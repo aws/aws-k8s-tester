@@ -148,7 +148,6 @@ func (ts *tester) Create() (err error) {
 				secretsJobName,
 			}
 			descCmd := strings.Join(descArgs, " ")
-			ts.cfg.Logger.Info("describing job", zap.String("describe-command", descCmd))
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			descOutput, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 			cancel()
@@ -157,6 +156,33 @@ func (ts *tester) Create() (err error) {
 			}
 			out := string(descOutput)
 			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", descCmd, out)
+		}),
+		k8s_client.WithPodFunc(func(pod v1.Pod) {
+			switch pod.Status.Phase {
+			case v1.PodFailed:
+				ts.cfg.Logger.Warn("pod failed",
+					zap.String("namespace", pod.Namespace),
+					zap.String("pod-name", pod.Name),
+					zap.String("pod-status-phase", fmt.Sprintf("%v", pod.Status.Phase)),
+				)
+				descArgs := []string{
+					ts.cfg.EKSConfig.KubectlPath,
+					"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+					"--namespace=" + pod.Namespace,
+					"describe",
+					"pod",
+					pod.Name,
+				}
+				descCmd := strings.Join(descArgs, " ")
+				ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+				descOutput, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+				cancel()
+				if err != nil {
+					ts.cfg.Logger.Warn("'kubectl describe job' failed", zap.Error(err))
+				}
+				out := string(descOutput)
+				fmt.Fprintf(ts.cfg.LogWriter, "\"%s\" output:\n\n%s\n\n", descCmd, out)
+			}
 		}),
 	)
 	cancel()

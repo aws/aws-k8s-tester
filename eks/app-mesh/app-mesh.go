@@ -148,9 +148,8 @@ func (ts *tester) Delete() error {
 			out := strings.TrimSpace(string(output))
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl get all' failed", zap.Error(err))
-			} else {
-				fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
 			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
 		}),
 		k8s_client.WithForceDelete(true),
 	); err != nil {

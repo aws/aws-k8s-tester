@@ -155,7 +155,6 @@ func (ts *tester) Create() (err error) {
 				stresserJobName,
 			}
 			descCmd := strings.Join(descArgs, " ")
-			ts.cfg.Logger.Info("describing job", zap.String("describe-command", descCmd))
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			descOutput, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 			cancel()
@@ -174,9 +173,6 @@ func (ts *tester) Create() (err error) {
 				"--tail=10",
 			}
 			cmdLogs := strings.Join(argsLogs, " ")
-
-			fmt.Fprintf(ts.cfg.LogWriter, "\n")
-			ts.cfg.Logger.Info("running query function for remote stresser")
 			ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 			logsOutput, err := exec.New().CommandContext(ctx, argsLogs[0], argsLogs[1:]...).CombinedOutput()
 			cancel()
@@ -184,7 +180,34 @@ func (ts *tester) Create() (err error) {
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
 			}
-			fmt.Fprintf(ts.cfg.LogWriter, "\n\"%s\":\n%s\n", cmdLogs, out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\":\n%s\n", cmdLogs, out)
+		}),
+		k8s_client.WithPodFunc(func(pod v1.Pod) {
+			switch pod.Status.Phase {
+			case v1.PodFailed:
+				ts.cfg.Logger.Warn("pod failed",
+					zap.String("namespace", pod.Namespace),
+					zap.String("pod-name", pod.Name),
+					zap.String("pod-status-phase", fmt.Sprintf("%v", pod.Status.Phase)),
+				)
+				descArgs := []string{
+					ts.cfg.EKSConfig.KubectlPath,
+					"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+					"--namespace=" + pod.Namespace,
+					"describe",
+					"pod",
+					pod.Name,
+				}
+				descCmd := strings.Join(descArgs, " ")
+				ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+				descOutput, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+				cancel()
+				if err != nil {
+					ts.cfg.Logger.Warn("'kubectl describe job' failed", zap.Error(err))
+				}
+				out := string(descOutput)
+				fmt.Fprintf(ts.cfg.LogWriter, "\"%s\" output:\n\n%s\n\n", descCmd, out)
+			}
 		}),
 	)
 	cancel()
@@ -268,9 +291,8 @@ func (ts *tester) Delete() error {
 			out := strings.TrimSpace(string(output))
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl get all' failed", zap.Error(err))
-			} else {
-				fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
 			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
 		}),
 		k8s_client.WithForceDelete(true),
 	); err != nil {

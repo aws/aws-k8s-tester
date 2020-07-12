@@ -1014,11 +1014,6 @@ func (ts *tester) checkLogs() error {
 			"pod/" + podName,
 		}
 		logsCmd := strings.Join(logsArgs, " ")
-		ts.cfg.Logger.Info("checking pod logs",
-			zap.String("pod-name", podName),
-			zap.String("node-name", nodeName),
-			zap.String("logs-command", logsCmd),
-		)
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		runOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
 		cancel()
@@ -1030,7 +1025,7 @@ func (ts *tester) checkLogs() error {
 		if !strings.Contains(output, ts.sleepMessage) {
 			continue
 		}
-		if _, err = f.WriteString(fmt.Sprintf("'%s' from %q:\n\n%s\n\n", logsCmd, nodeName, output)); err != nil {
+		if _, err = f.WriteString(fmt.Sprintf("'%s' from node %q:\n\n%s\n\n", logsCmd, nodeName, output)); err != nil {
 			ts.cfg.Logger.Warn("failed to write", zap.Error(err))
 			continue
 		}
@@ -1076,12 +1071,12 @@ func (ts *tester) checkLogs() error {
 		if !strings.Contains(output, ts.testBody) {
 			continue
 		}
-		if _, err = f.WriteString(fmt.Sprintf("'%s' from %q:\n\n%s\n\n", catCmd, nodeName, output)); err != nil {
+		if _, err = f.WriteString(fmt.Sprintf("'%s' from node %q:\n\n%s\n\n", catCmd, nodeName, output)); err != nil {
 			ts.cfg.Logger.Warn("failed to write", zap.Error(err))
 			continue
 		}
-		ts.cfg.Logger.Info("checked pod output file from node, found matching text body", zap.String("pod-name", podName))
 
+		ts.cfg.Logger.Info("checked pod output file from node, found matching text body", zap.String("pod-name", podName))
 		success++
 	}
 	if success < expects {

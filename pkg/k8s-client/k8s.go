@@ -36,7 +36,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
-	apiv1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -162,8 +161,8 @@ func RetryFunction(f func() error, options ...*ApiCallOptions) wait.ConditionFun
 }
 
 // ListPodsWithOptions lists the pods using the provided options.
-func ListPodsWithOptions(c clientset.Interface, namespace string, listOpts metav1.ListOptions) ([]apiv1.Pod, error) {
-	var pods []apiv1.Pod
+func ListPodsWithOptions(c clientset.Interface, namespace string, listOpts metav1.ListOptions) ([]v1.Pod, error) {
+	var pods []v1.Pod
 	listFunc := func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		podsList, err := c.CoreV1().Pods(namespace).List(ctx, listOpts)
@@ -181,13 +180,13 @@ func ListPodsWithOptions(c clientset.Interface, namespace string, listOpts metav
 }
 
 // ListNodes returns list of cluster nodes.
-func ListNodes(c clientset.Interface) ([]apiv1.Node, error) {
+func ListNodes(c clientset.Interface) ([]v1.Node, error) {
 	return ListNodesWithOptions(c, metav1.ListOptions{})
 }
 
 // ListNodesWithOptions lists the cluster nodes using the provided options.
-func ListNodesWithOptions(c clientset.Interface, listOpts metav1.ListOptions) ([]apiv1.Node, error) {
-	var nodes []apiv1.Node
+func ListNodesWithOptions(c clientset.Interface, listOpts metav1.ListOptions) ([]v1.Node, error) {
+	var nodes []v1.Node
 	listFunc := func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		nodesList, err := c.CoreV1().Nodes().List(ctx, listOpts)
@@ -209,7 +208,7 @@ func CreateNamespace(lg *zap.Logger, c clientset.Interface, namespace string) er
 	createFunc := func() error {
 		lg.Info("creating namespace", zap.String("namespace", namespace))
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		_, err := c.CoreV1().Namespaces().Create(ctx, &apiv1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}, metav1.CreateOptions{})
+		_, err := c.CoreV1().Namespaces().Create(ctx, &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}, metav1.CreateOptions{})
 		cancel()
 		if err == nil {
 			lg.Info("created namespace", zap.String("namespace", namespace))
@@ -285,7 +284,7 @@ func waitForDeleteNamespace(lg *zap.Logger, c clientset.Interface, namespace str
 	retryWaitFunc := func() (done bool, err error) {
 		lg.Info("waiting for namespace deletion", zap.String("namespace", namespace))
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		var ns *apiv1.Namespace
+		var ns *v1.Namespace
 		ns, err = c.CoreV1().Namespaces().Get(ctx, namespace, metav1.GetOptions{})
 		cancel()
 		if err != nil {
@@ -459,8 +458,8 @@ $ kubectl get ns eks-2020062119-floralb5826l-stresser-remote -o json
 */
 
 // ListNamespaces returns list of existing namespace names.
-func ListNamespaces(c clientset.Interface) ([]apiv1.Namespace, error) {
-	var namespaces []apiv1.Namespace
+func ListNamespaces(c clientset.Interface) ([]v1.Namespace, error) {
+	var namespaces []v1.Namespace
 	listFunc := func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		namespacesList, err := c.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
@@ -478,7 +477,7 @@ func ListNamespaces(c clientset.Interface) ([]apiv1.Namespace, error) {
 }
 
 // ListEvents retrieves events for the object with the given name.
-func ListEvents(c clientset.Interface, namespace string, name string, options ...*ApiCallOptions) (obj *apiv1.EventList, err error) {
+func ListEvents(c clientset.Interface, namespace string, name string, options ...*ApiCallOptions) (obj *v1.EventList, err error) {
 	getFunc := func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		obj, err = c.CoreV1().Events(namespace).List(
@@ -524,7 +523,7 @@ func WaitForJobCompletes(
 	namespace string,
 	jobName string,
 	targetCompletes int,
-	opts ...OpOption) (job *batchv1.Job, pods []apiv1.Pod, err error) {
+	opts ...OpOption) (job *batchv1.Job, pods []v1.Pod, err error) {
 	job, _, pods, err = waitForJobCompletes(false, ctx, lg, logWriter, stopc, k8sClient, initialWait, pollInterval, namespace, jobName, targetCompletes, opts...)
 	return job, pods, err
 }
@@ -542,7 +541,7 @@ func WaitForCronJobCompletes(
 	namespace string,
 	jobName string,
 	targetCompletes int,
-	opts ...OpOption) (cronJob *batchv1beta1.CronJob, pods []apiv1.Pod, err error) {
+	opts ...OpOption) (cronJob *batchv1beta1.CronJob, pods []v1.Pod, err error) {
 	_, cronJob, pods, err = waitForJobCompletes(true, ctx, lg, logWriter, stopc, k8sClient, initialWait, pollInterval, namespace, jobName, targetCompletes, opts...)
 	return cronJob, pods, err
 }
@@ -574,7 +573,7 @@ func waitForJobCompletes(
 	namespace string,
 	jobName string,
 	targetCompletes int,
-	opts ...OpOption) (job *batchv1.Job, cronJob *batchv1beta1.CronJob, pods []apiv1.Pod, err error) {
+	opts ...OpOption) (job *batchv1.Job, cronJob *batchv1beta1.CronJob, pods []v1.Pod, err error) {
 	ret := Op{}
 	ret.applyOpts(opts)
 
@@ -623,24 +622,27 @@ func waitForJobCompletes(
 			return false, nil
 		}
 		podSucceededCnt := 0
-		for _, item := range pods {
-			jv, ok := item.Labels["job-name"]
+		for _, pod := range pods {
+			jv, ok := pod.Labels["job-name"]
 			match := ok && jv == jobName
 			if !match {
 				// CronJob
-				match = strings.HasPrefix(item.Name, jobName)
+				match = strings.HasPrefix(pod.Name, jobName)
 			}
-			lg.Info("job pod",
+			lg.Info("pod",
 				zap.String("job-name", jobName),
 				zap.String("job-name-from-label", jv),
-				zap.String("pod-name", item.Name),
-				zap.String("pod-status-phase", fmt.Sprintf("%v", item.Status.Phase)),
+				zap.String("pod-name", pod.Name),
+				zap.String("pod-status-phase", fmt.Sprintf("%v", pod.Status.Phase)),
 				zap.Bool("label-match", match),
 			)
+			if ret.podFunc != nil {
+				ret.podFunc(pod)
+			}
 			if !match {
 				continue
 			}
-			if item.Status.Phase == apiv1.PodSucceeded {
+			if pod.Status.Phase == v1.PodSucceeded {
 				podSucceededCnt++
 			}
 		}
@@ -680,7 +682,7 @@ func waitForJobCompletes(
 				return false, err
 			}
 			for _, cond := range job.Status.Conditions {
-				if cond.Status != apiv1.ConditionTrue {
+				if cond.Status != v1.ConditionTrue {
 					continue
 				}
 				if cond.Type == batchv1.JobFailed {
@@ -820,6 +822,7 @@ func WaitForDeploymentCompletes(
 // Op represents a Kubernetes client operation.
 type Op struct {
 	queryFunc       func()
+	podFunc         func(v1.Pod)
 	forceDelete     bool
 	forceDeleteFunc func()
 }
@@ -830,6 +833,11 @@ type OpOption func(*Op)
 // WithQueryFunc configures query function to be called in retry func.
 func WithQueryFunc(f func()) OpOption {
 	return func(op *Op) { op.queryFunc = f }
+}
+
+// WithPodFunc configures function to be called for pod.
+func WithPodFunc(f func(v1.Pod)) OpOption {
+	return func(op *Op) { op.podFunc = f }
 }
 
 // WithForceDelete configures force delete.

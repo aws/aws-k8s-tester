@@ -369,7 +369,6 @@ func (ts *tester) waitDeploymentRedisLeader() (err error) {
 				"--selector=app.kubernetes.io/name=" + redisLabelName + ",role=" + redisLeaderRoleName,
 			}
 			logsCmd := strings.Join(logsArgs, " ")
-			ts.cfg.Logger.Info("fetching pod logs", zap.String("logs-command", logsCmd))
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 			logsOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
 			cancel()
@@ -641,7 +640,6 @@ func (ts *tester) waitDeploymentRedisFollower() (err error) {
 				"--selector=app.kubernetes.io/name=" + redisLabelName + ",role=" + redisFollowerRoleName,
 			}
 			logsCmd := strings.Join(logsArgs, " ")
-			ts.cfg.Logger.Info("fetching pod logs", zap.String("logs-command", logsCmd))
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 			logsOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
 			cancel()
@@ -910,7 +908,6 @@ func (ts *tester) waitDeploymentGuestbook() (err error) {
 				"--selector=app.kubernetes.io/name=" + nlbGuestbookAppName,
 			}
 			logsCmd := strings.Join(logsArgs, " ")
-			ts.cfg.Logger.Info("fetching pod logs", zap.String("logs-command", logsCmd))
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 			logsOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
 			cancel()

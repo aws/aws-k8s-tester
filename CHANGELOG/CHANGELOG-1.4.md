@@ -19,6 +19,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 ## `pkg`
 
 - Add [`pkg/k8s-client.WaitForDeploymentCompletes`](https://github.com/aws/aws-k8s-tester/commit/a8a69c5e092abf88ff7e0ddb636c4ce8400cf2f1).
+- Add [`pkg/k8s-client.WithPodFunc` to debug job pod failures](https://github.com/aws/aws-k8s-tester/commit/).
 
 
 
