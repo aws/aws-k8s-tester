@@ -607,7 +607,9 @@ func (ts *tester) deleteServiceAccount() error {
 const TemplateConfigMap = `
 #!/usr/bin/env bash
 set -e
+
 aws --version
+aws-utils version
 
 printf "\nProjected ServiceAccount token AWS_WEB_IDENTITY_TOKEN_FILE:\n"
 cat $AWS_WEB_IDENTITY_TOKEN_FILE; echo
@@ -619,14 +621,15 @@ printf "\nAWS_ROLE_ARN:\n"
 echo $AWS_ROLE_ARN
 
 printf "\n'aws sts get-caller-identity' output:\n"
-aws --debug --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity
+aws --debug --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity || true
+aws-utils --partition {{.Partition}} --region {{.Region}} || true
 
-CALLER_ROLE_ARN=$(aws --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity --query Arn --output text)
+CALLER_ROLE_ARN=$(aws --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity --query Arn --output text || true)
 printf "\n'aws sts get-caller-identity' role ARN:\n"
 echo $CALLER_ROLE_ARN
 if [[ $CALLER_ROLE_ARN =~ *{{ .RoleName }}* ]]; then
   echo "Unexpected CALLER_ROLE_ARN: ${CALLER_ROLE_ARN}"
-  exit 1
+  aws-utils --partition {{.Partition}} --region {{.Region}} --match-contain-role-arn {{ .RoleName }}
 fi
 printf "\nSUCCESS IRSA FARGATE TEST: CALLER_ROLE_ARN FOUND!\n\n"
 
@@ -644,6 +647,8 @@ printf "\nSUCCESS IRSA FARGATE TEST: EXITING...\n\n"
 `
 
 type configMapTemplate struct {
+	Partition    string
+	Region       string
 	RoleName     string
 	S3BucketName string
 	S3Key        string
@@ -656,7 +661,14 @@ func (ts *tester) createConfigMap() error {
 	tpl := template.Must(template.New("TemplateConfigMap").Parse(TemplateConfigMap))
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, configMapTemplate{
-		RoleName:     ts.cfg.EKSConfig.AddOnIRSAFargate.RoleName,
+		Partition: ts.cfg.EKSConfig.Partition,
+		Region:    ts.cfg.EKSConfig.Region,
+
+		// e.g.
+		// created role ARN:    arn:aws:iam::607362164682:role/eks-2020071200-galaxyzejwho-add-on-irsa-role
+		// sts caller role ARN: arn:aws:sts::607362164682:assumed-role/eks-2020071200-galaxyzejwho-add-on-irsa-role/botocore-session-1594541343
+		RoleName: ts.cfg.EKSConfig.AddOnIRSAFargate.RoleName,
+
 		S3BucketName: ts.cfg.EKSConfig.S3BucketName,
 		S3Key:        ts.cfg.EKSConfig.AddOnIRSAFargate.S3Key,
 		SleepMessage: ts.sleepMessage,
