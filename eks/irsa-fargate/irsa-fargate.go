@@ -622,14 +622,14 @@ echo $AWS_ROLE_ARN
 
 printf "\n'aws sts get-caller-identity' output:\n"
 aws --debug --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity || true
-/aws-utils --partition {{.Partition}} --region {{.Region}} || true
+/aws-utils sts --partition {{.Partition}} --region {{.Region}} || true
 
 CALLER_ROLE_ARN=$(aws --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity --query Arn --output text || true)
 printf "\n'aws sts get-caller-identity' role ARN:\n"
 echo $CALLER_ROLE_ARN
 if [[ $CALLER_ROLE_ARN =~ *{{ .RoleName }}* ]]; then
   echo "Unexpected CALLER_ROLE_ARN: ${CALLER_ROLE_ARN}"
-  /aws-utils --partition {{.Partition}} --region {{.Region}} --match-contain-role-arn {{ .RoleName }}
+  /aws-utils sts --partition {{.Partition}} --region {{.Region}} --match-contain-role-arn {{ .RoleName }}
 fi
 printf "\nSUCCESS IRSA FARGATE TEST: CALLER_ROLE_ARN FOUND!\n\n"
 
