@@ -599,6 +599,8 @@ echo $AWS_ROLE_ARN
 
 printf "\n'aws sts get-caller-identity' output:\n"
 aws --debug --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity || true
+
+printf "\n'aws-utils sts' output:\n"
 /aws-utils sts --log-level debug --partition {{.Partition}} --region {{.Region}} || true
 
 printf "\n'aws sts get-caller-identity' role ARN:\n"
