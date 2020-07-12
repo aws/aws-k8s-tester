@@ -898,6 +898,57 @@ func (ts *tester) waitDeployment() (err error) {
 			}
 			out := string(output)
 			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+
+			getArgs := []string{
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnIRSA.Namespace,
+				"get",
+				"pods",
+			}
+			getCmd := strings.Join(getArgs, " ")
+			ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+			cmdOutput, err := exec.New().CommandContext(ctx, getArgs[0], getArgs[1:]...).CombinedOutput()
+			cancel()
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl get pods' failed", zap.Error(err))
+			}
+			out = string(cmdOutput)
+			fmt.Fprintf(ts.cfg.LogWriter, "\"%s\" output:\n\n%s\n\n", getCmd, out)
+
+			pods, err := ts.cfg.K8SClient.ListPods(ts.cfg.EKSConfig.AddOnIRSA.Namespace, 3000, 3*time.Second)
+			if err != nil {
+				ts.cfg.Logger.Warn("failed to list Pod", zap.Bool("retriable-error", k8s_client.IsRetryableAPIError(err)), zap.Error(err))
+				return
+			}
+			if len(pods) == 0 {
+				ts.cfg.Logger.Warn("got an empty list of Pod")
+				return
+			}
+			for _, pod := range pods {
+				ts.cfg.Logger.Info("pod",
+					zap.String("pod-name", pod.Name),
+					zap.String("pod-status-phase", fmt.Sprintf("%v", pod.Status.Phase)),
+				)
+				if pod.Status.Phase == v1.PodFailed {
+					logsArgs := []string{
+						ts.cfg.EKSConfig.KubectlPath,
+						"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+						"--namespace=" + ts.cfg.EKSConfig.AddOnIRSA.Namespace,
+						"logs",
+						fmt.Sprintf("pod/%s", pod.Name),
+					}
+					logsCmd := strings.Join(logsArgs, " ")
+					ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+					cmdOutput, err = exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
+					cancel()
+					if err != nil {
+						ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
+					}
+					out = string(cmdOutput)
+					fmt.Fprintf(ts.cfg.LogWriter, "\"%s\" output:\n\n%s\n\n", logsCmd, out)
+				}
+			}
 		}),
 	)
 	cancel()

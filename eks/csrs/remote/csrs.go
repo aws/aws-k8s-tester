@@ -175,13 +175,30 @@ func (ts *tester) Create() (err error) {
 				}
 				descCmd := strings.Join(descArgs, " ")
 				ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-				descOutput, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+				cmdOutput, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 				cancel()
 				if err != nil {
 					ts.cfg.Logger.Warn("'kubectl describe job' failed", zap.Error(err))
 				}
-				out := string(descOutput)
+				out := string(cmdOutput)
 				fmt.Fprintf(ts.cfg.LogWriter, "\"%s\" output:\n\n%s\n\n", descCmd, out)
+
+				logsArgs := []string{
+					ts.cfg.EKSConfig.KubectlPath,
+					"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+					"--namespace=" + pod.Namespace,
+					"logs",
+					fmt.Sprintf("pod/%s", pod.Name),
+				}
+				logsCmd := strings.Join(logsArgs, " ")
+				ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+				cmdOutput, err = exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
+				cancel()
+				if err != nil {
+					ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
+				}
+				out = string(cmdOutput)
+				fmt.Fprintf(ts.cfg.LogWriter, "\"%s\" output:\n\n%s\n\n", logsCmd, out)
 			}
 		}),
 	)
