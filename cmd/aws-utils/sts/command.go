@@ -48,9 +48,10 @@ func stsFunc(cmd *cobra.Command, args []string) {
 		panic(err)
 	}
 	_, stsOutput, _, err := pkg_aws.New(&pkg_aws.Config{
-		Logger:    lg,
-		Partition: partition,
-		Region:    region,
+		Logger:        lg,
+		DebugAPICalls: logLevel == "debug",
+		Partition:     partition,
+		Region:        region,
 	})
 	if err != nil {
 		lg.Fatal("failed to create AWS session", zap.Error(err))

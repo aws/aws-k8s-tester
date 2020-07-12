@@ -622,7 +622,7 @@ echo $AWS_ROLE_ARN
 
 printf "\n'aws sts get-caller-identity' output:\n"
 aws --debug --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity || true
-/aws-utils sts --partition {{.Partition}} --region {{.Region}} || true
+/aws-utils sts --log-level debug --partition {{.Partition}} --region {{.Region}} || true
 
 CALLER_ROLE_ARN=$(aws --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity --query Arn --output text || true)
 printf "\n'aws sts get-caller-identity' role ARN:\n"
