@@ -9,12 +9,17 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5).
 
+## `cmd`
+
+- Add [`cmd/aws-utils` for IRSA tests](https://github.com/aws/aws-k8s-tester/commit/c0de5f0b2625fca7d7e8a61bc783c820ca71e77c).
+
 ## `eks`
 
 - Fix [remote tester job Pod](https://github.com/aws/aws-k8s-tester/commit/0d6e2c9e390b688029cc88d565b249ce79f4e15c).
   - Change pod `RestartPolicy` from `v1.RestartPolicyOnFailure` to `v1.RestartPolicyNever`.
   - ref. https://github.com/kubernetes/kubernetes/issues/54870.
 - Use [`pkg/k8s-client.WaitForDeploymentCompletes`](https://github.com/aws/aws-k8s-tester/commit/0d6e2c9e390b688029cc88d565b249ce79f4e15c).
+- Fix [`eks/irsa` and `eks/irsa-fargate` role ARN query tests](https://github.com/aws/aws-k8s-tester/commit/12d17a25229faa3f2daf573cab3fc0c4aeaa0076).
 
 ## `pkg`
 
