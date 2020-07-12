@@ -11,7 +11,14 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 
 ## `eks`
 
-- Fix [`eks/csrs/remote` job Pod polling](https://github.com/aws/aws-k8s-tester/commit/cd9f9b959606370a895a3768dc63d11a542cb2c4).
+- Fix [remote tester job Pod](https://github.com/aws/aws-k8s-tester/commit/0d6e2c9e390b688029cc88d565b249ce79f4e15c).
+  - Change pod `RestartPolicy` from `v1.RestartPolicyOnFailure` to `v1.RestartPolicyNever`.
+  - ref. https://github.com/kubernetes/kubernetes/issues/54870.
+- Use [`pkg/k8s-client.WaitForDeploymentCompletes`](https://github.com/aws/aws-k8s-tester/commit/0d6e2c9e390b688029cc88d565b249ce79f4e15c).
+
+## `pkg`
+
+- Add [`pkg/k8s-client.WaitForDeploymentCompletes`](https://github.com/aws/aws-k8s-tester/commit/a8a69c5e092abf88ff7e0ddb636c4ce8400cf2f1).
 
 
 
