@@ -65,9 +65,10 @@ func metricsImageFunc(cmd *cobra.Command, args []string) {
 	query := string(d)
 
 	ss, _, _, err := aws.New(&aws.Config{
-		Logger:    lg,
-		Partition: partition,
-		Region:    region,
+		Logger:        lg,
+		DebugAPICalls: logLevel == "debug",
+		Partition:     partition,
+		Region:        region,
 	})
 	if err != nil {
 		lg.Fatal("failed to create AWS session", zap.Error(err))
