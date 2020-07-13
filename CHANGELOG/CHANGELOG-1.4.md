@@ -26,6 +26,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 - Add [`iam:SetSecurityTokenServicePreferences` to worker node role IAM policy](https://github.com/aws/aws-k8s-tester/commit/9a09a37d92dbd8eed2f98a9249aa6e3b2f9d6459).
   - ref. https://docs.aws.amazon.com/cli/latest/reference/iam/set-security-token-service-preferences.html.
   - To use regional STS endpoint.
+- Fix [STS regional endpoint dial timeouts](https://github.com/aws/aws-k8s-tester/commit/bce310faa1c2abcc48617f6b5a3c732992a039d0).
+  - e.g. `"RequestError: send request failed\ncaused by: Post \"https://iam.amazonaws.com/\": dial tcp: i/o timeout"} failed to create AWS session RequestError: send request failed caused by: Post "https://sts.us-west-2.amazonaws.com/": dial tcp: i/o timeout"`
 
 ## `pkg`
 
