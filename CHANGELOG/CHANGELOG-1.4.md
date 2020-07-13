@@ -16,6 +16,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 
 ## `eks`
 
+- Fix [typos in `kubectl describe job` commands for `eks/*/remote` testers](https://github.com/aws/aws-k8s-tester/commit/561cdfe9b1fa9137e9b6c468fcf731e886daa094).
+- Fix [wrong buckets for `eks/*/remote` testers](https://github.com/aws/aws-k8s-tester/commit/).
 - Add [more debugging logs to remote testers for failed pods](https://github.com/aws/aws-k8s-tester/commit/a3e1e97f1d92e109c84edeba6e91d09f1e5fcd17).
 - Add [more debugging logs to `eks/irsa`](https://github.com/aws/aws-k8s-tester/commit/a3e1e97f1d92e109c84edeba6e91d09f1e5fcd17).
 - Fix [remote tester job Pod](https://github.com/aws/aws-k8s-tester/commit/0d6e2c9e390b688029cc88d565b249ce79f4e15c).
