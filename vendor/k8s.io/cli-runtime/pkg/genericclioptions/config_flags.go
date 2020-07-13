@@ -17,7 +17,6 @@ limitations under the License.
 package genericclioptions
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -57,15 +56,8 @@ const (
 )
 
 var (
-	defaultCacheDir = filepath.Join(homedir.HomeDir(), ".kube", "http-cache")
-
-	ErrEmptyConfig = errors.New(`Missing or incomplete configuration info.  Please point to an existing, complete config file:
-
-  1. Via the command-line flag --kubeconfig
-  2. Via the KUBECONFIG environment variable
-  3. In your home directory as ~/.kube/config
-
-To view or setup config directly use the 'config' command.`)
+	defaultCacheDir                = filepath.Join(homedir.HomeDir(), ".kube", "http-cache")
+	defaultDiscoveryCacheParentDir = filepath.Join(homedir.HomeDir(), ".kube", "cache", "discovery")
 )
 
 // RESTClientGetter is an interface that the ConfigFlags describe to provide an easier way to mock for commands
@@ -121,12 +113,7 @@ type ConfigFlags struct {
 // to a .kubeconfig file, loading rules, and config flag overrides.
 // Expects the AddFlags method to have been called.
 func (f *ConfigFlags) ToRESTConfig() (*rest.Config, error) {
-	config, err := f.ToRawKubeConfigLoader().ClientConfig()
-	// replace client-go's ErrEmptyConfig error with our custom, more verbose version
-	if clientcmd.IsEmptyConfig(err) {
-		return nil, ErrEmptyConfig
-	}
-	return config, err
+	return f.ToRawKubeConfigLoader().ClientConfig()
 }
 
 // ToRawKubeConfigLoader binds config flag values to config overrides
@@ -206,16 +193,11 @@ func (f *ConfigFlags) toRawKubeConfigLoader() clientcmd.ClientConfig {
 		overrides.Timeout = *f.Timeout
 	}
 
-	var clientConfig clientcmd.ClientConfig
-
 	// we only have an interactive prompt when a password is allowed
 	if f.Password == nil {
-		clientConfig = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, overrides)
-	} else {
-		clientConfig = clientcmd.NewInteractiveDeferredLoadingClientConfig(loadingRules, overrides, os.Stdin)
+		return &clientConfig{clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, overrides)}
 	}
-
-	return clientConfig
+	return &clientConfig{clientcmd.NewInteractiveDeferredLoadingClientConfig(loadingRules, overrides, os.Stdin)}
 }
 
 // toRawKubePersistentConfigLoader binds config flag values to config overrides
@@ -245,14 +227,20 @@ func (f *ConfigFlags) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, e
 	// double it just so we don't end up here again for a while.  This config is only used for discovery.
 	config.Burst = 100
 
+	httpCacheDir, discoveryCacheParentDir := defaultCacheDir, defaultDiscoveryCacheParentDir
+
 	// retrieve a user-provided value for the "cache-dir"
-	// defaulting to ~/.kube/http-cache if no user-value is given.
-	httpCacheDir := defaultCacheDir
+	// override httpCacheDir and discoveryCacheDir if user-value is given.
 	if f.CacheDir != nil {
 		httpCacheDir = *f.CacheDir
+		if len(httpCacheDir) > 0 {
+			// override discoveryCacheDir default value so that server resources and http-cache data are stored in the same location
+			discoveryCacheParentDir = filepath.Join(filepath.Dir(httpCacheDir), "cache", "discovery")
+		}
 	}
 
-	discoveryCacheDir := computeDiscoverCacheDir(filepath.Join(homedir.HomeDir(), ".kube", "cache", "discovery"), config.Host)
+	discoveryCacheDir := computeDiscoverCacheDir(discoveryCacheParentDir, config.Host)
+
 	return diskcached.NewCachedDiscoveryClientForConfig(config, discoveryCacheDir, httpCacheDir, time.Duration(10*time.Minute))
 }
 
