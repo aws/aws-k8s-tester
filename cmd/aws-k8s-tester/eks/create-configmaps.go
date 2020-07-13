@@ -77,6 +77,11 @@ func createConfigMapsFunc(cmd *cobra.Command, args []string) {
 		fmt.Fprintf(os.Stderr, "kubeconfig not found %q\n", configmapsKubeConfigPath)
 		os.Exit(1)
 	}
+
+	// TODO: make take awhile for volume to be mounted complete...
+	// remove this sleep...
+	time.Sleep(3 * time.Second)
+
 	if err := os.MkdirAll("/var/log", 0700); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create dir %v\n", err)
 		os.Exit(1)
