@@ -605,7 +605,7 @@ aws s3 cp s3://{{ .S3BucketName }}/{{ .S3Key }} /var/log/$HOSTNAME.s3.output;
 printf "\n"
 echo {{ .S3Key }} contents:
 cat /var/log/$HOSTNAME.s3.output;
-printf "\nSUCCESS IRSA TEST: S3 FILE DOWNLOADED!\n\n"
+printf "\n\nSUCCESS IRSA TEST: S3 FILE DOWNLOADED!\n\n"
 
 printf "\n'aws-utils sts' expected role ARN:\n"
 /aws-utils sts --partition {{.Partition}} --region {{.Region}} --match-contain-role-arn {{ .RoleName }}
