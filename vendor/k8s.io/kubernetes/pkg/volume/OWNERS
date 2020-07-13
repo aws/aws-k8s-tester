@@ -1,8 +1,21 @@
 # See the OWNERS docs at https://go.k8s.io/owners
 
 approvers:
-- sig-storage-approvers
+- saad-ali
+- thockin
+- jsafrane
+- rootfs
+- gnufied
+- msau42
 reviewers:
-- sig-storage-reviewers
+- saad-ali
+- jsafrane
+- rootfs
+- jingxu97
+- msau42
+- gnufied
+- verult
+- davidz627
+- humblec
 labels:
 - sig/storage

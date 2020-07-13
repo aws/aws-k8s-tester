@@ -26,12 +26,10 @@ type AdmissionFailureHandlerStub struct{}
 
 var _ AdmissionFailureHandler = &AdmissionFailureHandlerStub{}
 
-// NewAdmissionFailureHandlerStub returns an instance of AdmissionFailureHandlerStub.
 func NewAdmissionFailureHandlerStub() *AdmissionFailureHandlerStub {
 	return &AdmissionFailureHandlerStub{}
 }
 
-// HandleAdmissionFailure simply passes admission rejection on, with no special handling.
 func (n *AdmissionFailureHandlerStub) HandleAdmissionFailure(admitPod *v1.Pod, failureReasons []PredicateFailureReason) ([]PredicateFailureReason, error) {
 	return failureReasons, nil
 }

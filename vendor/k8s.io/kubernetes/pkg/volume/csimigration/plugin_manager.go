@@ -68,8 +68,6 @@ func (pm PluginManager) IsMigrationCompleteForPlugin(pluginName string) bool {
 		return utilfeature.DefaultFeatureGate.Enabled(features.CSIMigrationAzureDiskComplete)
 	case csilibplugins.CinderInTreePluginName:
 		return utilfeature.DefaultFeatureGate.Enabled(features.CSIMigrationOpenStackComplete)
-	case csilibplugins.VSphereInTreePluginName:
-		return utilfeature.DefaultFeatureGate.Enabled(features.CSIMigrationvSphereComplete)
 	default:
 		return false
 	}
@@ -94,8 +92,6 @@ func (pm PluginManager) IsMigrationEnabledForPlugin(pluginName string) bool {
 		return utilfeature.DefaultFeatureGate.Enabled(features.CSIMigrationAzureDisk)
 	case csilibplugins.CinderInTreePluginName:
 		return utilfeature.DefaultFeatureGate.Enabled(features.CSIMigrationOpenStack)
-	case csilibplugins.VSphereInTreePluginName:
-		return utilfeature.DefaultFeatureGate.Enabled(features.CSIMigrationvSphere)
 	default:
 		return false
 	}

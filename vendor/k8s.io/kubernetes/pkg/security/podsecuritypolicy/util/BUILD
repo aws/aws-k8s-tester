@@ -26,7 +26,6 @@ go_test(
     embed = [":go_default_library"],
     deps = [
         "//pkg/apis/core:go_default_library",
-        "//pkg/serviceaccount:go_default_library",
         "//staging/src/k8s.io/api/policy/v1beta1:go_default_library",
     ],
 )

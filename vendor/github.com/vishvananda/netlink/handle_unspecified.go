@@ -73,15 +73,7 @@ func (h *Handle) LinkSetVfVlan(link Link, vf, vlan int) error {
 	return ErrNotImplemented
 }
 
-func (h *Handle) LinkSetVfVlanQos(link Link, vf, vlan, qos int) error {
-	return ErrNotImplemented
-}
-
 func (h *Handle) LinkSetVfTxRate(link Link, vf, rate int) error {
-	return ErrNotImplemented
-}
-
-func (h *Handle) LinkSetVfRate(link Link, vf, minRate, maxRate int) error {
 	return ErrNotImplemented
 }
 
@@ -154,10 +146,6 @@ func (h *Handle) LinkSetFlood(link Link, mode bool) error {
 }
 
 func (h *Handle) LinkSetTxQLen(link Link, qlen int) error {
-	return ErrNotImplemented
-}
-
-func (h *Handle) LinkSetGroup(link Link, group int) error {
 	return ErrNotImplemented
 }
 

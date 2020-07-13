@@ -71,8 +71,8 @@ type Queue interface {
 
 	// HasSynced returns true if the first batch of keys have all been
 	// popped.  The first batch of keys are those of the first Replace
-	// operation if that happened before any Add, AddIfNotPresent,
-	// Update, or Delete; otherwise the first batch is empty.
+	// operation if that happened before any Add, Update, or Delete;
+	// otherwise the first batch is empty.
 	HasSynced() bool
 
 	// Close the queue
@@ -128,7 +128,8 @@ type FIFO struct {
 	// Indication the queue is closed.
 	// Used to indicate a queue is closed so a control loop can exit when a queue is empty.
 	// Currently, not used to gate any of CRED operations.
-	closed bool
+	closed     bool
+	closedLock sync.Mutex
 }
 
 var (
@@ -137,14 +138,14 @@ var (
 
 // Close the queue.
 func (f *FIFO) Close() {
-	f.lock.Lock()
-	defer f.lock.Unlock()
+	f.closedLock.Lock()
+	defer f.closedLock.Unlock()
 	f.closed = true
 	f.cond.Broadcast()
 }
 
 // HasSynced returns true if an Add/Update/Delete/AddIfNotPresent are called first,
-// or the first batch of items inserted by Replace() has been popped.
+// or an Update called first but the first batch of items inserted by Replace() has been popped
 func (f *FIFO) HasSynced() bool {
 	f.lock.Lock()
 	defer f.lock.Unlock()
@@ -261,8 +262,8 @@ func (f *FIFO) GetByKey(key string) (item interface{}, exists bool, err error) {
 
 // IsClosed checks if the queue is closed
 func (f *FIFO) IsClosed() bool {
-	f.lock.Lock()
-	defer f.lock.Unlock()
+	f.closedLock.Lock()
+	defer f.closedLock.Unlock()
 	if f.closed {
 		return true
 	}
@@ -283,7 +284,7 @@ func (f *FIFO) Pop(process PopProcessFunc) (interface{}, error) {
 			// When the queue is empty, invocation of Pop() is blocked until new item is enqueued.
 			// When Close() is called, the f.closed is set and the condition is broadcasted.
 			// Which causes this loop to continue and return from the Pop().
-			if f.closed {
+			if f.IsClosed() {
 				return nil, ErrFIFOClosed
 			}
 

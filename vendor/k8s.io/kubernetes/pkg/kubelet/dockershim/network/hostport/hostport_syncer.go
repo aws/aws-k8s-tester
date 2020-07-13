@@ -1,5 +1,3 @@
-// +build !dockerless
-
 /*
 Copyright 2014 The Kubernetes Authors.
 
@@ -28,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 
 	v1 "k8s.io/api/core/v1"
 	iptablesproxy "k8s.io/kubernetes/pkg/proxy/iptables"
@@ -201,7 +199,7 @@ func (h *hostportSyncer) SyncHostports(natInterfaceName string, activePodPortMap
 		klog.V(4).Infof("syncHostportsRules took %v", time.Since(start))
 	}()
 
-	hostportPodMap, err := gatherAllHostports(activePodPortMappings, h.iptables.IsIPv6())
+	hostportPodMap, err := gatherAllHostports(activePodPortMappings, h.iptables.IsIpv6())
 	if err != nil {
 		return err
 	}

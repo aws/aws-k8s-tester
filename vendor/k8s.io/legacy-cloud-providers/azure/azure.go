@@ -42,12 +42,11 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	cloudprovider "k8s.io/cloud-provider"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 	"k8s.io/legacy-cloud-providers/azure/auth"
 	azcache "k8s.io/legacy-cloud-providers/azure/cache"
 	azclients "k8s.io/legacy-cloud-providers/azure/clients"
 	"k8s.io/legacy-cloud-providers/azure/clients/diskclient"
-	"k8s.io/legacy-cloud-providers/azure/clients/fileclient"
 	"k8s.io/legacy-cloud-providers/azure/clients/interfaceclient"
 	"k8s.io/legacy-cloud-providers/azure/clients/loadbalancerclient"
 	"k8s.io/legacy-cloud-providers/azure/clients/publicipclient"
@@ -62,12 +61,6 @@ import (
 	"k8s.io/legacy-cloud-providers/azure/clients/vmssclient"
 	"k8s.io/legacy-cloud-providers/azure/clients/vmssvmclient"
 	"k8s.io/legacy-cloud-providers/azure/retry"
-
-	// ensure the newly added package from azure-sdk-for-go is in vendor/
-	_ "k8s.io/legacy-cloud-providers/azure/clients/containerserviceclient"
-	// ensure the newly added package from azure-sdk-for-go is in vendor/
-	_ "k8s.io/legacy-cloud-providers/azure/clients/deploymentclient"
-
 	"sigs.k8s.io/yaml"
 )
 
@@ -241,7 +234,7 @@ type Cloud struct {
 	StorageAccountClient            storageaccountclient.Interface
 	DisksClient                     diskclient.Interface
 	SnapshotsClient                 snapshotclient.Interface
-	FileClient                      fileclient.Interface
+	FileClient                      FileClient
 	VirtualMachineScaleSetsClient   vmssclient.Interface
 	VirtualMachineScaleSetVMsClient vmssvmclient.Interface
 	VirtualMachineSizesClient       vmsizeclient.Interface
@@ -253,7 +246,7 @@ type Cloud struct {
 	// ipv6DualStack allows overriding for unit testing.  It's normally initialized from featuregates
 	ipv6DualStackEnabled bool
 	// Lock for access to node caches, includes nodeZones, nodeResourceGroups, and unmanagedNodes.
-	nodeCachesLock sync.RWMutex
+	nodeCachesLock sync.Mutex
 	// nodeZones is a mapping from Zone to a sets.String of Node's names in the Zone
 	// it is updated by the nodeInformer
 	nodeZones map[string]sets.String
@@ -269,7 +262,7 @@ type Cloud struct {
 	// routeCIDRs holds cache for route CIDRs.
 	routeCIDRs map[string]string
 
-	KubeClient       clientset.Interface
+	kubeClient       clientset.Interface
 	eventBroadcaster record.EventBroadcaster
 	eventRecorder    record.EventRecorder
 	routeUpdater     *delayedRouteUpdater
@@ -391,7 +384,7 @@ func (az *Cloud) InitializeCloudFromConfig(config *Config, fromSecret bool) erro
 		// No credentials provided, useInstanceMetadata should be enabled for Kubelet.
 		// TODO(feiskyer): print different error message for Kubelet and controller-manager, as they're
 		// requiring different credential settings.
-		if !config.UseInstanceMetadata && config.CloudConfigType == cloudConfigTypeFile {
+		if !config.UseInstanceMetadata && az.Config.CloudConfigType == cloudConfigTypeFile {
 			return fmt.Errorf("useInstanceMetadata must be enabled without Azure credentials")
 		}
 
@@ -554,8 +547,6 @@ func (az *Cloud) configAzureClients(
 	loadBalancerClientConfig := azClientConfig.WithRateLimiter(az.Config.LoadBalancerRateLimit)
 	securityGroupClientConfig := azClientConfig.WithRateLimiter(az.Config.SecurityGroupRateLimit)
 	publicIPClientConfig := azClientConfig.WithRateLimiter(az.Config.PublicIPAddressRateLimit)
-	// TODO(ZeroMagic): add azurefileRateLimit
-	fileClientConfig := azClientConfig.WithRateLimiter(nil)
 
 	// If uses network resources in different AAD Tenant, update Authorizer for VM/VMSS client config
 	if multiTenantServicePrincipalToken != nil {
@@ -598,7 +589,8 @@ func (az *Cloud) configAzureClients(
 	az.LoadBalancerClient = loadbalancerclient.New(loadBalancerClientConfig)
 	az.SecurityGroupsClient = securitygroupclient.New(securityGroupClientConfig)
 	az.PublicIPAddressesClient = publicipclient.New(publicIPClientConfig)
-	az.FileClient = fileclient.New(fileClientConfig)
+	// fileClient is not based on armclient, but it's still backoff retried.
+	az.FileClient = newAzureFileClient(&az.Environment, azClientConfig.Backoff)
 }
 
 func (az *Cloud) getAzureClientConfig(servicePrincipalToken *adal.ServicePrincipalToken) *azclients.ClientConfig {
@@ -647,9 +639,9 @@ func parseConfig(configReader io.Reader) (*Config, error) {
 
 // Initialize passes a Kubernetes clientBuilder interface to the cloud provider
 func (az *Cloud) Initialize(clientBuilder cloudprovider.ControllerClientBuilder, stop <-chan struct{}) {
-	az.KubeClient = clientBuilder.ClientOrDie("azure-cloud-provider")
+	az.kubeClient = clientBuilder.ClientOrDie("azure-cloud-provider")
 	az.eventBroadcaster = record.NewBroadcaster()
-	az.eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: az.KubeClient.CoreV1().Events("")})
+	az.eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: az.kubeClient.CoreV1().Events("")})
 	az.eventRecorder = az.eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "azure-cloud-provider"})
 	az.InitializeCloudFromSecret()
 }
@@ -662,11 +654,6 @@ func (az *Cloud) LoadBalancer() (cloudprovider.LoadBalancer, bool) {
 // Instances returns an instances interface. Also returns true if the interface is supported, false otherwise.
 func (az *Cloud) Instances() (cloudprovider.Instances, bool) {
 	return az, true
-}
-
-// InstancesV2 returns an instancesV2 interface. Also returns true if the interface is supported, false otherwise.
-func (az *Cloud) InstancesV2() (cloudprovider.InstancesV2, bool) {
-	return nil, false
 }
 
 // Zones returns a zones interface. Also returns true if the interface is supported, false otherwise.
@@ -812,8 +799,8 @@ func (az *Cloud) GetActiveZones() (sets.String, error) {
 		return nil, fmt.Errorf("Azure cloud provider doesn't have informers set")
 	}
 
-	az.nodeCachesLock.RLock()
-	defer az.nodeCachesLock.RUnlock()
+	az.nodeCachesLock.Lock()
+	defer az.nodeCachesLock.Unlock()
 	if !az.nodeInformerSynced() {
 		return nil, fmt.Errorf("node informer is not synced when trying to GetActiveZones")
 	}
@@ -839,8 +826,8 @@ func (az *Cloud) GetNodeResourceGroup(nodeName string) (string, error) {
 		return az.ResourceGroup, nil
 	}
 
-	az.nodeCachesLock.RLock()
-	defer az.nodeCachesLock.RUnlock()
+	az.nodeCachesLock.Lock()
+	defer az.nodeCachesLock.Unlock()
 	if !az.nodeInformerSynced() {
 		return "", fmt.Errorf("node informer is not synced when trying to GetNodeResourceGroup")
 	}
@@ -861,8 +848,8 @@ func (az *Cloud) GetResourceGroups() (sets.String, error) {
 		return sets.NewString(az.ResourceGroup), nil
 	}
 
-	az.nodeCachesLock.RLock()
-	defer az.nodeCachesLock.RUnlock()
+	az.nodeCachesLock.Lock()
+	defer az.nodeCachesLock.Unlock()
 	if !az.nodeInformerSynced() {
 		return nil, fmt.Errorf("node informer is not synced when trying to GetResourceGroups")
 	}
@@ -882,8 +869,8 @@ func (az *Cloud) GetUnmanagedNodes() (sets.String, error) {
 		return nil, nil
 	}
 
-	az.nodeCachesLock.RLock()
-	defer az.nodeCachesLock.RUnlock()
+	az.nodeCachesLock.Lock()
+	defer az.nodeCachesLock.Unlock()
 	if !az.nodeInformerSynced() {
 		return nil, fmt.Errorf("node informer is not synced when trying to GetUnmanagedNodes")
 	}

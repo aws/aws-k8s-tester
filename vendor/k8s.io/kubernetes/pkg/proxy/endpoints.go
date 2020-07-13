@@ -23,7 +23,7 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 
 	v1 "k8s.io/api/core/v1"
 	discovery "k8s.io/api/discovery/v1beta1"
@@ -94,10 +94,6 @@ func newBaseEndpointInfo(IP string, port int, isLocal bool, topology map[string]
 
 type makeEndpointFunc func(info *BaseEndpointInfo) Endpoint
 
-// This handler is invoked by the apply function on every change. This function should not modify the
-// EndpointsMap's but just use the changes for any Proxier specific cleanup.
-type processEndpointsMapChangeFunc func(oldEndpointsMap, newEndpointsMap EndpointsMap)
-
 // EndpointChangeTracker carries state about uncommitted changes to an arbitrary number of
 // Endpoints, keyed by their namespace and name.
 type EndpointChangeTracker struct {
@@ -108,8 +104,7 @@ type EndpointChangeTracker struct {
 	// items maps a service to is endpointsChange.
 	items map[types.NamespacedName]*endpointsChange
 	// makeEndpointInfo allows proxier to inject customized information when processing endpoint.
-	makeEndpointInfo          makeEndpointFunc
-	processEndpointsMapChange processEndpointsMapChangeFunc
+	makeEndpointInfo makeEndpointFunc
 	// endpointSliceCache holds a simplified version of endpoint slices.
 	endpointSliceCache *EndpointSliceCache
 	// isIPv6Mode indicates if change tracker is under IPv6/IPv4 mode. Nil means not applicable.
@@ -121,15 +116,14 @@ type EndpointChangeTracker struct {
 }
 
 // NewEndpointChangeTracker initializes an EndpointsChangeMap
-func NewEndpointChangeTracker(hostname string, makeEndpointInfo makeEndpointFunc, isIPv6Mode *bool, recorder record.EventRecorder, endpointSlicesEnabled bool, processEndpointsMapChange processEndpointsMapChangeFunc) *EndpointChangeTracker {
+func NewEndpointChangeTracker(hostname string, makeEndpointInfo makeEndpointFunc, isIPv6Mode *bool, recorder record.EventRecorder, endpointSlicesEnabled bool) *EndpointChangeTracker {
 	ect := &EndpointChangeTracker{
-		hostname:                  hostname,
-		items:                     make(map[types.NamespacedName]*endpointsChange),
-		makeEndpointInfo:          makeEndpointInfo,
-		isIPv6Mode:                isIPv6Mode,
-		recorder:                  recorder,
-		lastChangeTriggerTimes:    make(map[types.NamespacedName][]time.Time),
-		processEndpointsMapChange: processEndpointsMapChange,
+		hostname:               hostname,
+		items:                  make(map[types.NamespacedName]*endpointsChange),
+		makeEndpointInfo:       makeEndpointInfo,
+		isIPv6Mode:             isIPv6Mode,
+		recorder:               recorder,
+		lastChangeTriggerTimes: make(map[types.NamespacedName][]time.Time),
 	}
 	if endpointSlicesEnabled {
 		ect.endpointSliceCache = NewEndpointSliceCache(hostname, isIPv6Mode, recorder, makeEndpointInfo)
@@ -182,10 +176,6 @@ func (ect *EndpointChangeTracker) Update(previous, current *v1.Endpoints) bool {
 		// there will be no network programming for them and thus no network programming latency metric
 		// should be exported.
 		delete(ect.lastChangeTriggerTimes, namespacedName)
-	} else {
-		for spn, eps := range change.current {
-			klog.V(2).Infof("Service port %s updated: %d endpoints", spn, len(eps))
-		}
 	}
 
 	metrics.EndpointChangesPending.Set(float64(len(ect.items)))
@@ -394,7 +384,6 @@ func (ect *EndpointChangeTracker) endpointsToEndpointsMap(endpoints *v1.Endpoint
 // The changes map is cleared after applying them.
 // In addition it returns (via argument) and resets the lastChangeTriggerTimes for all endpoints
 // that were changed and will result in syncing the proxy rules.
-// apply triggers processEndpointsMapChange on every change.
 func (em EndpointsMap) apply(ect *EndpointChangeTracker, staleEndpoints *[]ServiceEndpoint,
 	staleServiceNames *[]ServicePortName, lastChangeTriggerTimes *map[types.NamespacedName][]time.Time) {
 	if ect == nil {
@@ -403,9 +392,6 @@ func (em EndpointsMap) apply(ect *EndpointChangeTracker, staleEndpoints *[]Servi
 
 	changes := ect.checkoutChanges()
 	for _, change := range changes {
-		if ect.processEndpointsMapChange != nil {
-			ect.processEndpointsMapChange(change.previous, change.current)
-		}
 		em.unmerge(change.previous)
 		em.merge(change.current)
 		detectStaleConnections(change.previous, change.current, staleEndpoints, staleServiceNames)

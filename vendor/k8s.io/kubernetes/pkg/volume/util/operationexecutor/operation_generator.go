@@ -34,7 +34,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	volerr "k8s.io/cloud-provider/volume/errors"
 	csitrans "k8s.io/csi-translation-lib"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 	"k8s.io/kubernetes/pkg/features"
 	kevents "k8s.io/kubernetes/pkg/kubelet/events"
 	"k8s.io/kubernetes/pkg/volume"
@@ -603,12 +603,7 @@ func (og *operationGenerator) GenerateMountVolumeFunc(
 				return volumeToMount.GenerateError("MountVolume.MarkDeviceAsMounted failed", markDeviceMountedErr)
 			}
 
-			// If volume expansion is performed after MountDevice but before SetUp then
-			// deviceMountPath and deviceStagePath is going to be the same.
-			// Deprecation: Calling NodeExpandVolume after NodeStage/MountDevice will be deprecated
-			// in a future version of k8s.
 			resizeOptions.DeviceMountPath = deviceMountPath
-			resizeOptions.DeviceStagePath = deviceMountPath
 			resizeOptions.CSIVolumePhase = volume.CSIVolumeStaged
 
 			// NodeExpandVolume will resize the file system if user has requested a resize of
@@ -632,7 +627,6 @@ func (og *operationGenerator) GenerateMountVolumeFunc(
 
 		// Execute mount
 		mountErr := volumeMounter.SetUp(volume.MounterArgs{
-			FsUser:              ioutil.FsUserFrom(volumeToMount.Pod),
 			FsGroup:             fsGroup,
 			DesiredSize:         volumeToMount.DesiredSizeLimit,
 			FSGroupChangePolicy: fsGroupChangePolicy,
@@ -840,15 +834,8 @@ func (og *operationGenerator) GenerateUnmountDeviceFunc(
 		deviceMountPath, err :=
 			volumeDeviceMounter.GetDeviceMountPath(deviceToDetach.VolumeSpec)
 		if err != nil {
-			// On failure other than "does not exist", return error. Caller will log and retry.
-			if !strings.Contains(err.Error(), "does not exist") {
-				return deviceToDetach.GenerateError("GetDeviceMountPath failed", err)
-			}
-			// If the mount path could not be found, don't fail the unmount, but instead log a warning and proceed,
-			// using the value from deviceToDetach.DeviceMountPath, so that the device can be marked as unmounted
-			deviceMountPath = deviceToDetach.DeviceMountPath
-			klog.Warningf(deviceToDetach.GenerateMsg(fmt.Sprintf(
-				"GetDeviceMountPath failed, but unmount operation will proceed using deviceMountPath=%s: %v", deviceMountPath, err), ""))
+			// On failure, return error. Caller will log and retry.
+			return deviceToDetach.GenerateError("GetDeviceMountPath failed", err)
 		}
 		refs, err := deviceMountableVolumePlugin.GetDeviceMountRefs(deviceMountPath)
 
@@ -951,7 +938,6 @@ func (og *operationGenerator) GenerateMapVolumeFunc(
 
 	mapVolumeFunc := func() (simpleErr error, detailedErr error) {
 		var devicePath string
-		var stagingPath string
 		// Set up global map path under the given plugin directory using symbolic link
 		globalMapPath, err :=
 			blockVolumeMapper.GetGlobalMapPath(volumeToMount.VolumeSpec)
@@ -975,8 +961,7 @@ func (og *operationGenerator) GenerateMapVolumeFunc(
 		}
 		// Call SetUpDevice if blockVolumeMapper implements CustomBlockVolumeMapper
 		if customBlockVolumeMapper, ok := blockVolumeMapper.(volume.CustomBlockVolumeMapper); ok {
-			var mapErr error
-			stagingPath, mapErr = customBlockVolumeMapper.SetUpDevice()
+			mapErr := customBlockVolumeMapper.SetUpDevice()
 			if mapErr != nil {
 				og.markDeviceErrorState(volumeToMount, devicePath, globalMapPath, mapErr, actualStateOfWorld)
 				// On failure, return error. Caller will log and retry.
@@ -1079,9 +1064,8 @@ func (og *operationGenerator) GenerateMapVolumeFunc(
 		klog.V(verbosity).Infof(detailedMsg)
 
 		resizeOptions := volume.NodeResizeOptions{
-			DevicePath:      devicePath,
-			DeviceStagePath: stagingPath,
-			CSIVolumePhase:  volume.CSIVolumePublished,
+			DevicePath:     devicePath,
+			CSIVolumePhase: volume.CSIVolumePublished,
 		}
 		_, resizeError := og.nodeExpandVolume(volumeToMount, resizeOptions)
 		if resizeError != nil {
@@ -1498,64 +1482,40 @@ func (og *operationGenerator) GenerateExpandInUseVolumeFunc(
 		var simpleErr, detailedErr error
 		resizeOptions := volume.NodeResizeOptions{
 			VolumeSpec: volumeToMount.VolumeSpec,
-			DevicePath: volumeToMount.DevicePath,
-		}
-		fsVolume, err := util.CheckVolumeModeFilesystem(volumeToMount.VolumeSpec)
-		if err != nil {
-			return volumeToMount.GenerateError("NodeExpandvolume.CheckVolumeModeFilesystem failed", err)
 		}
 
-		if fsVolume {
-			volumeMounter, newMounterErr := volumePlugin.NewMounter(
-				volumeToMount.VolumeSpec,
-				volumeToMount.Pod,
-				volume.VolumeOptions{})
-			if newMounterErr != nil {
-				return volumeToMount.GenerateError("NodeExpandVolume.NewMounter initialization failed", newMounterErr)
-			}
+		attachableVolumePlugin, _ :=
+			og.volumePluginMgr.FindAttachablePluginBySpec(volumeToMount.VolumeSpec)
 
-			resizeOptions.DeviceMountPath = volumeMounter.GetPath()
-
-			deviceMountableVolumePlugin, _ := og.volumePluginMgr.FindDeviceMountablePluginBySpec(volumeToMount.VolumeSpec)
-			var volumeDeviceMounter volume.DeviceMounter
-			if deviceMountableVolumePlugin != nil {
-				volumeDeviceMounter, _ = deviceMountableVolumePlugin.NewDeviceMounter()
-			}
-
-			if volumeDeviceMounter != nil {
-				deviceStagePath, err := volumeDeviceMounter.GetDeviceMountPath(volumeToMount.VolumeSpec)
+		if attachableVolumePlugin != nil {
+			volumeAttacher, _ := attachableVolumePlugin.NewAttacher()
+			if volumeAttacher != nil {
+				resizeOptions.CSIVolumePhase = volume.CSIVolumeStaged
+				resizeOptions.DevicePath = volumeToMount.DevicePath
+				dmp, err := volumeAttacher.GetDeviceMountPath(volumeToMount.VolumeSpec)
 				if err != nil {
 					return volumeToMount.GenerateError("NodeExpandVolume.GetDeviceMountPath failed", err)
 				}
-				resizeOptions.DeviceStagePath = deviceStagePath
-			}
-		} else {
-			// Get block volume mapper plugin
-			blockVolumePlugin, err :=
-				og.volumePluginMgr.FindMapperPluginBySpec(volumeToMount.VolumeSpec)
-			if err != nil {
-				return volumeToMount.GenerateError("MapVolume.FindMapperPluginBySpec failed", err)
-			}
-
-			if blockVolumePlugin == nil {
-				return volumeToMount.GenerateError("MapVolume.FindMapperPluginBySpec failed to find BlockVolumeMapper plugin. Volume plugin is nil.", nil)
-			}
-
-			blockVolumeMapper, newMapperErr := blockVolumePlugin.NewBlockVolumeMapper(
-				volumeToMount.VolumeSpec,
-				volumeToMount.Pod,
-				volume.VolumeOptions{})
-			if newMapperErr != nil {
-				return volumeToMount.GenerateError("MapVolume.NewBlockVolumeMapper initialization failed", newMapperErr)
-			}
-
-			// if plugin supports custom mappers lets add DeviceStagePath
-			if customBlockVolumeMapper, ok := blockVolumeMapper.(volume.CustomBlockVolumeMapper); ok {
-				resizeOptions.DeviceStagePath = customBlockVolumeMapper.GetStagingPath()
+				resizeOptions.DeviceMountPath = dmp
+				resizeDone, simpleErr, detailedErr = og.doOnlineExpansion(volumeToMount, actualStateOfWorld, resizeOptions)
+				if simpleErr != nil || detailedErr != nil {
+					return simpleErr, detailedErr
+				}
+				if resizeDone {
+					return nil, nil
+				}
 			}
 		}
+		// if we are here that means volume plugin does not support attach interface
+		volumeMounter, newMounterErr := volumePlugin.NewMounter(
+			volumeToMount.VolumeSpec,
+			volumeToMount.Pod,
+			volume.VolumeOptions{})
+		if newMounterErr != nil {
+			return volumeToMount.GenerateError("NodeExpandVolume.NewMounter initialization failed", newMounterErr)
+		}
 
-		// if we are doing online expansion then volume is already published
+		resizeOptions.DeviceMountPath = volumeMounter.GetPath()
 		resizeOptions.CSIVolumePhase = volume.CSIVolumePublished
 		resizeDone, simpleErr, detailedErr = og.doOnlineExpansion(volumeToMount, actualStateOfWorld, resizeOptions)
 		if simpleErr != nil || detailedErr != nil {

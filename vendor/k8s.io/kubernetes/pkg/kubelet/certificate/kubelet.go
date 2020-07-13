@@ -26,10 +26,11 @@ import (
 	"sort"
 	"time"
 
-	certificates "k8s.io/api/certificates/v1"
+	certificates "k8s.io/api/certificates/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
+	certificatesclient "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
 	"k8s.io/client-go/util/certificate"
 	compbasemetrics "k8s.io/component-base/metrics"
 	"k8s.io/component-base/metrics/legacyregistry"
@@ -40,11 +41,9 @@ import (
 // NewKubeletServerCertificateManager creates a certificate manager for the kubelet when retrieving a server certificate
 // or returns an error.
 func NewKubeletServerCertificateManager(kubeClient clientset.Interface, kubeCfg *kubeletconfig.KubeletConfiguration, nodeName types.NodeName, getAddresses func() []v1.NodeAddress, certDirectory string) (certificate.Manager, error) {
-	var clientsetFn certificate.ClientsetFunc
-	if kubeClient != nil {
-		clientsetFn = func(current *tls.Certificate) (clientset.Interface, error) {
-			return kubeClient, nil
-		}
+	var certSigningRequestClient certificatesclient.CertificateSigningRequestInterface
+	if kubeClient != nil && kubeClient.CertificatesV1beta1() != nil {
+		certSigningRequestClient = kubeClient.CertificatesV1beta1().CertificateSigningRequests()
 	}
 	certificateStore, err := certificate.NewFileStore(
 		"kubelet-server",
@@ -104,7 +103,9 @@ func NewKubeletServerCertificateManager(kubeClient clientset.Interface, kubeCfg 
 	}
 
 	m, err := certificate.NewManager(&certificate.Config{
-		ClientsetFn: clientsetFn,
+		ClientFn: func(current *tls.Certificate) (certificatesclient.CertificateSigningRequestInterface, error) {
+			return certSigningRequestClient, nil
+		},
 		GetTemplate: getTemplate,
 		SignerName:  certificates.KubeletServingSignerName,
 		Usages: []certificates.KeyUsage{
@@ -141,7 +142,7 @@ func NewKubeletServerCertificateManager(kubeClient clientset.Interface, kubeCfg 
 		},
 		func() float64 {
 			if c := m.Current(); c != nil && c.Leaf != nil {
-				return math.Trunc(c.Leaf.NotAfter.Sub(time.Now()).Seconds())
+				return c.Leaf.NotAfter.Sub(time.Now()).Seconds()
 			}
 			return math.Inf(1)
 		},
@@ -197,7 +198,7 @@ func NewKubeletClientCertificateManager(
 	bootstrapKeyData []byte,
 	certFile string,
 	keyFile string,
-	clientsetFn certificate.ClientsetFunc,
+	clientFn certificate.CSRClientFunc,
 ) (certificate.Manager, error) {
 
 	certificateStore, err := certificate.NewFileStore(
@@ -209,6 +210,16 @@ func NewKubeletClientCertificateManager(
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize client certificate store: %v", err)
 	}
+	var certificateExpiration = compbasemetrics.NewGauge(
+		&compbasemetrics.GaugeOpts{
+			Namespace:      metrics.KubeletSubsystem,
+			Subsystem:      "certificate_manager",
+			Name:           "client_expiration_seconds",
+			Help:           "Gauge of the lifetime of a certificate. The value is the date the certificate will expire in seconds since January 1, 1970 UTC.",
+			StabilityLevel: compbasemetrics.ALPHA,
+		},
+	)
+	legacyregistry.Register(certificateExpiration)
 	var certificateRenewFailure = compbasemetrics.NewCounter(
 		&compbasemetrics.CounterOpts{
 			Namespace:      metrics.KubeletSubsystem,
@@ -221,7 +232,7 @@ func NewKubeletClientCertificateManager(
 	legacyregistry.Register(certificateRenewFailure)
 
 	m, err := certificate.NewManager(&certificate.Config{
-		ClientsetFn: clientsetFn,
+		ClientFn: clientFn,
 		Template: &x509.CertificateRequest{
 			Subject: pkix.Name{
 				CommonName:   fmt.Sprintf("system:node:%s", nodeName),
@@ -258,6 +269,5 @@ func NewKubeletClientCertificateManager(
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize client certificate manager: %v", err)
 	}
-
 	return m, nil
 }

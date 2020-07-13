@@ -1,4 +1,4 @@
-// +build !windows,!dockerless
+// +build !windows
 
 /*
 Copyright 2019 The Kubernetes Authors.
@@ -25,7 +25,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 func (r *streamingRuntime) portForward(podSandboxID string, port int32, stream io.ReadWriteCloser) error {

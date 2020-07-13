@@ -21,7 +21,7 @@ package gce
 import (
 	"fmt"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 
 	"github.com/GoogleCloudPlatform/k8s-cloud-provider/pkg/cloud"
 	"k8s.io/api/core/v1"

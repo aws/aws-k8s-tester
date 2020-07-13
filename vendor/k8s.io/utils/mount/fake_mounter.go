@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 // FakeMounter implements mount.Interface for tests.

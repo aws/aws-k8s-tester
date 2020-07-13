@@ -24,7 +24,7 @@ import (
 
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 const logFlushFreqFlagName = "log-flush-frequency"

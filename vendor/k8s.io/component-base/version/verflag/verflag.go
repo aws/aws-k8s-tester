@@ -89,7 +89,6 @@ const versionFlagName = "version"
 
 var (
 	versionFlag = Version(versionFlagName, VersionFalse, "Print version information and quit")
-	programName = "Kubernetes"
 )
 
 // AddFlags registers this package's flags on arbitrary FlagSets, such that they point to the
@@ -105,7 +104,7 @@ func PrintAndExitIfRequested() {
 		fmt.Printf("%#v\n", version.Get())
 		os.Exit(0)
 	} else if *versionFlag == VersionTrue {
-		fmt.Printf("%s %s\n", programName, version.Get())
+		fmt.Printf("Kubernetes %s\n", version.Get())
 		os.Exit(0)
 	}
 }

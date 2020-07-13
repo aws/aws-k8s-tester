@@ -25,10 +25,14 @@ import (
 
 const (
 	// LabelOS is a label to indicate the operating system of the node.
-	// The OS labels are promoted to GA in 1.14. kubelet applies GA labels and stop applying the beta OS labels in Kubernetes 1.19.
+	// The OS labels are promoted to GA in 1.14. kubelet applies both beta
+	// and GA labels to ensure backward compatibility.
+	// TODO: stop applying the beta OS labels in Kubernetes 1.18.
 	LabelOS = "beta.kubernetes.io/os"
 	// LabelArch is a label to indicate the architecture of the node.
-	// The Arch labels are promoted to GA in 1.14. kubelet applies GA labels and stop applying the beta Arch labels in Kubernetes 1.19.
+	// The Arch labels are promoted to GA in 1.14. kubelet applies both beta
+	// and GA labels to ensure backward compatibility.
+	// TODO: stop applying the beta Arch labels in Kubernetes 1.18.
 	LabelArch = "beta.kubernetes.io/arch"
 )
 

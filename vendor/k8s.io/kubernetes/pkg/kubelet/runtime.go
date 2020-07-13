@@ -128,7 +128,9 @@ func (s *runtimeState) storageErrors() error {
 	return utilerrors.NewAggregate(errs)
 }
 
-func newRuntimeState(runtimeSyncThreshold time.Duration) *runtimeState {
+func newRuntimeState(
+	runtimeSyncThreshold time.Duration,
+) *runtimeState {
 	return &runtimeState{
 		lastBaseRuntimeSync:      time.Time{},
 		baseRuntimeSyncThreshold: runtimeSyncThreshold,

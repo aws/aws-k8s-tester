@@ -26,7 +26,7 @@ import (
 	"time"
 
 	certutil "k8s.io/client-go/util/cert"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 const (

@@ -26,7 +26,7 @@ import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/component-base/metrics"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 	"k8s.io/kubernetes/pkg/features"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 	"k8s.io/kubernetes/pkg/kubelet/prober/results"
@@ -103,10 +103,11 @@ func NewManager(
 	statusManager status.Manager,
 	livenessManager results.Manager,
 	startupManager results.Manager,
-	runner kubecontainer.CommandRunner,
+	runner kubecontainer.ContainerCommandRunner,
+	refManager *kubecontainer.RefManager,
 	recorder record.EventRecorder) Manager {
 
-	prober := newProber(runner, recorder)
+	prober := newProber(runner, refManager, recorder)
 	readinessManager := results.NewManager()
 	return &manager{
 		statusManager:    statusManager,
@@ -235,6 +236,18 @@ func (m *manager) CleanupPods(desiredPods map[types.UID]sets.Empty) {
 
 func (m *manager) UpdatePodStatus(podUID types.UID, podStatus *v1.PodStatus) {
 	for i, c := range podStatus.ContainerStatuses {
+		var ready bool
+		if c.State.Running == nil {
+			ready = false
+		} else if result, ok := m.readinessManager.Get(kubecontainer.ParseContainerID(c.ContainerID)); ok {
+			ready = result == results.Success
+		} else {
+			// The check whether there is a probe which hasn't run yet.
+			_, exists := m.getWorker(podUID, c.Name, readiness)
+			ready = !exists
+		}
+		podStatus.ContainerStatuses[i].Ready = ready
+
 		var started bool
 		if c.State.Running == nil {
 			started = false
@@ -249,20 +262,6 @@ func (m *manager) UpdatePodStatus(podUID types.UID, podStatus *v1.PodStatus) {
 			started = !exists
 		}
 		podStatus.ContainerStatuses[i].Started = &started
-
-		if started {
-			var ready bool
-			if c.State.Running == nil {
-				ready = false
-			} else if result, ok := m.readinessManager.Get(kubecontainer.ParseContainerID(c.ContainerID)); ok {
-				ready = result == results.Success
-			} else {
-				// The check whether there is a probe which hasn't run yet.
-				_, exists := m.getWorker(podUID, c.Name, readiness)
-				ready = !exists
-			}
-			podStatus.ContainerStatuses[i].Ready = ready
-		}
 	}
 	// init containers are ready if they have exited with success or if a readiness probe has
 	// succeeded.

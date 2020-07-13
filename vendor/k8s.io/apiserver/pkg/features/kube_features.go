@@ -59,6 +59,13 @@ const (
 	// audited.
 	AdvancedAuditing featuregate.Feature = "AdvancedAuditing"
 
+	// owner: @pbarker
+	// alpha: v1.13
+	//
+	// DynamicAuditing enables configuration of audit policy and webhook backends through an
+	// AuditSink API object.
+	DynamicAuditing featuregate.Feature = "DynamicAuditing"
+
 	// owner: @ilackams
 	// alpha: v1.7
 	//
@@ -76,7 +83,6 @@ const (
 	// owner: @apelisse
 	// alpha: v1.12
 	// beta: v1.13
-	// stable: v1.18
 	//
 	// Allow requests to be processed but not stored, so that
 	// validation, merging, mutation can be tested without
@@ -138,18 +144,11 @@ const (
 	// Deprecates and removes SelfLink from ObjectMeta and ListMeta.
 	RemoveSelfLink featuregate.Feature = "RemoveSelfLink"
 
-	// owner: @shaloulcy, @wojtek-t
+	// owner: @shaloulcy
 	// alpha: v1.18
-	// beta: v1.19
 	//
 	// Allows label and field based indexes in apiserver watch cache to accelerate list operations.
 	SelectorIndex featuregate.Feature = "SelectorIndex"
-
-	// owner: @liggitt
-	// beta: v1.19
-	//
-	// Allows sending warning headers in API responses.
-	WarningHeaders featuregate.Feature = "WarningHeaders"
 )
 
 func init() {
@@ -163,9 +162,10 @@ var defaultKubernetesFeatureGates = map[featuregate.Feature]featuregate.FeatureS
 	StreamingProxyRedirects: {Default: true, PreRelease: featuregate.Deprecated},
 	ValidateProxyRedirects:  {Default: true, PreRelease: featuregate.Beta},
 	AdvancedAuditing:        {Default: true, PreRelease: featuregate.GA},
+	DynamicAuditing:         {Default: false, PreRelease: featuregate.Alpha},
 	APIResponseCompression:  {Default: true, PreRelease: featuregate.Beta},
 	APIListChunking:         {Default: true, PreRelease: featuregate.Beta},
-	DryRun:                  {Default: true, PreRelease: featuregate.GA},
+	DryRun:                  {Default: true, PreRelease: featuregate.Beta},
 	RemainingItemCount:      {Default: true, PreRelease: featuregate.Beta},
 	ServerSideApply:         {Default: true, PreRelease: featuregate.Beta},
 	StorageVersionHash:      {Default: true, PreRelease: featuregate.Beta},
@@ -174,6 +174,5 @@ var defaultKubernetesFeatureGates = map[featuregate.Feature]featuregate.FeatureS
 	WatchBookmark:           {Default: true, PreRelease: featuregate.GA, LockToDefault: true},
 	APIPriorityAndFairness:  {Default: false, PreRelease: featuregate.Alpha},
 	RemoveSelfLink:          {Default: false, PreRelease: featuregate.Alpha},
-	SelectorIndex:           {Default: true, PreRelease: featuregate.Beta},
-	WarningHeaders:          {Default: true, PreRelease: featuregate.Beta},
+	SelectorIndex:           {Default: false, PreRelease: featuregate.Alpha},
 }

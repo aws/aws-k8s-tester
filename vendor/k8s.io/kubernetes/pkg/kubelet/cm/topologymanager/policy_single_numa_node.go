@@ -40,7 +40,10 @@ func (p *singleNumaNodePolicy) Name() string {
 }
 
 func (p *singleNumaNodePolicy) canAdmitPodResult(hint *TopologyHint) bool {
-	return hint.Preferred
+	if !hint.Preferred {
+		return false
+	}
+	return true
 }
 
 // Return hints that have valid bitmasks with exactly one bit set.

@@ -22,7 +22,7 @@ import (
 	"os"
 	"sync"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 // Factory is a function that returns a cloudprovider.Interface.
@@ -97,6 +97,7 @@ func InitCloudProvider(name string, configFilePath string) (Interface, error) {
 	var err error
 
 	if name == "" {
+		klog.Info("No cloud provider specified.")
 		return nil, nil
 	}
 

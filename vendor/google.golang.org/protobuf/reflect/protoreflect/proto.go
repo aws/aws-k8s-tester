@@ -22,9 +22,8 @@
 //
 // The protobuf descriptor interfaces are not meant to be implemented by
 // user code since they might need to be extended in the future to support
-// additions to the protobuf language.
-// The "google.golang.org/protobuf/reflect/protodesc" package converts between
-// google.protobuf.DescriptorProto messages and protobuf descriptors.
+// additions to the protobuf language. Protobuf descriptors can be constructed
+// using the "google.golang.org/protobuf/reflect/protodesc" package.
 //
 //
 // Go Type Descriptors

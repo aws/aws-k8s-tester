@@ -114,7 +114,7 @@ func (p *StatsProvider) GetCgroupStats(cgroupName string, updateStats bool) (*st
 	}
 	// Rootfs and imagefs doesn't make sense for raw cgroup.
 	s := cadvisorInfoToContainerStats(cgroupName, info, nil, nil)
-	n := cadvisorInfoToNetworkStats(info)
+	n := cadvisorInfoToNetworkStats(cgroupName, info)
 	return s, n, nil
 }
 

@@ -22,7 +22,7 @@ func newListConverter(t reflect.Type, fd pref.FieldDescriptor) Converter {
 }
 
 type listConverter struct {
-	goType reflect.Type // []T
+	goType reflect.Type
 	c      Converter
 }
 
@@ -48,11 +48,11 @@ func (c *listConverter) IsValidPB(v pref.Value) bool {
 	if !ok {
 		return false
 	}
-	return list.v.Type().Elem() == c.goType
+	return list.v.Type().Elem() == c.goType && list.IsValid()
 }
 
 func (c *listConverter) IsValidGo(v reflect.Value) bool {
-	return v.IsValid() && v.Type() == c.goType
+	return v.Type() == c.goType
 }
 
 func (c *listConverter) New() pref.Value {
@@ -64,7 +64,7 @@ func (c *listConverter) Zero() pref.Value {
 }
 
 type listPtrConverter struct {
-	goType reflect.Type // *[]T
+	goType reflect.Type
 	c      Converter
 }
 
@@ -88,7 +88,7 @@ func (c *listPtrConverter) IsValidPB(v pref.Value) bool {
 }
 
 func (c *listPtrConverter) IsValidGo(v reflect.Value) bool {
-	return v.IsValid() && v.Type() == c.goType
+	return v.Type() == c.goType
 }
 
 func (c *listPtrConverter) New() pref.Value {

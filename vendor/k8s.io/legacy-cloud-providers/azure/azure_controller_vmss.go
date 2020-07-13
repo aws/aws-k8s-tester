@@ -22,11 +22,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-12-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
 	"github.com/Azure/go-autorest/autorest/to"
 
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 	azcache "k8s.io/legacy-cloud-providers/azure/cache"
 )
 
@@ -46,8 +46,7 @@ func (ss *scaleSet) AttachDisk(isManagedDisk bool, diskName, diskURI string, nod
 
 	disks := []compute.DataDisk{}
 	if vm.StorageProfile != nil && vm.StorageProfile.DataDisks != nil {
-		disks = make([]compute.DataDisk, len(*vm.StorageProfile.DataDisks))
-		copy(disks, *vm.StorageProfile.DataDisks)
+		disks = filterDetachingDisks(*vm.StorageProfile.DataDisks)
 	}
 	if isManagedDisk {
 		managedDisk := &compute.ManagedDiskParameters{ID: &diskURI}
@@ -137,8 +136,7 @@ func (ss *scaleSet) DetachDisk(diskName, diskURI string, nodeName types.NodeName
 
 	disks := []compute.DataDisk{}
 	if vm.StorageProfile != nil && vm.StorageProfile.DataDisks != nil {
-		disks = make([]compute.DataDisk, len(*vm.StorageProfile.DataDisks))
-		copy(disks, *vm.StorageProfile.DataDisks)
+		disks = filterDetachingDisks(*vm.StorageProfile.DataDisks)
 	}
 	bFoundDisk := false
 	for i, disk := range disks {
@@ -147,7 +145,7 @@ func (ss *scaleSet) DetachDisk(diskName, diskURI string, nodeName types.NodeName
 			(disk.ManagedDisk != nil && diskURI != "" && strings.EqualFold(*disk.ManagedDisk.ID, diskURI)) {
 			// found the disk
 			klog.V(2).Infof("azureDisk - detach disk: name %q uri %q", diskName, diskURI)
-			disks[i].ToBeDetached = to.BoolPtr(true)
+			disks = append(disks[:i], disks[i+1:]...)
 			bFoundDisk = true
 			break
 		}

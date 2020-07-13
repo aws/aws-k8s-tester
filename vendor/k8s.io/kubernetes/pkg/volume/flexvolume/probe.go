@@ -25,7 +25,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 	utilfs "k8s.io/kubernetes/pkg/util/filesystem"
 	"k8s.io/kubernetes/pkg/volume"
 	"k8s.io/utils/exec"
@@ -140,7 +140,7 @@ func (prober *flexVolumeProber) newProbeEvent(driverDirName string, op volume.Pr
 		probeEvent.PluginName = plugin.GetPluginName()
 	} else if op == volume.ProbeRemove {
 		driverName := utilstrings.UnescapeQualifiedName(driverDirName)
-		probeEvent.PluginName = driverName
+		probeEvent.PluginName = flexVolumePluginNamePrefix + driverName
 
 	} else {
 		return probeEvent, fmt.Errorf("Unknown Operation on directory: %s. ", driverDirName)

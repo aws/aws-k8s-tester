@@ -25,7 +25,7 @@ import (
 
 // TODO(random-liu): We need to better organize runtime errors for introspection.
 
-// ErrCrashLoopBackOff returned when a container Terminated and Kubelet is backing off the restart.
+// Container Terminated and Kubelet is backing off the restart
 var ErrCrashLoopBackOff = errors.New("CrashLoopBackOff")
 
 var (
@@ -35,16 +35,18 @@ var (
 )
 
 var (
-	// ErrRunContainer returned when runtime failed to start any of pod's container.
-	ErrRunContainer = errors.New("RunContainerError")
-	// ErrKillContainer returned when runtime failed to kill any of pod's containers.
-	ErrKillContainer = errors.New("KillContainerError")
-	// ErrCreatePodSandbox returned when runtime failed to create a sandbox for pod.
+	ErrRunContainer     = errors.New("RunContainerError")
+	ErrKillContainer    = errors.New("KillContainerError")
+	ErrVerifyNonRoot    = errors.New("VerifyNonRootError")
+	ErrRunInitContainer = errors.New("RunInitContainerError")
 	ErrCreatePodSandbox = errors.New("CreatePodSandboxError")
-	// ErrConfigPodSandbox returned when runetime failed to get pod sandbox config from pod.
 	ErrConfigPodSandbox = errors.New("ConfigPodSandboxError")
-	// ErrKillPodSandbox returned when runtime failed to stop pod's sandbox.
-	ErrKillPodSandbox = errors.New("KillPodSandboxError")
+	ErrKillPodSandbox   = errors.New("KillPodSandboxError")
+)
+
+var (
+	ErrSetupNetwork    = errors.New("SetupNetworkError")
+	ErrTeardownNetwork = errors.New("TeardownNetworkError")
 )
 
 // SyncAction indicates different kind of actions in SyncPod() and KillPod(). Now there are only actions
@@ -52,22 +54,14 @@ var (
 type SyncAction string
 
 const (
-	// StartContainer action
-	StartContainer SyncAction = "StartContainer"
-	// KillContainer action
-	KillContainer SyncAction = "KillContainer"
-	// SetupNetwork action
-	SetupNetwork SyncAction = "SetupNetwork"
-	// TeardownNetwork action
-	TeardownNetwork SyncAction = "TeardownNetwork"
-	// InitContainer action
-	InitContainer SyncAction = "InitContainer"
-	// CreatePodSandbox action
+	StartContainer   SyncAction = "StartContainer"
+	KillContainer    SyncAction = "KillContainer"
+	SetupNetwork     SyncAction = "SetupNetwork"
+	TeardownNetwork  SyncAction = "TeardownNetwork"
+	InitContainer    SyncAction = "InitContainer"
 	CreatePodSandbox SyncAction = "CreatePodSandbox"
-	// ConfigPodSandbox action
 	ConfigPodSandbox SyncAction = "ConfigPodSandbox"
-	// KillPodSandbox action
-	KillPodSandbox SyncAction = "KillPodSandbox"
+	KillPodSandbox   SyncAction = "KillPodSandbox"
 )
 
 // SyncResult is the result of sync action.

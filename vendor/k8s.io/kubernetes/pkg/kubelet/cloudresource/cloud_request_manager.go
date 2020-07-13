@@ -27,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	cloudprovider "k8s.io/cloud-provider"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 // SyncManager is an interface for making requests to a cloud provider

@@ -25,7 +25,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
+	"k8s.io/kubernetes/pkg/kubelet/checkpoint"
+	"k8s.io/kubernetes/pkg/kubelet/checkpointmanager"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 	"k8s.io/kubernetes/pkg/kubelet/events"
 	kubetypes "k8s.io/kubernetes/pkg/kubelet/types"
@@ -61,8 +63,9 @@ type PodConfig struct {
 	updates chan kubetypes.PodUpdate
 
 	// contains the list of all configured sources
-	sourcesLock sync.Mutex
-	sources     sets.String
+	sourcesLock       sync.Mutex
+	sources           sets.String
+	checkpointManager checkpointmanager.CheckpointManager
 }
 
 // NewPodConfig creates an object that can merge many configuration sources into a stream
@@ -106,6 +109,24 @@ func (c *PodConfig) Updates() <-chan kubetypes.PodUpdate {
 // Sync requests the full configuration be delivered to the update channel.
 func (c *PodConfig) Sync() {
 	c.pods.Sync()
+}
+
+// Restore restores pods from the checkpoint path, *once*
+func (c *PodConfig) Restore(path string, updates chan<- interface{}) error {
+	if c.checkpointManager != nil {
+		return nil
+	}
+	var err error
+	c.checkpointManager, err = checkpointmanager.NewCheckpointManager(path)
+	if err != nil {
+		return err
+	}
+	pods, err := checkpoint.LoadPods(c.checkpointManager)
+	if err != nil {
+		return err
+	}
+	updates <- kubetypes.PodUpdate{Pods: pods, Op: kubetypes.RESTORE, Source: kubetypes.ApiserverSource}
+	return nil
 }
 
 // podStorage manages the current pod state at any point in time and ensures updates
@@ -152,7 +173,7 @@ func (s *podStorage) Merge(source string, change interface{}) error {
 	defer s.updateLock.Unlock()
 
 	seenBefore := s.sourcesSeen.Has(source)
-	adds, updates, deletes, removes, reconciles := s.merge(source, change)
+	adds, updates, deletes, removes, reconciles, restores := s.merge(source, change)
 	firstSet := !seenBefore && s.sourcesSeen.Has(source)
 
 	// deliver update notifications
@@ -169,6 +190,9 @@ func (s *podStorage) Merge(source string, change interface{}) error {
 		}
 		if len(deletes.Pods) > 0 {
 			s.updates <- *deletes
+		}
+		if len(restores.Pods) > 0 {
+			s.updates <- *restores
 		}
 		if firstSet && len(adds.Pods) == 0 && len(updates.Pods) == 0 && len(deletes.Pods) == 0 {
 			// Send an empty update when first seeing the source and there are
@@ -206,7 +230,7 @@ func (s *podStorage) Merge(source string, change interface{}) error {
 	return nil
 }
 
-func (s *podStorage) merge(source string, change interface{}) (adds, updates, deletes, removes, reconciles *kubetypes.PodUpdate) {
+func (s *podStorage) merge(source string, change interface{}) (adds, updates, deletes, removes, reconciles, restores *kubetypes.PodUpdate) {
 	s.podLock.Lock()
 	defer s.podLock.Unlock()
 
@@ -215,6 +239,7 @@ func (s *podStorage) merge(source string, change interface{}) (adds, updates, de
 	deletePods := []*v1.Pod{}
 	removePods := []*v1.Pod{}
 	reconcilePods := []*v1.Pod{}
+	restorePods := []*v1.Pod{}
 
 	pods := s.pods[source]
 	if pods == nil {
@@ -287,6 +312,9 @@ func (s *podStorage) merge(source string, change interface{}) (adds, updates, de
 				removePods = append(removePods, existing)
 			}
 		}
+	case kubetypes.RESTORE:
+		klog.V(4).Infof("Restoring pods for source %s", source)
+		restorePods = append(restorePods, update.Pods...)
 
 	default:
 		klog.Warningf("Received invalid update type: %v", update)
@@ -300,8 +328,9 @@ func (s *podStorage) merge(source string, change interface{}) (adds, updates, de
 	deletes = &kubetypes.PodUpdate{Op: kubetypes.DELETE, Pods: copyPods(deletePods), Source: source}
 	removes = &kubetypes.PodUpdate{Op: kubetypes.REMOVE, Pods: copyPods(removePods), Source: source}
 	reconciles = &kubetypes.PodUpdate{Op: kubetypes.RECONCILE, Pods: copyPods(reconcilePods), Source: source}
+	restores = &kubetypes.PodUpdate{Op: kubetypes.RESTORE, Pods: copyPods(restorePods), Source: source}
 
-	return adds, updates, deletes, removes, reconciles
+	return adds, updates, deletes, removes, reconciles, restores
 }
 
 func (s *podStorage) markSourceSet(source string) {

@@ -29,7 +29,7 @@ import (
 
 	cmutil "k8s.io/kubernetes/pkg/kubelet/cm/util"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 func NewOOMAdjuster() *OOMAdjuster {

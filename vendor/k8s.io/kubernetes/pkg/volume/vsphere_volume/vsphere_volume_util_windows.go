@@ -25,7 +25,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 type diskInfoResult struct {

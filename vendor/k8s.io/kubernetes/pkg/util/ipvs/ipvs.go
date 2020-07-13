@@ -19,7 +19,6 @@ package ipvs
 import (
 	"net"
 	"strconv"
-	"strings"
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/version"
@@ -133,9 +132,4 @@ func GetRequiredIPVSModules(kernelVersion *version.Version) []string {
 	}
 	return []string{KernelModuleIPVS, KernelModuleIPVSRR, KernelModuleIPVSWRR, KernelModuleIPVSSH, KernelModuleNfConntrack}
 
-}
-
-// IsRsGracefulTerminationNeeded returns true if protocol requires graceful termination for the stale connections
-func IsRsGracefulTerminationNeeded(proto string) bool {
-	return !strings.EqualFold(proto, "UDP") && !strings.EqualFold(proto, "SCTP")
 }

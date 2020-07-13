@@ -25,7 +25,7 @@ import (
 
 	api "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 	"k8s.io/kubernetes/pkg/volume"
 	"k8s.io/kubernetes/pkg/volume/util"
 	"k8s.io/utils/exec"
@@ -34,7 +34,8 @@ import (
 )
 
 const (
-	flexVolumePluginName = "kubernetes.io/flexvolume"
+	flexVolumePluginName       = "kubernetes.io/flexvolume"
+	flexVolumePluginNamePrefix = "flexvolume-"
 )
 
 // FlexVolumePlugin object.
@@ -113,7 +114,7 @@ func (plugin *flexVolumePlugin) getExecutable() string {
 
 // Name is part of the volume.VolumePlugin interface.
 func (plugin *flexVolumePlugin) GetPluginName() string {
-	return plugin.driverName
+	return flexVolumePluginNamePrefix + plugin.driverName
 }
 
 // GetVolumeName is part of the volume.VolumePlugin interface.

@@ -158,13 +158,6 @@ func (h *Handle) xfrmStateAddOrUpdate(state *XfrmState, nlProto int) error {
 		out := nl.NewRtAttr(nl.XFRMA_REPLAY_ESN_VAL, writeReplayEsn(state.ReplayWindow))
 		req.AddData(out)
 	}
-	if state.OutputMark != 0 {
-		out := nl.NewRtAttr(nl.XFRMA_OUTPUT_MARK, nl.Uint32Attr(uint32(state.OutputMark)))
-		req.AddData(out)
-	}
-
-	ifId := nl.NewRtAttr(nl.XFRMA_IF_ID, nl.Uint32Attr(uint32(state.Ifid)))
-	req.AddData(ifId)
 
 	_, err := req.Execute(unix.NETLINK_XFRM, 0)
 	return err
@@ -191,7 +184,12 @@ func (h *Handle) xfrmStateAllocSpi(state *XfrmState) (*XfrmState, error) {
 		return nil, err
 	}
 
-	return parseXfrmState(msgs[0], FAMILY_ALL)
+	s, err := parseXfrmState(msgs[0], FAMILY_ALL)
+	if err != nil {
+		return nil, err
+	}
+
+	return s, err
 }
 
 // XfrmStateDel will delete an xfrm state from the system. Note that
@@ -276,9 +274,6 @@ func (h *Handle) xfrmStateGetOrDelete(state *XfrmState, nlProto int) (*XfrmState
 		out := nl.NewRtAttr(nl.XFRMA_SRCADDR, state.Src.To16())
 		req.AddData(out)
 	}
-
-	ifId := nl.NewRtAttr(nl.XFRMA_IF_ID, nl.Uint32Attr(uint32(state.Ifid)))
-	req.AddData(ifId)
 
 	resType := nl.XFRM_MSG_NEWSA
 	if nlProto == nl.XFRM_MSG_DELSA {
@@ -377,10 +372,6 @@ func parseXfrmState(m []byte, family int) (*XfrmState, error) {
 			state.Mark = new(XfrmMark)
 			state.Mark.Value = mark.Value
 			state.Mark.Mask = mark.Mask
-		case nl.XFRMA_OUTPUT_MARK:
-			state.OutputMark = int(native.Uint32(attr.Value))
-		case nl.XFRMA_IF_ID:
-			state.Ifid = int(native.Uint32(attr.Value))
 		}
 	}
 
@@ -403,7 +394,11 @@ func (h *Handle) XfrmStateFlush(proto Proto) error {
 	req.AddData(&nl.XfrmUsersaFlush{Proto: uint8(proto)})
 
 	_, err := req.Execute(unix.NETLINK_XFRM, 0)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func limitsToLft(lmts XfrmStateLimits, lft *nl.XfrmLifetimeCfg) {

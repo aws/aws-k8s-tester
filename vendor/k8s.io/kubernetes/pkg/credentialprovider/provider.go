@@ -22,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 // DockerConfigProvider is the interface that registered extensions implement
@@ -57,10 +57,6 @@ func init() {
 type CachingDockerConfigProvider struct {
 	Provider DockerConfigProvider
 	Lifetime time.Duration
-
-	// ShouldCache is an optional function that returns true if the specific config should be cached.
-	// If nil, all configs are treated as cacheable.
-	ShouldCache func(DockerConfig) bool
 
 	// cache fields
 	cacheDockerConfig DockerConfig
@@ -100,10 +96,7 @@ func (d *CachingDockerConfigProvider) Provide(image string) DockerConfig {
 	}
 
 	klog.V(2).Infof("Refreshing cache for provider: %v", reflect.TypeOf(d.Provider).String())
-	config := d.Provider.Provide(image)
-	if d.ShouldCache == nil || d.ShouldCache(config) {
-		d.cacheDockerConfig = config
-		d.expiration = time.Now().Add(d.Lifetime)
-	}
-	return config
+	d.cacheDockerConfig = d.Provider.Provide(image)
+	d.expiration = time.Now().Add(d.Lifetime)
+	return d.cacheDockerConfig
 }

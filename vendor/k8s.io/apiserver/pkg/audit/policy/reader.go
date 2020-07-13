@@ -28,7 +28,7 @@ import (
 	"k8s.io/apiserver/pkg/apis/audit/validation"
 	"k8s.io/apiserver/pkg/audit"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 var (

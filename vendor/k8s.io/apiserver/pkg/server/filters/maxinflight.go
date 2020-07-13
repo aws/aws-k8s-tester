@@ -28,7 +28,7 @@ import (
 	"k8s.io/apiserver/pkg/endpoints/metrics"
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 const (

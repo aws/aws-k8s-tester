@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 
 	api "k8s.io/api/core/v1"
 	storage "k8s.io/api/storage/v1"
@@ -225,9 +225,6 @@ func (p *csiPlugin) Init(host volume.VolumeHost) error {
 		},
 		csitranslationplugins.AzureFileInTreePluginName: func() bool {
 			return utilfeature.DefaultFeatureGate.Enabled(features.CSIMigration) && utilfeature.DefaultFeatureGate.Enabled(features.CSIMigrationAzureFile)
-		},
-		csitranslationplugins.VSphereInTreePluginName: func() bool {
-			return utilfeature.DefaultFeatureGate.Enabled(features.CSIMigration) && utilfeature.DefaultFeatureGate.Enabled(features.CSIMigrationvSphere)
 		},
 	}
 

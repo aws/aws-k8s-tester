@@ -1,5 +1,3 @@
-// +build !dockerless
-
 /*
 Copyright 2016 The Kubernetes Authors.
 
@@ -23,7 +21,7 @@ import (
 
 	"google.golang.org/grpc"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 	"k8s.io/kubernetes/pkg/kubelet/dockershim"
 	"k8s.io/kubernetes/pkg/kubelet/util"
 )

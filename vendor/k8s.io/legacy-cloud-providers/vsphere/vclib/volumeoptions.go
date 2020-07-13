@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"k8s.io/api/core/v1"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 // VolumeOptions specifies various options for a volume.

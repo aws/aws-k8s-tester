@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// WARNING: DO NOT add new use-caes to this package as it is deprecated and slated for deletion.
-
 package ssh
 
 import (
@@ -45,7 +43,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/component-base/metrics"
 	"k8s.io/component-base/metrics/legacyregistry"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 /*

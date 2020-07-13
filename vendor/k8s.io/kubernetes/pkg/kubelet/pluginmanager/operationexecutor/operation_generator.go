@@ -26,7 +26,7 @@ import (
 	"net"
 	"time"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"

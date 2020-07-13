@@ -25,8 +25,7 @@ import (
 	"time"
 
 	"golang.org/x/net/http2"
-	"k8s.io/component-base/cli/flag"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apiserver/pkg/server/dynamiccertificates"
@@ -57,14 +56,6 @@ func (s *SecureServingInfo) tlsConfig(stopCh <-chan struct{}) (*tls.Config, erro
 	}
 	if len(s.CipherSuites) > 0 {
 		tlsConfig.CipherSuites = s.CipherSuites
-		insecureCiphers := flag.InsecureTLSCiphers()
-		for i := 0; i < len(s.CipherSuites); i++ {
-			for cipherName, cipherID := range insecureCiphers {
-				if s.CipherSuites[i] == cipherID {
-					klog.Warningf("Use of insecure cipher '%s' detected.", cipherName)
-				}
-			}
-		}
 	}
 
 	if s.ClientCA != nil {
@@ -218,7 +209,7 @@ func RunServer(
 		defer utilruntime.HandleCrash()
 
 		var listener net.Listener
-		listener = tcpKeepAliveListener{ln}
+		listener = tcpKeepAliveListener{ln.(*net.TCPListener)}
 		if server.TLSConfig != nil {
 			listener = tls.NewListener(listener, server.TLSConfig)
 		}
@@ -244,17 +235,15 @@ func RunServer(
 //
 // Copied from Go 1.7.2 net/http/server.go
 type tcpKeepAliveListener struct {
-	net.Listener
+	*net.TCPListener
 }
 
 func (ln tcpKeepAliveListener) Accept() (net.Conn, error) {
-	c, err := ln.Listener.Accept()
+	tc, err := ln.AcceptTCP()
 	if err != nil {
 		return nil, err
 	}
-	if tc, ok := c.(*net.TCPConn); ok {
-		tc.SetKeepAlive(true)
-		tc.SetKeepAlivePeriod(defaultKeepAlivePeriod)
-	}
-	return c, nil
+	tc.SetKeepAlive(true)
+	tc.SetKeepAlivePeriod(defaultKeepAlivePeriod)
+	return tc, nil
 }

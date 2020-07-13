@@ -27,7 +27,7 @@ import (
 	"strings"
 
 	"k8s.io/api/core/v1"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 
 	"github.com/GoogleCloudPlatform/k8s-cloud-provider/pkg/cloud"
 	cloudprovider "k8s.io/cloud-provider"

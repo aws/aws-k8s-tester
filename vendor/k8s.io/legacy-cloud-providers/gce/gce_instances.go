@@ -29,7 +29,7 @@ import (
 	"cloud.google.com/go/compute/metadata"
 	computebeta "google.golang.org/api/compute/v0.beta"
 	compute "google.golang.org/api/compute/v1"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 
 	"github.com/GoogleCloudPlatform/k8s-cloud-provider/pkg/cloud"
 	"github.com/GoogleCloudPlatform/k8s-cloud-provider/pkg/cloud/filter"
@@ -42,10 +42,7 @@ import (
 )
 
 const (
-	defaultZone                   = ""
-	networkInterfaceIP            = "instance/network-interfaces/%s/ip"
-	networkInterfaceAccessConfigs = "instance/network-interfaces/%s/access-configs"
-	networkInterfaceExternalIP    = "instance/network-interfaces/%s/access-configs/%s/external-ip"
+	defaultZone = ""
 )
 
 func newInstancesMetricContext(request, zone string) *metricContext {
@@ -86,85 +83,29 @@ func (g *Cloud) ToInstanceReferences(zone string, instanceNames []string) (refs 
 }
 
 // NodeAddresses is an implementation of Instances.NodeAddresses.
-func (g *Cloud) NodeAddresses(ctx context.Context, nodeName types.NodeName) ([]v1.NodeAddress, error) {
-	timeoutCtx, cancel := context.WithTimeout(ctx, 1*time.Hour)
-	defer cancel()
-
-	instanceName := string(nodeName)
-
-	if g.useMetadataServer {
-		// Use metadata server if possible
-		if g.isCurrentInstance(instanceName) {
-
-			nics, err := metadata.Get("instance/network-interfaces/")
-			if err != nil {
-				return nil, fmt.Errorf("couldn't get network interfaces: %v", err)
-			}
-
-			nicsArr := strings.Split(nics, "/\n")
-			nodeAddresses := []v1.NodeAddress{}
-
-			for _, nic := range nicsArr {
-
-				if nic == "" {
-					continue
-				}
-
-				internalIP, err := metadata.Get(fmt.Sprintf(networkInterfaceIP, nic))
-				if err != nil {
-					return nil, fmt.Errorf("couldn't get internal IP: %v", err)
-				}
-				nodeAddresses = append(nodeAddresses, v1.NodeAddress{Type: v1.NodeInternalIP, Address: internalIP})
-
-				acs, err := metadata.Get(fmt.Sprintf(networkInterfaceAccessConfigs, nic))
-				if err != nil {
-					return nil, fmt.Errorf("couldn't get access configs: %v", err)
-				}
-
-				acsArr := strings.Split(acs, "/\n")
-
-				for _, ac := range acsArr {
-
-					if ac == "" {
-						continue
-					}
-
-					externalIP, err := metadata.Get(fmt.Sprintf(networkInterfaceExternalIP, nic, ac))
-					if err != nil {
-						return nil, fmt.Errorf("couldn't get external IP: %v", err)
-					}
-
-					if externalIP != "" {
-						nodeAddresses = append(nodeAddresses, v1.NodeAddress{Type: v1.NodeExternalIP, Address: externalIP})
-					}
-				}
-			}
-
-			internalDNSFull, err := metadata.Get("instance/hostname")
-			if err != nil {
-				klog.Warningf("couldn't get full internal DNS name: %v", err)
-			} else {
-				nodeAddresses = append(nodeAddresses,
-					v1.NodeAddress{Type: v1.NodeInternalDNS, Address: internalDNSFull},
-					v1.NodeAddress{Type: v1.NodeHostName, Address: internalDNSFull},
-				)
-			}
-			return nodeAddresses, nil
-		}
-	}
-
-	// Use GCE API
-	instanceObj, err := g.getInstanceByName(instanceName)
+func (g *Cloud) NodeAddresses(_ context.Context, _ types.NodeName) ([]v1.NodeAddress, error) {
+	internalIP, err := metadata.Get("instance/network-interfaces/0/ip")
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get instance details: %v", err)
+		return nil, fmt.Errorf("couldn't get internal IP: %v", err)
 	}
-
-	instance, err := g.c.Instances().Get(timeoutCtx, meta.ZonalKey(canonicalizeInstanceName(instanceObj.Name), instanceObj.Zone))
+	externalIP, err := metadata.Get("instance/network-interfaces/0/access-configs/0/external-ip")
 	if err != nil {
-		return []v1.NodeAddress{}, fmt.Errorf("error while querying for instance: %v", err)
+		return nil, fmt.Errorf("couldn't get external IP: %v", err)
+	}
+	addresses := []v1.NodeAddress{
+		{Type: v1.NodeInternalIP, Address: internalIP},
+		{Type: v1.NodeExternalIP, Address: externalIP},
 	}
 
-	return nodeAddressesFromInstance(instance)
+	if internalDNSFull, err := metadata.Get("instance/hostname"); err != nil {
+		klog.Warningf("couldn't get full internal DNS name: %v", err)
+	} else {
+		addresses = append(addresses,
+			v1.NodeAddress{Type: v1.NodeInternalDNS, Address: internalDNSFull},
+			v1.NodeAddress{Type: v1.NodeHostName, Address: internalDNSFull},
+		)
+	}
+	return addresses, nil
 }
 
 // NodeAddressesByProviderID will not be called from the node that is requesting this ID.
@@ -183,7 +124,17 @@ func (g *Cloud) NodeAddressesByProviderID(ctx context.Context, providerID string
 		return []v1.NodeAddress{}, fmt.Errorf("error while querying for providerID %q: %v", providerID, err)
 	}
 
-	return nodeAddressesFromInstance(instance)
+	if len(instance.NetworkInterfaces) < 1 {
+		return []v1.NodeAddress{}, fmt.Errorf("could not find network interfaces for providerID %q", providerID)
+	}
+	networkInterface := instance.NetworkInterfaces[0]
+
+	nodeAddresses := []v1.NodeAddress{{Type: v1.NodeInternalIP, Address: networkInterface.NetworkIP}}
+	for _, config := range networkInterface.AccessConfigs {
+		nodeAddresses = append(nodeAddresses, v1.NodeAddress{Type: v1.NodeExternalIP, Address: config.NatIP})
+	}
+
+	return nodeAddresses, nil
 }
 
 // instanceByProviderID returns the cloudprovider instance of the node
@@ -208,52 +159,6 @@ func (g *Cloud) instanceByProviderID(providerID string) (*gceInstance, error) {
 // InstanceShutdownByProviderID returns true if the instance is in safe state to detach volumes
 func (g *Cloud) InstanceShutdownByProviderID(ctx context.Context, providerID string) (bool, error) {
 	return false, cloudprovider.NotImplemented
-}
-
-// InstanceMetadataByProviderID returns metadata of the specified instance.
-func (g *Cloud) InstanceMetadataByProviderID(ctx context.Context, providerID string) (*cloudprovider.InstanceMetadata, error) {
-	timeoutCtx, cancel := context.WithTimeout(ctx, 1*time.Hour)
-	defer cancel()
-
-	if providerID == "" {
-		return nil, fmt.Errorf("couldn't compute InstanceMetadata for empty providerID")
-	}
-
-	_, zone, name, err := splitProviderID(providerID)
-	if err != nil {
-		return nil, err
-	}
-
-	instance, err := g.c.Instances().Get(timeoutCtx, meta.ZonalKey(canonicalizeInstanceName(name), zone))
-	if err != nil {
-		return nil, fmt.Errorf("error while querying for providerID %q: %v", providerID, err)
-	}
-
-	addresses, err := nodeAddressesFromInstance(instance)
-	if err != nil {
-		return nil, err
-	}
-	return &cloudprovider.InstanceMetadata{
-		ProviderID:    providerID,
-		Type:          lastComponent(instance.MachineType),
-		NodeAddresses: addresses,
-	}, nil
-}
-
-func nodeAddressesFromInstance(instance *compute.Instance) ([]v1.NodeAddress, error) {
-	if len(instance.NetworkInterfaces) < 1 {
-		return nil, fmt.Errorf("could not find network interfaces for instanceID %q", instance.Id)
-	}
-	nodeAddresses := []v1.NodeAddress{}
-
-	for _, nic := range instance.NetworkInterfaces {
-		nodeAddresses = append(nodeAddresses, v1.NodeAddress{Type: v1.NodeInternalIP, Address: nic.NetworkIP})
-		for _, config := range nic.AccessConfigs {
-			nodeAddresses = append(nodeAddresses, v1.NodeAddress{Type: v1.NodeExternalIP, Address: config.NatIP})
-		}
-	}
-
-	return nodeAddresses, nil
 }
 
 // InstanceTypeByProviderID returns the cloudprovider instance type of the node
@@ -456,20 +361,21 @@ func (g *Cloud) CurrentNodeName(ctx context.Context, hostname string) (types.Nod
 	return types.NodeName(hostname), nil
 }
 
-// AliasRangesByProviderID returns a list of CIDR ranges that are assigned to the
+// AliasRanges returns a list of CIDR ranges that are assigned to the
 // `node` for allocation to pods. Returns a list of the form
 // "<ip>/<netmask>".
-func (g *Cloud) AliasRangesByProviderID(providerID string) (cidrs []string, err error) {
+func (g *Cloud) AliasRanges(nodeName types.NodeName) (cidrs []string, err error) {
 	ctx, cancel := cloud.ContextWithCallTimeout()
 	defer cancel()
 
-	_, zone, name, err := splitProviderID(providerID)
+	var instance *gceInstance
+	instance, err = g.getInstanceByName(mapNodeNameToInstanceName(nodeName))
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	var res *computebeta.Instance
-	res, err = g.c.BetaInstances().Get(ctx, meta.ZonalKey(canonicalizeInstanceName(name), zone))
+	res, err = g.c.BetaInstances().Get(ctx, meta.ZonalKey(instance.Name, lastComponent(instance.Zone)))
 	if err != nil {
 		return
 	}
@@ -482,29 +388,28 @@ func (g *Cloud) AliasRangesByProviderID(providerID string) (cidrs []string, err 
 	return
 }
 
-// AddAliasToInstanceByProviderID adds an alias to the given instance from the named
+// AddAliasToInstance adds an alias to the given instance from the named
 // secondary range.
-func (g *Cloud) AddAliasToInstanceByProviderID(providerID string, alias *net.IPNet) error {
+func (g *Cloud) AddAliasToInstance(nodeName types.NodeName, alias *net.IPNet) error {
 	ctx, cancel := cloud.ContextWithCallTimeout()
 	defer cancel()
 
-	_, zone, name, err := splitProviderID(providerID)
+	v1instance, err := g.getInstanceByName(mapNodeNameToInstanceName(nodeName))
 	if err != nil {
 		return err
 	}
-
-	instance, err := g.c.BetaInstances().Get(ctx, meta.ZonalKey(canonicalizeInstanceName(name), zone))
+	instance, err := g.c.BetaInstances().Get(ctx, meta.ZonalKey(v1instance.Name, lastComponent(v1instance.Zone)))
 	if err != nil {
 		return err
 	}
 
 	switch len(instance.NetworkInterfaces) {
 	case 0:
-		return fmt.Errorf("instance %q has no network interfaces", providerID)
+		return fmt.Errorf("instance %q has no network interfaces", nodeName)
 	case 1:
 	default:
 		klog.Warningf("Instance %q has more than one network interface, using only the first (%v)",
-			providerID, instance.NetworkInterfaces)
+			nodeName, instance.NetworkInterfaces)
 	}
 
 	iface := &computebeta.NetworkInterface{}
@@ -515,7 +420,7 @@ func (g *Cloud) AddAliasToInstanceByProviderID(providerID string, alias *net.IPN
 		SubnetworkRangeName: g.secondaryRangeName,
 	})
 
-	mc := newInstancesMetricContext("add_alias", zone)
+	mc := newInstancesMetricContext("add_alias", v1instance.Zone)
 	err = g.c.BetaInstances().UpdateNetworkInterface(ctx, meta.ZonalKey(instance.Name, lastComponent(instance.Zone)), iface.Name, iface)
 	return mc.Observe(err)
 }

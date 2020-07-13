@@ -4,7 +4,6 @@ package fs
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -67,20 +66,8 @@ func (s *CpuGroup) SetRtSched(path string, cgroup *configs.Cgroup) error {
 
 func (s *CpuGroup) Set(path string, cgroup *configs.Cgroup) error {
 	if cgroup.Resources.CpuShares != 0 {
-		shares := cgroup.Resources.CpuShares
-		if err := fscommon.WriteFile(path, "cpu.shares", strconv.FormatUint(shares, 10)); err != nil {
+		if err := fscommon.WriteFile(path, "cpu.shares", strconv.FormatUint(cgroup.Resources.CpuShares, 10)); err != nil {
 			return err
-		}
-		// read it back
-		sharesRead, err := fscommon.GetCgroupParamUint(path, "cpu.shares")
-		if err != nil {
-			return err
-		}
-		// ... and check
-		if shares > sharesRead {
-			return fmt.Errorf("the maximum allowed cpu-shares is %d", sharesRead)
-		} else if shares < sharesRead {
-			return fmt.Errorf("the minimum allowed cpu-shares is %d", sharesRead)
 		}
 	}
 	if cgroup.Resources.CpuPeriod != 0 {

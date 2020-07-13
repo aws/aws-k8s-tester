@@ -380,7 +380,7 @@ var (
 		"global-default", "global-default", 9900,
 		flowcontrol.FlowDistinguisherMethodByUserType,
 		flowcontrol.PolicyRulesWithSubjects{
-			Subjects: groups(user.AllUnauthenticated, user.AllAuthenticated),
+			Subjects: groups(serviceaccount.AllServiceAccountsGroup),
 			ResourceRules: []flowcontrol.ResourcePolicyRule{resourceRule(
 				[]string{flowcontrol.VerbAll},
 				[]string{flowcontrol.APIGroupAll},

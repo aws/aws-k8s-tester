@@ -30,10 +30,9 @@ import (
 	"time"
 
 	"github.com/opencontainers/runc/libcontainer/cgroups"
-	cgroupfs "github.com/opencontainers/runc/libcontainer/cgroups/fs"
-	cgroupfs2 "github.com/opencontainers/runc/libcontainer/cgroups/fs2"
+	"github.com/opencontainers/runc/libcontainer/cgroups/fs"
 	"github.com/opencontainers/runc/libcontainer/configs"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 	utilio "k8s.io/utils/io"
 	"k8s.io/utils/mount"
 	utilpath "k8s.io/utils/path"
@@ -50,8 +49,8 @@ import (
 	kubefeatures "k8s.io/kubernetes/pkg/features"
 	podresourcesapi "k8s.io/kubernetes/pkg/kubelet/apis/podresources/v1alpha1"
 	"k8s.io/kubernetes/pkg/kubelet/cadvisor"
-	"k8s.io/kubernetes/pkg/kubelet/cm/containermap"
 	"k8s.io/kubernetes/pkg/kubelet/cm/cpumanager"
+	"k8s.io/kubernetes/pkg/kubelet/cm/cpumanager/containermap"
 	cputopology "k8s.io/kubernetes/pkg/kubelet/cm/cpumanager/topology"
 	"k8s.io/kubernetes/pkg/kubelet/cm/devicemanager"
 	"k8s.io/kubernetes/pkg/kubelet/cm/topologymanager"
@@ -63,7 +62,7 @@ import (
 	"k8s.io/kubernetes/pkg/kubelet/qos"
 	"k8s.io/kubernetes/pkg/kubelet/stats/pidlimit"
 	"k8s.io/kubernetes/pkg/kubelet/status"
-	schedulerframework "k8s.io/kubernetes/pkg/scheduler/framework/v1alpha1"
+	schedulernodeinfo "k8s.io/kubernetes/pkg/scheduler/nodeinfo"
 	"k8s.io/kubernetes/pkg/util/oom"
 	"k8s.io/kubernetes/pkg/util/procfs"
 	utilsysctl "k8s.io/kubernetes/pkg/util/sysctl"
@@ -92,21 +91,17 @@ type systemContainer struct {
 
 	// Function that ensures the state of the container.
 	// m is the cgroup manager for the specified container.
-	ensureStateFunc func(m cgroups.Manager) error
+	ensureStateFunc func(m *fs.Manager) error
 
 	// Manager for the cgroups of the external container.
-	manager cgroups.Manager
+	manager *fs.Manager
 }
 
-func newSystemCgroups(containerName string) (*systemContainer, error) {
-	manager, err := createManager(containerName)
-	if err != nil {
-		return nil, err
-	}
+func newSystemCgroups(containerName string) *systemContainer {
 	return &systemContainer{
 		name:    containerName,
-		manager: manager,
-	}, nil
+		manager: createManager(containerName),
+	}
 }
 
 type containerManagerImpl struct {
@@ -164,11 +159,6 @@ func validateSystemRequirements(mountUtil mount.Interface) (features, error) {
 	mountPoints, err := mountUtil.List()
 	if err != nil {
 		return f, fmt.Errorf("%s - %v", localErr, err)
-	}
-
-	if cgroups.IsCgroup2UnifiedMode() {
-		f.cpuHardcapping = true
-		return f, nil
 	}
 
 	expectedCgroups := sets.NewString("cpu", "cpuacct", "cpuset", "memory")
@@ -370,28 +360,17 @@ func (cm *containerManagerImpl) InternalContainerLifecycle() InternalContainerLi
 }
 
 // Create a cgroup container manager.
-func createManager(containerName string) (cgroups.Manager, error) {
-	cg := &configs.Cgroup{
-		Parent: "/",
-		Name:   containerName,
-		Resources: &configs.Resources{
-			Devices: []*configs.DeviceRule{
-				{
-					Type:        'a',
-					Permissions: "rwm",
-					Allow:       true,
-					Minor:       configs.Wildcard,
-					Major:       configs.Wildcard,
-				},
+func createManager(containerName string) *fs.Manager {
+	allowAllDevices := true
+	return &fs.Manager{
+		Cgroups: &configs.Cgroup{
+			Parent: "/",
+			Name:   containerName,
+			Resources: &configs.Resources{
+				AllowAllDevices: &allowAllDevices,
 			},
 		},
 	}
-
-	if cgroups.IsCgroup2UnifiedMode() {
-		return cgroupfs2.NewManager(cg, "", false)
-
-	}
-	return cgroupfs.NewManager(cg, nil, false), nil
 }
 
 type KernelTunableBehavior string
@@ -499,28 +478,27 @@ func (cm *containerManagerImpl) setupNode(activePods ActivePodsFunc) error {
 		if cm.SystemCgroupsName == "/" {
 			return fmt.Errorf("system container cannot be root (\"/\")")
 		}
-		cont, err := newSystemCgroups(cm.SystemCgroupsName)
-		if err != nil {
-			return err
-		}
-		cont.ensureStateFunc = func(manager cgroups.Manager) error {
+		cont := newSystemCgroups(cm.SystemCgroupsName)
+		cont.ensureStateFunc = func(manager *fs.Manager) error {
 			return ensureSystemCgroups("/", manager)
 		}
 		systemContainers = append(systemContainers, cont)
 	}
 
 	if cm.KubeletCgroupsName != "" {
-		cont, err := newSystemCgroups(cm.KubeletCgroupsName)
-		if err != nil {
-			return err
+		cont := newSystemCgroups(cm.KubeletCgroupsName)
+		allowAllDevices := true
+		manager := fs.Manager{
+			Cgroups: &configs.Cgroup{
+				Parent: "/",
+				Name:   cm.KubeletCgroupsName,
+				Resources: &configs.Resources{
+					AllowAllDevices: &allowAllDevices,
+				},
+			},
 		}
-
-		manager, err := createManager(cm.KubeletCgroupsName)
-		if err != nil {
-			return err
-		}
-		cont.ensureStateFunc = func(_ cgroups.Manager) error {
-			return ensureProcessInContainerWithOOMScore(os.Getpid(), qos.KubeletOOMScoreAdj, manager)
+		cont.ensureStateFunc = func(_ *fs.Manager) error {
+			return ensureProcessInContainerWithOOMScore(os.Getpid(), qos.KubeletOOMScoreAdj, &manager)
 		}
 		systemContainers = append(systemContainers, cont)
 	} else {
@@ -693,7 +671,7 @@ func (cm *containerManagerImpl) GetResources(pod *v1.Pod, container *v1.Containe
 	return opts, nil
 }
 
-func (cm *containerManagerImpl) UpdatePluginResources(node *schedulerframework.NodeInfo, attrs *lifecycle.PodAdmitAttributes) error {
+func (cm *containerManagerImpl) UpdatePluginResources(node *schedulernodeinfo.NodeInfo, attrs *lifecycle.PodAdmitAttributes) error {
 	return cm.deviceManager.UpdatePluginResources(node, attrs)
 }
 
@@ -838,7 +816,7 @@ func getPidsForProcess(name, pidFile string) ([]int, error) {
 // Temporarily export the function to be used by dockershim.
 // TODO(yujuhong): Move this function to dockershim once kubelet migrates to
 // dockershim as the default.
-func EnsureDockerInContainer(dockerAPIVersion *utilversion.Version, oomScoreAdj int, manager cgroups.Manager) error {
+func EnsureDockerInContainer(dockerAPIVersion *utilversion.Version, oomScoreAdj int, manager *fs.Manager) error {
 	type process struct{ name, file string }
 	dockerProcs := []process{{dockerProcessName, dockerPidFile}}
 	if dockerAPIVersion.AtLeast(containerdAPIVersion) {
@@ -862,7 +840,7 @@ func EnsureDockerInContainer(dockerAPIVersion *utilversion.Version, oomScoreAdj 
 	return utilerrors.NewAggregate(errs)
 }
 
-func ensureProcessInContainerWithOOMScore(pid int, oomScoreAdj int, manager cgroups.Manager) error {
+func ensureProcessInContainerWithOOMScore(pid int, oomScoreAdj int, manager *fs.Manager) error {
 	if runningInHost, err := isProcessRunningInHost(pid); err != nil {
 		// Err on the side of caution. Avoid moving the docker daemon unless we are able to identify its context.
 		return err
@@ -879,18 +857,10 @@ func ensureProcessInContainerWithOOMScore(pid int, oomScoreAdj int, manager cgro
 			errs = append(errs, fmt.Errorf("failed to find container of PID %d: %v", pid, err))
 		}
 
-		name := ""
-		cgroups, err := manager.GetCgroups()
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to get cgroups for %d: %v", pid, err))
-		} else {
-			name = cgroups.Name
-		}
-
-		if cont != name {
+		if cont != manager.Cgroups.Name {
 			err = manager.Apply(pid)
 			if err != nil {
-				errs = append(errs, fmt.Errorf("failed to move PID %d (in %q) to %q: %v", pid, cont, name, err))
+				errs = append(errs, fmt.Errorf("failed to move PID %d (in %q) to %q: %v", pid, cont, manager.Cgroups.Name, err))
 			}
 		}
 	}
@@ -912,14 +882,6 @@ func getContainer(pid int) (string, error) {
 	cgs, err := cgroups.ParseCgroupFile(fmt.Sprintf("/proc/%d/cgroup", pid))
 	if err != nil {
 		return "", err
-	}
-
-	if cgroups.IsCgroup2UnifiedMode() {
-		c, found := cgs[""]
-		if !found {
-			return "", cgroups.NewNotFoundError("unified")
-		}
-		return c, nil
 	}
 
 	cpu, found := cgs["cpu"]
@@ -964,7 +926,7 @@ func getContainer(pid int) (string, error) {
 // The reason of leaving kernel threads at root cgroup is that we don't want to tie the
 // execution of these threads with to-be defined /system quota and create priority inversions.
 //
-func ensureSystemCgroups(rootCgroupPath string, manager cgroups.Manager) error {
+func ensureSystemCgroups(rootCgroupPath string, manager *fs.Manager) error {
 	// Move non-kernel PIDs to the system container.
 	// Only keep errors on latest attempt.
 	var finalErr error
@@ -995,13 +957,7 @@ func ensureSystemCgroups(rootCgroupPath string, manager cgroups.Manager) error {
 		for _, pid := range pids {
 			err := manager.Apply(pid)
 			if err != nil {
-				name := ""
-				cgroups, err := manager.GetCgroups()
-				if err == nil {
-					name = cgroups.Name
-				}
-
-				finalErr = fmt.Errorf("failed to move PID %d into the system container %q: %v", pid, name, err)
+				finalErr = fmt.Errorf("failed to move PID %d into the system container %q: %v", pid, manager.Cgroups.Name, err)
 			}
 		}
 

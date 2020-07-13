@@ -1,5 +1,3 @@
-// +build !dockerless
-
 /*
 Copyright 2017 The Kubernetes Authors.
 

@@ -19,10 +19,11 @@ package noderesources
 import (
 	v1 "k8s.io/api/core/v1"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 	v1helper "k8s.io/kubernetes/pkg/apis/core/v1/helper"
 	"k8s.io/kubernetes/pkg/features"
 	framework "k8s.io/kubernetes/pkg/scheduler/framework/v1alpha1"
+	schedulernodeinfo "k8s.io/kubernetes/pkg/scheduler/nodeinfo"
 	schedutil "k8s.io/kubernetes/pkg/scheduler/util"
 )
 
@@ -45,7 +46,7 @@ type resourceToValueMap map[v1.ResourceName]int64
 // score will use `scorer` function to calculate the score.
 func (r *resourceAllocationScorer) score(
 	pod *v1.Pod,
-	nodeInfo *framework.NodeInfo) (int64, *framework.Status) {
+	nodeInfo *schedulernodeinfo.NodeInfo) (int64, *framework.Status) {
 	node := nodeInfo.Node()
 	if node == nil {
 		return 0, framework.NewStatus(framework.Error, "node not found")
@@ -66,7 +67,7 @@ func (r *resourceAllocationScorer) score(
 	} else {
 		score = r.scorer(requested, allocatable, false, 0, 0)
 	}
-	if klog.V(10).Enabled() {
+	if klog.V(10) {
 		if len(pod.Spec.Volumes) >= 0 && utilfeature.DefaultFeatureGate.Enabled(features.BalanceAttachedNodeVolumes) && nodeInfo.TransientInfo != nil {
 			klog.Infof(
 				"%v -> %v: %v, map of allocatable resources %v, map of requested resources %v , allocatable volumes %d, requested volumes %d, score %d",
@@ -89,22 +90,24 @@ func (r *resourceAllocationScorer) score(
 }
 
 // calculateResourceAllocatableRequest returns resources Allocatable and Requested values
-func calculateResourceAllocatableRequest(nodeInfo *framework.NodeInfo, pod *v1.Pod, resource v1.ResourceName) (int64, int64) {
+func calculateResourceAllocatableRequest(nodeInfo *schedulernodeinfo.NodeInfo, pod *v1.Pod, resource v1.ResourceName) (int64, int64) {
+	allocatable := nodeInfo.AllocatableResource()
+	requested := nodeInfo.RequestedResource()
 	podRequest := calculatePodResourceRequest(pod, resource)
 	switch resource {
 	case v1.ResourceCPU:
-		return nodeInfo.Allocatable.MilliCPU, (nodeInfo.NonZeroRequested.MilliCPU + podRequest)
+		return allocatable.MilliCPU, (nodeInfo.NonZeroRequest().MilliCPU + podRequest)
 	case v1.ResourceMemory:
-		return nodeInfo.Allocatable.Memory, (nodeInfo.NonZeroRequested.Memory + podRequest)
+		return allocatable.Memory, (nodeInfo.NonZeroRequest().Memory + podRequest)
 
 	case v1.ResourceEphemeralStorage:
-		return nodeInfo.Allocatable.EphemeralStorage, (nodeInfo.Requested.EphemeralStorage + podRequest)
+		return allocatable.EphemeralStorage, (requested.EphemeralStorage + podRequest)
 	default:
 		if v1helper.IsScalarResourceName(resource) {
-			return nodeInfo.Allocatable.ScalarResources[resource], (nodeInfo.Requested.ScalarResources[resource] + podRequest)
+			return allocatable.ScalarResources[resource], (requested.ScalarResources[resource] + podRequest)
 		}
 	}
-	if klog.V(10).Enabled() {
+	if klog.V(10) {
 		klog.Infof("requested resource %v not considered for node score calculation",
 			resource,
 		)

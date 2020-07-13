@@ -32,7 +32,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/spf13/pflag"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 	"k8s.io/kubernetes/pkg/credentialprovider"
 	"k8s.io/legacy-cloud-providers/azure/auth"
 	"sigs.k8s.io/yaml"
@@ -56,9 +56,8 @@ var (
 func init() {
 	credentialprovider.RegisterCredentialProvider("azure",
 		&credentialprovider.CachingDockerConfigProvider{
-			Provider:    NewACRProvider(flagConfigFile),
-			Lifetime:    1 * time.Minute,
-			ShouldCache: func(d credentialprovider.DockerConfig) bool { return len(d) > 0 },
+			Provider: NewACRProvider(flagConfigFile),
+			Lifetime: 1 * time.Minute,
 		})
 }
 
@@ -187,12 +186,6 @@ func (a *acrProvider) Provide(image string) credentialprovider.DockerConfig {
 	klog.V(4).Infof("try to provide secret for image %s", image)
 	cfg := credentialprovider.DockerConfig{}
 
-	defaultConfigEntry := credentialprovider.DockerConfigEntry{
-		Username: "",
-		Password: "",
-		Email:    dummyRegistryEmail,
-	}
-
 	if a.config.UseManagedIdentityExtension {
 		if loginServer := a.parseACRLoginServerFromImage(image); loginServer == "" {
 			klog.V(4).Infof("image(%s) is not from ACR, skip MSI authentication", image)
@@ -200,8 +193,6 @@ func (a *acrProvider) Provide(image string) credentialprovider.DockerConfig {
 			if cred, err := getACRDockerEntryFromARMToken(a, loginServer); err == nil {
 				cfg[loginServer] = *cred
 			}
-			// add ACR anonymous repo support: use empty username and password for anonymous access
-			cfg["*.azurecr.*"] = defaultConfigEntry
 		}
 	} else {
 		// Add our entry for each of the supported container registry URLs
@@ -235,9 +226,13 @@ func (a *acrProvider) Provide(image string) credentialprovider.DockerConfig {
 				cfg[customAcrSuffix] = *cred
 			}
 		}
+	}
 
-		// add ACR anonymous repo support: use empty username and password for anonymous access
-		cfg["*.azurecr.*"] = defaultConfigEntry
+	// add ACR anonymous repo support: use empty username and password for anonymous access
+	cfg["*.azurecr.*"] = credentialprovider.DockerConfigEntry{
+		Username: "",
+		Password: "",
+		Email:    dummyRegistryEmail,
 	}
 	return cfg
 }

@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"k8s.io/apiserver/pkg/server"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc"

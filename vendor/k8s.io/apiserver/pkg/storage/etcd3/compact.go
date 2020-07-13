@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"go.etcd.io/etcd/clientv3"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 const (

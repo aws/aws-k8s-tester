@@ -73,7 +73,7 @@ func (m *unsupportedCgroupManager) ReduceCPULimits(cgroupName CgroupName) error 
 var RootCgroupName = CgroupName([]string{})
 
 func NewCgroupName(base CgroupName, components ...string) CgroupName {
-	return append(append([]string{}, base...), components...)
+	return CgroupName(append(base, components...))
 }
 
 func (cgroupName CgroupName) ToSystemd() string {

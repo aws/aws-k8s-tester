@@ -22,12 +22,16 @@ import (
 	"sync/atomic"
 	"time"
 
+	"k8s.io/klog"
+
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/clock"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/klog/v2"
 	api "k8s.io/kubernetes/pkg/apis/core"
 )
+
+var proxierHealthzRetryInterval = 60 * time.Second
 
 // ProxierHealthUpdater allows callers to update healthz timestamp only.
 type ProxierHealthUpdater interface {
@@ -39,8 +43,8 @@ type ProxierHealthUpdater interface {
 	// rules to reflect the current state.
 	Updated()
 
-	// Run starts the healthz HTTP server and blocks until it exits.
-	Run() error
+	// Run starts the healthz http server and returns.
+	Run()
 }
 
 var _ ProxierHealthUpdater = &proxierHealthServer{}
@@ -88,28 +92,31 @@ func (hs *proxierHealthServer) QueuedUpdate() {
 	hs.lastQueued.Store(hs.clock.Now())
 }
 
-// Run starts the healthz HTTP server and blocks until it exits.
-func (hs *proxierHealthServer) Run() error {
+// Run starts the healthz http server and returns.
+func (hs *proxierHealthServer) Run() {
 	serveMux := http.NewServeMux()
 	serveMux.Handle("/healthz", healthzHandler{hs: hs})
 	server := hs.httpFactory.New(hs.addr, serveMux)
 
-	listener, err := hs.listener.Listen(hs.addr)
-	if err != nil {
-		msg := fmt.Sprintf("failed to start proxier healthz on %s: %v", hs.addr, err)
-		// TODO(thockin): move eventing back to caller
-		if hs.recorder != nil {
-			hs.recorder.Eventf(hs.nodeRef, api.EventTypeWarning, "FailedToStartProxierHealthcheck", msg)
+	go wait.Until(func() {
+		klog.V(3).Infof("Starting goroutine for proxier healthz on %s", hs.addr)
+
+		listener, err := hs.listener.Listen(hs.addr)
+		if err != nil {
+			msg := fmt.Sprintf("Failed to start proxier healthz on %s: %v", hs.addr, err)
+			if hs.recorder != nil {
+				hs.recorder.Eventf(hs.nodeRef, api.EventTypeWarning, "FailedToStartProxierHealthcheck", msg)
+			}
+			klog.Error(msg)
+			return
 		}
-		return fmt.Errorf("%v", msg)
-	}
 
-	klog.V(3).Infof("starting healthz on %s", hs.addr)
-
-	if err := server.Serve(listener); err != nil {
-		return fmt.Errorf("proxier healthz closed with error: %v", err)
-	}
-	return nil
+		if err := server.Serve(listener); err != nil {
+			klog.Errorf("Proxier healthz closed with error: %v", err)
+			return
+		}
+		klog.Error("Unexpected proxier healthz closed.")
+	}, proxierHealthzRetryInterval, wait.NeverStop)
 }
 
 type healthzHandler struct {

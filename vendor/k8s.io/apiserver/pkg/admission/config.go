@@ -25,7 +25,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"

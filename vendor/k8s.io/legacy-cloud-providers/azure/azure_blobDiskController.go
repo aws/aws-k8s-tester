@@ -37,7 +37,7 @@ import (
 
 	kwait "k8s.io/apimachinery/pkg/util/wait"
 	volerr "k8s.io/cloud-provider/volume/errors"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 const (
@@ -84,7 +84,7 @@ func (c *BlobDiskController) initStorageAccounts() {
 // If no storage account is given, search all the storage accounts associated with the resource group and pick one that
 // fits storage type and location.
 func (c *BlobDiskController) CreateVolume(blobName, accountName, accountType, location string, requestGB int) (string, string, int, error) {
-	account, key, err := c.common.cloud.EnsureStorageAccount(accountName, accountType, string(defaultStorageAccountKind), c.common.resourceGroup, location, dedicatedDiskAccountNamePrefix, true)
+	account, key, err := c.common.cloud.EnsureStorageAccount(accountName, accountType, string(defaultStorageAccountKind), c.common.resourceGroup, location, dedicatedDiskAccountNamePrefix)
 	if err != nil {
 		return "", "", 0, fmt.Errorf("could not get storage key for storage account %s: %v", accountName, err)
 	}
@@ -344,7 +344,7 @@ func (c *BlobDiskController) ensureDefaultContainer(storageAccountName string) e
 	}
 
 	// account exists but not ready yet
-	if provisionState != storage.Succeeded {
+	if provisionState != storage.ProvisioningStateSucceeded {
 		// we don't want many attempts to validate the account readiness
 		// here hence we are locking
 		counter := 1
@@ -375,7 +375,7 @@ func (c *BlobDiskController) ensureDefaultContainer(storageAccountName string) e
 				return false, nil // error performing the query - retryable
 			}
 
-			if provisionState == storage.Succeeded {
+			if provisionState == storage.ProvisioningStateSucceeded {
 				return true, nil
 			}
 

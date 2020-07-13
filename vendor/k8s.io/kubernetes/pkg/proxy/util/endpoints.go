@@ -21,7 +21,7 @@ import (
 	"net"
 	"strconv"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 // IPPart returns just the IP part of an IP or IP:port or endpoint string. If the IP

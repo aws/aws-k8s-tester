@@ -19,11 +19,9 @@ package cm
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	libcontainercgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 
@@ -34,7 +32,6 @@ import (
 	v1helper "k8s.io/kubernetes/pkg/apis/core/v1/helper"
 	v1qos "k8s.io/kubernetes/pkg/apis/core/v1/helper/qos"
 	kubefeatures "k8s.io/kubernetes/pkg/features"
-	"k8s.io/kubernetes/pkg/kubelet/cm/util"
 )
 
 const (
@@ -184,8 +181,8 @@ func ResourceConfigForPod(pod *v1.Pod, enforceCPULimits bool, cpuPeriod uint64) 
 	return result
 }
 
-// getCgroupSubsystemsV1 returns information about the mounted cgroup v1 subsystems
-func getCgroupSubsystemsV1() (*CgroupSubsystems, error) {
+// GetCgroupSubsystems returns information about the mounted cgroup subsystems
+func GetCgroupSubsystems() (*CgroupSubsystems, error) {
 	// get all cgroup mounts.
 	allCgroups, err := libcontainercgroups.GetCgroupMounts(true)
 	if err != nil {
@@ -204,41 +201,6 @@ func getCgroupSubsystemsV1() (*CgroupSubsystems, error) {
 		Mounts:      allCgroups,
 		MountPoints: mountPoints,
 	}, nil
-}
-
-// getCgroupSubsystemsV2 returns information about the enabled cgroup v2 subsystems
-func getCgroupSubsystemsV2() (*CgroupSubsystems, error) {
-	content, err := ioutil.ReadFile(filepath.Join(util.CgroupRoot, "cgroup.controllers"))
-	if err != nil {
-		return nil, err
-	}
-
-	mounts := []libcontainercgroups.Mount{}
-	controllers := strings.Fields(string(content))
-	mountPoints := make(map[string]string, len(controllers))
-	for _, controller := range controllers {
-		mountPoints[controller] = util.CgroupRoot
-		m := libcontainercgroups.Mount{
-			Mountpoint: util.CgroupRoot,
-			Root:       util.CgroupRoot,
-			Subsystems: []string{controller},
-		}
-		mounts = append(mounts, m)
-	}
-
-	return &CgroupSubsystems{
-		Mounts:      mounts,
-		MountPoints: mountPoints,
-	}, nil
-}
-
-// GetCgroupSubsystems returns information about the mounted cgroup subsystems
-func GetCgroupSubsystems() (*CgroupSubsystems, error) {
-	if libcontainercgroups.IsCgroup2UnifiedMode() {
-		return getCgroupSubsystemsV2()
-	}
-
-	return getCgroupSubsystemsV1()
 }
 
 // getCgroupProcs takes a cgroup directory name as an argument
@@ -276,11 +238,9 @@ func GetPodCgroupNameSuffix(podUID types.UID) string {
 }
 
 // NodeAllocatableRoot returns the literal cgroup path for the node allocatable cgroup
-func NodeAllocatableRoot(cgroupRoot string, cgroupsPerQOS bool, cgroupDriver string) string {
-	nodeAllocatableRoot := ParseCgroupfsToCgroupName(cgroupRoot)
-	if cgroupsPerQOS {
-		nodeAllocatableRoot = NewCgroupName(nodeAllocatableRoot, defaultNodeAllocatableCgroupName)
-	}
+func NodeAllocatableRoot(cgroupRoot, cgroupDriver string) string {
+	root := ParseCgroupfsToCgroupName(cgroupRoot)
+	nodeAllocatableRoot := NewCgroupName(root, defaultNodeAllocatableCgroupName)
 	if libcontainerCgroupManagerType(cgroupDriver) == libcontainerSystemd {
 		return nodeAllocatableRoot.ToSystemd()
 	}

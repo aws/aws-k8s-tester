@@ -1,4 +1,4 @@
-// +build linux,!dockerless
+// +build linux
 
 /*
 Copyright 2017 The Kubernetes Authors.
@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 )

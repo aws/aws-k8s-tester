@@ -16,7 +16,6 @@ import (
 	"google.golang.org/protobuf/internal/flags"
 	"google.golang.org/protobuf/internal/pragma"
 	"google.golang.org/protobuf/internal/set"
-	"google.golang.org/protobuf/internal/strs"
 	"google.golang.org/protobuf/proto"
 	pref "google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
@@ -54,13 +53,6 @@ type UnmarshalOptions struct {
 // Unmarshal reads the given []byte and populates the given proto.Message using options in
 // UnmarshalOptions object.
 func (o UnmarshalOptions) Unmarshal(b []byte, m proto.Message) error {
-	return o.unmarshal(b, m)
-}
-
-// unmarshal is a centralized function that all unmarshal operations go through.
-// For profiling purposes, avoid changing the name of this function or
-// introducing other code paths for unmarshal that do not go through this.
-func (o UnmarshalOptions) unmarshal(b []byte, m proto.Message) error {
 	proto.Reset(m)
 
 	if o.Resolver == nil {
@@ -347,10 +339,10 @@ func (d decoder) unmarshalScalar(fd pref.FieldDescriptor) (pref.Value, error) {
 
 	case pref.StringKind:
 		if s, ok := tok.String(); ok {
-			if strs.EnforceUTF8(fd) && !utf8.ValidString(s) {
-				return pref.Value{}, d.newError(tok.Pos(), "contains invalid UTF-8")
+			if utf8.ValidString(s) {
+				return pref.ValueOfString(s), nil
 			}
-			return pref.ValueOfString(s), nil
+			return pref.Value{}, d.newError(tok.Pos(), "contains invalid UTF-8")
 		}
 
 	case pref.BytesKind:

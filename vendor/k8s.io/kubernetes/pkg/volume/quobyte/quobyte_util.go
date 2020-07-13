@@ -26,7 +26,7 @@ import (
 	volumehelpers "k8s.io/cloud-provider/volume/helpers"
 
 	quobyteapi "github.com/quobyte/api"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 type quobyteVolumeManager struct {

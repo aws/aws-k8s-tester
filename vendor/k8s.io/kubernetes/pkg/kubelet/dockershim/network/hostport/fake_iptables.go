@@ -1,5 +1,3 @@
-// +build !dockerless
-
 /*
 Copyright 2016 The Kubernetes Authors.
 
@@ -42,7 +40,7 @@ type fakeTable struct {
 type fakeIPTables struct {
 	tables        map[string]*fakeTable
 	builtinChains map[string]sets.String
-	protocol      utiliptables.Protocol
+	ipv6          bool
 }
 
 func NewFakeIPTables() *fakeIPTables {
@@ -53,7 +51,7 @@ func NewFakeIPTables() *fakeIPTables {
 			string(utiliptables.TableNAT):    sets.NewString("PREROUTING", "INPUT", "OUTPUT", "POSTROUTING"),
 			string(utiliptables.TableMangle): sets.NewString("PREROUTING", "INPUT", "FORWARD", "OUTPUT", "POSTROUTING"),
 		},
-		protocol: utiliptables.ProtocolIPv4,
+		ipv6: false,
 	}
 }
 
@@ -225,12 +223,8 @@ func (f *fakeIPTables) DeleteRule(tableName utiliptables.Table, chainName utilip
 	return nil
 }
 
-func (f *fakeIPTables) IsIPv6() bool {
-	return f.protocol == utiliptables.ProtocolIPv6
-}
-
-func (f *fakeIPTables) Protocol() utiliptables.Protocol {
-	return f.protocol
+func (f *fakeIPTables) IsIpv6() bool {
+	return f.ipv6
 }
 
 func saveChain(chain *fakeChain, data *bytes.Buffer) {

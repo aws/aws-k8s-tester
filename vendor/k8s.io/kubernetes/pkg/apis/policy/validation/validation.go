@@ -22,7 +22,6 @@ import (
 	"regexp"
 	"strings"
 
-	"k8s.io/api/core/v1"
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
 	unversionedvalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -130,15 +129,15 @@ func ValidatePodSecurityPolicySpec(spec *policy.PodSecurityPolicySpec, fldPath *
 func ValidatePodSecurityPolicySpecificAnnotations(annotations map[string]string, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if p := annotations[v1.AppArmorBetaDefaultProfileAnnotationKey]; p != "" {
+	if p := annotations[apparmor.DefaultProfileAnnotationKey]; p != "" {
 		if err := apparmor.ValidateProfileFormat(p); err != nil {
-			allErrs = append(allErrs, field.Invalid(fldPath.Key(v1.AppArmorBetaDefaultProfileAnnotationKey), p, err.Error()))
+			allErrs = append(allErrs, field.Invalid(fldPath.Key(apparmor.DefaultProfileAnnotationKey), p, err.Error()))
 		}
 	}
-	if allowed := annotations[v1.AppArmorBetaAllowedProfilesAnnotationKey]; allowed != "" {
+	if allowed := annotations[apparmor.AllowedProfilesAnnotationKey]; allowed != "" {
 		for _, p := range strings.Split(allowed, ",") {
 			if err := apparmor.ValidateProfileFormat(p); err != nil {
-				allErrs = append(allErrs, field.Invalid(fldPath.Key(v1.AppArmorBetaAllowedProfilesAnnotationKey), allowed, err.Error()))
+				allErrs = append(allErrs, field.Invalid(fldPath.Key(apparmor.AllowedProfilesAnnotationKey), allowed, err.Error()))
 			}
 		}
 	}

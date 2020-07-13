@@ -48,8 +48,6 @@ func (m MetricsWithReset) Install(c *mux.PathRecorderMux) {
 		if req.Method == "DELETE" {
 			apimetrics.Reset()
 			etcd3metrics.Reset()
-			flowcontrolmetrics.Reset()
-
 			io.WriteString(w, "metrics reset\n")
 			return
 		}

@@ -19,7 +19,7 @@ package log
 import (
 	"fmt"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 const logFmt = "kubelet config controller: %s"

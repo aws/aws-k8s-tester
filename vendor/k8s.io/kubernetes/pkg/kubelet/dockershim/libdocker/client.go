@@ -1,5 +1,3 @@
-// +build !dockerless
-
 /*
 Copyright 2014 The Kubernetes Authors.
 
@@ -25,7 +23,7 @@ import (
 	dockercontainer "github.com/docker/docker/api/types/container"
 	dockerimagetypes "github.com/docker/docker/api/types/image"
 	dockerapi "github.com/docker/docker/client"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 const (
@@ -75,7 +73,7 @@ type Interface interface {
 func getDockerClient(dockerEndpoint string) (*dockerapi.Client, error) {
 	if len(dockerEndpoint) > 0 {
 		klog.Infof("Connecting to docker on %s", dockerEndpoint)
-		return dockerapi.NewClientWithOpts(dockerapi.WithHost(dockerEndpoint), dockerapi.WithVersion(""))
+		return dockerapi.NewClient(dockerEndpoint, "", nil, nil)
 	}
 	return dockerapi.NewClientWithOpts(dockerapi.FromEnv)
 }

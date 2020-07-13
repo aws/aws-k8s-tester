@@ -55,10 +55,6 @@ import (
  * |   |   |-- cbm_mask
  * |   |   |-- min_cbm_bits
  * |   |   |-- num_closids
- * |   |-- L3_MON
- * |   |   |-- max_threshold_occupancy
- * |   |   |-- mon_features
- * |   |   |-- num_rmids
  * |   |-- MB
  * |       |-- bandwidth_gran
  * |       |-- delay_linear
@@ -195,7 +191,8 @@ type intelRdtData struct {
 // Check if Intel RDT sub-features are enabled in init()
 func init() {
 	// 1. Check if hardware and kernel support Intel RDT sub-features
-	flagsSet, err := parseCpuInfoFile("/proc/cpuinfo")
+	// "cat_l3" flag for CAT and "mba" flag for MBA
+	isCatFlagSet, isMbaFlagSet, err := parseCpuInfoFile("/proc/cpuinfo")
 	if err != nil {
 		return
 	}
@@ -210,7 +207,7 @@ func init() {
 	// "resource control" filesystem. Intel RDT sub-features can be
 	// selectively disabled or enabled by kernel command line
 	// (e.g., rdt=!l3cat,mba) in 4.14 and newer kernel
-	if flagsSet.CAT {
+	if isCatFlagSet {
 		if _, err := os.Stat(filepath.Join(intelRdtRoot, "info", "L3")); err == nil {
 			isCatEnabled = true
 		}
@@ -220,21 +217,9 @@ func init() {
 		// MBA should be enabled because MBA Software Controller
 		// depends on MBA
 		isMbaEnabled = true
-	} else if flagsSet.MBA {
+	} else if isMbaFlagSet {
 		if _, err := os.Stat(filepath.Join(intelRdtRoot, "info", "MB")); err == nil {
 			isMbaEnabled = true
-		}
-	}
-
-	if flagsSet.MBMTotal || flagsSet.MBMLocal {
-		if _, err := os.Stat(filepath.Join(intelRdtRoot, "info", "L3_MON")); err == nil {
-			mbmEnabled = true
-			cmtEnabled = true
-		}
-
-		enabledMonFeatures, err = getMonFeatures(intelRdtRoot)
-		if err != nil {
-			return
 		}
 	}
 }
@@ -313,52 +298,40 @@ func isIntelRdtMounted() bool {
 	return true
 }
 
-type cpuInfoFlags struct {
-	CAT bool // Cache Allocation Technology
-	MBA bool // Memory Bandwidth Allocation
-
-	// Memory Bandwidth Monitoring related.
-	MBMTotal bool
-	MBMLocal bool
-}
-
-func parseCpuInfoFile(path string) (cpuInfoFlags, error) {
-	infoFlags := cpuInfoFlags{}
+func parseCpuInfoFile(path string) (bool, bool, error) {
+	isCatFlagSet := false
+	isMbaFlagSet := false
 
 	f, err := os.Open(path)
 	if err != nil {
-		return infoFlags, err
+		return false, false, err
 	}
 	defer f.Close()
 
 	s := bufio.NewScanner(f)
 	for s.Scan() {
+		if err := s.Err(); err != nil {
+			return false, false, err
+		}
+
 		line := s.Text()
 
 		// Search "cat_l3" and "mba" flags in first "flags" line
-		if strings.HasPrefix(line, "flags") {
+		if strings.Contains(line, "flags") {
 			flags := strings.Split(line, " ")
 			// "cat_l3" flag for CAT and "mba" flag for MBA
 			for _, flag := range flags {
 				switch flag {
 				case "cat_l3":
-					infoFlags.CAT = true
+					isCatFlagSet = true
 				case "mba":
-					infoFlags.MBA = true
-				case "cqm_mbm_total":
-					infoFlags.MBMTotal = true
-				case "cqm_mbm_local":
-					infoFlags.MBMLocal = true
+					isMbaFlagSet = true
 				}
 			}
-			return infoFlags, nil
+			return isCatFlagSet, isMbaFlagSet, nil
 		}
 	}
-	if err := s.Err(); err != nil {
-		return infoFlags, err
-	}
-
-	return infoFlags, nil
+	return isCatFlagSet, isMbaFlagSet, nil
 }
 
 func parseUint(s string, base, bitSize int) (uint64, error) {
@@ -613,8 +586,7 @@ func (m *IntelRdtManager) GetStats() (*Stats, error) {
 	schemaRootStrings := strings.Split(tmpRootStrings, "\n")
 
 	// The L3 cache and memory bandwidth schemata in 'container_id' group
-	containerPath := m.GetPath()
-	tmpStrings, err := getIntelRdtParamString(containerPath, "schemata")
+	tmpStrings, err := getIntelRdtParamString(m.GetPath(), "schemata")
 	if err != nil {
 		return nil, err
 	}
@@ -664,11 +636,6 @@ func (m *IntelRdtManager) GetStats() (*Stats, error) {
 				stats.MemBwSchema = strings.TrimSpace(schema)
 			}
 		}
-	}
-
-	err = getMonitoringStats(containerPath, stats)
-	if err != nil {
-		return nil, err
 	}
 
 	return stats, nil
@@ -791,7 +758,7 @@ type LastCmdError struct {
 }
 
 func (e *LastCmdError) Error() string {
-	return e.Err.Error() + ", last_cmd_status: " + e.LastCmdStatus
+	return fmt.Sprintf(e.Err.Error() + ", last_cmd_status: " + e.LastCmdStatus)
 }
 
 func NewLastCmdError(err error) error {

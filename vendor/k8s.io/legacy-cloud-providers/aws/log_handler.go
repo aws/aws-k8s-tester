@@ -20,7 +20,7 @@ package aws
 
 import (
 	"github.com/aws/aws-sdk-go/aws/request"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 // Handler for aws-sdk-go that logs all requests

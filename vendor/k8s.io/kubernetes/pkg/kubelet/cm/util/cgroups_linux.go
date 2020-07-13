@@ -23,35 +23,19 @@ import (
 	libcontainerutils "github.com/opencontainers/runc/libcontainer/utils"
 )
 
-const (
-	// CgroupRoot is the base path where cgroups are mounted
-	CgroupRoot = "/sys/fs/cgroup"
-)
-
 // GetPids gets pids of the desired cgroup
 // Forked from opencontainers/runc/libcontainer/cgroup/fs.Manager.GetPids()
 func GetPids(cgroupPath string) ([]int, error) {
-	dir := ""
-
-	if libcontainercgroups.IsCgroup2UnifiedMode() {
-		path, err := filepath.Rel("/", cgroupPath)
-		if err != nil {
-			return nil, err
-		}
-		dir = filepath.Join(CgroupRoot, path)
-	} else {
-		var err error
-		dir, err = getCgroupV1Path(cgroupPath)
-		if err != nil {
-			return nil, err
-		}
+	dir, err := getCgroupPath(cgroupPath)
+	if err != nil {
+		return nil, err
 	}
 	return libcontainercgroups.GetPids(dir)
 }
 
-// getCgroupV1Path gets the file path to the "devices" subsystem of the desired cgroup.
+// getCgroupPath gets the file path to the "devices" subsystem of the desired cgroup.
 // cgroupPath is the path in the cgroup hierarchy.
-func getCgroupV1Path(cgroupPath string) (string, error) {
+func getCgroupPath(cgroupPath string) (string, error) {
 	cgroupPath = libcontainerutils.CleanPath(cgroupPath)
 
 	mnt, root, err := libcontainercgroups.FindCgroupMountpointAndRoot(cgroupPath, "devices")
@@ -66,7 +50,7 @@ func getCgroupV1Path(cgroupPath string) (string, error) {
 		return filepath.Join(root, mnt, cgroupPath), nil
 	}
 
-	parentPath, err := getCgroupV1ParentPath(mnt, root)
+	parentPath, err := getCgroupParentPath(mnt, root)
 	if err != nil {
 		return "", err
 	}
@@ -74,8 +58,8 @@ func getCgroupV1Path(cgroupPath string) (string, error) {
 	return filepath.Join(parentPath, cgroupPath), nil
 }
 
-// getCgroupV1ParentPath gets the parent filepath to this cgroup, for resolving relative cgroup paths.
-func getCgroupV1ParentPath(mountpoint, root string) (string, error) {
+// getCgroupParentPath gets the parent filepath to this cgroup, for resolving relative cgroup paths.
+func getCgroupParentPath(mountpoint, root string) (string, error) {
 	// Use GetThisCgroupDir instead of GetInitCgroupDir, because the creating
 	// process could in container and shared pid namespace with host, and
 	// /proc/1/cgroup could point to whole other world of cgroups.

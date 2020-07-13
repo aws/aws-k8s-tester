@@ -36,8 +36,7 @@ func NewFileSharesClient(subscriptionID string) FileSharesClient {
 	return NewFileSharesClientWithBaseURI(DefaultBaseURI, subscriptionID)
 }
 
-// NewFileSharesClientWithBaseURI creates an instance of the FileSharesClient client using a custom endpoint.  Use this
-// when interacting with an Azure cloud that uses a non-standard base URI (sovereign clouds, Azure stack).
+// NewFileSharesClientWithBaseURI creates an instance of the FileSharesClient client.
 func NewFileSharesClientWithBaseURI(baseURI string, subscriptionID string) FileSharesClient {
 	return FileSharesClient{NewWithBaseURI(baseURI, subscriptionID)}
 }
@@ -78,8 +77,8 @@ func (client FileSharesClient) Create(ctx context.Context, resourceGroupName str
 		{TargetValue: fileShare,
 			Constraints: []validation.Constraint{{Target: "fileShare.FileShareProperties", Name: validation.Null, Rule: false,
 				Chain: []validation.Constraint{{Target: "fileShare.FileShareProperties.ShareQuota", Name: validation.Null, Rule: false,
-					Chain: []validation.Constraint{{Target: "fileShare.FileShareProperties.ShareQuota", Name: validation.InclusiveMaximum, Rule: int64(102400), Chain: nil},
-						{Target: "fileShare.FileShareProperties.ShareQuota", Name: validation.InclusiveMinimum, Rule: int64(1), Chain: nil},
+					Chain: []validation.Constraint{{Target: "fileShare.FileShareProperties.ShareQuota", Name: validation.InclusiveMaximum, Rule: int64(5120), Chain: nil},
+						{Target: "fileShare.FileShareProperties.ShareQuota", Name: validation.InclusiveMinimum, Rule: 1, Chain: nil},
 					}},
 				}}}},
 		{TargetValue: client.SubscriptionID,
@@ -135,7 +134,8 @@ func (client FileSharesClient) CreatePreparer(ctx context.Context, resourceGroup
 // CreateSender sends the Create request. The method will close the
 // http.Response Body if it receives an error.
 func (client FileSharesClient) CreateSender(req *http.Request) (*http.Response, error) {
-	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // CreateResponder handles the response to the Create request. The method always
@@ -233,7 +233,8 @@ func (client FileSharesClient) DeletePreparer(ctx context.Context, resourceGroup
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client FileSharesClient) DeleteSender(req *http.Request) (*http.Response, error) {
-	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // DeleteResponder handles the response to the Delete request. The method always
@@ -257,8 +258,7 @@ func (client FileSharesClient) DeleteResponder(resp *http.Response) (result auto
 // shareName - the name of the file share within the specified storage account. File share names must be
 // between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-)
 // character must be immediately preceded and followed by a letter or number.
-// expand - optional, used to expand the properties within share's properties.
-func (client FileSharesClient) Get(ctx context.Context, resourceGroupName string, accountName string, shareName string, expand GetShareExpand) (result FileShare, err error) {
+func (client FileSharesClient) Get(ctx context.Context, resourceGroupName string, accountName string, shareName string) (result FileShare, err error) {
 	if tracing.IsEnabled() {
 		ctx = tracing.StartSpan(ctx, fqdn+"/FileSharesClient.Get")
 		defer func() {
@@ -285,7 +285,7 @@ func (client FileSharesClient) Get(ctx context.Context, resourceGroupName string
 		return result, validation.NewError("storage.FileSharesClient", "Get", err.Error())
 	}
 
-	req, err := client.GetPreparer(ctx, resourceGroupName, accountName, shareName, expand)
+	req, err := client.GetPreparer(ctx, resourceGroupName, accountName, shareName)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "storage.FileSharesClient", "Get", nil, "Failure preparing request")
 		return
@@ -307,7 +307,7 @@ func (client FileSharesClient) Get(ctx context.Context, resourceGroupName string
 }
 
 // GetPreparer prepares the Get request.
-func (client FileSharesClient) GetPreparer(ctx context.Context, resourceGroupName string, accountName string, shareName string, expand GetShareExpand) (*http.Request, error) {
+func (client FileSharesClient) GetPreparer(ctx context.Context, resourceGroupName string, accountName string, shareName string) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"accountName":       autorest.Encode("path", accountName),
 		"resourceGroupName": autorest.Encode("path", resourceGroupName),
@@ -318,9 +318,6 @@ func (client FileSharesClient) GetPreparer(ctx context.Context, resourceGroupNam
 	const APIVersion = "2019-06-01"
 	queryParameters := map[string]interface{}{
 		"api-version": APIVersion,
-	}
-	if len(string(expand)) > 0 {
-		queryParameters["$expand"] = autorest.Encode("query", expand)
 	}
 
 	preparer := autorest.CreatePreparer(
@@ -334,7 +331,8 @@ func (client FileSharesClient) GetPreparer(ctx context.Context, resourceGroupNam
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client FileSharesClient) GetSender(req *http.Request) (*http.Response, error) {
-	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -358,8 +356,7 @@ func (client FileSharesClient) GetResponder(resp *http.Response) (result FileSha
 // must be between 3 and 24 characters in length and use numbers and lower-case letters only.
 // maxpagesize - optional. Specified maximum number of shares that can be included in the list.
 // filter - optional. When specified, only share names starting with the filter will be listed.
-// expand - optional, used to expand the properties within share's properties.
-func (client FileSharesClient) List(ctx context.Context, resourceGroupName string, accountName string, maxpagesize string, filter string, expand ListSharesExpand) (result FileShareItemsPage, err error) {
+func (client FileSharesClient) List(ctx context.Context, resourceGroupName string, accountName string, maxpagesize string, filter string) (result FileShareItemsPage, err error) {
 	if tracing.IsEnabled() {
 		ctx = tracing.StartSpan(ctx, fqdn+"/FileSharesClient.List")
 		defer func() {
@@ -384,7 +381,7 @@ func (client FileSharesClient) List(ctx context.Context, resourceGroupName strin
 	}
 
 	result.fn = client.listNextResults
-	req, err := client.ListPreparer(ctx, resourceGroupName, accountName, maxpagesize, filter, expand)
+	req, err := client.ListPreparer(ctx, resourceGroupName, accountName, maxpagesize, filter)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "storage.FileSharesClient", "List", nil, "Failure preparing request")
 		return
@@ -406,7 +403,7 @@ func (client FileSharesClient) List(ctx context.Context, resourceGroupName strin
 }
 
 // ListPreparer prepares the List request.
-func (client FileSharesClient) ListPreparer(ctx context.Context, resourceGroupName string, accountName string, maxpagesize string, filter string, expand ListSharesExpand) (*http.Request, error) {
+func (client FileSharesClient) ListPreparer(ctx context.Context, resourceGroupName string, accountName string, maxpagesize string, filter string) (*http.Request, error) {
 	pathParameters := map[string]interface{}{
 		"accountName":       autorest.Encode("path", accountName),
 		"resourceGroupName": autorest.Encode("path", resourceGroupName),
@@ -423,9 +420,6 @@ func (client FileSharesClient) ListPreparer(ctx context.Context, resourceGroupNa
 	if len(filter) > 0 {
 		queryParameters["$filter"] = autorest.Encode("query", filter)
 	}
-	if len(string(expand)) > 0 {
-		queryParameters["$expand"] = autorest.Encode("query", expand)
-	}
 
 	preparer := autorest.CreatePreparer(
 		autorest.AsGet(),
@@ -438,7 +432,8 @@ func (client FileSharesClient) ListPreparer(ctx context.Context, resourceGroupNa
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client FileSharesClient) ListSender(req *http.Request) (*http.Response, error) {
-	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -476,7 +471,7 @@ func (client FileSharesClient) listNextResults(ctx context.Context, lastResults 
 }
 
 // ListComplete enumerates all values, automatically crossing page boundaries as required.
-func (client FileSharesClient) ListComplete(ctx context.Context, resourceGroupName string, accountName string, maxpagesize string, filter string, expand ListSharesExpand) (result FileShareItemsIterator, err error) {
+func (client FileSharesClient) ListComplete(ctx context.Context, resourceGroupName string, accountName string, maxpagesize string, filter string) (result FileShareItemsIterator, err error) {
 	if tracing.IsEnabled() {
 		ctx = tracing.StartSpan(ctx, fqdn+"/FileSharesClient.List")
 		defer func() {
@@ -487,109 +482,7 @@ func (client FileSharesClient) ListComplete(ctx context.Context, resourceGroupNa
 			tracing.EndSpan(ctx, sc, err)
 		}()
 	}
-	result.page, err = client.List(ctx, resourceGroupName, accountName, maxpagesize, filter, expand)
-	return
-}
-
-// Restore restore a file share within a valid retention days if share soft delete is enabled
-// Parameters:
-// resourceGroupName - the name of the resource group within the user's subscription. The name is case
-// insensitive.
-// accountName - the name of the storage account within the specified resource group. Storage account names
-// must be between 3 and 24 characters in length and use numbers and lower-case letters only.
-// shareName - the name of the file share within the specified storage account. File share names must be
-// between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-)
-// character must be immediately preceded and followed by a letter or number.
-func (client FileSharesClient) Restore(ctx context.Context, resourceGroupName string, accountName string, shareName string, deletedShare DeletedShare) (result autorest.Response, err error) {
-	if tracing.IsEnabled() {
-		ctx = tracing.StartSpan(ctx, fqdn+"/FileSharesClient.Restore")
-		defer func() {
-			sc := -1
-			if result.Response != nil {
-				sc = result.Response.StatusCode
-			}
-			tracing.EndSpan(ctx, sc, err)
-		}()
-	}
-	if err := validation.Validate([]validation.Validation{
-		{TargetValue: resourceGroupName,
-			Constraints: []validation.Constraint{{Target: "resourceGroupName", Name: validation.MaxLength, Rule: 90, Chain: nil},
-				{Target: "resourceGroupName", Name: validation.MinLength, Rule: 1, Chain: nil},
-				{Target: "resourceGroupName", Name: validation.Pattern, Rule: `^[-\w\._\(\)]+$`, Chain: nil}}},
-		{TargetValue: accountName,
-			Constraints: []validation.Constraint{{Target: "accountName", Name: validation.MaxLength, Rule: 24, Chain: nil},
-				{Target: "accountName", Name: validation.MinLength, Rule: 3, Chain: nil}}},
-		{TargetValue: shareName,
-			Constraints: []validation.Constraint{{Target: "shareName", Name: validation.MaxLength, Rule: 63, Chain: nil},
-				{Target: "shareName", Name: validation.MinLength, Rule: 3, Chain: nil}}},
-		{TargetValue: deletedShare,
-			Constraints: []validation.Constraint{{Target: "deletedShare.DeletedShareName", Name: validation.Null, Rule: true, Chain: nil},
-				{Target: "deletedShare.DeletedShareVersion", Name: validation.Null, Rule: true, Chain: nil}}},
-		{TargetValue: client.SubscriptionID,
-			Constraints: []validation.Constraint{{Target: "client.SubscriptionID", Name: validation.MinLength, Rule: 1, Chain: nil}}}}); err != nil {
-		return result, validation.NewError("storage.FileSharesClient", "Restore", err.Error())
-	}
-
-	req, err := client.RestorePreparer(ctx, resourceGroupName, accountName, shareName, deletedShare)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "storage.FileSharesClient", "Restore", nil, "Failure preparing request")
-		return
-	}
-
-	resp, err := client.RestoreSender(req)
-	if err != nil {
-		result.Response = resp
-		err = autorest.NewErrorWithError(err, "storage.FileSharesClient", "Restore", resp, "Failure sending request")
-		return
-	}
-
-	result, err = client.RestoreResponder(resp)
-	if err != nil {
-		err = autorest.NewErrorWithError(err, "storage.FileSharesClient", "Restore", resp, "Failure responding to request")
-	}
-
-	return
-}
-
-// RestorePreparer prepares the Restore request.
-func (client FileSharesClient) RestorePreparer(ctx context.Context, resourceGroupName string, accountName string, shareName string, deletedShare DeletedShare) (*http.Request, error) {
-	pathParameters := map[string]interface{}{
-		"accountName":       autorest.Encode("path", accountName),
-		"resourceGroupName": autorest.Encode("path", resourceGroupName),
-		"shareName":         autorest.Encode("path", shareName),
-		"subscriptionId":    autorest.Encode("path", client.SubscriptionID),
-	}
-
-	const APIVersion = "2019-06-01"
-	queryParameters := map[string]interface{}{
-		"api-version": APIVersion,
-	}
-
-	preparer := autorest.CreatePreparer(
-		autorest.AsContentType("application/json; charset=utf-8"),
-		autorest.AsPost(),
-		autorest.WithBaseURL(client.BaseURI),
-		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Storage/storageAccounts/{accountName}/fileServices/default/shares/{shareName}/restore", pathParameters),
-		autorest.WithJSON(deletedShare),
-		autorest.WithQueryParameters(queryParameters))
-	return preparer.Prepare((&http.Request{}).WithContext(ctx))
-}
-
-// RestoreSender sends the Restore request. The method will close the
-// http.Response Body if it receives an error.
-func (client FileSharesClient) RestoreSender(req *http.Request) (*http.Response, error) {
-	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
-}
-
-// RestoreResponder handles the response to the Restore request. The method always
-// closes the http.Response Body.
-func (client FileSharesClient) RestoreResponder(resp *http.Response) (result autorest.Response, err error) {
-	err = autorest.Respond(
-		resp,
-		client.ByInspecting(),
-		azure.WithErrorUnlessStatusCode(http.StatusOK),
-		autorest.ByClosing())
-	result.Response = resp
+	result.page, err = client.List(ctx, resourceGroupName, accountName, maxpagesize, filter)
 	return
 }
 
@@ -679,7 +572,8 @@ func (client FileSharesClient) UpdatePreparer(ctx context.Context, resourceGroup
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client FileSharesClient) UpdateSender(req *http.Request) (*http.Response, error) {
-	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
+	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
+	return autorest.SendWithSender(client, req, sd...)
 }
 
 // UpdateResponder handles the response to the Update request. The method always

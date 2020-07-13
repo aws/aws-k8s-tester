@@ -22,7 +22,7 @@ import (
 	"hash/fnv"
 	"strings"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -102,14 +102,14 @@ func HashContainer(container *v1.Container) uint64 {
 	hash := fnv.New32a()
 	// Omit nil or empty field when calculating hash value
 	// Please see https://github.com/kubernetes/kubernetes/issues/53644
-	containerJSON, _ := json.Marshal(container)
-	hashutil.DeepHashObject(hash, containerJSON)
+	containerJson, _ := json.Marshal(container)
+	hashutil.DeepHashObject(hash, containerJson)
 	return uint64(hash.Sum32())
 }
 
-// envVarsToMap constructs a map of environment name to value from a slice
+// EnvVarsToMap constructs a map of environment name to value from a slice
 // of env vars.
-func envVarsToMap(envs []EnvVar) map[string]string {
+func EnvVarsToMap(envs []EnvVar) map[string]string {
 	result := map[string]string{}
 	for _, env := range envs {
 		result[env.Name] = env.Value
@@ -117,9 +117,9 @@ func envVarsToMap(envs []EnvVar) map[string]string {
 	return result
 }
 
-// v1EnvVarsToMap constructs a map of environment name to value from a slice
+// V1EnvVarsToMap constructs a map of environment name to value from a slice
 // of env vars.
-func v1EnvVarsToMap(envs []v1.EnvVar) map[string]string {
+func V1EnvVarsToMap(envs []v1.EnvVar) map[string]string {
 	result := map[string]string{}
 	for _, env := range envs {
 		result[env.Name] = env.Value
@@ -132,7 +132,7 @@ func v1EnvVarsToMap(envs []v1.EnvVar) map[string]string {
 // container environment definitions. This does *not* include valueFrom substitutions.
 // TODO: callers should use ExpandContainerCommandAndArgs with a fully resolved list of environment.
 func ExpandContainerCommandOnlyStatic(containerCommand []string, envs []v1.EnvVar) (command []string) {
-	mapping := expansion.MappingFuncFor(v1EnvVarsToMap(envs))
+	mapping := expansion.MappingFuncFor(V1EnvVarsToMap(envs))
 	if len(containerCommand) != 0 {
 		for _, cmd := range containerCommand {
 			command = append(command, expansion.Expand(cmd, mapping))
@@ -141,10 +141,9 @@ func ExpandContainerCommandOnlyStatic(containerCommand []string, envs []v1.EnvVa
 	return command
 }
 
-// ExpandContainerVolumeMounts expands the subpath of the given VolumeMount by replacing variable references with the values of given EnvVar.
 func ExpandContainerVolumeMounts(mount v1.VolumeMount, envs []EnvVar) (string, error) {
 
-	envmap := envVarsToMap(envs)
+	envmap := EnvVarsToMap(envs)
 	missingKeys := sets.NewString()
 	expanded := expansion.Expand(mount.SubPathExpr, func(key string) string {
 		value, ok := envmap[key]
@@ -160,9 +159,8 @@ func ExpandContainerVolumeMounts(mount v1.VolumeMount, envs []EnvVar) (string, e
 	return expanded, nil
 }
 
-// ExpandContainerCommandAndArgs expands the given Container's command by replacing variable references `with the values of given EnvVar.
 func ExpandContainerCommandAndArgs(container *v1.Container, envs []EnvVar) (command []string, args []string) {
-	mapping := expansion.MappingFuncFor(envVarsToMap(envs))
+	mapping := expansion.MappingFuncFor(EnvVarsToMap(envs))
 
 	if len(container.Command) != 0 {
 		for _, cmd := range container.Command {
@@ -179,7 +177,7 @@ func ExpandContainerCommandAndArgs(container *v1.Container, envs []EnvVar) (comm
 	return command, args
 }
 
-// FilterEventRecorder creates an event recorder to record object's event except implicitly required container's, like infra container.
+// Create an event recorder to record object's event except implicitly required container's, like infra container.
 func FilterEventRecorder(recorder record.EventRecorder) record.EventRecorder {
 	return &innerEventRecorder{
 		recorder: recorder,
@@ -222,13 +220,11 @@ func (irecorder *innerEventRecorder) AnnotatedEventf(object runtime.Object, anno
 
 }
 
-// IsHostNetworkPod returns whether the host networking requested for the given Pod.
 // Pod must not be nil.
 func IsHostNetworkPod(pod *v1.Pod) bool {
 	return pod.Spec.HostNetwork
 }
 
-// ConvertPodStatusToRunningPod returns Pod given PodStatus and container runtime string.
 // TODO(random-liu): Convert PodStatus to running Pod, should be deprecated soon
 func ConvertPodStatusToRunningPod(runtimeName string, podStatus *PodStatus) Pod {
 	runningPod := Pod{
@@ -262,11 +258,11 @@ func ConvertPodStatusToRunningPod(runtimeName string, podStatus *PodStatus) Pod 
 }
 
 // SandboxToContainerState converts runtimeapi.PodSandboxState to
-// kubecontainer.State.
+// kubecontainer.ContainerState.
 // This is only needed because we need to return sandboxes as if they were
 // kubecontainer.Containers to avoid substantial changes to PLEG.
 // TODO: Remove this once it becomes obsolete.
-func SandboxToContainerState(state runtimeapi.PodSandboxState) State {
+func SandboxToContainerState(state runtimeapi.PodSandboxState) ContainerState {
 	switch state {
 	case runtimeapi.PodSandboxState_SANDBOX_READY:
 		return ContainerStateRunning
@@ -287,7 +283,7 @@ func FormatPod(pod *Pod) string {
 // GetContainerSpec gets the container spec by containerName.
 func GetContainerSpec(pod *v1.Pod, containerName string) *v1.Container {
 	var containerSpec *v1.Container
-	podutil.VisitContainers(&pod.Spec, podutil.AllFeatureEnabledContainers(), func(c *v1.Container, containerType podutil.ContainerType) bool {
+	podutil.VisitContainers(&pod.Spec, func(c *v1.Container) bool {
 		if containerName == c.Name {
 			containerSpec = c
 			return false
@@ -300,7 +296,7 @@ func GetContainerSpec(pod *v1.Pod, containerName string) *v1.Container {
 // HasPrivilegedContainer returns true if any of the containers in the pod are privileged.
 func HasPrivilegedContainer(pod *v1.Pod) bool {
 	var hasPrivileged bool
-	podutil.VisitContainers(&pod.Spec, podutil.AllFeatureEnabledContainers(), func(c *v1.Container, containerType podutil.ContainerType) bool {
+	podutil.VisitContainers(&pod.Spec, func(c *v1.Container) bool {
 		if c.SecurityContext != nil && c.SecurityContext.Privileged != nil && *c.SecurityContext.Privileged {
 			hasPrivileged = true
 			return false

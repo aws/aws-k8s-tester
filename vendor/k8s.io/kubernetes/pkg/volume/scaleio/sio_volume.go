@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"strings"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 	"k8s.io/utils/mount"
 	utilstrings "k8s.io/utils/strings"
 
@@ -54,10 +54,6 @@ type sioVolume struct {
 
 	volume.MetricsNil
 }
-
-const (
-	minimumVolumeSizeGiB = 8
-)
 
 // *******************
 // volume.Volume Impl
@@ -276,17 +272,21 @@ func (v *sioVolume) Provision(selectedNode *api.Node, allowedTopologies []api.To
 
 	// setup volume attrributes
 	genName := v.generateName("k8svol", 11)
+	eightGig := int64(8 * volumehelpers.GiB)
 
 	capacity := v.options.PVC.Spec.Resources.Requests[api.ResourceName(api.ResourceStorage)]
 
-	volSizeGiB, err := volumehelpers.RoundUpToGiB(capacity)
-	if err != nil {
-		return nil, err
+	volSizeBytes := capacity.Value()
+	volSizeGB := int64(volumehelpers.RoundUpToGiB(capacity))
+
+	if volSizeBytes == 0 {
+		return nil, fmt.Errorf("invalid volume size of 0 specified")
 	}
 
-	if volSizeGiB < minimumVolumeSizeGiB {
-		volSizeGiB = minimumVolumeSizeGiB
-		klog.V(4).Info(log("capacity less than 8Gi found, adjusted to %dGi", volSizeGiB))
+	if volSizeBytes < eightGig {
+		eightGiBCapacity := resource.NewQuantity(eightGig, resource.BinarySI)
+		volSizeGB = int64(volumehelpers.RoundUpToGiB(*eightGiBCapacity))
+		klog.V(4).Info(log("capacity less than 8Gi found, adjusted to %dGi", volSizeGB))
 
 	}
 
@@ -298,7 +298,7 @@ func (v *sioVolume) Provision(selectedNode *api.Node, allowedTopologies []api.To
 
 	// create volume
 	volName := genName
-	vol, err := v.sioMgr.CreateVolume(volName, volSizeGiB)
+	vol, err := v.sioMgr.CreateVolume(volName, volSizeGB)
 	if err != nil {
 		klog.Error(log("provision failed while creating volume: %v", err))
 		return nil, err
@@ -333,7 +333,7 @@ func (v *sioVolume) Provision(selectedNode *api.Node, allowedTopologies []api.To
 			AccessModes:                   v.options.PVC.Spec.AccessModes,
 			Capacity: api.ResourceList{
 				api.ResourceName(api.ResourceStorage): resource.MustParse(
-					fmt.Sprintf("%dGi", volSizeGiB),
+					fmt.Sprintf("%dGi", volSizeGB),
 				),
 			},
 			PersistentVolumeSource: api.PersistentVolumeSource{

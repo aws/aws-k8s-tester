@@ -25,7 +25,7 @@ import (
 	volumehelpers "k8s.io/cloud-provider/volume/helpers"
 
 	flockerapi "github.com/clusterhq/flocker-go"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 type flockerUtil struct{}

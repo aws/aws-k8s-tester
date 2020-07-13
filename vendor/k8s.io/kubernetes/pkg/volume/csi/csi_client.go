@@ -23,6 +23,7 @@ import (
 	"io"
 	"net"
 	"sync"
+	"time"
 
 	csipbv1 "github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc"
@@ -30,7 +31,7 @@ import (
 	"google.golang.org/grpc/status"
 	api "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 	"k8s.io/kubernetes/pkg/volume"
 	volumetypes "k8s.io/kubernetes/pkg/volume/util/types"
 )
@@ -54,7 +55,7 @@ type csiClient interface {
 		fsType string,
 		mountOptions []string,
 	) error
-	NodeExpandVolume(ctx context.Context, rsOpts csiResizeOptions) (resource.Quantity, error)
+	NodeExpandVolume(ctx context.Context, volumeid, volumePath string, newSize resource.Quantity) (resource.Quantity, error)
 	NodeUnpublishVolume(
 		ctx context.Context,
 		volID string,
@@ -95,26 +96,18 @@ type csiDriverClient struct {
 	nodeV1ClientCreator nodeV1ClientCreator
 }
 
-type csiResizeOptions struct {
-	volumeID string
-	// volumePath is path where volume is available. It could be:
-	//   - path where node is staged if NodeExpandVolume is called after NodeStageVolume
-	//   - path where volume is published if NodeExpandVolume is called after NodePublishVolume
-	// DEPRECATION NOTICE: in future NodeExpandVolume will be always called after NodePublish
-	volumePath        string
-	stagingTargetPath string
-	fsType            string
-	accessMode        api.PersistentVolumeAccessMode
-	newSize           resource.Quantity
-	mountOptions      []string
-}
-
 var _ csiClient = &csiDriverClient{}
 
 type nodeV1ClientCreator func(addr csiAddr) (
 	nodeClient csipbv1.NodeClient,
 	closer io.Closer,
 	err error,
+)
+
+const (
+	initialDuration = 1 * time.Second
+	factor          = 2.0
+	steps           = 5
 )
 
 // newV1NodeClient creates a new NodeClient with the internally used gRPC
@@ -259,61 +252,36 @@ func (c *csiDriverClient) NodePublishVolume(
 	return err
 }
 
-func (c *csiDriverClient) NodeExpandVolume(ctx context.Context, opts csiResizeOptions) (resource.Quantity, error) {
+func (c *csiDriverClient) NodeExpandVolume(ctx context.Context, volumeID, volumePath string, newSize resource.Quantity) (resource.Quantity, error) {
 	if c.nodeV1ClientCreator == nil {
-		return opts.newSize, fmt.Errorf("version of CSI driver does not support volume expansion")
+		return newSize, fmt.Errorf("version of CSI driver does not support volume expansion")
 	}
 
-	if opts.volumeID == "" {
-		return opts.newSize, errors.New("missing volume id")
+	if volumeID == "" {
+		return newSize, errors.New("missing volume id")
 	}
-	if opts.volumePath == "" {
-		return opts.newSize, errors.New("missing volume path")
+	if volumePath == "" {
+		return newSize, errors.New("missing volume path")
 	}
 
-	if opts.newSize.Value() < 0 {
-		return opts.newSize, errors.New("size can not be less than 0")
+	if newSize.Value() < 0 {
+		return newSize, errors.New("size can not be less than 0")
 	}
 
 	nodeClient, closer, err := c.nodeV1ClientCreator(c.addr)
 	if err != nil {
-		return opts.newSize, err
+		return newSize, err
 	}
 	defer closer.Close()
 
 	req := &csipbv1.NodeExpandVolumeRequest{
-		VolumeId:      opts.volumeID,
-		VolumePath:    opts.volumePath,
-		CapacityRange: &csipbv1.CapacityRange{RequiredBytes: opts.newSize.Value()},
-		VolumeCapability: &csipbv1.VolumeCapability{
-			AccessMode: &csipbv1.VolumeCapability_AccessMode{
-				Mode: asCSIAccessModeV1(opts.accessMode),
-			},
-		},
+		VolumeId:      volumeID,
+		VolumePath:    volumePath,
+		CapacityRange: &csipbv1.CapacityRange{RequiredBytes: newSize.Value()},
 	}
-
-	// not all CSI drivers support NodeStageUnstage and hence the StagingTargetPath
-	// should only be set when available
-	if opts.stagingTargetPath != "" {
-		req.StagingTargetPath = opts.stagingTargetPath
-	}
-
-	if opts.fsType == fsTypeBlockName {
-		req.VolumeCapability.AccessType = &csipbv1.VolumeCapability_Block{
-			Block: &csipbv1.VolumeCapability_BlockVolume{},
-		}
-	} else {
-		req.VolumeCapability.AccessType = &csipbv1.VolumeCapability_Mount{
-			Mount: &csipbv1.VolumeCapability_MountVolume{
-				FsType:     opts.fsType,
-				MountFlags: opts.mountOptions,
-			},
-		}
-	}
-
 	resp, err := nodeClient.NodeExpandVolume(ctx, req)
 	if err != nil {
-		return opts.newSize, err
+		return newSize, err
 	}
 	updatedQuantity := resource.NewQuantity(resp.CapacityBytes, resource.BinarySI)
 	return *updatedQuantity, nil

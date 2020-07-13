@@ -4,7 +4,6 @@ package seccomp
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -35,12 +34,12 @@ const (
 // of the init until they join the namespace
 func InitSeccomp(config *configs.Seccomp) error {
 	if config == nil {
-		return errors.New("cannot initialize Seccomp - nil config passed")
+		return fmt.Errorf("cannot initialize Seccomp - nil config passed")
 	}
 
-	defaultAction, err := getAction(config.DefaultAction, nil)
+	defaultAction, err := getAction(config.DefaultAction)
 	if err != nil {
-		return errors.New("error initializing seccomp - invalid default action")
+		return fmt.Errorf("error initializing seccomp - invalid default action")
 	}
 
 	filter, err := libseccomp.NewFilter(defaultAction)
@@ -68,7 +67,7 @@ func InitSeccomp(config *configs.Seccomp) error {
 	// Add a rule for each syscall
 	for _, call := range config.Syscalls {
 		if call == nil {
-			return errors.New("encountered nil syscall while initializing Seccomp")
+			return fmt.Errorf("encountered nil syscall while initializing Seccomp")
 		}
 
 		if err = matchCall(filter, call); err != nil {
@@ -102,28 +101,22 @@ func IsEnabled() bool {
 }
 
 // Convert Libcontainer Action to Libseccomp ScmpAction
-func getAction(act configs.Action, errnoRet *uint) (libseccomp.ScmpAction, error) {
+func getAction(act configs.Action) (libseccomp.ScmpAction, error) {
 	switch act {
 	case configs.Kill:
 		return actKill, nil
 	case configs.Errno:
-		if errnoRet != nil {
-			return libseccomp.ActErrno.SetReturnCode(int16(*errnoRet)), nil
-		}
 		return actErrno, nil
 	case configs.Trap:
 		return actTrap, nil
 	case configs.Allow:
 		return actAllow, nil
 	case configs.Trace:
-		if errnoRet != nil {
-			return libseccomp.ActTrace.SetReturnCode(int16(*errnoRet)), nil
-		}
 		return actTrace, nil
 	case configs.Log:
 		return actLog, nil
 	default:
-		return libseccomp.ActInvalid, errors.New("invalid action, cannot use in rule")
+		return libseccomp.ActInvalid, fmt.Errorf("invalid action, cannot use in rule")
 	}
 }
 
@@ -145,7 +138,7 @@ func getOperator(op configs.Operator) (libseccomp.ScmpCompareOp, error) {
 	case configs.MaskEqualTo:
 		return libseccomp.CompareMaskedEqual, nil
 	default:
-		return libseccomp.CompareInvalid, errors.New("invalid operator, cannot use in rule")
+		return libseccomp.CompareInvalid, fmt.Errorf("invalid operator, cannot use in rule")
 	}
 }
 
@@ -154,7 +147,7 @@ func getCondition(arg *configs.Arg) (libseccomp.ScmpCondition, error) {
 	cond := libseccomp.ScmpCondition{}
 
 	if arg == nil {
-		return cond, errors.New("cannot convert nil to syscall condition")
+		return cond, fmt.Errorf("cannot convert nil to syscall condition")
 	}
 
 	op, err := getOperator(arg.Op)
@@ -168,11 +161,11 @@ func getCondition(arg *configs.Arg) (libseccomp.ScmpCondition, error) {
 // Add a rule to match a single syscall
 func matchCall(filter *libseccomp.ScmpFilter, call *configs.Syscall) error {
 	if call == nil || filter == nil {
-		return errors.New("cannot use nil as syscall to block")
+		return fmt.Errorf("cannot use nil as syscall to block")
 	}
 
 	if len(call.Name) == 0 {
-		return errors.New("empty string is not a valid syscall")
+		return fmt.Errorf("empty string is not a valid syscall")
 	}
 
 	// If we can't resolve the syscall, assume it's not supported on this kernel
@@ -183,7 +176,7 @@ func matchCall(filter *libseccomp.ScmpFilter, call *configs.Syscall) error {
 	}
 
 	// Convert the call's action to the libseccomp equivalent
-	callAct, err := getAction(call.Action, call.ErrnoRet)
+	callAct, err := getAction(call.Action)
 	if err != nil {
 		return fmt.Errorf("action in seccomp profile is invalid: %s", err)
 	}

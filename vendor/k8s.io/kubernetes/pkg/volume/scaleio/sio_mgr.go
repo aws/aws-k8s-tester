@@ -20,7 +20,7 @@ import (
 	"errors"
 	"strconv"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 	utilexec "k8s.io/utils/exec"
 
 	siotypes "github.com/thecodeteam/goscaleio/types/v1"

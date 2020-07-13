@@ -21,7 +21,7 @@ import (
 	"net"
 	"strconv"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 )
 
 // LocalPort describes a port on specific IP address and protocol

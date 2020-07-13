@@ -43,7 +43,6 @@ type Table string
 const (
 	TableNAT    Table = "nat"
 	TableFilter Table = "filter"
-	TableBroute Table = "broute"
 )
 
 type Chain string
@@ -53,7 +52,6 @@ const (
 	ChainPrerouting  Chain = "PREROUTING"
 	ChainOutput      Chain = "OUTPUT"
 	ChainInput       Chain = "INPUT"
-	ChainBrouting    Chain = "BROUTING"
 )
 
 type operation string
@@ -77,8 +75,6 @@ type Interface interface {
 	// Input args must follow the format and sequence of ebtables list output. Otherwise, EnsureRule will always create
 	// new rules and causing duplicates.
 	EnsureRule(position RulePosition, table Table, chain Chain, args ...string) (bool, error)
-	// DeleteRule checks if the specified rule is present and, if so, deletes it.
-	DeleteRule(table Table, chain Chain, args ...string) error
 	// EnsureChain checks if the specified chain is present and, if not, creates it.  If the rule existed, return true.
 	EnsureChain(table Table, chain Chain) (bool, error)
 	// DeleteChain deletes the specified chain.  If the chain did not exist, return error.
@@ -141,27 +137,6 @@ func (runner *runner) EnsureRule(position RulePosition, table Table, chain Chain
 		}
 	}
 	return exist, nil
-}
-
-func (runner *runner) DeleteRule(table Table, chain Chain, args ...string) error {
-	exist := true
-	fullArgs := makeFullArgs(table, opListChain, chain, fullMac)
-	out, err := runner.exec.Command(cmdebtables, fullArgs...).CombinedOutput()
-	if err != nil {
-		exist = false
-	} else {
-		exist = checkIfRuleExists(string(out), args...)
-	}
-
-	if !exist {
-		return nil
-	}
-	fullArgs = makeFullArgs(table, opDeleteRule, chain, args...)
-	out, err = runner.exec.Command(cmdebtables, fullArgs...).CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("Failed to delete rule: %v, output: %s", err, out)
-	}
-	return nil
 }
 
 func (runner *runner) EnsureChain(table Table, chain Chain) (bool, error) {

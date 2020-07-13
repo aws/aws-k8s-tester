@@ -1,5 +1,3 @@
-// +build !dockerless
-
 /*
 Copyright 2016 The Kubernetes Authors.
 
@@ -30,7 +28,7 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 
 	dockertypes "github.com/docker/docker/api/types"
 	dockercontainer "github.com/docker/docker/api/types/container"

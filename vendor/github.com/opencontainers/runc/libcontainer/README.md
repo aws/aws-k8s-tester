@@ -155,7 +155,8 @@ config := &configs.Config{
 		Parent: "system",
 		Resources: &configs.Resources{
 			MemorySwappiness: nil,
-			Devices:          specconv.AllowedDevices,
+			AllowAllDevices:  nil,
+			AllowedDevices:   configs.DefaultAllowedDevices,
 		},
 	},
 	MaskPaths: []string{
@@ -165,7 +166,7 @@ config := &configs.Config{
 	ReadonlyPaths: []string{
 		"/proc/sys", "/proc/sysrq-trigger", "/proc/irq", "/proc/bus",
 	},
-	Devices:  specconv.AllowedDevices,
+	Devices:  configs.DefaultAutoCreatedDevices,
 	Hostname: "testing",
 	Mounts: []*configs.Mount{
 		{

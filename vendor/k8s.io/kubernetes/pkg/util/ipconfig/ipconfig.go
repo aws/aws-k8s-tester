@@ -20,7 +20,7 @@ import (
 	"runtime"
 	"strings"
 
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 
 	utilexec "k8s.io/utils/exec"
 )
