@@ -141,7 +141,6 @@ func (ts *tester) Delete() error {
 		k8s_client.DefaultNamespaceDeletionInterval,
 		k8s_client.DefaultNamespaceDeletionTimeout,
 		k8s_client.WithQueryFunc(func() {
-			fmt.Fprintf(ts.cfg.LogWriter, "\n")
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			output, err := exec.New().CommandContext(ctx, getAllArgs[0], getAllArgs[1:]...).CombinedOutput()
 			cancel()

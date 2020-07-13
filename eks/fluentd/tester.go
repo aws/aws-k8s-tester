@@ -12,7 +12,9 @@
 package fluentd
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"io"
 	"reflect"
 	"strings"
@@ -25,6 +27,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"go.uber.org/zap"
+	"k8s.io/utils/exec"
 )
 
 // Config defines fluentd configuration.
@@ -87,14 +90,38 @@ func New(cfg Config) eks_tester.Tester {
 		func() error { return ts.deleteFluentdRBACClusterRole() },
 		func() error { return ts.deleteFluentdServiceAccount() },
 		func() error {
-			return k8s_client.DeleteNamespaceAndWait(
+			getAllArgs := []string{
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnFluentd.Namespace,
+				"get",
+				"all",
+			}
+			getAllCmd := strings.Join(getAllArgs, " ")
+
+			derr := k8s_client.DeleteNamespaceAndWait(
 				ts.cfg.Logger,
 				ts.cfg.K8SClient.KubernetesClientSet(),
 				ts.cfg.EKSConfig.AddOnFluentd.Namespace,
 				k8s_client.DefaultNamespaceDeletionInterval,
 				k8s_client.DefaultNamespaceDeletionTimeout,
+				k8s_client.WithQueryFunc(func() {
+					ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+					output, err := exec.New().CommandContext(ctx, getAllArgs[0], getAllArgs[1:]...).CombinedOutput()
+					cancel()
+					out := strings.TrimSpace(string(output))
+					if err != nil {
+						ts.cfg.Logger.Warn("'kubectl get all' failed", zap.Error(err))
+					}
+					fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
+				}),
 				k8s_client.WithForceDelete(true),
 			)
+			if derr != nil {
+				// TODO: fix this
+				ts.cfg.Logger.Warn("ignoring namespace delete error for fluentd", zap.Error(derr))
+			}
+			return nil
 		},
 	}
 	return ts
