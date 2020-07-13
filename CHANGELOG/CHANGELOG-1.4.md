@@ -40,6 +40,13 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 - Add [`pkg/k8s-client.WithPodFunc` to debug job pod failures](https://github.com/aws/aws-k8s-tester/commit/f245f770980daacf9f462a0d62c3c95c845a1477).
 - Use [regional STS endpoint by default in `pkg/aws`](https://github.com/aws/aws-k8s-tester/commit/6f1a3f830933713e17f0c059532d3cd77fa2587e).
 
+### Dependency
+
+- Upgrade [`github.com/kubernetes/kubernetes`](https://github.com/kubernetes/kubernetes/releases) from [`v1.18.6-rc.0`](https://github.com/kubernetes/kubernetes/releases/tag/v1.18.6-rc.0) to [`v1.19.0-rc.0`](https://github.com/kubernetes/kubernetes/releases/tag/v1.19.0-rc.0).
+- Upgrade [`github.com/kubernetes/client-go`](https://github.com/kubernetes/client-go/releases) from [`v0.18.6-rc.0`](https://github.com/kubernetes/clienthttps://github.com/kubernetes/client-go/releases/tag/v0.18.6-rc.0) to [`v0.19.0-rc.0`](https://github.com/kubernetes/client-go/releases/tag/v0.19.0-rc.0).
+  - See [commit `0e4cbc8e` for all the `eks` changes](https://github.com/aws/aws-k8s-tester/commit/0e4cbc8e0a3b7c7f3808e40205ecf5dc6d3ddbe9).
+  - See [commit `f1a984e3` for all the `vendor` changes](https://github.com/aws/aws-k8s-tester/commit/f1a984e394c880a1864327f97bb54ffab94e48f8).
+  - ref. https://github.com/kubernetes/kubernetes/pull/90552 changes `k8s.io/kubernetes/pkg/kubelet/remote` to `k8s.io/kubernetes/pkg/kubelet/cri/remote`.
 
 
 <hr>
