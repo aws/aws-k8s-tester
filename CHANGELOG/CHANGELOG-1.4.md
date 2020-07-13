@@ -28,6 +28,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
   - To use regional STS endpoint.
 - Fix [STS regional endpoint dial timeouts](https://github.com/aws/aws-k8s-tester/commit/bce310faa1c2abcc48617f6b5a3c732992a039d0).
   - e.g. `"RequestError: send request failed\ncaused by: Post \"https://iam.amazonaws.com/\": dial tcp: i/o timeout"} failed to create AWS session RequestError: send request failed caused by: Post "https://sts.us-west-2.amazonaws.com/": dial tcp: i/o timeout"`
+- Allow [`eks/fluentd` namespace deletion timeouts](https://github.com/aws/aws-k8s-tester/commit/ff5200fecb55b842dfeb0e338e19f49906e91d3c).
 
 ## `pkg`
 
