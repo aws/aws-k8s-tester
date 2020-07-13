@@ -22,11 +22,16 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
   - ref. https://github.com/kubernetes/kubernetes/issues/54870.
 - Use [`pkg/k8s-client.WaitForDeploymentCompletes`](https://github.com/aws/aws-k8s-tester/commit/0d6e2c9e390b688029cc88d565b249ce79f4e15c).
 - Fix [`eks/irsa` and `eks/irsa-fargate` role ARN query tests](https://github.com/aws/aws-k8s-tester/commit/12d17a25229faa3f2daf573cab3fc0c4aeaa0076).
+- Use [regional STS endpoint by default](https://github.com/aws/aws-k8s-tester/commit/9a09a37d92dbd8eed2f98a9249aa6e3b2f9d6459).
+- Add [`iam:SetSecurityTokenServicePreferences` to worker node role IAM policy](https://github.com/aws/aws-k8s-tester/commit/9a09a37d92dbd8eed2f98a9249aa6e3b2f9d6459).
+  - ref. https://docs.aws.amazon.com/cli/latest/reference/iam/set-security-token-service-preferences.html.
+  - To use regional STS endpoint.
 
 ## `pkg`
 
 - Add [`pkg/k8s-client.WaitForDeploymentCompletes`](https://github.com/aws/aws-k8s-tester/commit/a8a69c5e092abf88ff7e0ddb636c4ce8400cf2f1).
 - Add [`pkg/k8s-client.WithPodFunc` to debug job pod failures](https://github.com/aws/aws-k8s-tester/commit/f245f770980daacf9f462a0d62c3c95c845a1477).
+- Use [regional STS endpoint by default in `pkg/aws`](https://github.com/aws/aws-k8s-tester/commit/6f1a3f830933713e17f0c059532d3cd77fa2587e).
 
 
 
@@ -49,7 +54,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.3...v1.4.4
 - Increase [`ListCSRs` batch limit to 1,000](https://github.com/aws/aws-k8s-tester/commit/4965374b15ec09224477f41cc4b1c024601dfb43).
 - Increase [`ListNodes` batch limit to 1,000](https://github.com/aws/aws-k8s-tester/commit/7d36a80c22cfddbed20f75600462a6a396277d8a).
 - Do [not print spinner if not supported](https://github.com/aws/aws-k8s-tester/commit/afcac86d06e66b74488232f9d2c6d883b7c7832f).
-- Set [upper limit for `WaitForJobCompletes`](https://github.com/aws/aws-k8s-tester/commit/).
+- Set [upper limit for `WaitForJobCompletes`](https://github.com/aws/aws-k8s-tester/commit/7d36a80c22cfddbed20f75600462a6a396277d8a).
 
 
 
