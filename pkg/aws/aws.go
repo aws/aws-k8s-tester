@@ -2,16 +2,18 @@
 package aws
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
+	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"go.uber.org/zap"
 	"k8s.io/client-go/util/homedir"
@@ -128,27 +130,44 @@ func New(cfg *Config) (ss *session.Session, stsOutput *sts.GetCallerIdentityOutp
 	if err != nil {
 		return nil, nil, "", err
 	}
-	iamSvc := iam.New(stsSession)
-	if _, err = iamSvc.SetSecurityTokenServicePreferences(&iam.SetSecurityTokenServicePreferencesInput{
-		GlobalEndpointTokenVersion: aws.String("v2Token"),
-	}); err != nil {
-		cfg.Logger.Warn("failed to enable v2 security token", zap.Error(err))
-	}
+	/*
+		iamSvc := iam.New(stsSession)
+		if _, err = iamSvc.SetSecurityTokenServicePreferences(&iam.SetSecurityTokenServicePreferencesInput{
+			GlobalEndpointTokenVersion: aws.String("v2Token"),
+		}); err != nil {
+			cfg.Logger.Warn("failed to enable v2 security token", zap.Error(err))
+		}
+	*/
 	stsSvc := sts.New(stsSession)
-	stsOutput, err = stsSvc.GetCallerIdentity(&sts.GetCallerIdentityInput{})
-	if err != nil {
-		return nil, nil, "", err
-	}
-
-	cfg.Logger.Info(
-		"creating AWS session",
-		zap.String("partition", cfg.Partition),
-		zap.String("region", cfg.Region),
-		zap.String("region-resolved-sts-endpoint", stsEndpoint.URL),
-		zap.String("account-id", *stsOutput.Account),
-		zap.String("user-id", *stsOutput.UserId),
-		zap.String("arn", *stsOutput.Arn),
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	stsOutput, err = stsSvc.GetCallerIdentityWithContext(
+		ctx,
+		&sts.GetCallerIdentityInput{},
+		request.WithLogLevel(aws.LogDebug),
+		request.WithResponseReadTimeout(15*time.Second),
 	)
+	cancel()
+	if err != nil {
+		cfg.Logger.Warn("failed to get sts caller identity",
+			zap.String("partition", cfg.Partition),
+			zap.String("region", cfg.Region),
+			zap.String("region-id", region.ID()),
+			zap.String("region-description", region.Description()),
+			zap.String("region-resolved-sts-endpoint", stsEndpoint.URL),
+			zap.Error(err),
+		)
+	} else {
+		cfg.Logger.Info("successfully get sts caller identity",
+			zap.String("partition", cfg.Partition),
+			zap.String("region", cfg.Region),
+			zap.String("region-id", region.ID()),
+			zap.String("region-description", region.Description()),
+			zap.String("region-resolved-sts-endpoint", stsEndpoint.URL),
+			zap.String("account-id", aws.StringValue(stsOutput.Account)),
+			zap.String("user-id", aws.StringValue(stsOutput.UserId)),
+			zap.String("arn", aws.StringValue(stsOutput.Arn)),
+		)
+	}
 
 	resolver := endpoints.DefaultResolver()
 	if cfg.ResolverURL != "" {
@@ -169,6 +188,11 @@ func New(cfg *Config) (ss *session.Session, stsOutput *sts.GetCallerIdentityOutp
 	}
 	awsConfig.EndpointResolver = resolver
 
+	cfg.Logger.Info(
+		"creating AWS session",
+		zap.String("partition", cfg.Partition),
+		zap.String("region", cfg.Region),
+	)
 	ss, err = session.NewSession(&awsConfig)
 	if err != nil {
 		return nil, nil, "", err

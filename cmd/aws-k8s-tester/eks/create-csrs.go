@@ -15,7 +15,6 @@ import (
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -93,19 +92,11 @@ func createCSRsFunc(cmd *cobra.Command, args []string) {
 		Partition: csrsPartition,
 		Region:    csrsRegion,
 	}
-	awsSession, stsOutput, _, err := pkg_aws.New(awsCfg)
+	awsSession, _, _, err := pkg_aws.New(awsCfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to create AWS session %v\n", err)
 		os.Exit(1)
 	}
-	awsAccountID := aws.StringValue(stsOutput.Account)
-	awsUserID := aws.StringValue(stsOutput.UserId)
-	awsIAMRoleARN := aws.StringValue(stsOutput.Arn)
-	lg.Info("created AWS session",
-		zap.String("aws-account-id", awsAccountID),
-		zap.String("aws-user-id", awsUserID),
-		zap.String("aws-iam-role-arn", awsIAMRoleARN),
-	)
 
 	cli, err := k8s_client.NewEKS(&k8s_client.EKSConfig{
 		Logger:         lg,

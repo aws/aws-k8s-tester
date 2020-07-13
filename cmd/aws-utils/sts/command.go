@@ -53,13 +53,15 @@ func stsFunc(cmd *cobra.Command, args []string) {
 		Partition:     partition,
 		Region:        region,
 	})
-	if err != nil {
-		lg.Fatal("failed to create AWS session", zap.Error(err))
+	if stsOutput == nil || err != nil {
+		lg.Fatal("failed to create AWS session and get sts caller identity", zap.Error(err))
 	}
+
 	roleARN := aws.StringValue(stsOutput.Arn)
-	fmt.Fprintf(os.Stderr, "Account: %q\n", aws.StringValue(stsOutput.Account))
+	fmt.Fprintf(os.Stderr, "\nAccount: %q\n", aws.StringValue(stsOutput.Account))
 	fmt.Fprintf(os.Stderr, "Role Arn: %q\n", roleARN)
-	fmt.Fprintf(os.Stderr, "UserId: %q\n", aws.StringValue(stsOutput.UserId))
+	fmt.Fprintf(os.Stderr, "UserId: %q\n\n", aws.StringValue(stsOutput.UserId))
+
 	if matchExactRoleARN != "" {
 		if matchExactRoleARN != roleARN {
 			fmt.Fprintf(os.Stderr, "STS CALLER ROLE MATCH EXACT FAIL: Role ARN expected %q, but got %q\n", matchExactRoleARN, roleARN)
@@ -67,6 +69,7 @@ func stsFunc(cmd *cobra.Command, args []string) {
 		}
 		fmt.Fprintf(os.Stderr, "STS CALLER ROLE MATCH EXACT SUCCESS: Role ARN expected %q == %q\n", matchExactRoleARN, roleARN)
 	}
+
 	if matchContainRoleARN != "" {
 		if !strings.Contains(roleARN, matchContainRoleARN) {
 			fmt.Fprintf(os.Stderr, "STS CALLER ROLE MATCH CONTAIN FAIL: Role ARN expected to contain %q, but got %q\n", matchContainRoleARN, roleARN)
