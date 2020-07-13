@@ -157,10 +157,10 @@ func IsDirWriteable(dir string) error {
 	if !Exist(dir) {
 		return nil
 	}
-	f := filepath.Join(dir, ".touch")
+	f := filepath.Join(dir, "test"+randutil.String(15))
 	// grants owner to make/remove files inside the directory
 	if err := ioutil.WriteFile(f, []byte(""), 0700); err != nil {
 		return err
 	}
-	return os.Remove(f)
+	return os.RemoveAll(f)
 }

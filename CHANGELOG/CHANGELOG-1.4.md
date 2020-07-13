@@ -36,6 +36,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 
 ## `pkg`
 
+- Fix [`pkg/fileutil.IsDirWriteable` `os.RemoveAll`](https://github.com/aws/aws-k8s-tester/commit/).
+  - Fix `"failed to write dir remove /var/log/.touch: no such file or directory"` in remote testers.
 - Add [`pkg/k8s-client.WaitForDeploymentCompletes`](https://github.com/aws/aws-k8s-tester/commit/a8a69c5e092abf88ff7e0ddb636c4ce8400cf2f1).
 - Add [`pkg/k8s-client.WithPodFunc` to debug job pod failures](https://github.com/aws/aws-k8s-tester/commit/f245f770980daacf9f462a0d62c3c95c845a1477).
 - Use [regional STS endpoint by default in `pkg/aws`](https://github.com/aws/aws-k8s-tester/commit/6f1a3f830933713e17f0c059532d3cd77fa2587e).
