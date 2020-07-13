@@ -585,15 +585,15 @@ const TemplateConfigMap = `
 #!/usr/bin/env bash
 set -e
 
-printf "\nhttp://169.254.169.254/latest/meta-data/ami-id:\n"
-curl -v http://169.254.169.254/latest/meta-data/ami-id || true
-
 printf "\n"
 aws --version
 /s3-utils version
 /sts-utils version
 
-printf "\nProjected ServiceAccount token AWS_WEB_IDENTITY_TOKEN_FILE:\n"
+printf "\nhttp://169.254.169.254/latest/meta-data/ami-id:\n"
+curl -v http://169.254.169.254/latest/meta-data/ami-id || true
+
+printf "\n\nProjected ServiceAccount token AWS_WEB_IDENTITY_TOKEN_FILE:\n"
 cat $AWS_WEB_IDENTITY_TOKEN_FILE; echo
 
 printf "\nHOSTNAME:\n"
