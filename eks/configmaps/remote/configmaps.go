@@ -142,7 +142,7 @@ func (ts *tester) Create() (err error) {
 			descArgs := []string{
 				ts.cfg.EKSConfig.KubectlPath,
 				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-				"--namespace=" + ts.cfg.EKSConfig.AddOnCSRsRemote.Namespace,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnConfigmapsRemote.Namespace,
 				"describe",
 				"job",
 				configmapsJobName,
@@ -761,7 +761,7 @@ func (ts *tester) checkResults() (err error) {
 	if err == nil {
 		ts.cfg.Logger.Info("reading writes results raw",
 			zap.String("writes-dir", writesDirRaw),
-			zap.String("s3-dir", path.Dir(ts.cfg.EKSConfig.AddOnCSRsRemote.RequestsRawWritesJSONS3Key)),
+			zap.String("s3-dir", path.Dir(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsRawWritesJSONS3Key)),
 		)
 		cnt := 0
 		err = filepath.Walk(writesDirRaw, func(fpath string, info os.FileInfo, werr error) error {
