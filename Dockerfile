@@ -27,19 +27,20 @@ COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/_tmp/cl
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/_tmp/clusterloader2-testing-load/config.yaml /clusterloader2-test-config.yaml
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/_tmp/clusterloader2 /clusterloader2
 RUN rm -rf /go/src/github.com/aws/aws-k8s-tester
-RUN chmod +x /aws-k8s-tester /aws-utils /ec2-utils /eks-utils /etcd-utils /cw-utils /clusterloader2
+RUN chmod +x /aws-k8s-tester /cw-utils /ec2-utils /eks-utils /etcd-utils /s3-utils /sts-utils /clusterloader2
 WORKDIR /
 
 RUN curl -o /kubectl -LO https://storage.googleapis.com/kubernetes-release/release/v1.17.6/bin/linux/amd64/kubectl && chmod +x /kubectl && cp /kubectl /usr/local/bin/kubectl
 RUN ls /
 RUN ls /*.yaml
 RUN aws --version
-RUN /aws-utils version
+RUN /aws-k8s-tester version
+RUN /cw-utils version
 RUN /ec2-utils version
 RUN /eks-utils version
 RUN /etcd-utils version
-RUN /cw-utils version
-RUN /aws-k8s-tester version
+RUN /s3-utils version
+RUN /sts-utils version
 RUN cat /clusterloader2-test-config.yaml
 RUN /clusterloader2 --help || true
 RUN kubectl version --client=true

@@ -608,8 +608,13 @@ const TemplateConfigMap = `
 #!/usr/bin/env bash
 set -e
 
+printf "\nhttp://169.254.169.254/latest/meta-data/ami-id:\n"
+curl -v http://169.254.169.254/latest/meta-data/ami-id || true
+
+printf "\n"
 aws --version
-/aws-utils version
+/s3-utils version
+/sts-utils version
 
 printf "\nProjected ServiceAccount token AWS_WEB_IDENTITY_TOKEN_FILE:\n"
 cat $AWS_WEB_IDENTITY_TOKEN_FILE; echo
@@ -620,18 +625,22 @@ echo $HOSTNAME
 printf "\nAWS_ROLE_ARN:\n"
 echo $AWS_ROLE_ARN
 
-printf "\n'aws-utils sts' output:\n"
-/aws-utils sts --log-level debug --partition {{.Partition}} --region {{.Region}} || true
+printf "\n'sts-utils get-caller-identity' output:\n"
+/sts-utils get-caller-identity --log-level debug --partition {{.Partition}} --region {{.Region}} || true
 
-printf "\n'aws s3 cp':\n"
-aws s3 cp s3://{{ .S3BucketName }}/{{ .S3Key }} /tmp/$HOSTNAME.s3.output;
+# printf "\n'aws s3 cp':\n"
+# aws s3 cp s3://{{ .S3BucketName }}/{{ .S3Key }} /tmp/$HOSTNAME.s3.output;
+
+printf "\n's3-utils cp':\n"
+/s3-utils cp --log-level info --partition {{.Partition}} --region {{.Region}} --s3-bucket {{ .S3BucketName }} --s3-key {{ .S3Key }} --local-path /var/log/$HOSTNAME.s3.output;
+
 printf "\n"
 echo {{ .S3Key }} contents:
 cat /tmp/$HOSTNAME.s3.output;
 printf "\n\nSUCCESS IRSA FARGATE TEST: S3 FILE DOWNLOADED!\n\n"
 
-printf "\n'aws-utils sts' expected role ARN:\n"
-/aws-utils sts --partition {{.Partition}} --region {{.Region}} --match-contain-role-arn {{ .RoleName }}
+printf "\n'sts-utils get-caller-identity' expected role ARN:\n"
+/sts-utils get-caller-identity --partition {{.Partition}} --region {{.Region}} --match-contain-role-arn {{ .RoleName }}
 printf "\nSUCCESS IRSA FARGATE TEST: CALLER_ROLE_ARN FOUND!\n\n"
 
 printf "\n{{ .SleepMessage }}\n\n"
