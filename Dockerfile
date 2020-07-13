@@ -15,11 +15,12 @@ RUN aws --version
 
 ARG RELEASE_VERSION=latest
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/aws-k8s-tester-${RELEASE_VERSION}-linux-amd64 /aws-k8s-tester
-COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/aws-utils-${RELEASE_VERSION}-linux-amd64 /aws-utils
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/ec2-utils-${RELEASE_VERSION}-linux-amd64 /ec2-utils
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/eks-utils-${RELEASE_VERSION}-linux-amd64 /eks-utils
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/etcd-utils-${RELEASE_VERSION}-linux-amd64 /etcd-utils
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/cw-utils-${RELEASE_VERSION}-linux-amd64 /cw-utils
+COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/s3-utils-${RELEASE_VERSION}-linux-amd64 /s3-utils
+COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/sts-utils-${RELEASE_VERSION}-linux-amd64 /sts-utils
 # must copy all files from https://github.com/kubernetes/perf-tests/tree/master/clusterloader2/testing/load
 # the main config.yaml reads other resource spec (e.g. job.yaml) from the same directory
 # RUN curl -o /clusterloader2-test-config.yaml -LO https://raw.githubusercontent.com/kubernetes/perf-tests/master/clusterloader2/testing/load/config.yaml
