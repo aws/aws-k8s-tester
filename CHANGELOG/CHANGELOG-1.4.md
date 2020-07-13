@@ -43,6 +43,41 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 - Use [regional STS endpoint by default in `pkg/aws`](https://github.com/aws/aws-k8s-tester/commit/6f1a3f830933713e17f0c059532d3cd77fa2587e).
 
 
+```diff
+# Upgrading Kubernetes to "v1.19" is reverted...
+-### Dependency
+-
+-- Upgrade [`github.com/kubernetes/kubernetes`](https://github.com/kubernetes/kubernetes/releases) from [`v1.18.6-rc.0`](https://github.com/kubernetes/kubernetes/releases/tag/v1.18.6-rc.0) to [`v1.19.0-rc.0`](https://github.com/kubernetes/kubernetes/releases/tag/v1.19.0-rc.0).
+-- Upgrade [`github.com/kubernetes/client-go`](https://github.com/kubernetes/client-go/releases) from [`v0.18.6-rc.0`](https://github.com/kubernetes/clienthttps://github.com/kubernetes/client-go/releases/tag/v0.18.6-rc.0) to [`v0.19.0-rc.0`](https://github.com/kubernetes/client-go/releases/tag/v0.19.0-rc.0).
+-  - See [commit `0e4cbc8e` for all the `eks` changes](https://github.com/aws/aws-k8s-tester/commit/0e4cbc8e0a3b7c7f3808e40205ecf5dc6d3ddbe9).
+-  - See [commit `f1a984e3` for all the `vendor` changes](https://github.com/aws/aws-k8s-tester/commit/f1a984e394c880a1864327f97bb54ffab94e48f8).
+-  - ref. https://github.com/kubernetes/kubernetes/pull/90552 changes `k8s.io/kubernetes/pkg/kubelet/remote` to `k8s.io/kubernetes/pkg/kubelet/cri/remote`.
+```
+
+```bash
+# github.com/containerd/containerd/sys
+vendor/github.com/containerd/containerd/sys/proc.go:33:34: undefined: system.GetClockTicks
+github.com/google/cadvisor/container/raw
+# github.com/google/cadvisor/container/raw
+vendor/github.com/google/cadvisor/container/raw/handler.go:62:20: undefined: "github.com/opencontainers/runc/libcontainer/cgroups/fs".Manager
+# github.com/google/cadvisor/container/docker
+vendor/github.com/google/cadvisor/container/docker/handler.go:140:20: undefined: "github.com/opencontainers/runc/libcontainer/cgroups/fs".Manager
+# github.com/google/cadvisor/container/containerd
+vendor/github.com/google/cadvisor/container/containerd/handler.go:72:20: undefined: "github.com/opencontainers/runc/libcontainer/cgroups/fs".Manager
+github.com/google/cadvisor/container/crio
+# github.com/google/cadvisor/container/crio
+vendor/github.com/google/cadvisor/container/crio/handler.go:74:23: undefined: "github.com/opencontainers/runc/libcontainer/cgroups/fs".Manager
+vendor/github.com/google/cadvisor/container/crio/handler.go:98:20: undefined: "github.com/opencontainers/runc/libcontainer/cgroups/fs".Manager
+github.com/aws/aws-k8s-tester/pkg/aws
+github.com/aws/aws-k8s-tester/eks/cluster-loader
+github.com/aws/aws-k8s-tester/pkg/k8s-client
+# helm.sh/helm/v3/pkg/kube
+vendor/helm.sh/helm/v3/pkg/kube/client.go:180:26: too many arguments in call to helper.Get
+vendor/helm.sh/helm/v3/pkg/kube/client.go:180:58: info.Export undefined (type *"k8s.io/cli-runtime/pkg/resource".Info has no field or method Export)
+vendor/helm.sh/helm/v3/pkg/kube/client.go:380:31: too many arguments in call to helper.Get
+vendor/helm.sh/helm/v3/pkg/kube/client.go:380:69: target.Export undefined (type *"k8s.io/cli-runtime/pkg/resource".Info has no field or method Export)
+vendor/helm.sh/helm/v3/pkg/kube/client.go:485:11: undefined: "k8s.io/client-go/tools/watch".ListWatchUntil
+```
 
 <hr>
 
