@@ -1,5 +1,5 @@
-// Package sts implements "aws sts get-caller-identity" commands.
-package sts
+// Package getcalleridentity implements "aws sts get-caller-identity" commands.
+package getcalleridentity
 
 import (
 	"fmt"
@@ -25,12 +25,12 @@ func init() {
 	cobra.EnablePrefixMatching = true
 }
 
-// NewCommand implements "aws-utils sts" command.
+// NewCommand implements "sts-utils get-caller-identity" command.
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "sts [OUTPUT-PATH]",
-		Short: "AWS sts commands",
-		Run:   stsFunc,
+		Use:   "get-caller-identity",
+		Short: "AWS sts get-caller-identity commands",
+		Run:   getCallerIdentityFunc,
 	}
 	cmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "Log level (debug, info, warn, error, dpanic, panic, fatal)")
 	cmd.PersistentFlags().StringVar(&partition, "partition", "aws", "AWS partition")
@@ -40,7 +40,7 @@ func NewCommand() *cobra.Command {
 	return cmd
 }
 
-func stsFunc(cmd *cobra.Command, args []string) {
+func getCallerIdentityFunc(cmd *cobra.Command, args []string) {
 	lcfg := logutil.GetDefaultZapLoggerConfig()
 	lcfg.Level = zap.NewAtomicLevelAt(logutil.ConvertToZapLevel(logLevel))
 	lg, err := lcfg.Build()
