@@ -597,9 +597,6 @@ echo $HOSTNAME
 printf "\nAWS_ROLE_ARN:\n"
 echo $AWS_ROLE_ARN
 
-printf "\n'aws sts get-caller-identity' output:\n"
-aws --debug --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity || true
-
 printf "\n'aws-utils sts' output:\n"
 /aws-utils sts --log-level debug --partition {{.Partition}} --region {{.Region}} || true
 
@@ -622,6 +619,9 @@ printf "\nSUCCESS IRSA TEST: EXITING...\n\n"
 `
 
 /*
+printf "\n'aws sts get-caller-identity' output:\n"
+aws --debug --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity || true
+
 CALLER_ROLE_ARN=$(aws --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity --query Arn --output text || true)
 echo $CALLER_ROLE_ARN
 if [[ $CALLER_ROLE_ARN =~ *{{ .RoleName }}* ]]; then

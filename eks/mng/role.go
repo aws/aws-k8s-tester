@@ -146,6 +146,7 @@ Resources:
             - iam:CreateServiceLinkedRole
             - iam:GetServerCertificate
             - iam:ListServerCertificates
+            - iam:SetSecurityTokenServicePreferences
             Resource: "*"
           - Effect: Allow
             Action:
