@@ -616,12 +616,6 @@ aws --version
 printf "\nhttp://169.254.169.254/latest/meta-data/ami-id with IMDBv1:\n"
 curl -v http://169.254.169.254/latest/meta-data/ami-id || true
 
-# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
-printf "\nhttp://169.254.169.254/latest/meta-data/ami-id with IMDBv2:\n"
-TOKEN=` + "`" + `curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` + "`" + `\
-&& curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/ami-id || true
-printf "\n"
-
 printf "\n\nProjected ServiceAccount token AWS_WEB_IDENTITY_TOKEN_FILE:\n"
 cat $AWS_WEB_IDENTITY_TOKEN_FILE; echo
 
@@ -657,6 +651,12 @@ printf "\nSUCCESS IRSA FARGATE TEST: EXITING...\n\n"
 `
 
 /*
+# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
+printf "\nhttp://169.254.169.254/latest/meta-data/ami-id with IMDBv2:\n"
+TOKEN=` + "`" + `curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` + "`" + `\
+&& curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/ami-id || true
+printf "\n"
+
 printf "\n'aws sts get-caller-identity' output:\n"
 aws --debug --cli-read-timeout=5 --cli-connect-timeout=5 sts get-caller-identity || true
 
