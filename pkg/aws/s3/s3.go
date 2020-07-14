@@ -500,11 +500,26 @@ func download(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Key string, 
 	ret := Op{verbose: false, overwrite: false}
 	ret.applyOpts(opts)
 
-	lg.Info("downloading object", zap.String("s3-bucket", bucket), zap.String("s3-key", s3Key))
-	resp, err := s3API.GetObject(&s3.GetObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(s3Key),
-	})
+	lg.Info("downloading object",
+		zap.String("s3-bucket", bucket),
+		zap.String("s3-key", s3Key),
+		zap.String("timeout", ret.timeout.String()),
+	)
+	ctx, reqOpts := context.Background(), make([]request.Option, 0)
+	if ret.timeout > 0 {
+		var cancelFunc func()
+		ctx, cancelFunc = context.WithTimeout(context.Background(), ret.timeout)
+		defer cancelFunc()
+		reqOpts = append(reqOpts, request.WithResponseReadTimeout(ret.timeout))
+	}
+	resp, err := s3API.GetObjectWithContext(
+		ctx,
+		&s3.GetObjectInput{
+			Bucket: aws.String(bucket),
+			Key:    aws.String(s3Key),
+		},
+		reqOpts...,
+	)
 	if err != nil {
 		lg.Warn("failed to get object", zap.String("s3-bucket", bucket), zap.String("s3-key", s3Key), zap.Error(err))
 		return err
@@ -648,6 +663,7 @@ func DownloadDir(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Dir strin
 type Op struct {
 	verbose   bool
 	overwrite bool
+	timeout   time.Duration
 }
 
 // OpOption configures archiver operations.
@@ -661,6 +677,11 @@ func WithVerbose(b bool) OpOption {
 // WithOverwrite configures overwrites.
 func WithOverwrite(b bool) OpOption {
 	return func(op *Op) { op.overwrite = b }
+}
+
+// WithTimeout configures request timeouts.
+func WithTimeout(timeout time.Duration) OpOption {
+	return func(op *Op) { op.timeout = timeout }
 }
 
 func (op *Op) applyOpts(opts []OpOption) {
