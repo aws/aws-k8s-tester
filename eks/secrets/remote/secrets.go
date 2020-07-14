@@ -142,7 +142,7 @@ func (ts *tester) Create() (err error) {
 			descArgs := []string{
 				ts.cfg.EKSConfig.KubectlPath,
 				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-				"--namespace=" + ts.cfg.EKSConfig.AddOnStresserRemote.Namespace,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnSecretsRemote.Namespace,
 				"describe",
 				"job",
 				secretsJobName,
