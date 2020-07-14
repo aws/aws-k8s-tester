@@ -824,8 +824,8 @@ func NewDefault() *Config {
 
 		// read-only
 		Status: &Status{
-			Up:                    false,
-			PrivateDNSToSSHConfig: make(map[string]SSHConfig),
+			Up:                   false,
+			PrivateDNSToNodeInfo: make(map[string]NodeInfo),
 		},
 	}
 
@@ -1185,8 +1185,8 @@ func (cfg *Config) validateConfig() error {
 
 	if cfg.Status == nil {
 		cfg.Status = &Status{
-			Up:                    false,
-			PrivateDNSToSSHConfig: make(map[string]SSHConfig),
+			Up:                   false,
+			PrivateDNSToNodeInfo: make(map[string]NodeInfo),
 		}
 	}
 	if cfg.Status.ClusterCFNStackYAMLPath == "" {

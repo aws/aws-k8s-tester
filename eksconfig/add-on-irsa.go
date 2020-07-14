@@ -44,13 +44,10 @@ type AddOnIRSA struct {
 	// RoleName is the role name for IRSA.
 	RoleName string `json:"role-name"`
 	// RoleARN is the role ARN for IRSA.
-	RoleARN string `json:"role-arn"`
-	// RoleManagedPolicyARNs is IRSA role managed policy ARNs.
-	// ref. https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/
-	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
-	RoleCFNStackYAMLPath  string   `json:"role-cfn-stack-yaml-path" read-only:"true"`
-	RoleCFNStackYAMLS3Key string   `json:"role-cfn-stack-yaml-s3-key" read-only:"true"`
+	RoleARN               string `json:"role-arn"`
+	RoleCFNStackID        string `json:"role-cfn-stack-id" read-only:"true"`
+	RoleCFNStackYAMLPath  string `json:"role-cfn-stack-yaml-path" read-only:"true"`
+	RoleCFNStackYAMLS3Key string `json:"role-cfn-stack-yaml-s3-key" read-only:"true"`
 
 	// S3Key is the S3 key to write for IRSA tests.
 	S3Key string `json:"s3-key"`
@@ -143,7 +140,7 @@ func (cfg *Config) validateAddOnIRSA() error {
 	}
 
 	if cfg.AddOnIRSA.S3Key == "" {
-		cfg.AddOnIRSA.S3Key = path.Join(cfg.Name, "irsa-s3-key")
+		cfg.AddOnIRSA.S3Key = path.Join(cfg.AddOnIRSA.S3Dir, "irsa-s3-key")
 	}
 
 	if cfg.AddOnIRSA.DeploymentResultPath == "" {

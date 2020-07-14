@@ -64,21 +64,23 @@ type Status struct {
 	// ClusterStatus represents the status of the cluster.
 	ClusterStatus []ClusterStatus `json:"cluster-status"`
 
-	// PrivateDNSToSSHConfig maps each worker node's private IP to its public IP,
+	// PrivateDNSToNodeInfo maps each worker node's private IP to its public IP,
 	// public DNS, and SSH access user name.
-	// Worker node name in AWS is the node's EC2 instance private DNS.
+	// Kubernetes node object name is the node's EC2 instance private DNS.
 	// This is used for SSH access.
-	PrivateDNSToSSHConfig map[string]SSHConfig `json:"private-dns-to-ssh-config"`
+	PrivateDNSToNodeInfo map[string]NodeInfo `json:"private-dns-to-node-info"`
 }
 
-// SSHConfig represents basic SSH access configuration for worker nodes.
-type SSHConfig struct {
+// NodeInfo represents basic SSH access configuration for worker nodes.
+type NodeInfo struct {
+	NodeGroupName string `json:"node-group-name"`
+	AMIType       string `json:"ami-type"`
 	PublicIP      string `json:"public-ip"`
 	PublicDNSName string `json:"public-dns-name"`
 	UserName      string `json:"user-name"`
 }
 
-func (sc SSHConfig) ToString() string {
+func (sc NodeInfo) ToString() string {
 	b, err := json.Marshal(sc)
 	if err != nil {
 		return fmt.Sprintf("%+v", sc)

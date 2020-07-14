@@ -137,7 +137,7 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 	}
 
 	if cfg.AddOnIRSAFargate.S3Key == "" {
-		cfg.AddOnIRSAFargate.S3Key = path.Join(cfg.Name, "add-on-irsa-fargate-s3-key")
+		cfg.AddOnIRSAFargate.S3Key = path.Join(cfg.AddOnIRSAFargate.S3Dir, "irsa-fargate-s3-key")
 	}
 	// do not prefix with "eks-"
 	// e.g. "The fargate profile name starts with the reserved prefix: 'eks-'."

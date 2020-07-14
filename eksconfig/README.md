@@ -717,7 +717,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_IMAGE_TAG       | read-only "false" | *eksconfig.AddOnIRSA.RepositoryImageTag    | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_NAME                  | read-only "false" | *eksconfig.AddOnIRSA.RoleName              | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_ARN                   | read-only "false" | *eksconfig.AddOnIRSA.RoleARN               | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_MANAGED_POLICY_ARNS   | read-only "false" | *eksconfig.AddOnIRSA.RoleManagedPolicyARNs | []string           |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_CFN_STACK_ID          | read-only "true"  | *eksconfig.AddOnIRSA.RoleCFNStackID        | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_CFN_STACK_YAML_PATH   | read-only "true"  | *eksconfig.AddOnIRSA.RoleCFNStackYAMLPath  | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_CFN_STACK_YAML_S3_KEY | read-only "true"  | *eksconfig.AddOnIRSA.RoleCFNStackYAMLS3Key | string             |

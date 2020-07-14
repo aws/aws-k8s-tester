@@ -386,8 +386,6 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_NAME", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_ROLE_MANAGED_POLICY_ARNS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_S3_KEY")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_IRSA_REPOSITORY_ACCOUNT_ID", "uri")
@@ -1218,10 +1216,6 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnIRSA.RoleName != "hello" {
 		t.Fatalf("unexpected cfg.AddOnIRSA.RoleName %q", cfg.AddOnIRSA.RoleName)
-	}
-	expectedAddOnIRSARoleManagedPolicyARNs := []string{"a", "b", "c"}
-	if !reflect.DeepEqual(cfg.AddOnIRSA.RoleManagedPolicyARNs, expectedAddOnIRSARoleManagedPolicyARNs) {
-		t.Fatalf("unexpected cfg.AddOnIRSA.RoleManagedPolicyARNs %q", cfg.AddOnIRSA.RoleManagedPolicyARNs)
 	}
 	if cfg.AddOnIRSA.S3Key != "hello" {
 		t.Fatalf("unexpected cfg.AddOnIRSA.S3Key %q", cfg.AddOnIRSA.S3Key)
