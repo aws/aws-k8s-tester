@@ -4,11 +4,11 @@ package cp
 import (
 	"fmt"
 	"os"
+	"time"
 
 	pkg_aws "github.com/aws/aws-k8s-tester/pkg/aws"
 	pkg_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -21,6 +21,7 @@ var (
 	s3Bucket  string
 	s3Key     string
 	localPath string
+	timeout   time.Duration
 )
 
 func init() {
@@ -40,6 +41,7 @@ func NewCommand() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&s3Bucket, "s3-bucket", "", "s3 bucket")
 	cmd.PersistentFlags().StringVar(&s3Key, "s3-key", "", "s3 key")
 	cmd.PersistentFlags().StringVar(&localPath, "local-path", "", "local download path")
+	cmd.PersistentFlags().DurationVar(&timeout, "timeout", 5*time.Minute, "request timeout")
 	return cmd
 }
 
@@ -50,22 +52,26 @@ func cpFunc(cmd *cobra.Command, args []string) {
 	if err != nil {
 		panic(err)
 	}
-	ss, stsOutput, _, err := pkg_aws.New(&pkg_aws.Config{
+	ss, _, _, err := pkg_aws.New(&pkg_aws.Config{
 		Logger:        lg,
 		DebugAPICalls: logLevel == "debug",
 		Partition:     partition,
 		Region:        region,
 	})
-	if stsOutput == nil || err != nil {
-		lg.Warn("failed to create AWS session and get sts caller identity", zap.Error(err))
-	} else {
-		roleARN := aws.StringValue(stsOutput.Arn)
-		fmt.Fprintf(os.Stderr, "\nAccount: %q\n", aws.StringValue(stsOutput.Account))
-		fmt.Fprintf(os.Stderr, "Role Arn: %q\n", roleARN)
-		fmt.Fprintf(os.Stderr, "UserId: %q\n\n", aws.StringValue(stsOutput.UserId))
+	if ss == nil {
+		lg.Fatal("failed to create AWS session", zap.Error(err))
+	}
+	if err != nil {
+		lg.Warn("failed to create AWS session or get sts caller identity", zap.Error(err))
 	}
 
-	if err = pkg_s3.Download(lg, s3.New(ss), s3Bucket, s3Key, localPath, pkg_s3.WithOverwrite(true)); err != nil {
+	reqOpts := []pkg_s3.OpOption{
+		pkg_s3.WithOverwrite(true),
+	}
+	if timeout > 0 {
+		reqOpts = append(reqOpts, pkg_s3.WithTimeout(timeout))
+	}
+	if err = pkg_s3.Download(lg, s3.New(ss), s3Bucket, s3Key, localPath, reqOpts...); err != nil {
 		lg.Fatal("failed to download S3 file",
 			zap.String("s3-bucket", s3Bucket),
 			zap.String("s3-key", s3Key),

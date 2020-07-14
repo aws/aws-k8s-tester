@@ -608,7 +608,7 @@ printf "\n'sts-utils get-caller-identity' output:\n"
 # aws s3 cp s3://{{ .S3BucketName }}/{{ .S3Key }} /var/log/$HOSTNAME.s3.output;
 
 printf "\n's3-utils cp':\n"
-/s3-utils cp --log-level info --partition {{.Partition}} --region {{.Region}} --s3-bucket {{ .S3BucketName }} --s3-key {{ .S3Key }} --local-path /var/log/$HOSTNAME.s3.output;
+/s3-utils cp --log-level info --partition {{.Partition}} --region {{.Region}} --s3-bucket {{ .S3BucketName }} --s3-key {{ .S3Key }} --local-path /var/log/$HOSTNAME.s3.output --timeout 10s;
 
 printf "\n"
 echo {{ .S3Key }} contents:
