@@ -22,7 +22,6 @@ import (
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
-	"github.com/aws/aws-k8s-tester/ssh"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -300,45 +299,51 @@ Description: 'Amazon EKS Cluster IRSA Role'
 
 Parameters:
 
-  IRSARoleName:
+  RoleName:
     Type: String
     Description: The name of the IRSA role
 
-  IRSAIssuerARN:
+  IssuerARN:
     Type: String
     Description: EKS IRSA Provider ARN
 
-  IRSANamespace:
+  Namespace:
     Type: String
     Description: The namespace for the IRSA role
 
-  IRSAServiceAccountName:
+  ServiceAccountName:
     Type: String
     Description: The ServiceAccount name for the IRSA role
-
-  IRSARoleManagedPolicyARNs:
-    Type: CommaDelimitedList
-    Default: 'arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess'
-    Description: EKS IRSA policy ARNs
 
 Resources:
 
   IRSARole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Ref IRSARoleName
+      RoleName: !Ref RoleName
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
+        - Effect: Allow
+          Principal:
+            Federated: !Ref IssuerARN
+          Action:
+          - sts:AssumeRoleWithWebIdentity
+          Condition:
+            StringEquals:
+              {{ .IRSAIssuerHostPath }}:sub: !Join [':', ['system:serviceaccount', !Ref Namespace, !Ref ServiceAccountName]]
+      Policies:
+      - PolicyName: !Join ['-', [!Ref RoleName, 's3-policy']]
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
           - Effect: Allow
-            Principal:
-              Federated: !Ref IRSAIssuerARN
             Action:
-            - sts:AssumeRoleWithWebIdentity
-            Condition:
-              StringEquals:
-                {{ .IRSAIssuerHostPath }}:sub: !Join [':', ['system:serviceaccount', !Ref IRSANamespace, !Ref IRSAServiceAccountName]]
-      ManagedPolicyArns: !Ref IRSARoleManagedPolicyARNs
+            - s3:ListBucket
+            - s3:GetObject
+            Resource:
+            - !Join ['', [!Sub 'arn:${AWS::Partition}:s3:::', '{{.S3BucketName}}']]
+            - !Join ['', [!Sub 'arn:${AWS::Partition}:s3:::', '{{.S3BucketName}}', '/', '{{.ClusterName}}', '/*']]
 
 Outputs:
 
@@ -350,6 +355,8 @@ Outputs:
 
 type irsaTemplate struct {
 	IRSAIssuerHostPath string
+	S3BucketName       string
+	ClusterName        string
 }
 
 func (ts *tester) createRole() error {
@@ -366,6 +373,8 @@ func (ts *tester) createRole() error {
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, irsaTemplate{
 		IRSAIssuerHostPath: ts.cfg.EKSConfig.Status.ClusterOIDCIssuerHostPath,
+		S3BucketName:       ts.cfg.EKSConfig.S3BucketName,
+		ClusterName:        ts.cfg.EKSConfig.Name,
 	}); err != nil {
 		return err
 	}
@@ -398,33 +407,23 @@ func (ts *tester) createRole() error {
 		}),
 		Parameters: []*cloudformation.Parameter{
 			{
-				ParameterKey:   aws.String("IRSARoleName"),
+				ParameterKey:   aws.String("RoleName"),
 				ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnIRSA.RoleName),
 			},
 			{
-				ParameterKey:   aws.String("IRSAIssuerARN"),
+				ParameterKey:   aws.String("IssuerARN"),
 				ParameterValue: aws.String(ts.cfg.EKSConfig.Status.ClusterOIDCIssuerARN),
 			},
 			{
-				ParameterKey:   aws.String("IRSANamespace"),
+				ParameterKey:   aws.String("Namespace"),
 				ParameterValue: aws.String(ts.cfg.EKSConfig.AddOnIRSA.Namespace),
 			},
 			{
-				ParameterKey:   aws.String("IRSAServiceAccountName"),
+				ParameterKey:   aws.String("ServiceAccountName"),
 				ParameterValue: aws.String(irsaServiceAccountName),
 			},
 		},
 	}
-	if len(ts.cfg.EKSConfig.AddOnIRSA.RoleManagedPolicyARNs) > 0 {
-		ts.cfg.Logger.Info("creating a new IRSA role with custom managed role policies",
-			zap.Strings("policy-arns", ts.cfg.EKSConfig.AddOnIRSA.RoleManagedPolicyARNs),
-		)
-		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-			ParameterKey:   aws.String("IRSARoleManagedPolicyARNs"),
-			ParameterValue: aws.String(strings.Join(ts.cfg.EKSConfig.AddOnIRSA.RoleManagedPolicyARNs, ",")),
-		})
-	}
-
 	stackOutput, err := ts.cfg.CFNAPI.CreateStack(stackInput)
 	if err != nil {
 		return err
@@ -580,7 +579,7 @@ func (ts *tester) deleteServiceAccount() error {
 // TemplateConfigMap is the IRSA config map.
 // Do not download to the same file paths.
 // e.g. download failed: s3://aws-k8s-tester-eks-s3-bucket/eks-2020062621-misty8up27dz/irsa-s3-key to var/log/output-configmap.log [Errno 16] Device or resource busy: '/var/log/output-configmap.log.75Caa245' -> '/var/log/output-configmap.log'
-// ${HOSTNAME} is same as Pod name
+// ${HOSTNAME} is same as Pod name, writes "/var/log/[POD_NAME].s3.output"
 const TemplateConfigMap = `
 #!/usr/bin/env bash
 set -e
@@ -1080,7 +1079,6 @@ func (ts *tester) checkLogs() error {
 	defer f.Close()
 
 	success := 0
-	sshOpt := ssh.WithVerbose(ts.cfg.EKSConfig.LogLevel == "debug")
 	for _, pod := range pods {
 		podName := pod.Name
 		nodeName := pod.Spec.NodeName
@@ -1092,6 +1090,7 @@ func (ts *tester) checkLogs() error {
 			continue
 		}
 
+		fmt.Fprintf(ts.cfg.LogWriter, "\n*********************************\n")
 		descArgs := []string{
 			ts.cfg.EKSConfig.KubectlPath,
 			"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
@@ -1108,7 +1107,7 @@ func (ts *tester) checkLogs() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to kubectl describe", zap.Error(err))
 		}
-		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descCmd, output)
+		fmt.Fprintf(ts.cfg.LogWriter, "'%s' output:\n\n%s\n\n", descCmd, output)
 
 		logsArgs := []string{
 			ts.cfg.EKSConfig.KubectlPath,
@@ -1126,62 +1125,22 @@ func (ts *tester) checkLogs() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to kubectl logs", zap.Error(err))
 		}
-		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output from pod %q in node %q (expects %q):\n\n%s\n\n", logsCmd, pod.Name, pod.Spec.NodeName, ts.sleepMessage, output)
-		if !strings.Contains(output, ts.sleepMessage) {
-			continue
-		}
-		if _, err = f.WriteString(fmt.Sprintf("'%s' from node %q:\n\n%s\n\n", logsCmd, nodeName, output)); err != nil {
-			ts.cfg.Logger.Warn("failed to write", zap.Error(err))
-			continue
-		}
-		ts.cfg.Logger.Info("checked pod logs, found matching sleep message", zap.String("pod-name", podName))
-
-		cur, ok := ts.cfg.EKSConfig.Status.PrivateDNSToSSHConfig[nodeName]
+		cur, ok := ts.cfg.EKSConfig.Status.PrivateDNSToNodeInfo[nodeName]
 		if !ok {
 			return fmt.Errorf("node %q unknown", nodeName)
 		}
-		ts.cfg.Logger.Info("checking pod output file from node",
-			zap.String("pod-name", podName),
-			zap.String("node-name", nodeName),
-			zap.String("public-ip", cur.PublicIP),
-			zap.String("public-dns-name", cur.PublicDNSName),
-			zap.String("user-name", cur.UserName),
-		)
-		sh, err := ssh.New(ssh.Config{
-			Logger:        ts.cfg.Logger,
-			KeyPath:       ts.cfg.EKSConfig.RemoteAccessPrivateKeyPath,
-			PublicIP:      cur.PublicIP,
-			PublicDNSName: cur.PublicDNSName,
-			UserName:      cur.UserName,
-		})
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to create SSH", zap.Error(err))
+		fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output from pod %q in node %q, node group name %q, node group ami type %q, public IP %q, public DNS name %q, user name %q (expects %q):\n\n%s\n\n", logsCmd, pod.Name, nodeName, cur.NodeGroupName, cur.AMIType, cur.PublicIP, cur.PublicDNSName, cur.UserName, ts.sleepMessage, output)
+		if !strings.Contains(output, ts.sleepMessage) {
+			fmt.Fprintf(ts.cfg.LogWriter, "\n*********************************\n")
 			continue
 		}
-		if err = sh.Connect(); err != nil {
-			ts.cfg.Logger.Warn("failed to connect to SSH", zap.Error(err))
-			sh.Close()
-			continue
-		}
-		catCmd := fmt.Sprintf("sudo cat /var/log/%s.s3.output", podName)
-		runOutput, err = sh.Run(catCmd, sshOpt)
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to run SSH command", zap.Error(err))
-			sh.Close()
-			continue
-		}
-		sh.Close()
-		output = strings.TrimSpace(string(runOutput))
-		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output (expects %q):\n\n%s\n\n", catCmd, ts.testBody, output)
-		if !strings.Contains(output, ts.testBody) {
-			continue
-		}
-		if _, err = f.WriteString(fmt.Sprintf("'%s' from node %q:\n\n%s\n\n", catCmd, nodeName, output)); err != nil {
+		if _, err = f.WriteString(fmt.Sprintf("'%s' from pod %q in node %q, node group name %q, node group ami type %q, public IP %q, public DNS name %q, user name %q:\n\n%s\n\n", logsCmd, pod.Name, nodeName, cur.NodeGroupName, cur.AMIType, cur.PublicIP, cur.PublicDNSName, cur.UserName, output)); err != nil {
 			ts.cfg.Logger.Warn("failed to write", zap.Error(err))
+			fmt.Fprintf(ts.cfg.LogWriter, "\n*********************************\n")
 			continue
 		}
-
-		ts.cfg.Logger.Info("checked pod output file from node, found matching text body", zap.String("pod-name", podName))
+		ts.cfg.Logger.Info("checked pod logs, found matching sleep message", zap.String("pod-name", podName))
+		fmt.Fprintf(ts.cfg.LogWriter, "\n*********************************\n")
 		success++
 	}
 	if success < expects {
@@ -1189,9 +1148,11 @@ func (ts *tester) checkLogs() error {
 			zap.Int("success", success),
 			zap.Int("expects", expects),
 		)
-		return errors.New("IRSA Pods are not ready")
+		if success == 0 {
+			return errors.New("no IRSA Pod is ready")
+		}
+		// TODO: require success >= expects
 	}
-
 	ts.cfg.Logger.Info("checked logs from IRSA pods and nodes",
 		zap.Int("success", success),
 		zap.Int("expects", expects),

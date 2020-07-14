@@ -328,7 +328,7 @@ Parameters:
 
   RoleManagedPolicyARNs:
     Type: CommaDelimitedList
-    Default: 'arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess,arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy'
+    Default: 'arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy'
     Description: EKS IRSA Fargate policy ARNs
 
 Resources:
@@ -355,7 +355,18 @@ Resources:
           - sts:AssumeRole
       ManagedPolicyArns: !Ref RoleManagedPolicyARNs
       Path: /
-
+      Policies:
+      - PolicyName: !Join ['-', [!Ref RoleName, 's3-policy']]
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:ListBucket
+            - s3:GetObject
+            Resource:
+            - !Join ['', [!Sub 'arn:${AWS::Partition}:s3:::', '{{.S3BucketName}}']]
+            - !Join ['', [!Sub 'arn:${AWS::Partition}:s3:::', '{{.S3BucketName}}', '/', '{{.ClusterName}}', '/*']]
 
 Outputs:
 
@@ -367,6 +378,8 @@ Outputs:
 
 type irsaTemplate struct {
 	IRSAIssuerHostPath string
+	S3BucketName       string
+	ClusterName        string
 }
 
 func (ts *tester) createRole() error {
@@ -383,6 +396,8 @@ func (ts *tester) createRole() error {
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, irsaTemplate{
 		IRSAIssuerHostPath: ts.cfg.EKSConfig.Status.ClusterOIDCIssuerHostPath,
+		S3BucketName:       ts.cfg.EKSConfig.S3BucketName,
+		ClusterName:        ts.cfg.EKSConfig.Name,
 	}); err != nil {
 		return err
 	}
@@ -433,7 +448,7 @@ func (ts *tester) createRole() error {
 		},
 	}
 	if len(ts.cfg.EKSConfig.AddOnIRSAFargate.RoleServicePrincipals) > 0 {
-		ts.cfg.Logger.Info("creating a new IRSA role with role service principals",
+		ts.cfg.Logger.Info("creating a new IRSA Fargate role with role service principals",
 			zap.Strings("role-service-principals", ts.cfg.EKSConfig.AddOnIRSAFargate.RoleServicePrincipals),
 		)
 		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
@@ -442,7 +457,7 @@ func (ts *tester) createRole() error {
 		})
 	}
 	if len(ts.cfg.EKSConfig.AddOnIRSAFargate.RoleManagedPolicyARNs) > 0 {
-		ts.cfg.Logger.Info("creating a new IRSA role with custom managed role policies",
+		ts.cfg.Logger.Info("creating a new IRSA Fargate role with custom managed role policies",
 			zap.Strings("policy-arns", ts.cfg.EKSConfig.AddOnIRSAFargate.RoleManagedPolicyARNs),
 		)
 		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{

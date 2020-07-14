@@ -367,6 +367,7 @@ func (ts *tester) waitDeploymentRedisLeader() (err error) {
 				"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 				"logs",
 				"--selector=app.kubernetes.io/name=" + redisLabelName + ",role=" + redisLeaderRoleName,
+				"--timestamps",
 			}
 			logsCmd := strings.Join(logsArgs, " ")
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
@@ -638,6 +639,7 @@ func (ts *tester) waitDeploymentRedisFollower() (err error) {
 				"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 				"logs",
 				"--selector=app.kubernetes.io/name=" + redisLabelName + ",role=" + redisFollowerRoleName,
+				"--timestamps",
 			}
 			logsCmd := strings.Join(logsArgs, " ")
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
@@ -906,6 +908,7 @@ func (ts *tester) waitDeploymentGuestbook() (err error) {
 				"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 				"logs",
 				"--selector=app.kubernetes.io/name=" + nlbGuestbookAppName,
+				"--timestamps",
 			}
 			logsCmd := strings.Join(logsArgs, " ")
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)

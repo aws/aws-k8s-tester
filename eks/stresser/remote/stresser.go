@@ -170,6 +170,7 @@ func (ts *tester) Create() (err error) {
 				"--namespace=" + ts.cfg.EKSConfig.AddOnStresserRemote.Namespace,
 				"logs",
 				"--selector=job-name=" + stresserJobName,
+				"--timestamps",
 				"--tail=10",
 			}
 			cmdLogs := strings.Join(argsLogs, " ")
@@ -214,6 +215,7 @@ func (ts *tester) Create() (err error) {
 					"--namespace=" + pod.Namespace,
 					"logs",
 					fmt.Sprintf("pod/%s", pod.Name),
+					"--timestamps",
 				}
 				logsCmd := strings.Join(logsArgs, " ")
 				ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)

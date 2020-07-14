@@ -710,6 +710,7 @@ func (ts *tester) checkNodes() error {
 		"--namespace=" + ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
 		"logs",
 		"--selector=app.kubernetes.io/name=" + hollowNodesAppName,
+		"--timestamps",
 		"--tail=10",
 	}
 	cmdLogs := strings.Join(argsLogs, " ")

@@ -66,7 +66,7 @@ Resources:
       # https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html
       # https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/iam-policy.json
       # https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller
-      - PolicyName: !Join ['-', [!Ref RoleName, 'alb-appmesh-policy']]
+      - PolicyName: !Join ['-', [!Ref RoleName, 'mng-policy-more']]
         PolicyDocument:
           Version: '2012-10-17'
           Statement:

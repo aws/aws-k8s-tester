@@ -903,6 +903,7 @@ func (ts *tester) create2048Ingress() error {
 		"--namespace=kube-system",
 		"logs",
 		"--selector=app.kubernetes.io/name=" + albIngressControllerName,
+		"--timestamps",
 	}
 	logsCmd := strings.Join(logsArgs, " ")
 

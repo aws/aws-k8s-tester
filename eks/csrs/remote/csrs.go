@@ -189,6 +189,7 @@ func (ts *tester) Create() (err error) {
 					"--namespace=" + pod.Namespace,
 					"logs",
 					fmt.Sprintf("pod/%s", pod.Name),
+					"--timestamps",
 				}
 				logsCmd := strings.Join(logsArgs, " ")
 				ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)

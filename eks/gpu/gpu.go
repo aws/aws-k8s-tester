@@ -454,6 +454,7 @@ func (ts *tester) CreateNvidiaSMI() error {
 		"--namespace=default",
 		"logs",
 		"nvidia-smi",
+		"--timestamps",
 	}
 	logsCmd := strings.Join(logsArgs, " ")
 

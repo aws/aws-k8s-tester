@@ -132,7 +132,9 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 		cur.Instances[id] = ivv
 	}
 	for _, inst := range cur.Instances {
-		ts.cfg.EKSConfig.Status.PrivateDNSToSSHConfig[inst.PrivateDNSName] = eksconfig.SSHConfig{
+		ts.cfg.EKSConfig.Status.PrivateDNSToNodeInfo[inst.PrivateDNSName] = eksconfig.NodeInfo{
+			NodeGroupName: cur.Name,
+			AMIType:       cur.AMIType,
 			PublicIP:      inst.PublicIP,
 			PublicDNSName: inst.PublicDNSName,
 			UserName:      cur.RemoteAccessUserName,
