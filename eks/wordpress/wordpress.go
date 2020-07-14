@@ -15,10 +15,14 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/helm"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/pkg/aws/elb"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"go.uber.org/zap"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 )
@@ -30,6 +34,7 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	ELB2API   elbv2iface.ELBV2API
 }
 
 var pkgName = reflect.TypeOf(tester{}).PkgPath()
@@ -113,6 +118,33 @@ func (ts *tester) Delete() error {
 
 	if err := ts.deleteHelmWordpress(); err != nil {
 		errs = append(errs, err.Error())
+	}
+
+	if err := ts.deleteService(); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete WordPress Service (%v)", err))
+	}
+	ts.cfg.Logger.Info("wait for 3-minute after deleting Service")
+	time.Sleep(3 * time.Minute)
+
+	/*
+	   # NLB tags
+	   kubernetes.io/service-name
+	   leegyuho-test-prod-nlb-hello-world/hello-world-service
+
+	   kubernetes.io/cluster/leegyuho-test-prod
+	   owned
+	*/
+	if err := elb.DeleteELBv2(
+		ts.cfg.Logger,
+		ts.cfg.ELB2API,
+		ts.cfg.EKSConfig.AddOnWordpress.NLBARN,
+		ts.cfg.EKSConfig.Parameters.VPCID,
+		map[string]string{
+			"kubernetes.io/cluster/" + ts.cfg.EKSConfig.Name: "owned",
+			"kubernetes.io/service-name":                     ts.cfg.EKSConfig.AddOnWordpress.Namespace + "/" + wordpressServiceName,
+		},
+	); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete WordPress (%v)", err))
 	}
 
 	if err := k8s_client.DeleteNamespaceAndWait(
@@ -220,7 +252,6 @@ func (ts *tester) deleteHelmWordpress() error {
 }
 
 func (ts *tester) waitService() error {
-	svcName := "wordpress"
 	ts.cfg.Logger.Info("waiting for WordPress service")
 
 	waitDur := 2 * time.Minute
@@ -237,7 +268,7 @@ func (ts *tester) waitService() error {
 		"--namespace=" + ts.cfg.EKSConfig.AddOnWordpress.Namespace,
 		"describe",
 		"svc",
-		svcName,
+		wordpressServiceName,
 	}
 	argsCmd := strings.Join(args, " ")
 	hostName := ""
@@ -264,7 +295,7 @@ func (ts *tester) waitService() error {
 		so, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
 			Services(ts.cfg.EKSConfig.AddOnWordpress.Namespace).
-			Get(ctx, svcName, metav1.GetOptions{})
+			Get(ctx, wordpressServiceName, metav1.GetOptions{})
 		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to get WordPress service; retrying", zap.Error(err))
@@ -351,5 +382,32 @@ func (ts *tester) waitService() error {
 	fmt.Fprintf(ts.cfg.LogWriter, "WordPress UserName: %s\n", ts.cfg.EKSConfig.AddOnWordpress.UserName)
 	fmt.Fprintf(ts.cfg.LogWriter, "WordPress Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnWordpress.Password))
 
+	return ts.cfg.EKSConfig.Sync()
+}
+
+const wordpressServiceName = "wordpress"
+
+func (ts *tester) deleteService() error {
+	ts.cfg.Logger.Info("deleting wordpress Service")
+	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	err := ts.cfg.K8SClient.KubernetesClientSet().
+		CoreV1().
+		Services(ts.cfg.EKSConfig.AddOnWordpress.Namespace).
+		Delete(
+			ctx,
+			wordpressServiceName,
+			metav1.DeleteOptions{
+				GracePeriodSeconds: aws.Int64(0),
+				PropagationPolicy:  &foreground,
+			},
+		)
+	cancel()
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
+		return fmt.Errorf("failed to delete wordpress Service (%v)", err)
+	}
+
+	ts.cfg.Logger.Info("deleted wordpress Service", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }

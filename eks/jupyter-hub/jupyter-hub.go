@@ -16,10 +16,12 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/helm"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/pkg/aws/elb"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -36,6 +38,7 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	ELB2API   elbv2iface.ELBV2API
 }
 
 var pkgName = reflect.TypeOf(tester{}).PkgPath()
@@ -134,6 +137,33 @@ func (ts *tester) Delete() error {
 
 	if err := ts.deleteTillerServiceAccount(); err != nil {
 		errs = append(errs, err.Error())
+	}
+
+	if err := ts.deleteService(); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete WordPress Service (%v)", err))
+	}
+	ts.cfg.Logger.Info("wait for 3-minute after deleting Service")
+	time.Sleep(3 * time.Minute)
+
+	/*
+	   # NLB tags
+	   kubernetes.io/service-name
+	   leegyuho-test-prod-nlb-hello-world/hello-world-service
+
+	   kubernetes.io/cluster/leegyuho-test-prod
+	   owned
+	*/
+	if err := elb.DeleteELBv2(
+		ts.cfg.Logger,
+		ts.cfg.ELB2API,
+		ts.cfg.EKSConfig.AddOnJupyterHub.NLBARN,
+		ts.cfg.EKSConfig.Parameters.VPCID,
+		map[string]string{
+			"kubernetes.io/cluster/" + ts.cfg.EKSConfig.Name: "owned",
+			"kubernetes.io/service-name":                     ts.cfg.EKSConfig.AddOnJupyterHub.Namespace + "/" + jupyterHubServiceName,
+		},
+	); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete WordPress (%v)", err))
 	}
 
 	if err := k8s_client.DeleteNamespaceAndWait(
@@ -381,7 +411,6 @@ func (ts *tester) deleteHelmJupyterHub() error {
 }
 
 func (ts *tester) waitService() error {
-	svcName := "proxy-public"
 	ts.cfg.Logger.Info("waiting for JupyterHub service")
 
 	waitDur := 2 * time.Minute
@@ -398,7 +427,7 @@ func (ts *tester) waitService() error {
 		"--namespace=" + ts.cfg.EKSConfig.AddOnJupyterHub.Namespace,
 		"describe",
 		"svc",
-		svcName,
+		jupyterHubServiceName,
 	}
 	argsCmd := strings.Join(args, " ")
 	hostName := ""
@@ -425,7 +454,7 @@ func (ts *tester) waitService() error {
 		so, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
 			Services(ts.cfg.EKSConfig.AddOnJupyterHub.Namespace).
-			Get(ctx, svcName, metav1.GetOptions{})
+			Get(ctx, jupyterHubServiceName, metav1.GetOptions{})
 		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to get JupyterHub service; retrying", zap.Error(err))
@@ -508,5 +537,32 @@ func (ts *tester) waitService() error {
 	fmt.Fprintf(ts.cfg.LogWriter, "NLB JupyterHub Name: %s\n", ts.cfg.EKSConfig.AddOnJupyterHub.NLBName)
 	fmt.Fprintf(ts.cfg.LogWriter, "NLB JupyterHub URL: %s\n\n", ts.cfg.EKSConfig.AddOnJupyterHub.URL)
 
+	return ts.cfg.EKSConfig.Sync()
+}
+
+const jupyterHubServiceName = "proxy-public"
+
+func (ts *tester) deleteService() error {
+	ts.cfg.Logger.Info("deleting JupyterHub Service")
+	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	err := ts.cfg.K8SClient.KubernetesClientSet().
+		CoreV1().
+		Services(ts.cfg.EKSConfig.AddOnJupyterHub.Namespace).
+		Delete(
+			ctx,
+			jupyterHubServiceName,
+			metav1.DeleteOptions{
+				GracePeriodSeconds: aws.Int64(0),
+				PropagationPolicy:  &foreground,
+			},
+		)
+	cancel()
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
+		return fmt.Errorf("failed to delete JupyterHub Service (%v)", err)
+	}
+
+	ts.cfg.Logger.Info("deleted JupyterHub Service", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }

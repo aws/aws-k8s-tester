@@ -160,8 +160,8 @@ func (ts *tester) Delete() error {
 	if err := ts.deleteServiceGuestbook(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB guestbook Service (%v)", err))
 	}
-	ts.cfg.Logger.Info("wait for a minute after deleting Service")
-	time.Sleep(time.Minute)
+	ts.cfg.Logger.Info("wait for 3-minute after deleting Service")
+	time.Sleep(3 * time.Minute)
 	if err := ts.deleteDeploymentGuestbook(); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete NLB guestbook Deployment (%v)", err))
 	}

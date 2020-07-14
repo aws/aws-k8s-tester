@@ -15,10 +15,14 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/helm"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	"github.com/aws/aws-k8s-tester/pkg/aws/elb"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"go.uber.org/zap"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 )
@@ -30,6 +34,7 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	ELB2API   elbv2iface.ELBV2API
 }
 
 var pkgName = reflect.TypeOf(tester{}).PkgPath()
@@ -132,6 +137,33 @@ func (ts *tester) Delete() error {
 
 	if err := ts.deleteHelmPrometheus(); err != nil {
 		errs = append(errs, err.Error())
+	}
+
+	if err := ts.deleteGrafanaService(); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete Grafana Service (%v)", err))
+	}
+	ts.cfg.Logger.Info("wait for 3-minute after deleting Service")
+	time.Sleep(3 * time.Minute)
+
+	/*
+	   # NLB tags
+	   kubernetes.io/service-name
+	   leegyuho-test-prod-nlb-hello-world/hello-world-service
+
+	   kubernetes.io/cluster/leegyuho-test-prod
+	   owned
+	*/
+	if err := elb.DeleteELBv2(
+		ts.cfg.Logger,
+		ts.cfg.ELB2API,
+		ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaNLBARN,
+		ts.cfg.EKSConfig.Parameters.VPCID,
+		map[string]string{
+			"kubernetes.io/cluster/" + ts.cfg.EKSConfig.Name: "owned",
+			"kubernetes.io/service-name":                     "grafana/" + grafanaServiceName,
+		},
+	); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete Grafana (%v)", err))
 	}
 
 	if err := k8s_client.DeleteNamespaceAndWait(
@@ -363,7 +395,6 @@ func (ts *tester) deleteHelmGrafana() error {
 }
 
 func (ts *tester) waitServiceGrafana() error {
-	svcName := "grafana"
 	ts.cfg.Logger.Info("waiting for Grafana service")
 
 	waitDur := 2 * time.Minute
@@ -380,7 +411,7 @@ func (ts *tester) waitServiceGrafana() error {
 		"--namespace=" + chartNameGrafana,
 		"describe",
 		"svc",
-		svcName,
+		grafanaServiceName,
 	}
 	argsCmd := strings.Join(args, " ")
 	hostName := ""
@@ -407,7 +438,7 @@ func (ts *tester) waitServiceGrafana() error {
 		so, err := ts.cfg.K8SClient.KubernetesClientSet().
 			CoreV1().
 			Services(chartNameGrafana).
-			Get(ctx, svcName, metav1.GetOptions{})
+			Get(ctx, grafanaServiceName, metav1.GetOptions{})
 		cancel()
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to get Grafana service; retrying", zap.Error(err))
@@ -494,5 +525,32 @@ func (ts *tester) waitServiceGrafana() error {
 	fmt.Fprintf(ts.cfg.LogWriter, "Grafana Admin User Name: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminUserName)
 	fmt.Fprintf(ts.cfg.LogWriter, "Grafana Admin Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminPassword))
 
+	return ts.cfg.EKSConfig.Sync()
+}
+
+const grafanaServiceName = "grafana"
+
+func (ts *tester) deleteGrafanaService() error {
+	ts.cfg.Logger.Info("deleting grafana Service")
+	foreground := metav1.DeletePropagationForeground
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	err := ts.cfg.K8SClient.KubernetesClientSet().
+		CoreV1().
+		Services(chartNamespaceGrafana).
+		Delete(
+			ctx,
+			grafanaServiceName,
+			metav1.DeleteOptions{
+				GracePeriodSeconds: aws.Int64(0),
+				PropagationPolicy:  &foreground,
+			},
+		)
+	cancel()
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
+		return fmt.Errorf("failed to delete grafana Service (%v)", err)
+	}
+
+	ts.cfg.Logger.Info("deleted grafana Service", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }

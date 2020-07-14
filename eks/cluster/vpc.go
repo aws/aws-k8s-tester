@@ -897,7 +897,6 @@ func (ts *tester) deleteVPC() error {
 		2*time.Minute,
 		20*time.Second,
 	)
-
 	var st cfn.StackStatus
 	for st = range ch {
 		if st.Error != nil {

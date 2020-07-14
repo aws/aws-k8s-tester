@@ -528,6 +528,7 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			ELB2API:   ts.elbv2API,
 		}),
 		php_apache.New(php_apache.Config{
 			Logger:    ts.lg,
@@ -682,6 +683,7 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			ELB2API:   ts.elbv2API,
 		}),
 		jupyter_hub.New(jupyter_hub.Config{
 			Logger:    ts.lg,
@@ -689,6 +691,7 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			ELB2API:   ts.elbv2API,
 		}),
 		kubeflow.New(kubeflow.Config{
 			Logger:    ts.lg,
