@@ -54,7 +54,6 @@ type Show struct {
 	ChartPathOptions
 	Devel        bool
 	OutputFormat ShowOutputFormat
-	chart        *chart.Chart // for testing
 }
 
 // NewShow creates a new Show object with the given configuration.
@@ -66,28 +65,25 @@ func NewShow(output ShowOutputFormat) *Show {
 
 // Run executes 'helm show' against the given release.
 func (s *Show) Run(chartpath string) (string, error) {
-	if s.chart == nil {
-		chrt, err := loader.Load(chartpath)
-		if err != nil {
-			return "", err
-		}
-		s.chart = chrt
+	var out strings.Builder
+	chrt, err := loader.Load(chartpath)
+	if err != nil {
+		return "", err
 	}
-	cf, err := yaml.Marshal(s.chart.Metadata)
+	cf, err := yaml.Marshal(chrt.Metadata)
 	if err != nil {
 		return "", err
 	}
 
-	var out strings.Builder
 	if s.OutputFormat == ShowChart || s.OutputFormat == ShowAll {
 		fmt.Fprintf(&out, "%s\n", cf)
 	}
 
-	if (s.OutputFormat == ShowValues || s.OutputFormat == ShowAll) && s.chart.Values != nil {
+	if (s.OutputFormat == ShowValues || s.OutputFormat == ShowAll) && chrt.Values != nil {
 		if s.OutputFormat == ShowAll {
 			fmt.Fprintln(&out, "---")
 		}
-		for _, f := range s.chart.Raw {
+		for _, f := range chrt.Raw {
 			if f.Name == chartutil.ValuesfileName {
 				fmt.Fprintln(&out, string(f.Data))
 			}
@@ -98,7 +94,7 @@ func (s *Show) Run(chartpath string) (string, error) {
 		if s.OutputFormat == ShowAll {
 			fmt.Fprintln(&out, "---")
 		}
-		readme := findReadme(s.chart.Files)
+		readme := findReadme(chrt.Files)
 		if readme == nil {
 			return out.String(), nil
 		}

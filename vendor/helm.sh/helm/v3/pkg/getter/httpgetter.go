@@ -119,7 +119,6 @@ func (g *HTTPGetter) httpClient() (*http.Client, error) {
 
 	client := &http.Client{
 		Transport: transport,
-		Timeout:   g.opts.timeout,
 	}
 
 	return client, nil

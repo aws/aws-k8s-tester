@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*Package engine implements the Go text template engine as needed for Helm.
+/*Package engine implements the Go template engine as a Tiller Engine.
 
-When Helm renders templates it does so with additional functions and different
-modes (e.g., strict, lint mode). This package handles the helm specific
-implementation.
+Tiller provides a simple interface for taking a Chart and rendering its templates.
+The 'engine' package implements this interface using Go's built-in 'text/template'
+package.
 */
 package engine // import "helm.sh/helm/v3/pkg/engine"

@@ -73,7 +73,7 @@ require (
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	gopkg.in/ini.v1 v1.46.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8
-	helm.sh/helm/v3 v3.3.0-rc.1
+	helm.sh/helm/v3 v3.2.4
 	k8s.io/api v0.18.6-rc.0
 	k8s.io/apimachinery v0.18.6-rc.0
 	k8s.io/cli-runtime v0.18.6-rc.0

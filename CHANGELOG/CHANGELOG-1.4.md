@@ -100,7 +100,9 @@ vendor/helm.sh/helm/v3/pkg/kube/client.go:485:11: undefined: "k8s.io/client-go/t
 
 ### Dependency
 
-- Upgrade [`helm.sh/helm/v3`](https://github.com/helm/helm/releases) from [`v3.2.3`](https://github.com/helm/helm/releases/tag/v3.2.3) to [`v3.3.0-rc.1`](https://github.com/helm/helm/releases/tag/v3.3.0-rc.1).
+- Upgrade [`helm.sh/helm/v3`](https://github.com/helm/helm/releases) from [`v3.2.3`](https://github.com/helm/helm/releases/tag/v3.2.3) to [`v3.2.4`](https://github.com/helm/helm/releases/tag/v3.2.4).
+  - [`v3.3.0-rc.1`](https://github.com/helm/helm/releases/tag/v3.3.0-rc.1) does not work...
+  - ref. `kubectl -n grafana logs pod/grafana-test` shows `[ "$code" == "200" ]' failed`.
 
 
 

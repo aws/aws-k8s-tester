@@ -64,7 +64,6 @@ func (p *Pull) Run(chartRef string) (string, error) {
 		Options: []getter.Option{
 			getter.WithBasicAuth(p.Username, p.Password),
 			getter.WithTLSClientConfig(p.CertFile, p.KeyFile, p.CaFile),
-			getter.WithInsecureSkipVerifyTLS(p.InsecureSkipTLSverify),
 		},
 		RepositoryConfig: p.Settings.RepositoryConfig,
 		RepositoryCache:  p.Settings.RepositoryCache,
