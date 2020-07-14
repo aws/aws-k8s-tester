@@ -18,7 +18,8 @@ func Get() string {
 	if err != nil {
 		h = os.Getenv("HOSTNAME")
 	}
-	return fmt.Sprintf("name=%s,user=%s,home=%s,hostname=%s,os=%s,arch=%s",
+	// ref. https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html#tag-conventions
+	return fmt.Sprintf("name=%s_user=%s_home=%s_hostname=%s_os=%s_arch=%s",
 		u.Name,
 		u.Username,
 		u.HomeDir,
