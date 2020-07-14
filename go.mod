@@ -64,16 +64,16 @@ require (
 	github.com/prometheus/common v0.9.1
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
 	// etcd v3.4.9
 	go.etcd.io/etcd v0.5.0-alpha.5.0.20200520232829-54ba9589114f
 	go.uber.org/zap v1.15.0
-	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	gopkg.in/ini.v1 v1.46.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8
-	helm.sh/helm/v3 v3.2.3
+	helm.sh/helm/v3 v3.3.0-rc.1
 	k8s.io/api v0.18.6-rc.0
 	k8s.io/apimachinery v0.18.6-rc.0
 	k8s.io/cli-runtime v0.18.6-rc.0

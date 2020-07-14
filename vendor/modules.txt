@@ -44,7 +44,7 @@ github.com/Masterminds/goutils
 github.com/Masterminds/semver/v3
 # github.com/Masterminds/sprig/v3 v3.1.0
 github.com/Masterminds/sprig/v3
-# github.com/Masterminds/squirrel v1.2.0
+# github.com/Masterminds/squirrel v1.4.0
 github.com/Masterminds/squirrel
 # github.com/Microsoft/go-winio v0.4.15-0.20190919025122-fc70bd9a86b5
 github.com/Microsoft/go-winio
@@ -82,7 +82,7 @@ github.com/PuerkitoBio/urlesc
 github.com/andybalholm/brotli
 # github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e
 github.com/armon/circbuf
-# github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496
+# github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535
 github.com/asaskevich/govalidator
 # github.com/aws/aws-sdk-go v1.33.5
 ## explicit
@@ -192,7 +192,7 @@ github.com/container-storage-interface/spec/lib/go/csi
 github.com/containerd/cgroups/stats/v1
 # github.com/containerd/console v0.0.0-20180822173158-c12b1e7919c1
 github.com/containerd/console
-# github.com/containerd/containerd v1.3.3 => github.com/containerd/containerd v1.3.4
+# github.com/containerd/containerd v1.3.4 => github.com/containerd/containerd v1.3.4
 github.com/containerd/containerd/api/services/containers/v1
 github.com/containerd/containerd/api/services/tasks/v1
 github.com/containerd/containerd/api/services/version/v1
@@ -531,13 +531,13 @@ github.com/klauspost/compress/zstd
 github.com/klauspost/compress/zstd/internal/xxhash
 # github.com/klauspost/pgzip v1.2.1
 github.com/klauspost/pgzip
-# github.com/konsorten/go-windows-terminal-sequences v1.0.2
+# github.com/konsorten/go-windows-terminal-sequences v1.0.3
 github.com/konsorten/go-windows-terminal-sequences
 # github.com/lann/builder v0.0.0-20180802200727-47ae307949d0
 github.com/lann/builder
 # github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0
 github.com/lann/ps
-# github.com/lib/pq v1.3.0
+# github.com/lib/pq v1.7.0
 github.com/lib/pq
 github.com/lib/pq/oid
 github.com/lib/pq/scram
@@ -651,7 +651,7 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/opencontainers/go-digest v1.0.0-rc1
+# github.com/opencontainers/go-digest v1.0.0
 github.com/opencontainers/go-digest
 # github.com/opencontainers/image-spec v1.0.1
 github.com/opencontainers/image-spec/specs-go
@@ -715,7 +715,7 @@ github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
 # github.com/quobyte/api v0.1.2
 github.com/quobyte/api
-# github.com/rubenv/sql-migrate v0.0.0-20200212082348-64f95ea68aa3
+# github.com/rubenv/sql-migrate v0.0.0-20200616145509-8d140a17f351
 github.com/rubenv/sql-migrate
 github.com/rubenv/sql-migrate/sqlparse
 # github.com/rubiojr/go-vhd v0.0.0-20160810183302-0bfd3b39853c
@@ -726,7 +726,7 @@ github.com/russross/blackfriday
 github.com/satori/go.uuid
 # github.com/seccomp/libseccomp-golang v0.9.1
 github.com/seccomp/libseccomp-golang
-# github.com/sirupsen/logrus v1.4.2
+# github.com/sirupsen/logrus v1.6.0
 github.com/sirupsen/logrus
 # github.com/spf13/afero v1.2.2
 github.com/spf13/afero
@@ -746,7 +746,7 @@ github.com/storageos/go-api/serror
 github.com/storageos/go-api/types
 # github.com/stretchr/objx v0.2.0
 github.com/stretchr/objx
-# github.com/stretchr/testify v1.5.1
+# github.com/stretchr/testify v1.6.1
 ## explicit
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/mock
@@ -796,7 +796,7 @@ github.com/vmware/govmomi/vim25/xml
 github.com/xeipuuv/gojsonpointer
 # github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415
 github.com/xeipuuv/gojsonreference
-# github.com/xeipuuv/gojsonschema v1.1.0
+# github.com/xeipuuv/gojsonschema v1.2.0
 github.com/xeipuuv/gojsonschema
 # github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
 github.com/xi2/xz
@@ -853,7 +853,7 @@ go.uber.org/zap/internal/bufferpool
 go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/zapcore
-# golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
+# golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 ## explicit
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/blowfish
@@ -1041,7 +1041,7 @@ google.golang.org/protobuf/types/known/timestamppb
 google.golang.org/protobuf/types/known/wrapperspb
 # gopkg.in/fsnotify.v1 v1.4.7
 gopkg.in/fsnotify.v1
-# gopkg.in/gcfg.v1 v1.2.0
+# gopkg.in/gcfg.v1 v1.2.3
 gopkg.in/gcfg.v1
 gopkg.in/gcfg.v1/scanner
 gopkg.in/gcfg.v1/token
@@ -1054,12 +1054,14 @@ gopkg.in/inf.v0
 ## explicit
 # gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 gopkg.in/tomb.v1
-# gopkg.in/warnings.v0 v0.1.1
+# gopkg.in/warnings.v0 v0.1.2
 gopkg.in/warnings.v0
 # gopkg.in/yaml.v2 v2.2.8
 ## explicit
 gopkg.in/yaml.v2
-# helm.sh/helm/v3 v3.2.3
+# gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+gopkg.in/yaml.v3
+# helm.sh/helm/v3 v3.3.0-rc.1
 ## explicit
 helm.sh/helm/v3/internal/experimental/registry
 helm.sh/helm/v3/internal/fileutil
@@ -1140,7 +1142,7 @@ k8s.io/api/settings/v1alpha1
 k8s.io/api/storage/v1
 k8s.io/api/storage/v1alpha1
 k8s.io/api/storage/v1beta1
-# k8s.io/apiextensions-apiserver v0.18.0 => k8s.io/apiextensions-apiserver v0.18.6-rc.0
+# k8s.io/apiextensions-apiserver v0.18.4 => k8s.io/apiextensions-apiserver v0.18.6-rc.0
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1
@@ -1585,7 +1587,7 @@ k8s.io/kube-openapi/pkg/util/proto/validation
 k8s.io/kube-proxy/config/v1alpha1
 # k8s.io/kube-scheduler v0.0.0 => k8s.io/kube-scheduler v0.18.6-rc.0
 k8s.io/kube-scheduler/extender/v1
-# k8s.io/kubectl v0.18.0 => k8s.io/kubectl v0.18.6-rc.0
+# k8s.io/kubectl v0.18.4 => k8s.io/kubectl v0.18.6-rc.0
 k8s.io/kubectl/pkg/cmd/util
 k8s.io/kubectl/pkg/scheme
 k8s.io/kubectl/pkg/util/interrupt

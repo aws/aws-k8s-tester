@@ -88,6 +88,11 @@ vendor/helm.sh/helm/v3/pkg/kube/client.go:380:69: target.Export undefined (type 
 vendor/helm.sh/helm/v3/pkg/kube/client.go:485:11: undefined: "k8s.io/client-go/tools/watch".ListWatchUntil
 ```
 
+### Dependency
+
+- Upgrade [`helm.sh/helm/v3`](https://github.com/helm/helm/releases) from [`v3.2.3`](https://github.com/helm/helm/releases/tag/v3.2.3) to [`v3.3.0-rc.1`](https://github.com/helm/helm/releases/tag/v3.3.0-rc.1).
+
+
 
 
 <hr>
