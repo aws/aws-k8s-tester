@@ -1126,7 +1126,7 @@ func (ts *tester) checkLogs() error {
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to kubectl logs", zap.Error(err))
 		}
-		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output (expects %q):\n\n%s\n\n", logsCmd, ts.sleepMessage, output)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output from pod %q in node %q (expects %q):\n\n%s\n\n", logsCmd, pod.Name, pod.Spec.NodeName, ts.sleepMessage, output)
 		if !strings.Contains(output, ts.sleepMessage) {
 			continue
 		}
