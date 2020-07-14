@@ -14,6 +14,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 - Add [`cmd/s3-utils` for IRSA tests](https://github.com/aws/aws-k8s-tester/commit/3ebee3697be06d1ad6a3a9cca3788f29be2fdd1d).
 - Add [`cmd/sts-utils` for IRSA tests](https://github.com/aws/aws-k8s-tester/commit/3ebee3697be06d1ad6a3a9cca3788f29be2fdd1d).
 
+## `ec2`
+
+- Tag [resources with user information](https://github.com/aws/aws-k8s-tester/commit/).
+
 ## `eksconfig`
 
 - Remove [`AddOnIRSA.RoleManagedPolicyARNs`](https://github.com/aws/aws-k8s-tester/commit/aaed4fdc885ec54eee841f2ee5ebd5527c0b4afb).
@@ -21,6 +25,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 
 ## `eks`
 
+- Tag [resources with user information](https://github.com/aws/aws-k8s-tester/commit/).
 - Set [timeouts for `eks/irsa` and `eks/irsa-fargate` S3 requests](https://github.com/aws/aws-k8s-tester/commit/a8a1ef411854636946868a5a815e1e7dd089dd26).
 - Allow [`eks/irsa` tester failures, only requires minimum 1 Pod success, debugging...](https://github.com/aws/aws-k8s-tester/commit/a89d1606946d363fb02fd853fc2f26d35463e0b7).
 - Add [`kubectl logs --timestamps` flags](https://github.com/aws/aws-k8s-tester/commit/a89d1606946d363fb02fd853fc2f26d35463e0b7).
@@ -46,6 +51,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 
 ## `pkg`
 
+- Add [`pkg/user`](https://github.com/aws/aws-k8s-tester/commit/ae786d8017115860c600d9e5b52a04375372d4bd).
 - Add [`pkg/aws/s3.WithTimeout`](https://github.com/aws/aws-k8s-tester/commit/8ba8a4b59b64031b654301a61b1f468f96e1d260).
 - Fix [`pkg/fileutil.IsDirWriteable` `os.RemoveAll`](https://github.com/aws/aws-k8s-tester/commit/c251476f3efc313d91f8d93401613ffbfb6fbd9c).
   - Fix `"failed to write dir remove /var/log/.touch: no such file or directory"` in remote testers.

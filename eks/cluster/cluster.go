@@ -28,6 +28,7 @@ import (
 	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
+	"github.com/aws/aws-k8s-tester/pkg/user"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -343,6 +344,7 @@ func (ts *tester) createEKS() (err error) {
 			Tags: map[string]*string{
 				"Kind":                   aws.String("aws-k8s-tester"),
 				"aws-k8s-tester-version": aws.String(version.ReleaseVersion),
+				"User":                   aws.String(user.Get()),
 			},
 		}
 		for k, v := range ts.cfg.EKSConfig.Parameters.Tags {
@@ -415,6 +417,7 @@ func (ts *tester) createEKS() (err error) {
 				"Kind":                   "aws-k8s-tester",
 				"Name":                   ts.cfg.EKSConfig.Name,
 				"aws-k8s-tester-version": version.ReleaseVersion,
+				"User":                   user.Get(),
 			}),
 			Parameters: []*cloudformation.Parameter{
 				{

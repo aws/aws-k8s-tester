@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
+	"github.com/aws/aws-k8s-tester/pkg/user"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -474,6 +475,7 @@ func (ts *tester) createASGs() error {
 				"Kind":                   "aws-k8s-tester",
 				"Name":                   ts.cfg.EKSConfig.Name,
 				"aws-k8s-tester-version": version.ReleaseVersion,
+				"User":                   user.Get(),
 			}),
 			Parameters: []*cloudformation.Parameter{
 				{

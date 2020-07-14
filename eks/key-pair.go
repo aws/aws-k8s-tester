@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
+	"github.com/aws/aws-k8s-tester/pkg/user"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/request"
@@ -85,6 +86,7 @@ func (ts *Tester) createKeyPair() (err error) {
 
 			Metadata: map[string]*string{
 				"Kind": aws.String("aws-k8s-tester"),
+				"User": aws.String(user.Get()),
 			},
 		})
 		if err == nil {

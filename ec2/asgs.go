@@ -15,6 +15,7 @@ import (
 	aws_ec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
 	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
+	"github.com/aws/aws-k8s-tester/pkg/user"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -428,6 +429,7 @@ func (ts *Tester) createASGs() (err error) {
 				"Kind":                   "aws-k8s-tester",
 				"Name":                   ts.cfg.Name,
 				"aws-k8s-tester-version": version.ReleaseVersion,
+				"User":                   user.Get(),
 			}),
 			Parameters: []*cloudformation.Parameter{
 				{

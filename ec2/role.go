@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	aws_iam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
 	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
+	"github.com/aws/aws-k8s-tester/pkg/user"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
@@ -116,6 +117,7 @@ func (ts *Tester) createRole() error {
 			"Kind":                   "aws-k8s-tester",
 			"Name":                   ts.cfg.Name,
 			"aws-k8s-tester-version": version.ReleaseVersion,
+			"User":                   user.Get(),
 		}),
 		Parameters: []*cloudformation.Parameter{
 			{
