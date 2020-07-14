@@ -327,8 +327,26 @@ func (ts *tester) createHelmGrafana() error {
 		ChartName:      chartNameGrafana,
 		ReleaseName:    chartNameGrafana,
 		Values:         values,
-		QueryFunc:      nil,
-		QueryInterval:  30 * time.Second,
+		QueryFunc: func() {
+			getAllArgs := []string{
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=" + chartNamespaceGrafana,
+				"get",
+				"all",
+			}
+			getAllCmd := strings.Join(getAllArgs, " ")
+
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(ctx, getAllArgs[0], getAllArgs[1:]...).CombinedOutput()
+			cancel()
+			out := strings.TrimSpace(string(output))
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl get all' failed", zap.Error(err))
+			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
+		},
+		QueryInterval: 30 * time.Second,
 	})
 }
 

@@ -175,17 +175,14 @@ func (ts *tester) createHelmCSI() error {
 			ts.cfg.Logger.Info(fmt.Sprintf("[install] "+format, v...))
 		},
 		QueryFunc: func() {
-			fmt.Fprintf(ts.cfg.LogWriter, "\n")
-
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			output, err := exec.New().CommandContext(ctx, getAllArgs[0], getAllArgs[1:]...).CombinedOutput()
 			cancel()
 			out := strings.TrimSpace(string(output))
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl get all' failed", zap.Error(err))
-			} else {
-				fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
 			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
 
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 			output, err = exec.New().CommandContext(ctx, descArgsDs[0], descArgsDs[1:]...).CombinedOutput()
@@ -193,9 +190,8 @@ func (ts *tester) createHelmCSI() error {
 			out = strings.TrimSpace(string(output))
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe daemonset' failed", zap.Error(err))
-			} else {
-				fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descCmdDs, out)
 			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descCmdDs, out)
 
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 			output, err = exec.New().CommandContext(ctx, descArgsDp[0], descArgsDp[1:]...).CombinedOutput()
@@ -203,9 +199,8 @@ func (ts *tester) createHelmCSI() error {
 			out = strings.TrimSpace(string(output))
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
-			} else {
-				fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descCmdDp, out)
 			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descCmdDp, out)
 
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 			output, err = exec.New().CommandContext(ctx, descArgsPods[0], descArgsPods[1:]...).CombinedOutput()
@@ -213,9 +208,8 @@ func (ts *tester) createHelmCSI() error {
 			out = strings.TrimSpace(string(output))
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe pods' failed", zap.Error(err))
-			} else {
-				fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descCmdPods, out)
 			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descCmdPods, out)
 
 			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 			output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
@@ -223,9 +217,8 @@ func (ts *tester) createHelmCSI() error {
 			out = strings.TrimSpace(string(output))
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
-			} else {
-				fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", logsCmd, out)
 			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", logsCmd, out)
 		},
 		QueryInterval: 30 * time.Second,
 	})
