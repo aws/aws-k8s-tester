@@ -698,7 +698,7 @@ func (ts *tester) checkPod() error {
 	)
 
 	succeeded := false
-	retryStart, waitDur := time.Now(), 3*time.Minute
+	retryStart, waitDur := time.Now(), 10*time.Minute
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:

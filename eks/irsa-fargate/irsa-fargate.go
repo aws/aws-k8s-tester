@@ -1044,7 +1044,7 @@ func (ts *tester) checkResults() (err error) {
 
 	ts.cfg.Logger.Info("checking results")
 	ready := false
-	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*3*time.Second
+	waitDur := 10 * time.Minute
 	retryStart := time.Now()
 	for time.Now().Sub(retryStart) < waitDur {
 		select {
