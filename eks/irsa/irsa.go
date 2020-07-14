@@ -1092,7 +1092,7 @@ func (ts *tester) checkLogs() error {
 			continue
 		}
 
-		fmt.Fprintf(ts.cfg.LogWriter, "\n*********************************\n")
+		fmt.Fprintf(ts.cfg.LogWriter, "\n***** Pod %q *****\n", podName)
 		descArgs := []string{
 			ts.cfg.EKSConfig.KubectlPath,
 			"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
@@ -1133,16 +1133,17 @@ func (ts *tester) checkLogs() error {
 		}
 		fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output from pod %q in node %q, node group name %q, node group ami type %q, public IP %q, public DNS name %q, user name %q (expects %q):\n\n%s\n\n", logsCmd, pod.Name, nodeName, cur.NodeGroupName, cur.AMIType, cur.PublicIP, cur.PublicDNSName, cur.UserName, ts.sleepMessage, output)
 		if !strings.Contains(output, ts.sleepMessage) {
-			fmt.Fprintf(ts.cfg.LogWriter, "\n*********************************\n")
+			ts.cfg.Logger.Warn("'kubectl logs' output does not contain expected outputs", zap.String("expected-output", ts.sleepMessage))
+			fmt.Fprintf(ts.cfg.LogWriter, "***********\n\n")
 			continue
 		}
 		if _, err = f.WriteString(fmt.Sprintf("'%s' from pod %q in node %q, node group name %q, node group ami type %q, public IP %q, public DNS name %q, user name %q:\n\n%s\n\n", logsCmd, pod.Name, nodeName, cur.NodeGroupName, cur.AMIType, cur.PublicIP, cur.PublicDNSName, cur.UserName, output)); err != nil {
 			ts.cfg.Logger.Warn("failed to write", zap.Error(err))
-			fmt.Fprintf(ts.cfg.LogWriter, "\n*********************************\n")
+			fmt.Fprintf(ts.cfg.LogWriter, "***********\n\n")
 			continue
 		}
 		ts.cfg.Logger.Info("checked pod logs, found matching sleep message", zap.String("pod-name", podName))
-		fmt.Fprintf(ts.cfg.LogWriter, "\n*********************************\n")
+		fmt.Fprintf(ts.cfg.LogWriter, "***********\n\n")
 		success++
 	}
 	if success < expects {

@@ -630,8 +630,8 @@ aws --version
 /s3-utils version
 /sts-utils version
 
-printf "\nhttp://169.254.169.254/latest/meta-data/ami-id with IMDBv1:\n"
-curl -v http://169.254.169.254/latest/meta-data/ami-id || true
+# printf "\nhttp://169.254.169.254/latest/meta-data/ami-id with IMDBv1:\n"
+# curl -v http://169.254.169.254/latest/meta-data/ami-id || true
 
 printf "\n\nProjected ServiceAccount token AWS_WEB_IDENTITY_TOKEN_FILE:\n"
 cat $AWS_WEB_IDENTITY_TOKEN_FILE; echo
