@@ -68,6 +68,7 @@ import (
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/pkg/terminal"
+	"github.com/aws/aws-k8s-tester/pkg/user"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -773,7 +774,7 @@ func (ts *Tester) createTesters() (err error) {
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc#Options
 func (ts *Tester) Up() (err error) {
 	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Fprintf(ts.logWriter, ts.color("[light_green]UP START [default](%q)\n"), ts.cfg.ConfigPath)
+	fmt.Fprintf(ts.logWriter, ts.color("[light_green]UP START [default](%q, %q)\n"), ts.cfg.ConfigPath, user.Get())
 
 	now := time.Now()
 
@@ -890,7 +891,11 @@ func (ts *Tester) Up() (err error) {
 		ts.logFile.Sync()
 	}()
 
-	ts.lg.Info("Up started", zap.String("version", version.Version()), zap.String("name", ts.cfg.Name))
+	ts.lg.Info("starting Up",
+		zap.String("version", version.Version()),
+		zap.String("user", user.Get()),
+		zap.String("name", ts.cfg.Name),
+	)
 	defer ts.cfg.Sync()
 
 	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
@@ -1309,6 +1314,7 @@ func (ts *Tester) down() (err error) {
 
 	now := time.Now()
 	ts.lg.Warn("starting Down",
+		zap.String("user", user.Get()),
 		zap.String("name", ts.cfg.Name),
 		zap.String("cluster-arn", ts.cfg.Status.ClusterARN),
 	)

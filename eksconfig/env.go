@@ -606,17 +606,8 @@ func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
 
 		case reflect.Map:
 			switch fieldName {
-			case "Tags":
-				vv.Field(i).Set(reflect.ValueOf(make(map[string]string)))
-				for _, pair := range strings.Split(sv, ";") {
-					fields := strings.Split(pair, "=")
-					if len(fields) != 2 {
-						return nil, fmt.Errorf("map %q for %q has unexpected format (e.g. should be 'a=b;c;d,e=f')", sv, fieldName)
-					}
-					vv.Field(i).SetMapIndex(reflect.ValueOf(fields[0]), reflect.ValueOf(fields[1]))
-				}
-
-			case "DeploymentNodeSelector",
+			case "Tags",
+				"DeploymentNodeSelector",
 				"DeploymentNodeSelector2048":
 				vv.Field(i).Set(reflect.ValueOf(make(map[string]string)))
 				mm := make(map[string]string)

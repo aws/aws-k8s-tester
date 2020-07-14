@@ -91,7 +91,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME_SERVERS", `1.2.3.0,4.5.6.7`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME_SERVERS")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_TAGS", "to-delete=2019;hello-world=test")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_TAGS", `{"to-delete":"2020","hello-world":   "test"}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_TAGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_KEY", "eks-options")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_KEY")
@@ -643,7 +643,7 @@ func TestEnv(t *testing.T) {
 	if !reflect.DeepEqual(cfg.Parameters.DHCPOptionsDomainNameServers, []string{"1.2.3.0", "4.5.6.7"}) {
 		t.Fatalf("unexpected cfg.Parameters.DHCPOptionsDomainNameServers %q", cfg.Parameters.DHCPOptionsDomainNameServers)
 	}
-	expectedTags := map[string]string{"to-delete": "2019", "hello-world": "test"}
+	expectedTags := map[string]string{"to-delete": "2020", "hello-world": "test"}
 	if !reflect.DeepEqual(cfg.Parameters.Tags, expectedTags) {
 		t.Fatalf("Tags expected %v, got %v", expectedTags, cfg.Parameters.Tags)
 	}

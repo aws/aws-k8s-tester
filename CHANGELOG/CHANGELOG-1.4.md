@@ -22,6 +22,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 
 - Remove [`AddOnIRSA.RoleManagedPolicyARNs`](https://github.com/aws/aws-k8s-tester/commit/aaed4fdc885ec54eee841f2ee5ebd5527c0b4afb).
 - Rename [`SSHConfig` to `NodeInfo`](https://github.com/aws/aws-k8s-tester/commit/aaed4fdc885ec54eee841f2ee5ebd5527c0b4afb).
+- [`AWS_K8S_TESTER_EKS_PARAMETERS_TAGS` must be set in `map[string]string`](https://github.com/aws/aws-k8s-tester/commit/).
+  - `'a=b;c;d,e=f'` should be `{"a":"b","c":"d"}`.
 
 ## `eks`
 

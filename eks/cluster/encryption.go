@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/aws/aws-k8s-tester/pkg/user"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -59,6 +60,7 @@ func (ts *tester) createEncryption() error {
 		Tags: []*kms.Tag{
 			{TagKey: aws.String("Kind"), TagValue: aws.String("aws-k8s-tester")},
 			{TagKey: aws.String("Version"), TagValue: aws.String(version.ReleaseVersion)},
+			{TagKey: aws.String("User"), TagValue: aws.String(user.Get())},
 		},
 	})
 	if err != nil {
