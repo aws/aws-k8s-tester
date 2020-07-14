@@ -1091,6 +1091,24 @@ func (ts *tester) checkLogs() error {
 			continue
 		}
 
+		descArgs := []string{
+			ts.cfg.EKSConfig.KubectlPath,
+			"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+			"--namespace=" + ts.cfg.EKSConfig.AddOnIRSA.Namespace,
+			"describe",
+			"pod",
+			podName,
+		}
+		descCmd := strings.Join(descArgs, " ")
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		runOutput, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+		cancel()
+		output := strings.TrimSpace(string(runOutput))
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to kubectl describe", zap.Error(err))
+		}
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descCmd, output)
+
 		logsArgs := []string{
 			ts.cfg.EKSConfig.KubectlPath,
 			"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
@@ -1099,10 +1117,10 @@ func (ts *tester) checkLogs() error {
 			"pod/" + podName,
 		}
 		logsCmd := strings.Join(logsArgs, " ")
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		runOutput, err := exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
+		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+		runOutput, err = exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
 		cancel()
-		output := strings.TrimSpace(string(runOutput))
+		output = strings.TrimSpace(string(runOutput))
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to kubectl logs", zap.Error(err))
 		}
