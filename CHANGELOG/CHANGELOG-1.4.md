@@ -16,7 +16,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 
 ## `ec2`
 
-- Tag [resources with user information](https://github.com/aws/aws-k8s-tester/commit/).
+- Tag [resources with user information](https://github.com/aws/aws-k8s-tester/commit/51688be5904528f48d56f102e3b3f667b8e6a723).
 
 ## `eksconfig`
 
@@ -25,7 +25,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 
 ## `eks`
 
-- Tag [resources with user information](https://github.com/aws/aws-k8s-tester/commit/).
+- Tag [resources with user information](https://github.com/aws/aws-k8s-tester/commit/51688be5904528f48d56f102e3b3f667b8e6a723).
 - Set [timeouts for `eks/irsa` and `eks/irsa-fargate` S3 requests](https://github.com/aws/aws-k8s-tester/commit/a8a1ef411854636946868a5a815e1e7dd089dd26).
 - Allow [`eks/irsa` tester failures, only requires minimum 1 Pod success, debugging...](https://github.com/aws/aws-k8s-tester/commit/a89d1606946d363fb02fd853fc2f26d35463e0b7).
 - Add [`kubectl logs --timestamps` flags](https://github.com/aws/aws-k8s-tester/commit/a89d1606946d363fb02fd853fc2f26d35463e0b7).
