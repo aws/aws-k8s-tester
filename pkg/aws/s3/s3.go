@@ -490,13 +490,13 @@ func PollUntilExist(
 
 // Download downloads the file from the S3 bucket.
 func Download(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Key string, localPath string, opts ...OpOption) (err error) {
-	return download(lg, s3API, bucket, s3Key, localPath)
+	return download(lg, s3API, bucket, s3Key, localPath, opts...)
 }
 
 // DownloadToTempFile downloads the file from the S3 bucket to a temporary file.
 func DownloadToTempFile(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Key string, opts ...OpOption) (localPath string, err error) {
 	localPath = fileutil.GetTempFilePath()
-	return localPath, download(lg, s3API, bucket, s3Key, localPath)
+	return localPath, download(lg, s3API, bucket, s3Key, localPath, opts...)
 }
 
 func download(lg *zap.Logger, s3API s3iface.S3API, bucket string, s3Key string, localPath string, opts ...OpOption) (err error) {
