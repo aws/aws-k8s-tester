@@ -14,10 +14,19 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 - Add [`cmd/s3-utils` for IRSA tests](https://github.com/aws/aws-k8s-tester/commit/3ebee3697be06d1ad6a3a9cca3788f29be2fdd1d).
 - Add [`cmd/sts-utils` for IRSA tests](https://github.com/aws/aws-k8s-tester/commit/3ebee3697be06d1ad6a3a9cca3788f29be2fdd1d).
 
+## `eksconfig`
+
+- Remove [`AddOnIRSA.RoleManagedPolicyARNs`](https://github.com/aws/aws-k8s-tester/commit/aaed4fdc885ec54eee841f2ee5ebd5527c0b4afb).
+- Rename [`SSHConfig` to `NodeInfo`](https://github.com/aws/aws-k8s-tester/commit/aaed4fdc885ec54eee841f2ee5ebd5527c0b4afb).
+
 ## `eks`
 
+- Allow [`eks/irsa` tester failures, only requires minimum 1 Pod success, debugging...](https://github.com/aws/aws-k8s-tester/commit/a89d1606946d363fb02fd853fc2f26d35463e0b7).
+- Add [`kubectl logs --timestamps` flags](https://github.com/aws/aws-k8s-tester/commit/a89d1606946d363fb02fd853fc2f26d35463e0b7).
+- Remove [`arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess` from default `eks/irsa-fargate` IAM role](https://github.com/aws/aws-k8s-tester/commit/a89d1606946d363fb02fd853fc2f26d35463e0b7).
+- Fix [`eks/irsa` when worker nodes have disabled SSH access (e.g. Bottlerocket OS)](https://github.com/aws/aws-k8s-tester/commit/a89d1606946d363fb02fd853fc2f26d35463e0b7).
 - Fix [typos in `kubectl describe job` commands for `eks/*/remote` testers](https://github.com/aws/aws-k8s-tester/commit/561cdfe9b1fa9137e9b6c468fcf731e886daa094).
-- Fix [wrong buckets for `eks/*/remote` testers](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix [wrong buckets for `eks/*/remote` testers](https://github.com/aws/aws-k8s-tester/commit/01903baa70764b796c92c4da9397bca19c6bda05).
 - Add [more debugging logs to remote testers for failed pods](https://github.com/aws/aws-k8s-tester/commit/a3e1e97f1d92e109c84edeba6e91d09f1e5fcd17).
 - Add [more debugging logs to `eks/irsa`](https://github.com/aws/aws-k8s-tester/commit/a3e1e97f1d92e109c84edeba6e91d09f1e5fcd17).
 - Fix [remote tester job Pod](https://github.com/aws/aws-k8s-tester/commit/0d6e2c9e390b688029cc88d565b249ce79f4e15c).
@@ -36,7 +45,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
 
 ## `pkg`
 
-- Fix [`pkg/fileutil.IsDirWriteable` `os.RemoveAll`](https://github.com/aws/aws-k8s-tester/commit/).
+- Fix [`pkg/fileutil.IsDirWriteable` `os.RemoveAll`](https://github.com/aws/aws-k8s-tester/commit/c251476f3efc313d91f8d93401613ffbfb6fbd9c).
   - Fix `"failed to write dir remove /var/log/.touch: no such file or directory"` in remote testers.
 - Add [`pkg/k8s-client.WaitForDeploymentCompletes`](https://github.com/aws/aws-k8s-tester/commit/a8a69c5e092abf88ff7e0ddb636c4ce8400cf2f1).
 - Add [`pkg/k8s-client.WithPodFunc` to debug job pod failures](https://github.com/aws/aws-k8s-tester/commit/f245f770980daacf9f462a0d62c3c95c845a1477).
@@ -78,6 +87,8 @@ vendor/helm.sh/helm/v3/pkg/kube/client.go:380:31: too many arguments in call to 
 vendor/helm.sh/helm/v3/pkg/kube/client.go:380:69: target.Export undefined (type *"k8s.io/cli-runtime/pkg/resource".Info has no field or method Export)
 vendor/helm.sh/helm/v3/pkg/kube/client.go:485:11: undefined: "k8s.io/client-go/tools/watch".ListWatchUntil
 ```
+
+
 
 <hr>
 
@@ -313,7 +324,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
 - Configure [S3 directory](https://github.com/aws/aws-k8s-tester/commit/53a0169e208b66a00135bf05002c27de2000e9ed).
  - Add [`ClusterAutoscaler` add-on per node-group using `AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS={"GetRef.Name-...":{..."cluster-autoscaler":{"enable":false}...}}`](https://github.com/aws/aws-k8s-tester/pull/99).
 - Fix [typo in `eksconfig.AddOnManagedNodeGroups.LogsTarGzPath`](https://github.com/aws/aws-k8s-tester/commit/7b60047ca4d6fad281db512d4de905a27b80303a).
-- Add [`Status.PrivateDNSToSSHConfig` for node SSH access](https://github.com/aws/aws-k8s-tester/commit/a3c9d7d5e3382c378de686fe0faec6bdeb47f027).
+- Add [`Status.PrivateDNSToNodeInfo` for node SSH access](https://github.com/aws/aws-k8s-tester/commit/a3c9d7d5e3382c378de686fe0faec6bdeb47f027).
 - Record [`PodStartupLatency` in `eksconfig.AddOnClusterLoaderLocal` via `eks/cluster-loader/local`](https://github.com/aws/aws-k8s-tester/commit/8d4cb87b7bd798ad7f1b5d2de22d0deb26c4c75e).
 - Record [`PodStartupLatency` in `eksconfig.AddOnClusterLoaderRemote` via `eks/cluster-loader/remote`](https://github.com/aws/aws-k8s-tester/commit/8d4cb87b7bd798ad7f1b5d2de22d0deb26c4c75e).
 - Add [`RequestsSummaryWritesCompareS3Dir` and `RequestsSummaryReadsCompareS3Dir`](https://github.com/aws/aws-k8s-tester/commit/e559fae84787e7936fd167cd7da9a893c691e856).
