@@ -1353,11 +1353,17 @@ func (ts *Tester) down() (err error) {
 	}()
 
 	var errs []string
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteKeyPair [default](%q)\n"), ts.cfg.ConfigPath)
-	if err := ts.deleteKeyPair(); err != nil {
-		ts.lg.Warn("failed to delete key pair", zap.Error(err))
-		errs = append(errs, err.Error())
+
+	if ts.cfg.SkipDeleteClusterAndNodes {
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_yellow]SKIP [light_blue]deleteKeyPair [default](SkipDeleteClusterAndNodes 'true', %q)\n"), ts.cfg.ConfigPath)
+	} else {
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteKeyPair [default](%q)\n"), ts.cfg.ConfigPath)
+		if err := ts.deleteKeyPair(); err != nil {
+			ts.lg.Warn("failed to delete key pair", zap.Error(err))
+			errs = append(errs, err.Error())
+		}
 	}
 
 	testersN := len(ts.testers)
@@ -1372,69 +1378,74 @@ func (ts *Tester) down() (err error) {
 		}
 	}
 
-	// NOTE(jaypipes): Wait for a bit here because we asked Kubernetes to
-	// delete the NLB hello world and ALB2048 Deployment/Service above, and
-	// both of these interact with the underlying Kubernetes AWS cloud provider
-	// to clean up the cloud load balancer backing the Service of type
-	// LoadBalancer. The calls to delete the Service return immediately
-	// (successfully) but the cloud load balancer resources may not have been
-	// deleted yet, including the ENIs that were associated with the cloud load
-	// balancer. When, later, aws-k8s-tester tries deleting the VPC associated
-	// with the test cluster, it will run into permissions issues because the
-	// IAM role that created the ENIs associated with the ENIs in subnets
-	// associated with the cloud load balancers will no longer exist.
-	//
-	// https://github.com/aws/aws-k8s-tester/issues/70
-	// https://github.com/kubernetes/kubernetes/issues/53451
-	// https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/20190423-service-lb-finalizer.md
-	if (ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups()) &&
-		((ts.cfg.IsEnabledAddOnALB2048() && ts.cfg.AddOnALB2048.Created) ||
-			(ts.cfg.IsEnabledAddOnNLBHelloWorld() && ts.cfg.AddOnNLBHelloWorld.Created)) {
-		waitDur := 2 * time.Minute
-		ts.lg.Info("sleeping after deleting LB", zap.Duration("wait", waitDur))
-		time.Sleep(waitDur)
-	}
-
-	// following need to be run in order to resolve delete dependency
-	// e.g. cluster must be deleted before VPC delete
-	if ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.mngTester != nil {
+	if ts.cfg.SkipDeleteClusterAndNodes {
 		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Fprintf(ts.logWriter, ts.color("[light_blue]mngTester.Delete [default](%q)\n"), ts.cfg.ConfigPath)
-		if err := ts.mngTester.Delete(); err != nil {
-			ts.lg.Warn("failed mngTester.Delete", zap.Error(err))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_yellow]SKIP [light_blue]cluster/nodes.Delete [default](SkipDeleteClusterAndNodes 'true', %q)\n"), ts.cfg.ConfigPath)
+	} else {
+		// NOTE(jaypipes): Wait for a bit here because we asked Kubernetes to
+		// delete the NLB hello world and ALB2048 Deployment/Service above, and
+		// both of these interact with the underlying Kubernetes AWS cloud provider
+		// to clean up the cloud load balancer backing the Service of type
+		// LoadBalancer. The calls to delete the Service return immediately
+		// (successfully) but the cloud load balancer resources may not have been
+		// deleted yet, including the ENIs that were associated with the cloud load
+		// balancer. When, later, aws-k8s-tester tries deleting the VPC associated
+		// with the test cluster, it will run into permissions issues because the
+		// IAM role that created the ENIs associated with the ENIs in subnets
+		// associated with the cloud load balancers will no longer exist.
+		//
+		// https://github.com/aws/aws-k8s-tester/issues/70
+		// https://github.com/kubernetes/kubernetes/issues/53451
+		// https://github.com/kubernetes/enhancements/blob/master/keps/sig-network/20190423-service-lb-finalizer.md
+		if (ts.cfg.IsEnabledAddOnNodeGroups() || ts.cfg.IsEnabledAddOnManagedNodeGroups()) &&
+			((ts.cfg.IsEnabledAddOnALB2048() && ts.cfg.AddOnALB2048.Created) ||
+				(ts.cfg.IsEnabledAddOnNLBHelloWorld() && ts.cfg.AddOnNLBHelloWorld.Created)) {
+			waitDur := 2 * time.Minute
+			ts.lg.Info("sleeping after deleting LB", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
+		}
+
+		// following need to be run in order to resolve delete dependency
+		// e.g. cluster must be deleted before VPC delete
+		if ts.cfg.IsEnabledAddOnManagedNodeGroups() && ts.mngTester != nil {
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("[light_blue]mngTester.Delete [default](%q)\n"), ts.cfg.ConfigPath)
+			if err := ts.mngTester.Delete(); err != nil {
+				ts.lg.Warn("failed mngTester.Delete", zap.Error(err))
+				errs = append(errs, err.Error())
+			}
+
+			waitDur := 10 * time.Second
+			ts.lg.Info("sleeping before cluster deletion", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
+		}
+
+		if ts.cfg.IsEnabledAddOnNodeGroups() && ts.ngTester != nil {
+			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, ts.color("[light_blue]ngTester.Delete [default](%q)\n"), ts.cfg.ConfigPath)
+			if err := ts.ngTester.Delete(); err != nil {
+				ts.lg.Warn("failed ngTester.Delete", zap.Error(err))
+				errs = append(errs, err.Error())
+			}
+
+			waitDur := 10 * time.Second
+			ts.lg.Info("sleeping before cluster deletion", zap.Duration("wait", waitDur))
+			time.Sleep(waitDur)
+		}
+
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_blue]clusterTester.Delete [default](%q)\n"), ts.cfg.ConfigPath)
+		if err := ts.clusterTester.Delete(); err != nil {
+			ts.lg.Warn("failed clusterTester.Delete", zap.Error(err))
 			errs = append(errs, err.Error())
 		}
 
-		waitDur := 10 * time.Second
-		ts.lg.Info("sleeping before cluster deletion", zap.Duration("wait", waitDur))
-		time.Sleep(waitDur)
-	}
-
-	if ts.cfg.IsEnabledAddOnNodeGroups() && ts.ngTester != nil {
 		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Fprintf(ts.logWriter, ts.color("[light_blue]ngTester.Delete [default](%q)\n"), ts.cfg.ConfigPath)
-		if err := ts.ngTester.Delete(); err != nil {
-			ts.lg.Warn("failed ngTester.Delete", zap.Error(err))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteS3 [default](%q)\n"), ts.cfg.ConfigPath)
+		if err := ts.deleteS3(); err != nil {
+			ts.lg.Warn("failed deleteS3", zap.Error(err))
 			errs = append(errs, err.Error())
 		}
-
-		waitDur := 10 * time.Second
-		ts.lg.Info("sleeping before cluster deletion", zap.Duration("wait", waitDur))
-		time.Sleep(waitDur)
-	}
-
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]clusterTester.Delete [default](%q)\n"), ts.cfg.ConfigPath)
-	if err := ts.clusterTester.Delete(); err != nil {
-		ts.lg.Warn("failed clusterTester.Delete", zap.Error(err))
-		errs = append(errs, err.Error())
-	}
-
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteS3 [default](%q)\n"), ts.cfg.ConfigPath)
-	if err := ts.deleteS3(); err != nil {
-		ts.lg.Warn("failed deleteS3", zap.Error(err))
-		errs = append(errs, err.Error())
 	}
 
 	if len(errs) > 0 {
