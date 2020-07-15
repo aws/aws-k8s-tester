@@ -123,6 +123,13 @@ type Config struct {
 	// CWNamespace is the CloudWatch namespace to put metric datum.
 	CWNamespace string `json:"cw-namespace"`
 
+	// SkipDeleteClusterAndNodes is true to skip EKS "cluster" and "nodes" deletion.
+	// The created EKS "cluster" and all resources created "before" cluster are kept.
+	// For example, CMK key, VPC, IAM role are not deleted if cluster is to be kept.
+	// All node groups and managed node groups are kept.
+	// Use this to use existing clusters to create/delete add-ons.
+	SkipDeleteClusterAndNodes bool `json:"skip-delete-cluster-and-nodes"`
+
 	// Parameters defines EKS "cluster" creation parameters.
 	// It's ok to leave any parameters empty.
 	// If empty, it will use default values.
@@ -761,7 +768,8 @@ func NewDefault() *Config {
 
 		CWNamespace: "aws-k8s-tester-eks",
 
-		Parameters: getDefaultParameters(),
+		SkipDeleteClusterAndNodes: false,
+		Parameters:                getDefaultParameters(),
 
 		RemoteAccessKeyCreate: true,
 		// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner

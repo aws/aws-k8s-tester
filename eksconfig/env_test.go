@@ -71,6 +71,8 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_CLIENT_BURST", `177`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_CLIENT_BURST")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_SKIP_DELETE_CLUSTER_AND_NODES", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_SKIP_DELETE_CLUSTER_AND_NODES")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE", "false")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID", "vpc-id")
@@ -611,6 +613,10 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.ClientBurst != 177 {
 		t.Fatalf("unexpected cfg.ClientBurst %d", cfg.ClientBurst)
+	}
+
+	if !cfg.SkipDeleteClusterAndNodes {
+		t.Fatalf("unexpected SkipDeleteClusterAndNodes %v", cfg.SkipDeleteClusterAndNodes)
 	}
 
 	if cfg.Parameters.VPCCreate {
