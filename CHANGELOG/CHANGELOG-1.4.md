@@ -5,27 +5,45 @@
 
 
 
+## [v1.4.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.6) (2020-07)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.5...v1.4.6).
+
+### `eks`
+
+TODO
+
+### Go
+
+- Compile with [*Go 1.14.5*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+
+<hr>
+
+
+
 ## [v1.4.5](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.5) (2020-07-14)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5).
 
-## `cmd`
+### `cmd`
 
 - Add [`cmd/s3-utils` for IRSA tests](https://github.com/aws/aws-k8s-tester/commit/3ebee3697be06d1ad6a3a9cca3788f29be2fdd1d).
 - Add [`cmd/sts-utils` for IRSA tests](https://github.com/aws/aws-k8s-tester/commit/3ebee3697be06d1ad6a3a9cca3788f29be2fdd1d).
 
-## `ec2`
+### `ec2`
 
 - Tag [resources with user information](https://github.com/aws/aws-k8s-tester/commit/51688be5904528f48d56f102e3b3f667b8e6a723).
 
-## `eksconfig`
+### `eksconfig`
 
 - Remove [`AddOnIRSA.RoleManagedPolicyARNs`](https://github.com/aws/aws-k8s-tester/commit/aaed4fdc885ec54eee841f2ee5ebd5527c0b4afb).
 - Rename [`SSHConfig` to `NodeInfo`](https://github.com/aws/aws-k8s-tester/commit/aaed4fdc885ec54eee841f2ee5ebd5527c0b4afb).
 - [`AWS_K8S_TESTER_EKS_PARAMETERS_TAGS` must be set in `map[string]string`](https://github.com/aws/aws-k8s-tester/commit/d7f79677949ee58f7cb4c37d176d5f05caa7dacf).
   - `'a=b;c;d,e=f'` should be `{"a":"b","c":"d"}`.
 
-## `eks`
+### `eks`
 
 - Clean up [ELB resources from services in `eks/wordpress,nlb-guestbook,jupyter-hub,prometheus-grafana`](https://github.com/aws/aws-k8s-tester/commit/7aada081e7f3bd5486000f3afb4072bc7f8eac94).
 - Tag [resources with user information](https://github.com/aws/aws-k8s-tester/commit/51688be5904528f48d56f102e3b3f667b8e6a723).
@@ -52,7 +70,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.4...v1.4.5
   - e.g. `"RequestError: send request failed\ncaused by: Post \"https://iam.amazonaws.com/\": dial tcp: i/o timeout"} failed to create AWS session RequestError: send request failed caused by: Post "https://sts.us-west-2.amazonaws.com/": dial tcp: i/o timeout"`
 - Allow [`eks/fluentd` namespace deletion timeouts](https://github.com/aws/aws-k8s-tester/commit/ff5200fecb55b842dfeb0e338e19f49906e91d3c).
 
-## `pkg`
+### `pkg`
 
 - Add [`pkg/user`](https://github.com/aws/aws-k8s-tester/commit/ae786d8017115860c600d9e5b52a04375372d4bd).
 - Add [`pkg/aws/s3.WithTimeout`](https://github.com/aws/aws-k8s-tester/commit/8ba8a4b59b64031b654301a61b1f468f96e1d260).
@@ -105,6 +123,10 @@ vendor/helm.sh/helm/v3/pkg/kube/client.go:485:11: undefined: "k8s.io/client-go/t
   - [`v3.3.0-rc.1`](https://github.com/helm/helm/releases/tag/v3.3.0-rc.1) does not work...
   - ref. `kubectl -n grafana logs pod/grafana-test` shows `[ "$code" == "200" ]' failed`.
 
+### Go
+
+- Compile with [*Go 1.14.4*](https://golang.org/doc/devel/release.html#go1.14).
+
 
 
 
@@ -116,18 +138,23 @@ vendor/helm.sh/helm/v3/pkg/kube/client.go:485:11: undefined: "k8s.io/client-go/t
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.3...v1.4.4).
 
-## `eksconfig`
+### `eksconfig`
 
 - Make [EKS 1.17 default version](https://github.com/aws/aws-k8s-tester/commit/d924eb6b082e2fe678717057b138ce1ac964f2d9).
   - https://github.com/aws/containers-roadmap/issues/697
 
-## `eks`
+### `eks`
 
 - Fix [node label for BottleRocket OS worker nodes](https://github.com/aws/aws-k8s-tester/commit/86e8266052b0cc5aafd303168d764ec9fa8f5771).
 - Increase [`ListCSRs` batch limit to 1,000](https://github.com/aws/aws-k8s-tester/commit/4965374b15ec09224477f41cc4b1c024601dfb43).
 - Increase [`ListNodes` batch limit to 1,000](https://github.com/aws/aws-k8s-tester/commit/7d36a80c22cfddbed20f75600462a6a396277d8a).
 - Do [not print spinner if not supported](https://github.com/aws/aws-k8s-tester/commit/afcac86d06e66b74488232f9d2c6d883b7c7832f).
 - Set [upper limit for `WaitForJobCompletes`](https://github.com/aws/aws-k8s-tester/commit/7d36a80c22cfddbed20f75600462a6a396277d8a).
+
+### Go
+
+- Compile with [*Go 1.14.4*](https://golang.org/doc/devel/release.html#go1.14).
+
 
 
 
@@ -140,22 +167,22 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.3...v1.4.4
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.2...v1.4.3).
 
-## `ec2`
+### `ec2`
 
 - Only [print `SSMCommands` when total nodes are less than 10](https://github.com/aws/aws-k8s-tester/commit/464f1bf0a903f9c1b26c0e408ba1bc274ed94bb4).
 
-## `eksconfig`
+### `eksconfig`
 
 - Fix [`AddOnConformance` `sonobuoy-result/plugins/e2e/results/global/e2e.log` upload path](https://github.com/aws/aws-k8s-tester/commit/718c7dd1533541a23e99f45403a17d06af3ef1b7).
 
-## `eks`
+### `eks`
 
 - Clean up [worker nodes polling outputs](https://github.com/aws/aws-k8s-tester/commit/e6788aff97b996327653d82dd7fb8f15e7e10cf3).
 - Only [print `SSMCommands` when total nodes are less than 10](https://github.com/aws/aws-k8s-tester/commit/464f1bf0a903f9c1b26c0e408ba1bc274ed94bb4).
 - Fix [`eks/conformance` `sonobuoy-result/plugins/e2e/results/global/e2e.log` upload](https://github.com/aws/aws-k8s-tester/commit/718c7dd1533541a23e99f45403a17d06af3ef1b7).
 - Add ["spinner" to all polling functions](https://github.com/aws/aws-k8s-tester/commit/0f8f81969c238c16e59f83e2d4bb6e5f85bdbeac).
 
-## `pkg`
+### `pkg`
 
 - Add [`pkg/spinner`](https://github.com/aws/aws-k8s-tester/commit/2d0aa8a696d85914f1081a92a5a40f7f5d6ffbe9).
 - Pass [log writer to `pkg/cfn.Poll` for "spinner"](https://github.com/aws/aws-k8s-tester/commit/2d0aa8a696d85914f1081a92a5a40f7f5d6ffbe9).
@@ -166,6 +193,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.2...v1.4.3
 ### Dependency
 
 - Add [`github.com/briandowns/spinner`](https://github.com/briandowns/spinner/releases) [`v1.11.1`](https://github.com/briandowns/spinner/releases/tag/v1.11.1).
+
+### Go
+
+- Compile with [*Go 1.14.4*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 
@@ -200,6 +231,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.1...v1.4.2
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.33.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.3) to [`v1.33.5`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.5).
+
+### Go
+
+- Compile with [*Go 1.14.4*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 
@@ -246,6 +281,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.0...v1.4.1
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.32.11`](https://github.com/aws/aws-sdk-go/releases/tag/v1.32.11) to [`v1.33.3`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.3).
+
+### Go
+
+- Compile with [*Go 1.14.4*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 
@@ -371,6 +410,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.3.9...v1.4.0
   - See [commit `fc93a579` for all the changes](https://github.com/aws/aws-k8s-tester/commit/fc93a5792c7334fc099e18ad4a4de394f8c2a35c).
 - Add [`k8s.io/perf-tests`](https://github.com/kubernetes/perf-tests/releases).
   - See [`1aea23d3` for commit](https://github.com/aws/aws-k8s-tester/commit/1aea23d3259794307b45d344d3a953238c394efb).
+
+### Go
+
+- Compile with [*Go 1.14.4*](https://golang.org/doc/devel/release.html#go1.14).
 
 
 
