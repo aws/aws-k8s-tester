@@ -9,9 +9,23 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.5...v1.4.6).
 
+### `eksconfig`
+
+- Add [`SkipDeleteClusterAndNodes` to skip EKS cluster and nodes deletion](https://github.com/aws/aws-k8s-tester/commit/565635179860b4832b64cbe3b39fdbe1c12b1ae1).
+  - Useful for testing add-ons with existing clusters.
+  - If true, delete operation keeps all resources created before cluster (e.g. IAM role, VPC, CMK, etc.).
+  - If true, delete operation keeps all node groups and managed node groups!
+  - Set via `AWS_K8S_TESTER_EKS_SKIP_DELETE_CLUSTER_AND_NODES=true`.
+  - Default `AWS_K8S_TESTER_EKS_SKIP_DELETE_CLUSTER_AND_NODES=false`.
+  - `aws-k8s-tester eks create cluster --path` must be passed a valid configuration file with existing cluster information in order to use the existing cluster. Create cluster once, and delete all add-ons, and keep the cluster related fields in the YAML with all other fields removed.
+  - We will have better workflow and separate abstraction for add-ons. This is a short term solution.
+  - See https://github.com/aws/aws-k8s-tester/issues/123 for more.
+  - To delete the cluster, `SkipDeleteClusterAndNodes` must be set to `"false"` manually.
+  - Create a cluster with add-ons `AWS_K8S_TESTER_EKS_SKIP_DELETE_CLUSTER_AND_NODES=true aws-k8s-tester eks create cluster --auto-path` and delete add-ons "only" with `aws-k8s-tester eks delete cluster --path [PATH]` (make sure the YAML config file is set `skip-delete-cluster-and-nodes` to `false`), and `aws-k8s-tester eks create cluster --path [PATH]` to test more add-ons. And repeat.
+
 ### `eks`
 
-TODO
+- Skip [cluster and prerequisite resource deletion if `AWS_K8S_TESTER_EKS_SKIP_DELETE_CLUSTER_AND_NODES=true`](https://github.com/aws/aws-k8s-tester/commit/edcc77e163979df6919f41fb0e5552f73467d74c).
 
 ### Go
 
