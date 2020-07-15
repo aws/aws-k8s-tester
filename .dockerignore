@@ -4,3 +4,4 @@ bin/
 CHANGELOG/
 Dockerfile
 Makefile
+aws-k8s-tester
