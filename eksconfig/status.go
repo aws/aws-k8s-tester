@@ -14,6 +14,7 @@ import (
 // Read-only. Cannot be configured via environmental variables.
 type Status struct {
 	// Up is true if the cluster is up.
+	// If "Up" is set true, cluster creation is skipped.
 	Up bool `json:"up"`
 
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
