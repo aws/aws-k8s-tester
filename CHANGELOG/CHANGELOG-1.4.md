@@ -29,6 +29,12 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.5...v1.4.6
 - Use [`ReplicationController` for `eks/hollow-nodes/remote`](https://github.com/aws/aws-k8s-tester/pull/130).
 - Skip [cluster and prerequisite resource deletion if `AWS_K8S_TESTER_EKS_SKIP_DELETE_CLUSTER_AND_NODES=true`](https://github.com/aws/aws-k8s-tester/commit/edcc77e163979df6919f41fb0e5552f73467d74c).
 
+### Dependency
+
+- Upgrade [`github.com/kubernetes/kubernetes`](https://github.com/kubernetes/kubernetes/releases) from [`v1.18.6-rc.0`](https://github.com/kubernetes/kubernetes/releases/tag/v1.18.6-rc.0) to [`v1.18.7-rc.0`](https://github.com/kubernetes/kubernetes/releases/tag/v1.18.7-rc.0).
+- Upgrade [`github.com/kubernetes/client-go`](https://github.com/kubernetes/client-go/releases) from [`v0.18.6-rc.0`](https://github.com/kubernetes/clienthttps://github.com/kubernetes/client-go/releases/tag/v0.18.6-rc.0) to [`v0.18.7-rc.0`](https://github.com/kubernetes/client-go/releases/tag/v0.18.7-rc.0).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.33.5`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.5) to [`v1.33.6`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.6).
+
 ### Go
 
 - Compile with [*Go 1.14.5*](https://golang.org/doc/devel/release.html#go1.14).
