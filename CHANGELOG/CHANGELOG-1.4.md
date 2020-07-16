@@ -22,9 +22,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.5...v1.4.6
   - See https://github.com/aws/aws-k8s-tester/issues/123 for more.
   - To delete the cluster, `SkipDeleteClusterAndNodes` must be set to `"false"` manually.
   - Create a cluster with add-ons `AWS_K8S_TESTER_EKS_SKIP_DELETE_CLUSTER_AND_NODES=true aws-k8s-tester eks create cluster --auto-path` and delete add-ons "only" with `aws-k8s-tester eks delete cluster --path [PATH]` (make sure the YAML config file is set `skip-delete-cluster-and-nodes` to `false`), and `aws-k8s-tester eks create cluster --path [PATH]` to test more add-ons. And repeat.
+- Change [`AddOnHollowNodesRemote.DeploymentReplicas` to `ReplicationControllerReplicas`](https://github.com/aws/aws-k8s-tester/pull/130).
 
 ### `eks`
 
+- Use [`ReplicationController` for `eks/hollow-nodes/remote`](https://github.com/aws/aws-k8s-tester/pull/130).
 - Skip [cluster and prerequisite resource deletion if `AWS_K8S_TESTER_EKS_SKIP_DELETE_CLUSTER_AND_NODES=true`](https://github.com/aws/aws-k8s-tester/commit/edcc77e163979df6919f41fb0e5552f73467d74c).
 
 ### Go
