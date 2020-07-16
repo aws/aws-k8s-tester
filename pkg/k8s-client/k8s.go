@@ -721,6 +721,96 @@ func waitForJobCompletes(
 	return job, cronJob, pods, err
 }
 
+// WaitForReplicationControllerCompletes waits till target replicas are ready in the ReplicationController.
+func WaitForReplicationControllerCompletes(
+	ctx context.Context,
+	lg *zap.Logger,
+	logWriter io.Writer,
+	stopc chan struct{},
+	k8sClient EKS,
+	initialWait time.Duration,
+	pollInterval time.Duration,
+	namespace string,
+	replicationControllerName string,
+	targetAvailableReplicas int32,
+	opts ...OpOption) (dp *v1.ReplicationController, err error) {
+	ret := Op{}
+	ret.applyOpts(opts)
+
+	if pollInterval == 0 {
+		pollInterval = DefaultNamespacePollInterval
+	}
+
+	sp := spinner.New(logWriter, "Waiting for ReplicationController completes "+replicationControllerName)
+	lg.Info("waiting ReplicationController completes",
+		zap.String("namespace", namespace),
+		zap.String("job-name", replicationControllerName),
+		zap.String("initial-wait", initialWait.String()),
+		zap.String("poll-interval", pollInterval.String()),
+		zap.String("ctx-duration-left", ctxutil.DurationTillDeadline(ctx).String()),
+		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
+		zap.Int32("target-available-replicas", targetAvailableReplicas),
+	)
+	sp.Restart()
+	select {
+	case <-stopc:
+		sp.Stop()
+		return nil, errors.New("initial wait aborted")
+	case <-time.After(initialWait):
+		sp.Stop()
+	}
+
+	retryWaitFunc := func() (done bool, err error) {
+		select {
+		case <-stopc:
+			return true, errors.New("wait aborted")
+		default:
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		dp, err = k8sClient.KubernetesClientSet().
+			CoreV1().
+			ReplicationControllers(namespace).
+			Get(ctx, replicationControllerName, metav1.GetOptions{})
+		cancel()
+		if ret.queryFunc != nil {
+			ret.queryFunc()
+		}
+		if err != nil {
+			lg.Warn("failed to get ReplicationController", zap.Bool("retriable-error", IsRetryableAPIError(err)), zap.Error(err))
+			return false, err
+		}
+
+		var dpCond v1.ReplicationControllerCondition
+		for _, cond := range dp.Status.Conditions {
+			if cond.Status != v1.ConditionTrue {
+				continue
+			}
+			dpCond = cond
+			break
+		}
+		lg.Info("fetched ReplicationControllers",
+			zap.Int32("desired-replicas", dp.Status.Replicas),
+			zap.Int32("available-replicas", dp.Status.AvailableReplicas),
+			zap.Int32("ready-replicas", dp.Status.ReadyReplicas),
+			zap.String("condition-last-updated", dpCond.LastTransitionTime.String()),
+			zap.String("condition-type", string(dpCond.Type)),
+			zap.String("condition-status", string(dpCond.Status)),
+			zap.String("condition-reason", dpCond.Reason),
+			zap.String("condition-message", dpCond.Message),
+		)
+		if dpCond.Type == v1.ReplicationControllerReplicaFailure {
+			return true, fmt.Errorf("ReplicationController %q status %q", replicationControllerName, dpCond.Type)
+		}
+		if dp.Status.AvailableReplicas >= targetAvailableReplicas {
+			return true, nil
+		}
+		return false, nil
+	}
+	err = wait.PollImmediate(pollInterval, ctxutil.DurationTillDeadline(ctx), retryWaitFunc)
+	return dp, err
+}
+
 // WaitForDeploymentCompletes waits till target replicas are ready in the Deployment.
 func WaitForDeploymentCompletes(
 	ctx context.Context,

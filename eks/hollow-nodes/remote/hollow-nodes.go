@@ -27,7 +27,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"go.uber.org/zap"
-	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -108,10 +107,10 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createConfigMap(); err != nil {
 		return err
 	}
-	if err = ts.createDeployment(); err != nil {
+	if err = ts.createReplicationController(); err != nil {
 		return err
 	}
-	if err = ts.waitDeployment(); err != nil {
+	if err = ts.waitReplicationController(); err != nil {
 		return err
 	}
 	if err = ts.checkNodes(); err != nil {
@@ -141,7 +140,7 @@ func (ts *tester) Delete() (err error) {
 
 	var errs []string
 
-	if err := ts.deleteDeployment(); err != nil {
+	if err := ts.deleteReplicationController(); err != nil {
 		errs = append(errs, err.Error())
 	}
 	time.Sleep(2 * time.Minute)
@@ -187,7 +186,7 @@ const (
 	hollowNodesRBACClusterRoleBindingName  = "hollow-nodes-remote-rbac-role-binding"
 	hollowNodesKubeConfigConfigMapName     = "hollow-nodes-remote-kubeconfig-configmap"
 	hollowNodesKubeConfigConfigMapFileName = "hollow-nodes-remote-kubeconfig-configmap.yaml"
-	hollowNodesDeploymentName              = "hollow-nodes-remote-deployment"
+	hollowNodesReplicationControllerName   = "hollow-nodes-remote-replicationcontroller"
 	hollowNodesAppName                     = "hollow-nodes-remote-app"
 )
 
@@ -502,7 +501,7 @@ func (ts *tester) deleteConfigMap() error {
 
 // TODO: use "ReplicationController" to max out
 
-func (ts *tester) createDeployment() error {
+func (ts *tester) createReplicationController() error {
 	// "/opt/"+hollowNodesKubeConfigConfigMapFileName,
 	// do not specify "kubeconfig", and use in-cluster config via "pkg/k8s-client"
 	// ref. https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
@@ -519,37 +518,37 @@ func (ts *tester) createDeployment() error {
 		ts.cfg.EKSConfig.AddOnHollowNodesRemote.NodeLabelPrefix,
 	)
 
-	ts.cfg.Logger.Info("creating hollow nodes Deployment", zap.String("image", ts.ecrImage), zap.String("tester-command", testerCmd))
+	ts.cfg.Logger.Info("creating hollow nodes ReplicationController", zap.String("image", ts.ecrImage), zap.String("tester-command", testerCmd))
 	dirOrCreate := v1.HostPathDirectoryOrCreate
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cfg.K8SClient.KubernetesClientSet().
-		AppsV1().
-		Deployments(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace).
+	_, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().
+		ReplicationControllers(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace).
 		Create(
 			ctx,
-			&appsv1.Deployment{
+			&v1.ReplicationController{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "apps/v1",
-					Kind:       "Deployment",
+					Kind:       "ReplicationController",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      hollowNodesDeploymentName,
+					Name:      hollowNodesReplicationControllerName,
 					Namespace: ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
 					Labels: map[string]string{
-						"app.kubernetes.io/name": hollowNodesAppName,
+						"autoscaling.k8s.io/nodegroup": hollowNodesAppName,
+						"app.kubernetes.io/name":       hollowNodesAppName,
 					},
 				},
-				Spec: appsv1.DeploymentSpec{
-					Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnHollowNodesRemote.DeploymentReplicas),
-					Selector: &metav1.LabelSelector{
-						MatchLabels: map[string]string{
-							"app.kubernetes.io/name": hollowNodesAppName,
-						},
+				Spec: v1.ReplicationControllerSpec{
+					Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnHollowNodesRemote.ReplicationControllerReplicas),
+					Selector: map[string]string{
+						"autoscaling.k8s.io/nodegroup": hollowNodesAppName,
+						"app.kubernetes.io/name":       hollowNodesAppName,
 					},
-					Template: v1.PodTemplateSpec{
+					Template: &v1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: map[string]string{
-								"app.kubernetes.io/name": hollowNodesAppName,
+								"autoscaling.k8s.io/nodegroup": hollowNodesAppName,
+								"app.kubernetes.io/name":       hollowNodesAppName,
 							},
 						},
 						Spec: v1.PodSpec{
@@ -637,21 +636,21 @@ func (ts *tester) createDeployment() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create hollow node Deployment (%v)", err)
+		return fmt.Errorf("failed to create hollow node ReplicationController (%v)", err)
 	}
 	return nil
 }
 
-func (ts *tester) deleteDeployment() error {
-	ts.cfg.Logger.Info("deleting deployment")
+func (ts *tester) deleteReplicationController() error {
+	ts.cfg.Logger.Info("deleting replicationcontroller")
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
-		AppsV1().
-		Deployments(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace).
+		CoreV1().
+		ReplicationControllers(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace).
 		Delete(
 			ctx,
-			hollowNodesDeploymentName,
+			hollowNodesReplicationControllerName,
 			metav1.DeleteOptions{
 				GracePeriodSeconds: aws.Int64(0),
 				PropagationPolicy:  &foreground,
@@ -662,14 +661,14 @@ func (ts *tester) deleteDeployment() error {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
 		return err
 	}
-	ts.cfg.Logger.Info("deleted deployment")
+	ts.cfg.Logger.Info("deleted replicationcontroller")
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) waitDeployment() (err error) {
-	timeout := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnHollowNodesRemote.DeploymentReplicas)*time.Minute
+func (ts *tester) waitReplicationController() (err error) {
+	timeout := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnHollowNodesRemote.ReplicationControllerReplicas)*time.Minute
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	_, err = k8s_client.WaitForDeploymentCompletes(
+	_, err = k8s_client.WaitForReplicationControllerCompletes(
 		ctx,
 		ts.cfg.Logger,
 		ts.cfg.LogWriter,
@@ -678,8 +677,8 @@ func (ts *tester) waitDeployment() (err error) {
 		time.Minute,
 		20*time.Second,
 		ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
-		hollowNodesDeploymentName,
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.DeploymentReplicas,
+		hollowNodesReplicationControllerName,
+		ts.cfg.EKSConfig.AddOnHollowNodesRemote.ReplicationControllerReplicas,
 		k8s_client.WithQueryFunc(func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			output, err := exec.New().CommandContext(
@@ -688,15 +687,15 @@ func (ts *tester) waitDeployment() (err error) {
 				"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
 				"--namespace="+ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
 				"describe",
-				"deployment",
-				hollowNodesDeploymentName,
+				"replicationcontroller",
+				hollowNodesReplicationControllerName,
 			).CombinedOutput()
 			cancel()
 			if err != nil {
-				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
+				ts.cfg.Logger.Warn("'kubectl describe replicationcontroller' failed", zap.Error(err))
 			}
 			out := string(output)
-			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe replicationcontroller\" output:\n%s\n\n", out)
 		}),
 	)
 	cancel()
@@ -715,7 +714,7 @@ func (ts *tester) checkNodes() error {
 	}
 	cmdLogs := strings.Join(argsLogs, " ")
 
-	expectedNodes := ts.cfg.EKSConfig.AddOnHollowNodesRemote.Nodes * int(ts.cfg.EKSConfig.AddOnHollowNodesRemote.DeploymentReplicas)
+	expectedNodes := ts.cfg.EKSConfig.AddOnHollowNodesRemote.Nodes * int(ts.cfg.EKSConfig.AddOnHollowNodesRemote.ReplicationControllerReplicas)
 
 	// TODO: :some" hollow nodes may fail from resource quota
 	// find out why it's failing
