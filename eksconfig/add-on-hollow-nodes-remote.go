@@ -12,7 +12,7 @@ import (
 // add-on hollow nodes remote.
 // It generates loads from the remote workers (Pod) in the cluster.
 // Each worker writes serially with no concurrency.
-// Configure "DeploymentReplicas" accordingly to increase the concurrency.
+// Configure "ReplicationControllerReplicas" accordingly to increase the concurrency.
 type AddOnHollowNodesRemote struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
@@ -37,11 +37,11 @@ type AddOnHollowNodesRemote struct {
 	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester:latest"
 	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 
-	// DeploymentReplicas is the number of replicas to create for workers.
-	// The total number of objects to be created is "DeploymentReplicas" * "Nodes".
-	DeploymentReplicas int32 `json:"deployment-replicas,omitempty"`
+	// ReplicationControllerReplicas is the number of replicas to create for workers.
+	// The total number of objects to be created is "ReplicationControllerReplicas" * "Nodes".
+	ReplicationControllerReplicas int32 `json:"replication-controller-replicas,omitempty"`
 	// Nodes is the number of hollow nodes to create.
-	// The total number of objects to be created is "DeploymentReplicas" * "Nodes".
+	// The total number of objects to be created is "ReplicationControllerReplicas" * "Nodes".
 	Nodes int `json:"nodes"`
 
 	// NodeNamePrefix is the node name prefix for node names.
@@ -75,12 +75,12 @@ func (cfg *Config) IsEnabledAddOnHollowNodesRemote() bool {
 
 func getDefaultAddOnHollowNodesRemote() *AddOnHollowNodesRemote {
 	return &AddOnHollowNodesRemote{
-		Enable:             false,
-		DeploymentReplicas: 5,
-		Nodes:              2,
-		NodeNamePrefix:     "hollow" + randutil.String(5),
-		NodeLabelPrefix:    "hollow" + randutil.String(5),
-		MaxOpenFiles:       1000000,
+		Enable:                        false,
+		ReplicationControllerReplicas: 5,
+		Nodes:                         2,
+		NodeNamePrefix:                "hollow" + randutil.String(5),
+		NodeLabelPrefix:               "hollow" + randutil.String(5),
+		MaxOpenFiles:                  1000000,
 	}
 }
 
@@ -113,8 +113,8 @@ func (cfg *Config) validateAddOnHollowNodesRemote() error {
 		return errors.New("AddOnHollowNodesRemote.RepositoryImageTag empty")
 	}
 
-	if cfg.AddOnHollowNodesRemote.DeploymentReplicas == 0 {
-		cfg.AddOnHollowNodesRemote.DeploymentReplicas = 5
+	if cfg.AddOnHollowNodesRemote.ReplicationControllerReplicas == 0 {
+		cfg.AddOnHollowNodesRemote.ReplicationControllerReplicas = 5
 	}
 	if cfg.AddOnHollowNodesRemote.Nodes == 0 {
 		cfg.AddOnHollowNodesRemote.Nodes = 2
