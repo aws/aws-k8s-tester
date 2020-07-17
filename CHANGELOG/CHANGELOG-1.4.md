@@ -5,6 +5,29 @@
 
 
 
+## [v1.4.7](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.7) (2020-07-17)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.6...v1.4.7).
+
+### `eks`
+
+- Valid [China region service principals in `eks/ng` and `eks/mng`](https://github.com/aws/aws-k8s-tester/pull/132).
+- Fix [`eks/prometheus-grafana`](https://github.com/aws/aws-k8s-tester/issues/131).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.33.6`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.6) to [`v1.33.7`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.7).
+
+### Go
+
+- Compile with [*Go 1.14.6*](https://golang.org/doc/devel/release.html#go1.14).
+
+
+
+<hr>
+
+
+
 ## [v1.4.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.6) (2020-07-16)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.5...v1.4.6).
