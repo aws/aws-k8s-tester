@@ -609,22 +609,23 @@ func (ts *tester) waitDeploymentALB() (err error) {
 		albIngressControllerDeploymentName,
 		ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicasALB,
 		k8s_client.WithQueryFunc(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			output, err := exec.New().CommandContext(
-				ctx,
+			descArgs := []string{
 				ts.cfg.EKSConfig.KubectlPath,
-				"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
 				"--namespace=kube-system",
 				"describe",
 				"deployment",
 				albIngressControllerDeploymentName,
-			).CombinedOutput()
+			}
+			descCmd := strings.Join(descArgs, " ")
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 			cancel()
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
 			}
 			out := string(output)
-			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", descCmd, out)
 		}),
 	)
 	cancel()
@@ -742,22 +743,23 @@ func (ts *tester) waitDeployment2048() (err error) {
 		alb2048DeploymentName,
 		ts.cfg.EKSConfig.AddOnALB2048.DeploymentReplicas2048,
 		k8s_client.WithQueryFunc(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			output, err := exec.New().CommandContext(
-				ctx,
+			descArgs := []string{
 				ts.cfg.EKSConfig.KubectlPath,
-				"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-				"--namespace="+ts.cfg.EKSConfig.AddOnALB2048.Namespace,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnALB2048.Namespace,
 				"describe",
 				"deployment",
 				alb2048DeploymentName,
-			).CombinedOutput()
+			}
+			descCmd := strings.Join(descArgs, " ")
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 			cancel()
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
 			}
 			out := string(output)
-			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", descCmd, out)
 		}),
 	)
 	cancel()

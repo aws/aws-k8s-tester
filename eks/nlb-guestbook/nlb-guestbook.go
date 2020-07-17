@@ -344,22 +344,23 @@ func (ts *tester) waitDeploymentRedisLeader() (err error) {
 		redisLeaderDeploymentName,
 		1,
 		k8s_client.WithQueryFunc(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			output, err := exec.New().CommandContext(
-				ctx,
+			descArgs := []string{
 				ts.cfg.EKSConfig.KubectlPath,
-				"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-				"--namespace="+ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 				"describe",
 				"deployment",
 				redisLeaderDeploymentName,
-			).CombinedOutput()
+			}
+			descCmd := strings.Join(descArgs, " ")
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 			cancel()
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
 			}
 			out := string(output)
-			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", descCmd, out)
 
 			logsArgs := []string{
 				ts.cfg.EKSConfig.KubectlPath,
@@ -616,22 +617,23 @@ func (ts *tester) waitDeploymentRedisFollower() (err error) {
 		redisFollowerDeploymentName,
 		1,
 		k8s_client.WithQueryFunc(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			output, err := exec.New().CommandContext(
-				ctx,
+			descArgs := []string{
 				ts.cfg.EKSConfig.KubectlPath,
-				"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-				"--namespace="+ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 				"describe",
 				"deployment",
 				redisFollowerDeploymentName,
-			).CombinedOutput()
+			}
+			descCmd := strings.Join(descArgs, " ")
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 			cancel()
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
 			}
 			out := string(output)
-			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", descCmd, out)
 
 			logsArgs := []string{
 				ts.cfg.EKSConfig.KubectlPath,
@@ -885,22 +887,23 @@ func (ts *tester) waitDeploymentGuestbook() (err error) {
 		nlbGuestbookDeploymentName,
 		ts.cfg.EKSConfig.AddOnNLBGuestbook.DeploymentReplicas,
 		k8s_client.WithQueryFunc(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			output, err := exec.New().CommandContext(
-				ctx,
+			descArgs := []string{
 				ts.cfg.EKSConfig.KubectlPath,
-				"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-				"--namespace="+ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnNLBGuestbook.Namespace,
 				"describe",
 				"deployment",
 				nlbGuestbookDeploymentName,
-			).CombinedOutput()
+			}
+			descCmd := strings.Join(descArgs, " ")
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 			cancel()
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
 			}
 			out := string(output)
-			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", descCmd, out)
 
 			logsArgs := []string{
 				ts.cfg.EKSConfig.KubectlPath,

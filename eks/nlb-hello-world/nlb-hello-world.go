@@ -281,22 +281,23 @@ func (ts *tester) waitDeployment() (err error) {
 		nlbHelloWorldDeploymentName,
 		ts.cfg.EKSConfig.AddOnNLBHelloWorld.DeploymentReplicas,
 		k8s_client.WithQueryFunc(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			output, err := exec.New().CommandContext(
-				ctx,
+			descArgs := []string{
 				ts.cfg.EKSConfig.KubectlPath,
-				"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-				"--namespace="+ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=" + ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace,
 				"describe",
 				"deployment",
 				nlbHelloWorldDeploymentName,
-			).CombinedOutput()
+			}
+			descCmd := strings.Join(descArgs, " ")
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 			cancel()
 			if err != nil {
 				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
 			}
 			out := string(output)
-			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe deployment\" output:\n%s\n\n", out)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", descCmd, out)
 		}),
 	)
 	cancel()
