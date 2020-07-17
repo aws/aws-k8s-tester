@@ -301,13 +301,13 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			*/
 			found := false
 			for _, pv := range cfg.AddOnManagedNodeGroups.RoleServicePrincipals {
-				if pv == "ec2.amazonaws.com" { // TODO: support China regions ec2.amazonaws.com.cn or eks.amazonaws.com.cn
+				if pv == "ec2.amazonaws.com" || pv == "ec2.amazonaws.com.cn" {
 					found = true
 					break
 				}
 			}
 			if !found {
-				return fmt.Errorf("AddOnManagedNodeGroups.RoleServicePrincipals %q must include 'ec2.amazonaws.com'", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
+				return fmt.Errorf("AddOnManagedNodeGroups.RoleServicePrincipals %q must include 'ec2.amazonaws.com' or 'ec2.amazonaws.com.cn'", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
 			}
 		}
 
