@@ -298,6 +298,15 @@ func (ts *tester) createHelmGrafana() error {
 			"AMIType": ec2config.AMITypeAL2X8664,
 			"NGType":  ngType,
 		},
+		// standard_init_linux.go:211: exec user process caused "exec format error"
+		// if set to "1.31.1"
+		// ref. https://github.com/helm/charts/pull/23195
+		// ref. https://github.com/aws/aws-k8s-tester/issues/131
+		"initChownData": map[string]interface{}{
+			"image": map[string]interface{}{
+				"tag": "latest",
+			},
+		},
 		"persistence": map[string]interface{}{
 			"enabled": true,
 			// use CSI driver with volume type "gp2", as in launch configuration
