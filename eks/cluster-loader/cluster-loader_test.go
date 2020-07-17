@@ -33,9 +33,11 @@ func TestExec(t *testing.T) {
 	defer os.RemoveAll(loaderPath)
 	ld := &loader{
 		cfg: Config{
-			Logger:                   zap.NewExample(),
+			Logger:    zap.NewExample(),
+			LogWriter: os.Stderr,
+
 			ClusterLoaderPath:        loaderPath,
-			ClusterLoaderDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/v1.2.6/clusterloader2-linux-amd64",
+			ClusterLoaderDownloadURL: "https://github.com/aws/aws-k8s-tester/releases/download/v1.4.6/clusterloader2-linux-amd64",
 
 			PodsPerNode: 100,
 		},

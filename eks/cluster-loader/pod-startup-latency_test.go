@@ -19,7 +19,7 @@ func TestParsePodStartupLatency(t *testing.T) {
 		if info.IsDir() {
 			return nil
 		}
-		if !strings.HasPrefix(filepath.Base(path), "PodStartupLatency_") {
+		if !strings.HasPrefix(filepath.Base(path), "PodStartupLatency-") {
 			return nil
 		}
 		p, perr := ParsePodStartupLatency(path)
