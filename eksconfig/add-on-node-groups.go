@@ -209,13 +209,13 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			*/
 			found := false
 			for _, pv := range cfg.AddOnNodeGroups.RoleServicePrincipals {
-				if pv == "ec2.amazonaws.com" { // TODO: support China regions ec2.amazonaws.com.cn or eks.amazonaws.com.cn
+				if pv == "ec2.amazonaws.com" || pv == "ec2.amazonaws.com.cn" {
 					found = true
 					break
 				}
 			}
 			if !found {
-				return fmt.Errorf("AddOnNodeGroups.RoleServicePrincipals %q must include 'ec2.amazonaws.com'", cfg.AddOnNodeGroups.RoleServicePrincipals)
+				return fmt.Errorf("AddOnNodeGroups.RoleServicePrincipals %q must include 'ec2.amazonaws.com' or 'ec2.amazonaws.com.cn'", cfg.AddOnNodeGroups.RoleServicePrincipals)
 			}
 		}
 
