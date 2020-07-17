@@ -7,7 +7,7 @@ AKT_DISTRIBUTION = linux-amd64
 AKT_S3_BUCKET = s3://eks-prow
 AKT_S3_PREFIX ?= $(AKT_S3_BUCKET)/bin/aws-k8s-tester
 AKT_S3_PATH ?= $(AKT_S3_PREFIX)/aws-k8s-tester-$(AKT_TAG)-$(AKT_DISTRIBUTION)
-AKT_ECR_HOST = amazonaws.com
+AKT_ECR_HOST ?= amazonaws.com
 
 clean:
 	rm -rf ./bin ./_tmp
