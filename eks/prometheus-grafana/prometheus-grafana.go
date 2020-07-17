@@ -302,9 +302,12 @@ func (ts *tester) createHelmGrafana() error {
 		// if set to "1.31.1"
 		// ref. https://github.com/helm/charts/pull/23195
 		// ref. https://github.com/aws/aws-k8s-tester/issues/131
+		// make sure these are default empty in case chart version is <=5.4.0
+		// ref. https://github.com/helm/charts/pull/23240
 		"initChownData": map[string]interface{}{
 			"image": map[string]interface{}{
 				"tag": "latest",
+				"sha": "",
 			},
 		},
 		"persistence": map[string]interface{}{
