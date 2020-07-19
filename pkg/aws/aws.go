@@ -199,3 +199,25 @@ func New(cfg *Config) (ss *session.Session, stsOutput *sts.GetCallerIdentityOutp
 	}
 	return ss, stsOutput, awsCredsPath, err
 }
+
+// Regions returns the set of regions for the given partition.
+// It maps from region ID (e.g. us-west-2) to its region object.
+func Regions(partition string) (regions map[string]endpoints.Region, err error) {
+	var part endpoints.Partition
+	switch partition {
+	case endpoints.AwsPartitionID:
+		part = endpoints.AwsPartition()
+	case endpoints.AwsCnPartitionID:
+		part = endpoints.AwsCnPartition()
+	case endpoints.AwsUsGovPartitionID:
+		part = endpoints.AwsUsGovPartition()
+	case endpoints.AwsIsoPartitionID:
+		part = endpoints.AwsIsoPartition()
+	case endpoints.AwsIsoBPartitionID:
+		part = endpoints.AwsIsoBPartition()
+	default:
+		return nil, fmt.Errorf("unknown partition %q", partition)
+	}
+	regions = part.Regions()
+	return regions, nil
+}

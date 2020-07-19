@@ -13,7 +13,7 @@ import (
 )
 
 func TestCW(t *testing.T) {
-	// t.Skip()
+	t.Skip()
 
 	lg := zap.NewExample()
 	ss, _, _, err := pkg_aws.New(&pkg_aws.Config{
@@ -34,7 +34,7 @@ func TestCW(t *testing.T) {
 }
 
 func TestCWCreateDelete(t *testing.T) {
-	// t.Skip()
+	t.Skip()
 
 	lg := zap.NewExample()
 	ss, _, _, err := pkg_aws.New(&pkg_aws.Config{
@@ -50,6 +50,22 @@ func TestCWCreateDelete(t *testing.T) {
 	ecrAPI := ecr.New(ss, aws.NewConfig().WithRegion("us-west-2"))
 
 	repoURI, err := Create(
+		lg,
+		ecrAPI,
+		"607362164682",
+		"us-west-2",
+		repoName,
+		false,
+		ecr.ImageTagMutabilityMutable,
+		testRepoPolicy,
+		true,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(repoURI)
+
+	repoURI, err = Create(
 		lg,
 		ecrAPI,
 		"607362164682",

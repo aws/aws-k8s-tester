@@ -2,6 +2,7 @@
 package ecr
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -216,6 +217,9 @@ func Create(
 	}
 
 	if policyTxt != "" {
+		if _, jerr := json.Marshal(policyTxt); jerr != nil {
+			return "", fmt.Errorf("failed to marshal %v", jerr)
+		}
 		_, serr := svc.SetRepositoryPolicy(&ecr.SetRepositoryPolicyInput{
 			RegistryId:     aws.String(repoAccountID),
 			RepositoryName: aws.String(repoName),
