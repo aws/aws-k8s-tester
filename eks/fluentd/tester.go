@@ -56,7 +56,7 @@ func New(cfg Config) eks_tester.Tester {
 				ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxRegion != "" &&
 				ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxName != "" &&
 				ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxImageTag != "" {
-				ts.busyboxImg, err = aws_ecr.Check(
+				ts.busyboxImg, _, err = aws_ecr.Check(
 					ts.cfg.Logger,
 					ts.cfg.ECRAPI,
 					ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxAccountID,

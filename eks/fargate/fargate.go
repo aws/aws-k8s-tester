@@ -87,7 +87,7 @@ func (ts *tester) Create() (err error) {
 	}()
 
 	if ts.cfg.EKSConfig.AddOnFargate.RepositoryName != "" {
-		if ts.ecrImage, err = aws_ecr.Check(
+		if ts.ecrImage, _, err = aws_ecr.Check(
 			ts.cfg.Logger,
 			ts.cfg.ECRAPI,
 			ts.cfg.EKSConfig.AddOnFargate.RepositoryAccountID,

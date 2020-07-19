@@ -77,7 +77,7 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.EKSConfig.AddOnCronJobs.RepositoryBusyboxRegion != "" &&
 		ts.cfg.EKSConfig.AddOnCronJobs.RepositoryBusyboxName != "" &&
 		ts.cfg.EKSConfig.AddOnCronJobs.RepositoryBusyboxImageTag != "" {
-		if ts.busyboxImg, err = aws_ecr.Check(
+		if ts.busyboxImg, _, err = aws_ecr.Check(
 			ts.cfg.Logger,
 			ts.cfg.ECRAPI,
 			ts.cfg.EKSConfig.AddOnCronJobs.RepositoryBusyboxAccountID,

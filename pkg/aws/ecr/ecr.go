@@ -4,8 +4,10 @@ package ecr
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/dustin/go-humanize"
@@ -13,8 +15,15 @@ import (
 )
 
 // Check checks if the specified repository exists, and returns the repository URI + ":" + image tag.
-func Check(lg *zap.Logger, svc ecriface.ECRAPI, repoAccountID string, repoRegion string, repoName string, imageTag string) (img string, err error) {
-	lg.Info("describing ECR repositories",
+// It returns "true" for "ok" if the repository exists.
+func Check(
+	lg *zap.Logger,
+	svc ecriface.ECRAPI,
+	repoAccountID string,
+	repoRegion string,
+	repoName string,
+	imageTag string) (img string, ok bool, err error) {
+	lg.Info("describing an ECR repository",
 		zap.String("repo-account-id", repoAccountID),
 		zap.String("repo-region", repoRegion),
 		zap.String("repo-name", repoName),
@@ -25,30 +34,43 @@ func Check(lg *zap.Logger, svc ecriface.ECRAPI, repoAccountID string, repoRegion
 		RepositoryNames: aws.StringSlice([]string{repoName}),
 	})
 	if err != nil {
-		return "", err
+		ev, ok := err.(awserr.Error)
+		if !ok {
+			return "", false, err
+		}
+		switch ev.Code() {
+		case "RepositoryNotFoundException":
+			lg.Warn("ECR repo not found", zap.String("error-code", ev.Code()), zap.Error(err))
+			ok = false
+		default:
+		}
+		return "", ok, err
 	}
 	if len(repoOut.Repositories) != 1 {
-		return "", fmt.Errorf("%q expected 1 ECR repository, got %d", repoName, len(repoOut.Repositories))
+		return "", true, fmt.Errorf("%q expected 1 ECR repository, got %d", repoName, len(repoOut.Repositories))
 	}
 	repo := repoOut.Repositories[0]
+	repoAccountID2 := aws.StringValue(repo.RegistryId)
 	repoARN := aws.StringValue(repo.RepositoryArn)
 	repoName2 := aws.StringValue(repo.RepositoryName)
 	repoURI := aws.StringValue(repo.RepositoryUri)
 	img = repoURI + ":" + imageTag
 	lg.Info(
-		"described ECR repository",
+		"described an ECR repository",
 		zap.String("repo-arn", repoARN),
 		zap.String("repo-region", repoRegion),
 		zap.String("repo-name", repoName2),
 		zap.String("repo-uri", repoURI),
 		zap.String("img", img),
 	)
-
+	if repoAccountID2 != repoAccountID {
+		return "", true, fmt.Errorf("unexpected ECR repository account ID %q (expected %q)", repoAccountID2, repoAccountID)
+	}
 	if repoName2 != repoName {
-		return "", fmt.Errorf("unexpected ECR repository name %q", repoName2)
+		return "", true, fmt.Errorf("unexpected ECR repository name %q", repoName2)
 	}
 	if !strings.Contains(repoURI, repoRegion) {
-		return "", fmt.Errorf("region %q not found in URI %q", repoRegion, repoURI)
+		return "", true, fmt.Errorf("region %q not found in URI %q", repoRegion, repoURI)
 	}
 
 	lg.Info("describing images",
@@ -67,10 +89,10 @@ func Check(lg *zap.Logger, svc ecriface.ECRAPI, repoAccountID string, repoRegion
 	})
 	if err != nil {
 		lg.Warn("failed to describe image", zap.Error(err))
-		return "", err
+		return "", true, err
 	}
 	if len(imgOut.ImageDetails) == 0 {
-		return "", fmt.Errorf("image tag %q not found", imageTag)
+		return "", true, fmt.Errorf("image tag %q not found", imageTag)
 	}
 	lg.Info("described images",
 		zap.String("repo-name", repoName),
@@ -87,6 +109,227 @@ func Check(lg *zap.Logger, svc ecriface.ECRAPI, repoAccountID string, repoRegion
 			zap.String("size", humanize.Bytes(uint64(aws.Int64Value(img.ImageSizeInBytes)))),
 		)
 	}
+	return img, true, nil
+}
 
-	return img, nil
+// Create creates an ECR repo if it does not exist.
+// If the set policy fails, ECR repo creation is reverted (delete).
+func Create(
+	lg *zap.Logger,
+	svc ecriface.ECRAPI,
+	repoAccountID string,
+	repoRegion string,
+	repoName string,
+	imgScanOnPush bool,
+	imgTagMutability string,
+	policyTxt string,
+	setPolicyForce bool) (repoURI string, err error) {
+	lg.Info("creating an ECR repository",
+		zap.String("repo-account-id", repoAccountID),
+		zap.String("repo-region", repoRegion),
+		zap.String("repo-name", repoName),
+		zap.Bool("image-scan-on-push", imgScanOnPush),
+		zap.String("image-tag-mutability", imgTagMutability),
+		zap.Bool("set-policy-force", setPolicyForce),
+	)
+	switch imgTagMutability {
+	case ecr.ImageTagMutabilityMutable:
+	case ecr.ImageTagMutabilityImmutable:
+	default:
+		return "", fmt.Errorf("invalid image tag mutability %q", imgTagMutability)
+	}
+	repoOut, err := svc.DescribeRepositories(&ecr.DescribeRepositoriesInput{
+		RegistryId:      aws.String(repoAccountID),
+		RepositoryNames: aws.StringSlice([]string{repoName}),
+	})
+	if err == nil {
+		if len(repoOut.Repositories) != 1 {
+			return "", fmt.Errorf("%q expected 1 ECR repository, got %d", repoName, len(repoOut.Repositories))
+		}
+		repo := repoOut.Repositories[0]
+		repoAccountID2 := aws.StringValue(repo.RegistryId)
+		repoARN := aws.StringValue(repo.RepositoryArn)
+		repoName2 := aws.StringValue(repo.RepositoryName)
+		repoURI = aws.StringValue(repo.RepositoryUri)
+		lg.Info(
+			"found an ECR repository",
+			zap.String("repo-arn", repoARN),
+			zap.String("repo-region", repoRegion),
+			zap.String("repo-name", repoName2),
+			zap.String("repo-uri", repoURI),
+		)
+		if repoAccountID2 != repoAccountID {
+			return "", fmt.Errorf("unexpected ECR repository account ID %q (expected %q)", repoAccountID2, repoAccountID)
+		}
+		if repoName2 != repoName {
+			return "", fmt.Errorf("unexpected ECR repository name %q", repoName2)
+		}
+		if !strings.Contains(repoURI, repoRegion) {
+			return "", fmt.Errorf("region %q not found in URI %q", repoRegion, repoURI)
+		}
+		return repoURI, nil
+	}
+
+	ev, ok := err.(awserr.Error)
+	if !ok {
+		return "", err
+	}
+	if ev.Code() != "RepositoryNotFoundException" {
+		return "", err
+	}
+
+	lg.Info("ECR repo not found; creating a new one", zap.String("error-code", ev.Code()), zap.Error(err))
+	var createOutput *ecr.CreateRepositoryOutput
+	createOutput, err = svc.CreateRepository(&ecr.CreateRepositoryInput{
+		ImageScanningConfiguration: &ecr.ImageScanningConfiguration{
+			ScanOnPush: aws.Bool(imgScanOnPush),
+		},
+		ImageTagMutability: aws.String(imgTagMutability),
+		RepositoryName:     aws.String(repoName),
+		Tags: []*ecr.Tag{
+			{Key: aws.String("Kind"), Value: aws.String("aws-k8s-tester")},
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+	repo := createOutput.Repository
+	repoAccountID2 := aws.StringValue(repo.RegistryId)
+	repoARN := aws.StringValue(repo.RepositoryArn)
+	repoName2 := aws.StringValue(repo.RepositoryName)
+	repoURI = aws.StringValue(repo.RepositoryUri)
+	lg.Info(
+		"created an ECR repository",
+		zap.String("repo-arn", repoARN),
+		zap.String("repo-region", repoRegion),
+		zap.String("repo-name", repoName2),
+		zap.String("repo-uri", repoURI),
+	)
+	if repoAccountID2 != repoAccountID {
+		return "", fmt.Errorf("unexpected ECR repository account ID %q (expected %q)", repoAccountID2, repoAccountID)
+	}
+	if repoName2 != repoName {
+		return "", fmt.Errorf("unexpected ECR repository name %q", repoName2)
+	}
+	if !strings.Contains(repoURI, repoRegion) {
+		return "", fmt.Errorf("region %q not found in URI %q", repoRegion, repoURI)
+	}
+
+	if policyTxt != "" {
+		_, serr := svc.SetRepositoryPolicy(&ecr.SetRepositoryPolicyInput{
+			RegistryId:     aws.String(repoAccountID),
+			RepositoryName: aws.String(repoName),
+			Force:          aws.Bool(setPolicyForce),
+			PolicyText:     aws.String(policyTxt),
+		})
+		if serr != nil {
+			lg.Warn("failed to set repository policy, reverting ECR repository creation", zap.Error(err))
+			if derr := Delete(lg, svc, repoAccountID, repoRegion, repoName, false); derr != nil {
+				lg.Warn("failed to revert ECR repository creation", zap.Error(derr))
+			}
+			return "", fmt.Errorf("failed to set repostiory policy for %q (%v)", repoURI, serr)
+		}
+	}
+	return repoURI, nil
+}
+
+// Delete deletes an ECR repo if it exists.
+func Delete(
+	lg *zap.Logger,
+	svc ecriface.ECRAPI,
+	repoAccountID string,
+	repoRegion string,
+	repoName string,
+	force bool) (err error) {
+	lg.Info("deleting an ECR repository",
+		zap.String("repo-account-id", repoAccountID),
+		zap.String("repo-region", repoRegion),
+		zap.String("repo-name", repoName),
+		zap.Bool("force", force),
+	)
+	repoOut, err := svc.DescribeRepositories(&ecr.DescribeRepositoriesInput{
+		RegistryId:      aws.String(repoAccountID),
+		RepositoryNames: aws.StringSlice([]string{repoName}),
+	})
+	if err != nil {
+		ev, ok := err.(awserr.Error)
+		if ok && ev.Code() == "RepositoryNotFoundException" {
+			lg.Info("ECR repository already deleted; skipping",
+				zap.String("repo-account-id", repoAccountID),
+				zap.String("repo-region", repoRegion),
+				zap.String("repo-name", repoName),
+				zap.Error(err),
+			)
+			return nil
+		}
+		return err
+	}
+
+	if len(repoOut.Repositories) != 1 {
+		return fmt.Errorf("%q expected 1 ECR repository, got %d", repoName, len(repoOut.Repositories))
+	}
+	repo := repoOut.Repositories[0]
+	repoAccountID2 := aws.StringValue(repo.RegistryId)
+	repoARN := aws.StringValue(repo.RepositoryArn)
+	repoName2 := aws.StringValue(repo.RepositoryName)
+	repoURI := aws.StringValue(repo.RepositoryUri)
+	lg.Info(
+		"found an ECR repository; deleting",
+		zap.String("repo-arn", repoARN),
+		zap.String("repo-region", repoRegion),
+		zap.String("repo-name", repoName2),
+		zap.String("repo-uri", repoURI),
+	)
+	if repoAccountID2 != repoAccountID {
+		return fmt.Errorf("unexpected ECR repository account ID %q (expected %q)", repoAccountID2, repoAccountID)
+	}
+	if repoName2 != repoName {
+		return fmt.Errorf("unexpected ECR repository name %q", repoName2)
+	}
+	if !strings.Contains(repoURI, repoRegion) {
+		return fmt.Errorf("region %q not found in URI %q", repoRegion, repoURI)
+	}
+
+	_, err = svc.DeleteRepository(&ecr.DeleteRepositoryInput{
+		RegistryId:     aws.String(repoAccountID),
+		RepositoryName: aws.String(repoName),
+		Force:          aws.Bool(force),
+	})
+	if err != nil {
+		lg.Warn("failed to delete an ECR repository", zap.Error(err))
+		return err
+	}
+	// confirm ECR deletion
+	deleted := false
+	retryStart := time.Now()
+	for time.Now().Sub(retryStart) < 15*time.Minute {
+		time.Sleep(5 * time.Second)
+
+		_, derr := svc.DescribeRepositories(&ecr.DescribeRepositoriesInput{
+			RegistryId:      aws.String(repoAccountID),
+			RepositoryNames: aws.StringSlice([]string{repoName}),
+		})
+		if derr != nil {
+			ev, ok := derr.(awserr.Error)
+			if ok && ev.Code() == "RepositoryNotFoundException" {
+				lg.Info("confirmed ECR repository has been deleted",
+					zap.String("repo-account-id", repoAccountID),
+					zap.String("repo-region", repoRegion),
+					zap.String("repo-name", repoName),
+					zap.Error(derr),
+				)
+				deleted = true
+			}
+			if !deleted {
+				lg.Warn("failed to describe an ECR repository", zap.Error(derr))
+			}
+		}
+		if deleted {
+			break
+		}
+	}
+	if !deleted {
+		return fmt.Errorf("ECR %q has not been deleted", repoName)
+	}
+	return nil
 }
