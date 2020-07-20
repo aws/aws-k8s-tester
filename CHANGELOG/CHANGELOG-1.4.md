@@ -25,6 +25,12 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.7...v1.4.8
 - Add [`eks/cni-vpc`](https://github.com/aws/aws-k8s-tester/commit/104f581eac40168cc3c73d04b338e995b83e0923).
   - `eks/cni-vpc` is [installed before worker nodes and not deleted](https://github.com/aws/aws-k8s-tester/commit/cb63393b3131a5266deaae2dcfcf417897bc5848).
   - Requires [at least `AddOnCNIVPC.Version` `v1.7`](https://github.com/aws/aws-k8s-tester/commit/52f89b7bc78e84f6a87a081dbea277c07f54b0e5).
+- Fix [`eks/hollow-nodes/remote`]
+  - Deploys to kubemark namespace
+  - Uses a replication controller instead of deployment
+  - Kubemark pods now equal corresponding hollow node names
+  - Adds labels to hollow nodes for CA discovery
+  - Idempotently Create/Update kubemark resources.
 
 ### `pkg`
 

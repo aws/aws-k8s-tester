@@ -63,10 +63,6 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", pkgName))
 		return nil
 	}
-	if ts.cfg.EKSConfig.AddOnHollowNodesRemote.Created {
-		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", pkgName))
-		return nil
-	}
 
 	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", pkgName))
 	ts.cfg.EKSConfig.AddOnHollowNodesRemote.Created = true
@@ -96,26 +92,18 @@ func (ts *tester) Create() (err error) {
 	); err != nil {
 		return err
 	}
-	if err = ts.createServiceAccount(); err != nil {
-		return err
-	}
-	if err = ts.createRBACClusterRole(); err != nil {
-		return err
-	}
-	if err = ts.createRBACClusterRoleBinding(); err != nil {
-		return err
-	}
-	if err = ts.createConfigMap(); err != nil {
-		return err
-	}
-	if err = ts.createReplicationController(); err != nil {
-		return err
-	}
-	if err = ts.waitReplicationController(); err != nil {
-		return err
-	}
-	if err = ts.checkNodes(); err != nil {
-		return err
+
+	for _, step := range []func() error{
+		ts.createServiceAccount,
+		ts.createRBACClusterRole,
+		ts.createRBACClusterRoleBinding,
+		ts.createConfigMap,
+		ts.createHollowNodes,
+		ts.checkNodes,
+	} {
+		if err := step(); err != nil {
+			return fmt.Errorf("while executing step %s(), %v", reflect.TypeOf(step), err)
+		}
 	}
 
 	return ts.cfg.EKSConfig.Sync()
@@ -194,42 +182,41 @@ const (
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
 // ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 func (ts *tester) createServiceAccount() error {
-	ts.cfg.Logger.Info("creating cluster loader ServiceAccount")
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		ServiceAccounts(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace).
-		Create(
-			ctx,
-			&v1.ServiceAccount{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "v1",
-					Kind:       "ServiceAccount",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      hollowNodesServiceAccountName,
-					Namespace: ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
-					Labels: map[string]string{
-						"app.kubernetes.io/name": hollowNodesAppName,
-					},
-				},
+	ts.cfg.Logger.Info("creating kubemark ServiceAccount")
+	sa := &v1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ServiceAccount",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      hollowNodesServiceAccountName,
+			Namespace: ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
+			Labels: map[string]string{
+				"app.kubernetes.io/name": hollowNodesAppName,
 			},
-			metav1.CreateOptions{},
-		)
-	cancel()
-	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
-		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-		return fmt.Errorf("failed to create cluster loader ServiceAccount (%v)", err)
+		},
 	}
 
-	ts.cfg.Logger.Info("created cluster loader ServiceAccount")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	client := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().ServiceAccounts(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace)
+	defer cancel()
+	var err error
+	if _, err = client.Create(ctx, sa, metav1.CreateOptions{}); apierrs.IsAlreadyExists(err) {
+		_, err = client.Update(ctx, sa, metav1.UpdateOptions{})
+	}
+
+	if err != nil {
+		return fmt.Errorf("while creating service account (%v)", err)
+	}
+
+	ts.cfg.Logger.Info("created ServiceAccount")
 	return ts.cfg.EKSConfig.Sync()
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
 // ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 func (ts *tester) deleteServiceAccount() error {
-	ts.cfg.Logger.Info("deleting cluster loader ServiceAccount")
+	ts.cfg.Logger.Info("deleting kubemark ServiceAccount")
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -246,9 +233,9 @@ func (ts *tester) deleteServiceAccount() error {
 	cancel()
 	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-		return fmt.Errorf("failed to delete cluster loader ServiceAccount (%v)", err)
+		return fmt.Errorf("failed to delete kubemark ServiceAccount (%v)", err)
 	}
-	ts.cfg.Logger.Info("deleted cluster loader ServiceAccount", zap.Error(err))
+	ts.cfg.Logger.Info("deleted kubemark ServiceAccount", zap.Error(err))
 
 	return ts.cfg.EKSConfig.Sync()
 }
@@ -260,80 +247,79 @@ func (ts *tester) deleteServiceAccount() error {
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
 // ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 func (ts *tester) createRBACClusterRole() error {
-	ts.cfg.Logger.Info("creating cluster loader RBAC ClusterRole")
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cfg.K8SClient.KubernetesClientSet().
-		RbacV1().
-		ClusterRoles().
-		Create(
-			ctx,
-			&rbacv1.ClusterRole{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "rbac.authorization.k8s.io/v1",
-					Kind:       "ClusterRole",
+	ts.cfg.Logger.Info("creating kubemark RBAC ClusterRole")
+	role := &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "ClusterRole",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      hollowNodesRBACRoleName,
+			Namespace: "default",
+			Labels: map[string]string{
+				"app.kubernetes.io/name": hollowNodesAppName,
+			},
+		},
+		// e.g. "kubectl api-resources"
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{
+					"*",
 				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      hollowNodesRBACRoleName,
-					Namespace: "default",
-					Labels: map[string]string{
-						"app.kubernetes.io/name": hollowNodesAppName,
-					},
+				Resources: []string{
+					"leases",         // for API group "coordination.k8s.io"
+					"runtimeclasses", // for API group "node.k8s.io"
+					"nodes",
+					"nodes/status", // to patch resource "nodes/status" in API group "" at the cluster scope
+					"pods",
+					"pods/status", // to patch resource in API group "" in the namespace "kube-system"
+					"secrets",
+					"services",
+					"namespaces",
+					"configmaps",
+					"endpoints",
+					"events",
+					"ingresses",
+					"ingresses/status",
+					"services",
+					"jobs",
+					"cronjobs",
+					"storageclasses",
+					"volumeattachments",
+					"csidrivers", // for API group "storage.k8s.io"
+					"csinodes",   // Failed to initialize CSINodeInfo: error updating CSINode annotation: timed out waiting for the condition; caused by: csinodes.storage.k8s.io "hollowwandefortegreen6wd8z" is forbidden: User "system:serviceaccount:eks-2020052423-boldlyuxvugd-hollow-nodes-remote:hollow-nodes-remote-service-account" cannot get resource "csinodes" in API group "storage.k8s.io" at the cluster scope
 				},
-				// e.g. "kubectl api-resources"
-				Rules: []rbacv1.PolicyRule{
-					{
-						APIGroups: []string{
-							"*",
-						},
-						Resources: []string{
-							"leases",         // for API group "coordination.k8s.io"
-							"runtimeclasses", // for API group "node.k8s.io"
-							"nodes",
-							"nodes/status", // to patch resource "nodes/status" in API group "" at the cluster scope
-							"pods",
-							"pods/status", // to patch resource in API group "" in the namespace "kube-system"
-							"secrets",
-							"services",
-							"namespaces",
-							"configmaps",
-							"endpoints",
-							"events",
-							"ingresses",
-							"ingresses/status",
-							"services",
-							"jobs",
-							"cronjobs",
-							"storageclasses",
-							"volumeattachments",
-							"csidrivers", // for API group "storage.k8s.io"
-							"csinodes",   // Failed to initialize CSINodeInfo: error updating CSINode annotation: timed out waiting for the condition; caused by: csinodes.storage.k8s.io "hollowwandefortegreen6wd8z" is forbidden: User "system:serviceaccount:eks-2020052423-boldlyuxvugd-hollow-nodes-remote:hollow-nodes-remote-service-account" cannot get resource "csinodes" in API group "storage.k8s.io" at the cluster scope
-						},
-						Verbs: []string{
-							"create",
-							"get",
-							"list",
-							"update",
-							"watch",
-							"patch",
-						},
-					},
+				Verbs: []string{
+					"create",
+					"get",
+					"list",
+					"update",
+					"watch",
+					"patch",
 				},
 			},
-			metav1.CreateOptions{},
-		)
-	cancel()
-	if err != nil {
-		return fmt.Errorf("failed to create cluster loader RBAC ClusterRole (%v)", err)
+		},
 	}
 
-	ts.cfg.Logger.Info("created cluster loader RBAC ClusterRole")
+	client := ts.cfg.K8SClient.KubernetesClientSet().RbacV1().ClusterRoles()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	var err error
+	if _, err := client.Create(ctx, role, metav1.CreateOptions{}); apierrs.IsAlreadyExists(err) {
+		_, err = client.Update(ctx, role, metav1.UpdateOptions{})
+	}
+	if err != nil {
+		return fmt.Errorf("failed to create kubemark RBAC ClusterRole (%v)", err)
+	}
+
+	ts.cfg.Logger.Info("created kubemark RBAC ClusterRole")
 	return ts.cfg.EKSConfig.Sync()
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
 // ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 func (ts *tester) deleteRBACClusterRole() error {
-	ts.cfg.Logger.Info("deleting cluster loader RBAC ClusterRole")
+	ts.cfg.Logger.Info("deleting kubemark RBAC ClusterRole")
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -350,69 +336,67 @@ func (ts *tester) deleteRBACClusterRole() error {
 	cancel()
 	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-		return fmt.Errorf("failed to delete cluster loader RBAC ClusterRole (%v)", err)
+		return fmt.Errorf("failed to delete kubemark RBAC ClusterRole (%v)", err)
 	}
 
-	ts.cfg.Logger.Info("deleted cluster loader RBAC ClusterRole", zap.Error(err))
+	ts.cfg.Logger.Info("deleted kubemark RBAC ClusterRole", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
 // ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
-func (ts *tester) createRBACClusterRoleBinding() error {
-	ts.cfg.Logger.Info("creating cluster loader RBAC ClusterRoleBinding")
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cfg.K8SClient.KubernetesClientSet().
-		RbacV1().
-		ClusterRoleBindings().
-		Create(
-			ctx,
-			&rbacv1.ClusterRoleBinding{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "rbac.authorization.k8s.io/v1",
-					Kind:       "ClusterRoleBinding",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      hollowNodesRBACClusterRoleBindingName,
-					Namespace: "default",
-					Labels: map[string]string{
-						"app.kubernetes.io/name": hollowNodesAppName,
-					},
-				},
-				RoleRef: rbacv1.RoleRef{
-					APIGroup: "rbac.authorization.k8s.io",
-					Kind:     "ClusterRole",
-					Name:     hollowNodesRBACRoleName,
-				},
-				Subjects: []rbacv1.Subject{
-					{
-						APIGroup:  "",
-						Kind:      "ServiceAccount",
-						Name:      hollowNodesServiceAccountName,
-						Namespace: ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
-					},
-					{ // https://kubernetes.io/docs/reference/access-authn-authz/rbac/
-						APIGroup: "rbac.authorization.k8s.io",
-						Kind:     "User",
-						Name:     "system:node",
-					},
-				},
+func (ts *tester) createRBACClusterRoleBinding() (err error) {
+	ts.cfg.Logger.Info("creating kubemark RBAC ClusterRoleBinding")
+	resource := &rbacv1.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "rbac.authorization.k8s.io/v1",
+			Kind:       "ClusterRoleBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      hollowNodesRBACClusterRoleBindingName,
+			Namespace: "default",
+			Labels: map[string]string{
+				"app.kubernetes.io/name": hollowNodesAppName,
 			},
-			metav1.CreateOptions{},
-		)
-	cancel()
-	if err != nil {
-		return fmt.Errorf("failed to create cluster loader RBAC ClusterRoleBinding (%v)", err)
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     hollowNodesRBACRoleName,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				APIGroup:  "",
+				Kind:      "ServiceAccount",
+				Name:      hollowNodesServiceAccountName,
+				Namespace: ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
+			},
+			{ // https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "User",
+				Name:     "system:node",
+			},
+		},
+	}
+	client := ts.cfg.K8SClient.KubernetesClientSet().RbacV1().ClusterRoleBindings()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	if _, err = client.Create(ctx, resource, metav1.CreateOptions{}); apierrs.IsAlreadyExists(err) {
+		_, err = client.Update(ctx, resource, metav1.UpdateOptions{})
 	}
 
-	ts.cfg.Logger.Info("created cluster loader RBAC ClusterRoleBinding")
+	if err != nil {
+		return fmt.Errorf("failed to create kubemark RBAC ClusterRoleBinding (%v)", err)
+	}
+
+	ts.cfg.Logger.Info("created kubemark RBAC ClusterRoleBinding")
 	return ts.cfg.EKSConfig.Sync()
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
 // ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 func (ts *tester) deleteRBACClusterRoleBinding() error {
-	ts.cfg.Logger.Info("deleting cluster loader RBAC ClusterRoleBinding")
+	ts.cfg.Logger.Info("deleting kubemark RBAC ClusterRoleBinding")
 	foreground := metav1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	err := ts.cfg.K8SClient.KubernetesClientSet().
@@ -429,49 +413,47 @@ func (ts *tester) deleteRBACClusterRoleBinding() error {
 	cancel()
 	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
 		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-		return fmt.Errorf("failed to delete cluster loader RBAC ClusterRoleBinding (%v)", err)
+		return fmt.Errorf("failed to delete kubemark RBAC ClusterRoleBinding (%v)", err)
 	}
 
-	ts.cfg.Logger.Info("deleted cluster loader RBAC ClusterRoleBinding", zap.Error(err))
+	ts.cfg.Logger.Info("deleted kubemark RBAC ClusterRoleBinding", zap.Error(err))
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) createConfigMap() error {
+func (ts *tester) createConfigMap() (err error) {
 	ts.cfg.Logger.Info("creating config map")
 
 	b, err := ioutil.ReadFile(ts.cfg.EKSConfig.KubeConfigPath)
 	if err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err = ts.cfg.K8SClient.KubernetesClientSet().
-		CoreV1().
-		ConfigMaps(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace).
-		Create(
-			ctx,
-			&v1.ConfigMap{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "v1",
-					Kind:       "ConfigMap",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      hollowNodesKubeConfigConfigMapName,
-					Namespace: ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
-					Labels: map[string]string{
-						"name": hollowNodesKubeConfigConfigMapName,
-					},
-				},
-				Data: map[string]string{
-					hollowNodesKubeConfigConfigMapFileName: string(b),
-				},
+
+	resource := &v1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      hollowNodesKubeConfigConfigMapName,
+			Namespace: ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
+			Labels: map[string]string{
+				"name": hollowNodesKubeConfigConfigMapName,
 			},
-			metav1.CreateOptions{},
-		)
-	cancel()
-	if err != nil {
-		return err
+		},
+		Data: map[string]string{
+			hollowNodesKubeConfigConfigMapFileName: string(b),
+		},
 	}
 
+	client := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().ConfigMaps(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	if _, err = client.Create(ctx, resource, metav1.CreateOptions{}); apierrs.IsAlreadyExists(err) {
+		_, err = client.Update(ctx, resource, metav1.UpdateOptions{})
+	}
+	if err != nil {
+		return fmt.Errorf("while creating configmap %v", err)
+	}
 	ts.cfg.Logger.Info("created config map")
 	return ts.cfg.EKSConfig.Sync()
 }
@@ -500,142 +482,146 @@ func (ts *tester) deleteConfigMap() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-// TODO: use "ReplicationController" to max out
+func (ts *tester) createHollowNodes() error {
+	for i := 0; i < ts.cfg.EKSConfig.AddOnHollowNodesRemote.NodeGroups; i++ {
+		for j := 0; j < ts.cfg.EKSConfig.AddOnHollowNodesRemote.Nodes; j++ {
+			ng := fmt.Sprintf("%s-nodegroup-%d", ts.cfg.EKSConfig.AddOnHollowNodesRemote.NodeLabelPrefix, i)
+			name := fmt.Sprintf("%s-node-%d", ng, j)
+			if err := ts.createHollowNode(name, ng); err != nil {
+				return fmt.Errorf("while creating hollow node %v, %v", name, err)
+			}
+		}
+	}
+	return nil
+}
 
-func (ts *tester) createReplicationController() error {
-	// "/opt/"+hollowNodesKubeConfigConfigMapFileName,
-	// do not specify "kubeconfig", and use in-cluster config via "pkg/k8s-client"
-	// ref. https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
-	//
-	// randomize node label, for node checking
-	// in case multiple pods are creating hollow nodes
-	//
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create hollow-nodes --clients=%d --client-qps=%f --client-burst=%d --nodes=%d --node-name-prefix=%s --node-label-prefix=%s --remote=true",
+func (ts *tester) createHollowNode(name string, nodeGroup string) (err error) {
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create hollow-nodes --clients=%d --client-qps=%f --client-burst=%d --nodes=%d --node-name-prefix=${NODE_GROUP_NAME} --node-label-prefix=%s --remote=true",
 		ts.cfg.EKSConfig.Clients,
 		ts.cfg.EKSConfig.ClientQPS,
 		ts.cfg.EKSConfig.ClientBurst,
 		ts.cfg.EKSConfig.AddOnHollowNodesRemote.Nodes,
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.NodeNamePrefix,
 		ts.cfg.EKSConfig.AddOnHollowNodesRemote.NodeLabelPrefix,
 	)
 
 	ts.cfg.Logger.Info("creating hollow nodes ReplicationController", zap.String("image", ts.ecrImage), zap.String("tester-command", testerCmd))
 	dirOrCreate := v1.HostPathDirectoryOrCreate
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().
-		ReplicationControllers(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace).
-		Create(
-			ctx,
-			&v1.ReplicationController{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "apps/v1",
-					Kind:       "ReplicationController",
-				},
+
+	resource := &v1.ReplicationController{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps/v1",
+			Kind:       "ReplicationController",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
+			Labels: map[string]string{
+				"autoscaling.k8s.io/nodegroup": nodeGroup,
+				"app.kubernetes.io/name":       hollowNodesAppName,
+			},
+		},
+		Spec: v1.ReplicationControllerSpec{
+			Replicas: aws.Int32(1),
+			Selector: map[string]string{
+				"autoscaling.k8s.io/nodegroup": nodeGroup,
+				"app.kubernetes.io/name":       hollowNodesAppName,
+			},
+			Template: &v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      hollowNodesReplicationControllerName,
-					Namespace: ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
 					Labels: map[string]string{
-						"autoscaling.k8s.io/nodegroup": hollowNodesAppName,
+						"autoscaling.k8s.io/nodegroup": nodeGroup,
 						"app.kubernetes.io/name":       hollowNodesAppName,
+						// Name must point backwards to replication controller for CA to create new replicationcontrollers
+						"name": name,
 					},
 				},
-				Spec: v1.ReplicationControllerSpec{
-					Replicas: aws.Int32(ts.cfg.EKSConfig.AddOnHollowNodesRemote.ReplicationControllerReplicas),
-					Selector: map[string]string{
-						"autoscaling.k8s.io/nodegroup": hollowNodesAppName,
-						"app.kubernetes.io/name":       hollowNodesAppName,
-					},
-					Template: &v1.PodTemplateSpec{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								"autoscaling.k8s.io/nodegroup": hollowNodesAppName,
-								"app.kubernetes.io/name":       hollowNodesAppName,
+				Spec: v1.PodSpec{
+					ServiceAccountName: hollowNodesServiceAccountName,
+					RestartPolicy:      v1.RestartPolicyAlways,
+					Containers: []v1.Container{
+						{
+							Name:            hollowNodesAppName,
+							Image:           ts.ecrImage,
+							ImagePullPolicy: v1.PullAlways,
+							Command: []string{
+								"/bin/sh",
+								"-ec",
+								testerCmd,
 							},
-						},
-						Spec: v1.PodSpec{
-							ServiceAccountName: hollowNodesServiceAccountName,
-
-							RestartPolicy: v1.RestartPolicyAlways,
-							// TODO: set resource limits
-							Containers: []v1.Container{
-								{
-									Name:            hollowNodesAppName,
-									Image:           ts.ecrImage,
-									ImagePullPolicy: v1.PullAlways,
-
-									Command: []string{
-										"/bin/sh",
-										"-ec",
-										testerCmd,
-									},
-
-									// grant access "/dev/kmsg"
-									SecurityContext: &v1.SecurityContext{
-										Privileged: aws.Bool(true),
-									},
-
-									// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
-									VolumeMounts: []v1.VolumeMount{
-										{ // to execute
-											Name:      hollowNodesKubeConfigConfigMapName,
-											MountPath: "/opt",
-										},
-										{ // for hollow node kubelet, kubelet requires "/dev/kmsg"
-											Name:      "kmsg",
-											MountPath: "/dev/kmsg",
-										},
-										{ // to write
-											Name:      "varlog",
-											MountPath: "/var/log",
-											ReadOnly:  false,
-										},
-									},
-								},
+							Env: []v1.EnvVar{{
+								Name:      "NODE_GROUP_NAME",
+								ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.name"}},
+							}},
+							// grant access "/dev/kmsg"
+							SecurityContext: &v1.SecurityContext{
+								Privileged: aws.Bool(true),
 							},
-
 							// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
-							Volumes: []v1.Volume{
+							VolumeMounts: []v1.VolumeMount{
 								{ // to execute
-									Name: hollowNodesKubeConfigConfigMapName,
-									VolumeSource: v1.VolumeSource{
-										ConfigMap: &v1.ConfigMapVolumeSource{
-											LocalObjectReference: v1.LocalObjectReference{
-												Name: hollowNodesKubeConfigConfigMapName,
-											},
-											DefaultMode: aws.Int32(0777),
-										},
-									},
+									Name:      hollowNodesKubeConfigConfigMapName,
+									MountPath: "/opt",
 								},
-								{ // for hollow node kubelet
-									Name: "kmsg",
-									VolumeSource: v1.VolumeSource{
-										HostPath: &v1.HostPathVolumeSource{
-											Path: "/dev/kmsg",
-										},
-									},
+								{ // for hollow node kubelet, kubelet requires "/dev/kmsg"
+									Name:      "kmsg",
+									MountPath: "/dev/kmsg",
 								},
 								{ // to write
-									Name: "varlog",
-									VolumeSource: v1.VolumeSource{
-										HostPath: &v1.HostPathVolumeSource{
-											Path: "/var/log",
-											Type: &dirOrCreate,
-										},
-									},
+									Name:      "varlog",
+									MountPath: "/var/log",
+									ReadOnly:  false,
 								},
 							},
+						},
+					},
 
-							NodeSelector: map[string]string{
-								// do not deploy in fake nodes, obviously
-								"NodeType": "regular",
+					// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
+					Volumes: []v1.Volume{
+						{ // to execute
+							Name: hollowNodesKubeConfigConfigMapName,
+							VolumeSource: v1.VolumeSource{
+								ConfigMap: &v1.ConfigMapVolumeSource{
+									LocalObjectReference: v1.LocalObjectReference{
+										Name: hollowNodesKubeConfigConfigMapName,
+									},
+									DefaultMode: aws.Int32(0777),
+								},
 							},
 						},
+						{ // for hollow node kubelet
+							Name: "kmsg",
+							VolumeSource: v1.VolumeSource{
+								HostPath: &v1.HostPathVolumeSource{
+									Path: "/dev/kmsg",
+								},
+							},
+						},
+						{ // to write
+							Name: "varlog",
+							VolumeSource: v1.VolumeSource{
+								HostPath: &v1.HostPathVolumeSource{
+									Path: "/var/log",
+									Type: &dirOrCreate,
+								},
+							},
+						},
+					},
+
+					NodeSelector: map[string]string{
+						// do not deploy in fake nodes, obviously
+						"NodeType": "regular",
 					},
 				},
 			},
-			metav1.CreateOptions{},
-		)
-	cancel()
+		},
+	}
+
+	client := ts.cfg.K8SClient.KubernetesClientSet().CoreV1().ReplicationControllers(ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	if _, err = client.Create(ctx, resource, metav1.CreateOptions{}); apierrs.IsAlreadyExists(err) {
+		_, err = client.Update(ctx, resource, metav1.UpdateOptions{})
+	}
 	if err != nil {
 		return fmt.Errorf("failed to create hollow node ReplicationController (%v)", err)
 	}
@@ -666,43 +652,6 @@ func (ts *tester) deleteReplicationController() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-func (ts *tester) waitReplicationController() (err error) {
-	timeout := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnHollowNodesRemote.ReplicationControllerReplicas)*time.Minute
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	_, err = k8s_client.WaitForReplicationControllerCompletes(
-		ctx,
-		ts.cfg.Logger,
-		ts.cfg.LogWriter,
-		ts.cfg.Stopc,
-		ts.cfg.K8SClient,
-		time.Minute,
-		20*time.Second,
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
-		hollowNodesReplicationControllerName,
-		ts.cfg.EKSConfig.AddOnHollowNodesRemote.ReplicationControllerReplicas,
-		k8s_client.WithQueryFunc(func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-			output, err := exec.New().CommandContext(
-				ctx,
-				ts.cfg.EKSConfig.KubectlPath,
-				"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-				"--namespace="+ts.cfg.EKSConfig.AddOnHollowNodesRemote.Namespace,
-				"describe",
-				"replicationcontroller",
-				hollowNodesReplicationControllerName,
-			).CombinedOutput()
-			cancel()
-			if err != nil {
-				ts.cfg.Logger.Warn("'kubectl describe replicationcontroller' failed", zap.Error(err))
-			}
-			out := string(output)
-			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"kubectl describe replicationcontroller\" output:\n%s\n\n", out)
-		}),
-	)
-	cancel()
-	return err
-}
-
 func (ts *tester) checkNodes() error {
 	argsLogs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
@@ -715,7 +664,7 @@ func (ts *tester) checkNodes() error {
 	}
 	cmdLogs := strings.Join(argsLogs, " ")
 
-	expectedNodes := ts.cfg.EKSConfig.AddOnHollowNodesRemote.Nodes * int(ts.cfg.EKSConfig.AddOnHollowNodesRemote.ReplicationControllerReplicas)
+	expectedNodes := ts.cfg.EKSConfig.AddOnHollowNodesRemote.Nodes * ts.cfg.EKSConfig.AddOnHollowNodesRemote.NodeGroups
 
 	// TODO: :some" hollow nodes may fail from resource quota
 	// find out why it's failing

@@ -20,7 +20,6 @@ import (
 
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
-	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -128,12 +127,20 @@ func (ng *nodeGroup) Start() (err error) {
 		zap.Any("node-labels", ng.cfg.NodeLabels),
 	)
 	for i := 0; i < ng.cfg.Nodes; i++ {
+		// Cluster Autoscaler's Kubemark integration requires that the podname and node name are equal.
+		// To support this, the first node will be named identically to the pod and each subsequent node suffixed with index.
+		// For ClusterAutoscaler configurations, the #Nodes must be 1.
+		nodeName := ng.cfg.NodeNamePrefix
+		if i > 0 {
+			nodeName += string(i)
+		}
+
 		ng.kubelets[i], ng.kubeProxies[i], err = newNode(nodeConfig{
 			lg:           ng.cfg.Logger,
 			stopc:        ng.cfg.Stopc,
 			donec:        ng.donec,
 			cli:          ng.cfg.Client,
-			nodeName:     ng.cfg.NodeNamePrefix + randutil.String(10),
+			nodeName:     nodeName,
 			nodeLabels:   ng.cfg.NodeLabels,
 			maxOpenFiles: ng.cfg.MaxOpenFiles,
 			remote:       ng.cfg.Remote,
