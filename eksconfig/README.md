@@ -317,6 +317,10 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_TIME_FRAME_CREATE        | read-only "true"  | *eksconfig.AddOnPHPApache.TimeFrameCreate        | timeutil.TimeFrame |
 | AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_TIME_FRAME_DELETE        | read-only "true"  | *eksconfig.AddOnPHPApache.TimeFrameDelete        | timeutil.TimeFrame |
 | AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_NAMESPACE                | read-only "false" | *eksconfig.AddOnPHPApache.Namespace              | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_REPOSITORY_ACCOUNT_ID    | read-only "false" | *eksconfig.AddOnPHPApache.RepositoryAccountID    | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_REPOSITORY_REGION        | read-only "false" | *eksconfig.AddOnPHPApache.RepositoryRegion       | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_REPOSITORY_NAME          | read-only "false" | *eksconfig.AddOnPHPApache.RepositoryName         | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_REPOSITORY_IMAGE_TAG     | read-only "false" | *eksconfig.AddOnPHPApache.RepositoryImageTag     | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_DEPLOYMENT_REPLICAS      | read-only "false" | *eksconfig.AddOnPHPApache.DeploymentReplicas     | int32              |
 | AWS_K8S_TESTER_EKS_ADD_ON_PHP_APACHE_DEPLOYMENT_NODE_SELECTOR | read-only "false" | *eksconfig.AddOnPHPApache.DeploymentNodeSelector | map[string]string  |
 *---------------------------------------------------------------*-------------------*--------------------------------------------------*--------------------*

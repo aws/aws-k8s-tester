@@ -13,9 +13,11 @@ import (
 
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eksconfig"
+	aws_ecr "github.com/aws/aws-k8s-tester/pkg/aws/ecr"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -31,6 +33,7 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
+	ECRAPI    ecriface.ECRAPI
 }
 
 var pkgName = reflect.TypeOf(tester{}).PkgPath()
@@ -40,11 +43,13 @@ func (ts *tester) Name() string { return pkgName }
 // New creates a new Job tester.
 func New(cfg Config) eks_tester.Tester {
 	cfg.Logger.Info("creating tester", zap.String("tester", pkgName))
-	return &tester{cfg: cfg}
+	return &tester{cfg: cfg, phpApacheImg: phpApacheAppImageName}
 }
 
 type tester struct {
 	cfg Config
+
+	phpApacheImg string
 }
 
 const (
@@ -53,7 +58,7 @@ const (
 	phpApacheAppImageName   = "pjlewis/php-apache"
 )
 
-func (ts *tester) Create() error {
+func (ts *tester) Create() (err error) {
 	if !ts.cfg.EKSConfig.IsEnabledAddOnPHPApache() {
 		ts.cfg.Logger.Info("skipping tester.Create", zap.String("tester", pkgName))
 		return nil
@@ -73,6 +78,21 @@ func (ts *tester) Create() error {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
+	if ts.cfg.EKSConfig.AddOnPHPApache.RepositoryAccountID != "" &&
+		ts.cfg.EKSConfig.AddOnPHPApache.RepositoryRegion != "" &&
+		ts.cfg.EKSConfig.AddOnPHPApache.RepositoryName != "" &&
+		ts.cfg.EKSConfig.AddOnPHPApache.RepositoryImageTag != "" {
+		if ts.phpApacheImg, _, err = aws_ecr.Check(
+			ts.cfg.Logger,
+			ts.cfg.ECRAPI,
+			ts.cfg.EKSConfig.AddOnPHPApache.RepositoryAccountID,
+			ts.cfg.EKSConfig.AddOnPHPApache.RepositoryRegion,
+			ts.cfg.EKSConfig.AddOnPHPApache.RepositoryName,
+			ts.cfg.EKSConfig.AddOnPHPApache.RepositoryImageTag,
+		); err != nil {
+			return err
+		}
+	}
 	if err := k8s_client.CreateNamespace(
 		ts.cfg.Logger,
 		ts.cfg.K8SClient.KubernetesClientSet(),
@@ -178,7 +198,7 @@ func (ts *tester) createDeployment() error {
 							Containers: []v1.Container{
 								{
 									Name:            phpApacheAppName,
-									Image:           phpApacheAppImageName,
+									Image:           ts.phpApacheImg,
 									ImagePullPolicy: v1.PullAlways,
 								},
 							},

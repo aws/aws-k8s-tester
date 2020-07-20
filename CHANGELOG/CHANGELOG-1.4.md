@@ -7,6 +7,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.7...v1.4.8
 
 - Add [`cmd/ecr-utils`](https://github.com/aws/aws-k8s-tester/commit/50aa049a3e933c992fcfaeec6c671ec047a910bd).
 
+### `eksconfig`
+
+- Make [`AddOnPHPApache` ECR image configurable](https://github.com/aws/aws-k8s-tester/commit/).
+
 ### `pkg`
 
 - Change [`pkg/aws/ecr.Check` to return `ok bool`](https://github.com/aws/aws-k8s-tester/commit/e85f7f353d8bccb0462144219679d0945b065d04).

@@ -20,6 +20,18 @@ type AddOnPHPApache struct {
 	// Namespace is the namespace to create objects in.
 	Namespace string `json:"namespace"`
 
+	// RepositoryAccountID is the account ID for tester ECR image.
+	// e.g. "php-apache" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/php-apache"
+	RepositoryAccountID string `json:"repository-account-id,omitempty"`
+	// RepositoryRegion is the ECR repository region to pull from.
+	RepositoryRegion string `json:"repository-region,omitempty"`
+	// RepositoryName is the repositoryName for tester ECR image.
+	// e.g. "php-apache" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/php-apache"
+	RepositoryName string `json:"repository-name,omitempty"`
+	// RepositoryImageTag is the image tag for tester ECR image.
+	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/php-apache:latest"
+	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
+
 	// DeploymentReplicas is the number of replicas to deploy using "Deployment" object.
 	DeploymentReplicas int32 `json:"deployment-replicas"`
 	// DeploymentNodeSelector is configured to overwrite existing node selector
@@ -49,6 +61,13 @@ func getDefaultAddOnPHPApache() *AddOnPHPApache {
 		DeploymentReplicas:     3,
 		DeploymentNodeSelector: make(map[string]string),
 	}
+}
+
+func (cfg *Config) GetAddOnPHPApacheRepositoryRegion() string {
+	if !cfg.IsEnabledAddOnPHPApache() {
+		return cfg.Region
+	}
+	return cfg.AddOnPHPApache.RepositoryRegion
 }
 
 func (cfg *Config) validateAddOnPHPApache() error {

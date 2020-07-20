@@ -536,6 +536,7 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnPHPApacheRepositoryRegion())),
 		}),
 		nlb_hello_world.New(nlb_hello_world.Config{
 			Logger:    ts.lg,
