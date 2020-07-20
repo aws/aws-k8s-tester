@@ -429,3 +429,7 @@ func SetPolicy(
 	)
 	return repoURI, nil
 }
+
+// TODO: get auth token
+// https://github.com/aws/amazon-ecs-agent/blob/master/agent/dockerclient/dockerauth/ecr.go
+// automated docker push
