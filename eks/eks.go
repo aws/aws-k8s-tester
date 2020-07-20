@@ -990,7 +990,7 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Fprintf(ts.logWriter, ts.color("[light_green]cniTester.Create [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]cniTester.Create [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand()+" --namespace kube-system")
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,

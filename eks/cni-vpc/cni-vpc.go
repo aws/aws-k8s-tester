@@ -157,7 +157,7 @@ func (ts *tester) Delete() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-// https://github.com/aws/amazon-vpc-cni-k8s/blob/master/config/v1.6/aws-k8s-cni.yaml
+// https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
 const (
 	cniServiceAccountName         = "aws-node"
 	cniRBACRoleName               = "aws-node"
@@ -168,8 +168,7 @@ const (
 	cniCRDNamePlural              = "eniconfigs"
 )
 
-// ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
-// ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+// https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
 func (ts *tester) updateCNIServiceAccount() error {
 	ts.cfg.Logger.Info("updating CNI ServiceAccount")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -186,9 +185,6 @@ func (ts *tester) updateCNIServiceAccount() error {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      cniServiceAccountName,
 					Namespace: "kube-system",
-					Labels: map[string]string{
-						"app.kubernetes.io/name": cniAppName,
-					},
 				},
 			},
 			metav1.UpdateOptions{},
@@ -202,8 +198,7 @@ func (ts *tester) updateCNIServiceAccount() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-// ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
-// ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+// https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
 func (ts *tester) deleteCNIServiceAccount() error {
 	ts.cfg.Logger.Info("deleting CNI ServiceAccount")
 	foreground := metav1.DeletePropagationForeground
@@ -229,8 +224,7 @@ func (ts *tester) deleteCNIServiceAccount() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-// ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
-// ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+// https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
 func (ts *tester) updateCNIRBACClusterRole() error {
 	ts.cfg.Logger.Info("updating CNI RBAC ClusterRole")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -249,9 +243,6 @@ func (ts *tester) updateCNIRBACClusterRole() error {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      cniRBACRoleName,
 					Namespace: "default",
-					Labels: map[string]string{
-						"app.kubernetes.io/name": cniAppName,
-					},
 				},
 				Rules: []rbacv1.PolicyRule{
 					{
@@ -307,8 +298,7 @@ func (ts *tester) updateCNIRBACClusterRole() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-// ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
-// ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+// https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
 func (ts *tester) deleteCNIRBACClusterRole() error {
 	ts.cfg.Logger.Info("deleting CNI RBAC ClusterRole")
 	foreground := metav1.DeletePropagationForeground
@@ -334,8 +324,7 @@ func (ts *tester) deleteCNIRBACClusterRole() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-// ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
-// ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+// https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
 func (ts *tester) updateCNIRBACClusterRoleBinding() error {
 	ts.cfg.Logger.Info("updating CNI RBAC ClusterRoleBinding")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -352,9 +341,6 @@ func (ts *tester) updateCNIRBACClusterRoleBinding() error {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      cniRBACClusterRoleBindingName,
 					Namespace: "default",
-					Labels: map[string]string{
-						"app.kubernetes.io/name": cniAppName,
-					},
 				},
 				RoleRef: rbacv1.RoleRef{
 					APIGroup: "rbac.authorization.k8s.io",
@@ -381,8 +367,7 @@ func (ts *tester) updateCNIRBACClusterRoleBinding() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-// ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
-// ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+// https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
 func (ts *tester) deleteCNIRBACClusterRoleBinding() error {
 	ts.cfg.Logger.Info("deleting CNI RBAC ClusterRoleBinding")
 	foreground := metav1.DeletePropagationForeground
@@ -408,6 +393,7 @@ func (ts *tester) deleteCNIRBACClusterRoleBinding() error {
 	return ts.cfg.EKSConfig.Sync()
 }
 
+// https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
 func (ts *tester) updateCNICRD() (err error) {
 	ts.cfg.Logger.Info("getting CNI CRD")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -474,7 +460,7 @@ func (ts *tester) updateCNICRD() (err error) {
 	return ts.cfg.EKSConfig.Sync()
 }
 
-// https://github.com/aws/amazon-vpc-cni-k8s/blob/master/config/v1.6/aws-k8s-cni.yaml
+// https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
 func (ts *tester) updateCNIDaemonSet() (err error) {
 	envVars := []v1.EnvVar{
 		{
@@ -740,9 +726,28 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 	}
 
 	ts.cfg.Logger.Info("updated CNI DaemonSet")
+
+	descArgsDs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=kube-system",
+		"describe",
+		"daemonset.apps/" + cniDaemonSetName,
+	}
+	descCmdDs := strings.Join(descArgsDs, " ")
+	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+	output, err := exec.New().CommandContext(ctx, descArgsDs[0], descArgsDs[1:]...).CombinedOutput()
+	cancel()
+	outDesc := string(output)
+	if err != nil {
+		ts.cfg.Logger.Warn("'kubectl describe' failed", zap.Error(err))
+	}
+	fmt.Fprintf(ts.cfg.LogWriter, "\n'%s' output:\n\n%s\n\n", descCmdDs, outDesc)
+
 	return nil
 }
 
+// https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
 func (ts *tester) deleteCNIDaemonSet() (err error) {
 	foreground := metav1.DeletePropagationForeground
 	ts.cfg.Logger.Info("deleting CNI DaemonSet", zap.String("name", cniDaemonSetName))
@@ -767,8 +772,7 @@ func (ts *tester) deleteCNIDaemonSet() (err error) {
 	return nil
 }
 
-// this may run before nodes are created
-// should handle pending state pods
+// this may run before nodes are created, should handle pending state pods
 func (ts *tester) checkCNIPods() (err error) {
 	waitDur := 10*time.Minute + 3*time.Minute*time.Duration(ts.cfg.EKSConfig.TotalNodes)
 	retryStart := time.Now()
