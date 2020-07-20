@@ -10,6 +10,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/dustin/go-humanize"
@@ -21,15 +22,26 @@ import (
 func Check(
 	lg *zap.Logger,
 	svc ecriface.ECRAPI,
+	partition string,
 	repoAccountID string,
 	repoRegion string,
 	repoName string,
 	imageTag string) (img string, ok bool, err error) {
+	// e.g. 602401143452.dkr.ecr.us-west-2.amazonaws.com/amazon-k8s-cni:v1.6.3
+	ecrHost := "amazonaws.com"
+	switch partition {
+	case endpoints.AwsCnPartitionID:
+		ecrHost = "amazonaws.com.cn"
+	default:
+	}
+	img = fmt.Sprintf("%s.dkr.ecr.%s.%s/%s:%s", repoAccountID, repoRegion, ecrHost, repoName, imageTag)
+
 	lg.Info("describing an ECR repository",
 		zap.String("repo-account-id", repoAccountID),
 		zap.String("repo-region", repoRegion),
 		zap.String("repo-name", repoName),
 		zap.String("image-tag", imageTag),
+		zap.String("image", img),
 	)
 	repoOut, err := svc.DescribeRepositories(&ecr.DescribeRepositoriesInput{
 		RegistryId:      aws.String(repoAccountID),
@@ -38,7 +50,7 @@ func Check(
 	if err != nil {
 		ev, ok := err.(awserr.Error)
 		if !ok {
-			return "", false, err
+			return img, false, err
 		}
 		switch ev.Code() {
 		case "RepositoryNotFoundException":
@@ -46,10 +58,10 @@ func Check(
 			ok = false
 		default:
 		}
-		return "", ok, err
+		return img, ok, err
 	}
 	if len(repoOut.Repositories) != 1 {
-		return "", true, fmt.Errorf("%q expected 1 ECR repository, got %d", repoName, len(repoOut.Repositories))
+		return img, true, fmt.Errorf("%q expected 1 ECR repository, got %d", repoName, len(repoOut.Repositories))
 	}
 	repo := repoOut.Repositories[0]
 	repoAccountID2 := aws.StringValue(repo.RegistryId)
@@ -63,16 +75,16 @@ func Check(
 		zap.String("repo-region", repoRegion),
 		zap.String("repo-name", repoName2),
 		zap.String("repo-uri", repoURI),
-		zap.String("img", img),
+		zap.String("image", img),
 	)
 	if repoAccountID2 != repoAccountID {
-		return "", true, fmt.Errorf("unexpected ECR repository account ID %q (expected %q)", repoAccountID2, repoAccountID)
+		return img, true, fmt.Errorf("unexpected ECR repository account ID %q (expected %q)", repoAccountID2, repoAccountID)
 	}
 	if repoName2 != repoName {
-		return "", true, fmt.Errorf("unexpected ECR repository name %q", repoName2)
+		return img, true, fmt.Errorf("unexpected ECR repository name %q", repoName2)
 	}
 	if !strings.Contains(repoURI, repoRegion) {
-		return "", true, fmt.Errorf("region %q not found in URI %q", repoRegion, repoURI)
+		return img, true, fmt.Errorf("region %q not found in URI %q", repoRegion, repoURI)
 	}
 
 	lg.Info("describing images",
@@ -91,10 +103,10 @@ func Check(
 	})
 	if err != nil {
 		lg.Warn("failed to describe image", zap.Error(err))
-		return "", true, err
+		return img, true, err
 	}
 	if len(imgOut.ImageDetails) == 0 {
-		return "", true, fmt.Errorf("image tag %q not found", imageTag)
+		return img, true, fmt.Errorf("image tag %q not found", imageTag)
 	}
 	lg.Info("described images",
 		zap.String("repo-name", repoName),

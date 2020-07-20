@@ -59,6 +59,7 @@ func New(cfg Config) eks_tester.Tester {
 				ts.busyboxImg, _, err = aws_ecr.Check(
 					ts.cfg.Logger,
 					ts.cfg.ECRAPI,
+					ts.cfg.EKSConfig.Partition,
 					ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxAccountID,
 					ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxRegion,
 					ts.cfg.EKSConfig.AddOnFluentd.RepositoryBusyboxName,

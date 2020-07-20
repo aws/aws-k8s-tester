@@ -58,12 +58,22 @@ func New(cfg Config) eks_tester.Tester {
 				ts.cniImg, _, err = aws_ecr.Check(
 					ts.cfg.Logger,
 					ts.cfg.ECRAPI,
+					ts.cfg.EKSConfig.Partition,
 					ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryAccountID,
 					ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryRegion,
 					ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryName,
 					ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryImageTag,
 				)
-				return err
+				if err != nil &&
+					!strings.Contains(err.Error(), "not authorized to perform: ecr:DescribeRepositories") {
+					// e.g. "not authorized to perform: ecr:DescribeRepositories on resource: arn:aws:ecr:us-west-2:602401143452:repository/amazon-k8s-cni"
+					return err
+				}
+				if ts.cniImg == "" {
+					return errors.New("no amazon-k8s-cni ECR image found")
+				}
+				ts.cfg.Logger.Info("found amazon-k8s-cni ECR image", zap.String("image", ts.cniImg))
+				return nil
 			}
 			return nil
 		},

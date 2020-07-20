@@ -85,6 +85,7 @@ func (ts *tester) Create() (err error) {
 		if ts.phpApacheImg, _, err = aws_ecr.Check(
 			ts.cfg.Logger,
 			ts.cfg.ECRAPI,
+			ts.cfg.EKSConfig.Partition,
 			ts.cfg.EKSConfig.AddOnPHPApache.RepositoryAccountID,
 			ts.cfg.EKSConfig.AddOnPHPApache.RepositoryRegion,
 			ts.cfg.EKSConfig.AddOnPHPApache.RepositoryName,

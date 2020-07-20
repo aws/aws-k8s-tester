@@ -79,6 +79,7 @@ func (ts *tester) Create() (err error) {
 		if ts.busyboxImg, _, err = aws_ecr.Check(
 			ts.cfg.Logger,
 			ts.cfg.ECRAPI,
+			ts.cfg.EKSConfig.Partition,
 			ts.cfg.EKSConfig.AddOnJobsEcho.RepositoryBusyboxAccountID,
 			ts.cfg.EKSConfig.AddOnJobsEcho.RepositoryBusyboxRegion,
 			ts.cfg.EKSConfig.AddOnJobsEcho.RepositoryBusyboxName,

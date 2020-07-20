@@ -98,6 +98,7 @@ func (ts *tester) Create() (err error) {
 	if ts.ecrImage, _, err = aws_ecr.Check(
 		ts.cfg.Logger,
 		ts.cfg.ECRAPI,
+		ts.cfg.EKSConfig.Partition,
 		ts.cfg.EKSConfig.AddOnStresserRemote.RepositoryAccountID,
 		ts.cfg.EKSConfig.AddOnStresserRemote.RepositoryRegion,
 		ts.cfg.EKSConfig.AddOnStresserRemote.RepositoryName,

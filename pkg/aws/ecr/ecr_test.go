@@ -26,7 +26,7 @@ func TestCW(t *testing.T) {
 	}
 
 	ecrAPI := ecr.New(ss, aws.NewConfig().WithRegion("us-east-1"))
-	img, ok, err := Check(lg, ecrAPI, "607362164682", "us-east-1", "aws/aws-k8s-tester", "latest")
+	img, ok, err := Check(lg, ecrAPI, "607362164682", "aws", "us-east-1", "aws/aws-k8s-tester", "latest")
 	if err != nil {
 		t.Fatal(err)
 	}
