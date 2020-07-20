@@ -144,6 +144,9 @@ type Tester struct {
 	clusterTester cluster.Tester
 	k8sClient     k8s_client.EKS
 
+	// only create/install, no need delete
+	cniTester eks_tester.Tester
+
 	ngTester  ng.Tester
 	mngTester mng.Tester
 	gpuTester gpu.Tester
@@ -435,6 +438,15 @@ func (ts *Tester) createTesters() (err error) {
 		ELBV2API:  ts.elbv2API,
 	})
 
+	ts.cniTester = cni_vpc.New(cni_vpc.Config{
+		Logger:    ts.lg,
+		LogWriter: ts.logWriter,
+		Stopc:     ts.stopCreationCh,
+		EKSConfig: ts.cfg,
+		K8SClient: ts.k8sClient,
+		ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnCNIVPCRepositoryRegion())),
+	})
+
 	ts.ngTester = ng.New(ng.Config{
 		Logger:    ts.lg,
 		LogWriter: ts.logWriter,
@@ -471,14 +483,6 @@ func (ts *Tester) createTesters() (err error) {
 	})
 
 	ts.testers = []eks_tester.Tester{
-		cni_vpc.New(cni_vpc.Config{
-			Logger:    ts.lg,
-			LogWriter: ts.logWriter,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnCNIVPCRepositoryRegion())),
-		}),
 		cw_agent.New(cw_agent.Config{
 			Logger:    ts.lg,
 			LogWriter: ts.logWriter,
@@ -978,6 +982,25 @@ func (ts *Tester) Up() (err error) {
 	}
 	if serr := ts.uploadToS3(); serr != nil {
 		ts.lg.Warn("failed to upload artifacts to S3", zap.Error(serr))
+	}
+
+	if ts.cfg.IsEnabledAddOnCNIVPC() {
+		if ts.cniTester == nil {
+			return errors.New("ts.cniTester == nil when AddOnCNIVPC.Enable == true")
+		}
+
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]cniTester.Create [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.cniTester.Create,
+			ts.cniTester.Name(),
+		); err != nil {
+			return err
+		}
 	}
 
 	if ts.cfg.IsEnabledAddOnNodeGroups() {

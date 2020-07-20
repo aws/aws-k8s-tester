@@ -82,7 +82,7 @@ func New(cfg Config) eks_tester.Tester {
 		func() error { return ts.updateCNIRBACClusterRoleBinding() },
 		func() error { return ts.updateCNICRD() },
 		func() error { return ts.updateCNIDaemonSet() },
-		func() error { return ts.checkCNIPods() },
+		// func() error { return ts.checkCNIPods() },
 	}
 	ts.deletes = []func() error{}
 	return ts
@@ -747,6 +747,8 @@ func (ts *tester) deleteCNIDaemonSet() (err error) {
 	return nil
 }
 
+// this may run before nodes are created
+// should handle pending state pods
 func (ts *tester) checkCNIPods() (err error) {
 	waitDur := 10*time.Minute + 3*time.Minute*time.Duration(ts.cfg.EKSConfig.TotalNodes)
 	retryStart := time.Now()
@@ -801,7 +803,7 @@ func (ts *tester) _checkCNIPods() error {
 		descArgsPods := []string{
 			ts.cfg.EKSConfig.KubectlPath,
 			"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-			"--namespace=" + "kube-system",
+			"--namespace=kube-system",
 			"describe",
 			"pods/" + pod.Name,
 		}
@@ -810,7 +812,7 @@ func (ts *tester) _checkCNIPods() error {
 		logArgs := []string{
 			ts.cfg.EKSConfig.KubectlPath,
 			"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-			"--namespace=" + "kube-system",
+			"--namespace=kube-system",
 			"logs",
 			"pods/" + pod.Name,
 			"--all-containers=true",
