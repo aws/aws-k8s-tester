@@ -16,6 +16,7 @@ RUN aws --version
 ARG RELEASE_VERSION=latest
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/aws-k8s-tester-${RELEASE_VERSION}-linux-amd64 /aws-k8s-tester
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/ec2-utils-${RELEASE_VERSION}-linux-amd64 /ec2-utils
+COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/ecr-utils-${RELEASE_VERSION}-linux-amd64 /ecr-utils
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/eks-utils-${RELEASE_VERSION}-linux-amd64 /eks-utils
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/etcd-utils-${RELEASE_VERSION}-linux-amd64 /etcd-utils
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/cw-utils-${RELEASE_VERSION}-linux-amd64 /cw-utils
@@ -38,6 +39,7 @@ RUN aws --version
 RUN /aws-k8s-tester version
 RUN /cw-utils version
 RUN /ec2-utils version
+RUN /ecr-utils version
 RUN /eks-utils version
 RUN /etcd-utils version
 RUN /s3-utils version

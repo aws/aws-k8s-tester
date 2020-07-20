@@ -29,7 +29,7 @@ func init() {
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get-caller-identity",
-		Short: "AWS sts get-caller-identity commands",
+		Short: "sts-utils get-caller-identity commands",
 		Run:   getCallerIdentityFunc,
 	}
 	cmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "Log level (debug, info, warn, error, dpanic, panic, fatal)")

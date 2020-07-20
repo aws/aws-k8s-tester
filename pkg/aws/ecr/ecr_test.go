@@ -47,13 +47,13 @@ func TestCWCreateDelete(t *testing.T) {
 	}
 
 	repoName := randutil.String(10)
-	ecrAPI := ecr.New(ss, aws.NewConfig().WithRegion("us-west-2"))
+	ecrAPI := ecr.New(ss, aws.NewConfig().WithRegion("us-east-1"))
 
 	repoURI, err := Create(
 		lg,
 		ecrAPI,
 		"607362164682",
-		"us-west-2",
+		"us-east-1",
 		repoName,
 		false,
 		ecr.ImageTagMutabilityMutable,
@@ -69,7 +69,7 @@ func TestCWCreateDelete(t *testing.T) {
 		lg,
 		ecrAPI,
 		"607362164682",
-		"us-west-2",
+		"us-east-1",
 		repoName,
 		false,
 		ecr.ImageTagMutabilityMutable,
@@ -81,8 +81,15 @@ func TestCWCreateDelete(t *testing.T) {
 	}
 	fmt.Println(repoURI)
 
+	time.Sleep(5 * time.Second)
+	repoURI, err = SetPolicy(lg, ecrAPI, "607362164682", "us-east-1", repoName, testRepoPolicy, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(repoURI)
+
 	time.Sleep(10 * time.Second)
-	err = Delete(lg, ecrAPI, "607362164682", "us-west-2", repoName, true)
+	err = Delete(lg, ecrAPI, "607362164682", "us-east-1", repoName, true)
 	if err != nil {
 		t.Fatal(err)
 	}

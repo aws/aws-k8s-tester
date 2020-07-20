@@ -219,5 +219,8 @@ func Regions(partition string) (regions map[string]endpoints.Region, err error) 
 		return nil, fmt.Errorf("unknown partition %q", partition)
 	}
 	regions = part.Regions()
+	if len(regions) == 0 {
+		return nil, fmt.Errorf("no region found for partition %q", partition)
+	}
 	return regions, nil
 }

@@ -1,4 +1,23 @@
 
+## [v1.4.8](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.8) (2020-07)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.7...v1.4.8).
+
+### `cmd`
+
+- Add [`cmd/ecr-utils`](https://github.com/aws/aws-k8s-tester/commit/).
+
+### `pkg`
+
+- Change [`pkg/aws/ecr.Check` to return `ok bool`](https://github.com/aws/aws-k8s-tester/commit/e85f7f353d8bccb0462144219679d0945b065d04).
+  - Set `true` if the repository exists.
+- Add [`pkg/aws/ecr.Create`](https://github.com/aws/aws-k8s-tester/commit/e85f7f353d8bccb0462144219679d0945b065d04).
+- Add [`pkg/aws/ecr.Delete`](https://github.com/aws/aws-k8s-tester/commit/e85f7f353d8bccb0462144219679d0945b065d04).
+
+### Go
+
+- Compile with [*Go 1.14.6*](https://golang.org/doc/devel/release.html#go1.14).
+
 
 
 <hr>
@@ -13,13 +32,6 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.6...v1.4.7
 
 - Valid [China region service principals in `eks/ng` and `eks/mng`](https://github.com/aws/aws-k8s-tester/pull/132).
 - Fix [`eks/prometheus-grafana`](https://github.com/aws/aws-k8s-tester/issues/131).
-
-### `pkg`
-
-- Change [`pkg/aws/ecr.Check` to return `ok bool`](https://github.com/aws/aws-k8s-tester/commit/e85f7f353d8bccb0462144219679d0945b065d04).
-  - Set `true` if the repository exists.
-- Add [`pkg/aws/ecr.Create`](https://github.com/aws/aws-k8s-tester/commit/e85f7f353d8bccb0462144219679d0945b065d04).
-- Add [`pkg/aws/ecr.Delete`](https://github.com/aws/aws-k8s-tester/commit/e85f7f353d8bccb0462144219679d0945b065d04).
 
 ### Dependency
 

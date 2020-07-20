@@ -3,6 +3,7 @@ package ecr
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -227,7 +228,7 @@ func Create(
 			PolicyText:     aws.String(policyTxt),
 		})
 		if serr != nil {
-			lg.Warn("failed to set repository policy, reverting ECR repository creation", zap.Error(err))
+			lg.Warn("failed to set repository policy, reverting ECR repository creation", zap.Error(serr))
 			if derr := Delete(lg, svc, repoAccountID, repoRegion, repoName, false); derr != nil {
 				lg.Warn("failed to revert ECR repository creation", zap.Error(derr))
 			}
@@ -335,5 +336,96 @@ func Delete(
 	if !deleted {
 		return fmt.Errorf("ECR %q has not been deleted", repoName)
 	}
+
+	lg.Info("deleted an ECR repository",
+		zap.String("repo-account-id", repoAccountID),
+		zap.String("repo-region", repoRegion),
+		zap.String("repo-name", repoName),
+		zap.String("repo-uri", repoURI),
+		zap.Bool("force", force),
+	)
 	return nil
+}
+
+// SetPolicy updates the policy for an ECR repo.
+func SetPolicy(
+	lg *zap.Logger,
+	svc ecriface.ECRAPI,
+	repoAccountID string,
+	repoRegion string,
+	repoName string,
+	policyTxt string,
+	setPolicyForce bool) (repoURI string, err error) {
+	if len(policyTxt) == 0 {
+		return "", errors.New("empty policy")
+	}
+
+	lg.Info("setting policy for an ECR repository",
+		zap.String("repo-account-id", repoAccountID),
+		zap.String("repo-region", repoRegion),
+		zap.String("repo-name", repoName),
+		zap.Bool("set-policy-force", setPolicyForce),
+	)
+	repoOut, err := svc.DescribeRepositories(&ecr.DescribeRepositoriesInput{
+		RegistryId:      aws.String(repoAccountID),
+		RepositoryNames: aws.StringSlice([]string{repoName}),
+	})
+	if err != nil {
+		ev, ok := err.(awserr.Error)
+		if !ok {
+			return "", err
+		}
+		if ev.Code() == "RepositoryNotFoundException" {
+			lg.Warn("repository not found", zap.Error(err))
+		}
+		return "", err
+	}
+
+	if len(repoOut.Repositories) != 1 {
+		return "", fmt.Errorf("%q expected 1 ECR repository, got %d", repoName, len(repoOut.Repositories))
+	}
+	repo := repoOut.Repositories[0]
+	repoAccountID2 := aws.StringValue(repo.RegistryId)
+	repoARN := aws.StringValue(repo.RepositoryArn)
+	repoName2 := aws.StringValue(repo.RepositoryName)
+	repoURI = aws.StringValue(repo.RepositoryUri)
+	lg.Info(
+		"found an ECR repository",
+		zap.String("repo-arn", repoARN),
+		zap.String("repo-region", repoRegion),
+		zap.String("repo-name", repoName2),
+		zap.String("repo-uri", repoURI),
+	)
+	if repoAccountID2 != repoAccountID {
+		return "", fmt.Errorf("unexpected ECR repository account ID %q (expected %q)", repoAccountID2, repoAccountID)
+	}
+	if repoName2 != repoName {
+		return "", fmt.Errorf("unexpected ECR repository name %q", repoName2)
+	}
+	if !strings.Contains(repoURI, repoRegion) {
+		return "", fmt.Errorf("region %q not found in URI %q", repoRegion, repoURI)
+	}
+
+	if _, jerr := json.Marshal(policyTxt); jerr != nil {
+		return "", fmt.Errorf("failed to marshal %v", jerr)
+	}
+	_, serr := svc.SetRepositoryPolicy(&ecr.SetRepositoryPolicyInput{
+		RegistryId:     aws.String(repoAccountID),
+		RepositoryName: aws.String(repoName),
+		Force:          aws.Bool(setPolicyForce),
+		PolicyText:     aws.String(policyTxt),
+	})
+	if serr != nil {
+		lg.Warn("failed to set repository policy", zap.Error(serr))
+		return "", fmt.Errorf("failed to set repostiory policy for %q (%v)", repoURI, serr)
+	}
+
+	lg.Info("set policy for an ECR repository",
+		zap.String("repo-account-id", repoAccountID),
+		zap.String("repo-region", repoRegion),
+		zap.String("repo-name", repoName),
+		zap.String("repo-uri", repoURI),
+		zap.Bool("set-policy-force", setPolicyForce),
+	)
+	return repoURI, nil
 }
