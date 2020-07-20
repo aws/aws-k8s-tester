@@ -409,9 +409,28 @@ func (ts *tester) deleteCNIRBACClusterRoleBinding() error {
 }
 
 func (ts *tester) updateCNICRD() (err error) {
-	ts.cfg.Logger.Info("updating CNI CRD")
-
+	ts.cfg.Logger.Info("getting CNI CRD")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	crd, err := ts.cfg.K8SClient.APIExtensionsClientSet().
+		ApiextensionsV1beta1().
+		CustomResourceDefinitions().
+		Get(
+			ctx,
+			"eniconfigs.crd.k8s.amazonaws.com",
+			metav1.GetOptions{},
+		)
+	cancel()
+	if err != nil {
+		if apierrs.IsNotFound(err) {
+			ts.cfg.Logger.Warn("eniconfigs CRD does not exist", zap.Error(err))
+		} else {
+			return err
+		}
+	}
+	resourceVer := crd.ObjectMeta.ResourceVersion
+
+	ts.cfg.Logger.Info("updating CNI CRD", zap.String("resource-version", resourceVer))
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	_, err = ts.cfg.K8SClient.APIExtensionsClientSet().
 		ApiextensionsV1beta1().
 		CustomResourceDefinitions().
@@ -423,8 +442,9 @@ func (ts *tester) updateCNICRD() (err error) {
 					Kind:       "CustomResourceDefinition",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "eniconfigs.crd.k8s.amazonaws.com",
-					Namespace: "default",
+					Name:            "eniconfigs.crd.k8s.amazonaws.com",
+					Namespace:       "default",
+					ResourceVersion: resourceVer,
 				},
 				Spec: apiextensions_v1beta1.CustomResourceDefinitionSpec{
 					Scope: apiextensions_v1beta1.ClusterScoped,
@@ -614,7 +634,7 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 						},
 						{
 							Name:      "cni-net-dir",
-							MountPath: "/host/var/log",
+							MountPath: "/host/etc/cni/net.d",
 						},
 						{
 							Name:      "log-dir",
