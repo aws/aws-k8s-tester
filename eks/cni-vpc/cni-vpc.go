@@ -46,8 +46,7 @@ func (ts *tester) Name() string { return pkgName }
 func New(cfg Config) eks_tester.Tester {
 	cfg.Logger.Info("updating tester", zap.String("tester", pkgName))
 	ts := &tester{
-		cfg:    cfg,
-		cniImg: "busybox",
+		cfg: cfg,
 	}
 	ts.creates = []func() error{
 		func() (err error) {
@@ -73,7 +72,6 @@ func New(cfg Config) eks_tester.Tester {
 					return errors.New("no amazon-k8s-cni-init ECR image found")
 				}
 				ts.cfg.Logger.Info("found amazon-k8s-cni-init ECR image", zap.String("image", ts.cniInitImg))
-				return nil
 			}
 			if ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryAccountID != "" &&
 				ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryRegion != "" &&
@@ -97,7 +95,6 @@ func New(cfg Config) eks_tester.Tester {
 					return errors.New("no amazon-k8s-cni ECR image found")
 				}
 				ts.cfg.Logger.Info("found amazon-k8s-cni ECR image", zap.String("image", ts.cniImg))
-				return nil
 			}
 			return nil
 		},
