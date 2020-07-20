@@ -27,6 +27,7 @@ import (
 	cluster_loader_local "github.com/aws/aws-k8s-tester/eks/cluster-loader/local"
 	cluster_loader_remote "github.com/aws/aws-k8s-tester/eks/cluster-loader/remote"
 	cluster_version_upgrade "github.com/aws/aws-k8s-tester/eks/cluster/version-upgrade"
+	cni_vpc "github.com/aws/aws-k8s-tester/eks/cni-vpc"
 	config_maps_local "github.com/aws/aws-k8s-tester/eks/configmaps/local"
 	config_maps_remote "github.com/aws/aws-k8s-tester/eks/configmaps/remote"
 	"github.com/aws/aws-k8s-tester/eks/conformance"
@@ -470,11 +471,20 @@ func (ts *Tester) createTesters() (err error) {
 	})
 
 	ts.testers = []eks_tester.Tester{
+		cni_vpc.New(cni_vpc.Config{
+			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnCNIVPCRepositoryRegion())),
+		}),
 		cw_agent.New(cw_agent.Config{
 			Logger:    ts.lg,
 			LogWriter: ts.logWriter,
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
 		}),
 		fluentd.New(fluentd.Config{
 			Logger:    ts.lg,
