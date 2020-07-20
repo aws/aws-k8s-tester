@@ -79,6 +79,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnManagedNodeGroups, got %T", vv)
 	}
 
+	if cfg.AddOnCNIVPC == nil {
+		cfg.AddOnCNIVPC = &AddOnCNIVPC{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCNIVPC, cfg.AddOnCNIVPC)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnCNIVPC); ok {
+		cfg.AddOnCNIVPC = av
+	} else {
+		return fmt.Errorf("expected *AddOnCNIVPC, got %T", vv)
+	}
+
 	if cfg.AddOnCWAgent == nil {
 		cfg.AddOnCWAgent = &AddOnCWAgent{}
 	}
@@ -607,6 +620,7 @@ func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
 		case reflect.Map:
 			switch fieldName {
 			case "Tags",
+				"NodeSelector",
 				"DeploymentNodeSelector",
 				"DeploymentNodeSelector2048":
 				vv.Field(i).Set(reflect.ValueOf(make(map[string]string)))

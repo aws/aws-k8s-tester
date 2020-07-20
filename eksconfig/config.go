@@ -200,6 +200,8 @@ type Config struct {
 	TotalNodes       int64 `json:"total-nodes" read-only:"true"`
 	TotalHollowNodes int64 `json:"total-hollow-nodes" read-only:"true"`
 
+	// AddOnCNIVPC defines parameters for https://github.com/aws/amazon-vpc-cni-k8s.
+	AddOnCNIVPC *AddOnCNIVPC `json:"add-on-cni-vpc"`
 	// AddOnCWAgent defines parameters for EKS cluster
 	// add-on Fluentd.
 	AddOnCWAgent *AddOnCWAgent `json:"add-on-cw-agent,omitempty"`
@@ -792,6 +794,7 @@ func NewDefault() *Config {
 		AddOnNodeGroups:        getDefaultAddOnNodeGroups(name),
 		AddOnManagedNodeGroups: getDefaultAddOnManagedNodeGroups(name),
 
+		AddOnCNIVPC:        getDefaultAddOnCNIVPC(),
 		AddOnCWAgent:       getDefaultAddOnCWAgent(),
 		AddOnFluentd:       getDefaultAddOnFluentd(),
 		AddOnMetricsServer: getDefaultAddOnMetricsServer(),
@@ -901,6 +904,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	cfg.TotalHollowNodes = totalHollowNodes
 
+	if err := cfg.validateAddOnCNIVPC(); err != nil {
+		return fmt.Errorf("validateAddOnCNIVPC failed [%v]", err)
+	}
 	if err := cfg.validateAddOnCWAgent(); err != nil {
 		return fmt.Errorf("validateAddOnCWAgent failed [%v]", err)
 	}

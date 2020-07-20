@@ -178,6 +178,23 @@ func TestEnv(t *testing.T) {
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_REGION", "eu-north-1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_REGION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_NAME", "aws-k8s-cni")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_IMAGE_TAG", "latest2")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_IMAGE_TAG")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_NODE_SELECTOR", `{"a":"b","c":"d"}`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_NODE_SELECTOR")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_MINIMUM_IP_TARGET", "10")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_MINIMUM_IP_TARGET")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_WARM_IP_TARGET", "10")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_WARM_IP_TARGET")
+
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CW_AGENT_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CW_AGENT_ENABLE")
 
@@ -910,6 +927,32 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.AddOnManagedNodeGroups.LogsDir != "a" {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.LogsDir %q", cfg.AddOnManagedNodeGroups.LogsDir)
+	}
+
+	if !cfg.AddOnCNIVPC.Enable {
+		t.Fatalf("unexpected cfg.AddOnCNIVPC.Enable %v", cfg.AddOnCNIVPC.Enable)
+	}
+	if cfg.AddOnCNIVPC.RepositoryAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnCNIVPC.RepositoryAccountID %v", cfg.AddOnCNIVPC.RepositoryAccountID)
+	}
+	if cfg.AddOnCNIVPC.RepositoryRegion != "eu-north-1" {
+		t.Fatalf("unexpected cfg.AddOnCNIVPC.RepositoryRegion %v", cfg.AddOnCNIVPC.RepositoryRegion)
+	}
+	if cfg.AddOnCNIVPC.RepositoryName != "aws-k8s-cni" {
+		t.Fatalf("unexpected cfg.AddOnCNIVPC.RepositoryName %v", cfg.AddOnCNIVPC.RepositoryName)
+	}
+	if cfg.AddOnCNIVPC.RepositoryImageTag != "latest2" {
+		t.Fatalf("unexpected cfg.AddOnCNIVPC.RepositoryImageTag %v", cfg.AddOnCNIVPC.RepositoryImageTag)
+	}
+	expectedNodeSelectorCNIVPC := map[string]string{"a": "b", "c": "d"}
+	if !reflect.DeepEqual(cfg.AddOnCNIVPC.NodeSelector, expectedNodeSelectorCNIVPC) {
+		t.Fatalf("unexpected cfg.AddOnCNIVPC.NodeSelector %v", cfg.AddOnCNIVPC.NodeSelector)
+	}
+	if cfg.AddOnCNIVPC.MinimumIPTarget != 10 {
+		t.Fatalf("unexpected cfg.AddOnCNIVPC.MinimumIPTarget %d", cfg.AddOnCNIVPC.MinimumIPTarget)
+	}
+	if cfg.AddOnCNIVPC.WarmIPTarget != 10 {
+		t.Fatalf("unexpected cfg.AddOnCNIVPC.WarmIPTarget %d", cfg.AddOnCNIVPC.WarmIPTarget)
 	}
 
 	if !cfg.AddOnCWAgent.Enable {

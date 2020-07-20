@@ -42,6 +42,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCNIVPC, &eksconfig.AddOnCNIVPC{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCWAgent, &eksconfig.AddOnCWAgent{}))
 
 	b.WriteByte('\n')
