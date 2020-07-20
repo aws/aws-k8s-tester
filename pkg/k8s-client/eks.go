@@ -37,6 +37,7 @@ import (
 	extensions_v1beta1 "k8s.io/api/extensions/v1beta1"
 	networking_v1 "k8s.io/api/networking/v1"
 	policy_v1beta1 "k8s.io/api/policy/v1beta1"
+	apiextensions_client "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
@@ -125,6 +126,8 @@ type EKSConfig struct {
 type EKS interface {
 	// KubernetesClientSet returns a new kubernetes client set.
 	KubernetesClientSet() *kubernetes.Clientset
+	// APIExtensionsClientSet returns a new apiextensions client set.
+	APIExtensionsClientSet() *apiextensions_client.Clientset
 
 	// CheckEKSHealth checks the EKS health.
 	CheckHealth() error
@@ -194,9 +197,10 @@ type EKS interface {
 type eks struct {
 	cfg *EKSConfig
 
-	mu      sync.Mutex
-	clients []*kubernetes.Clientset
-	cur     int
+	mu               sync.Mutex
+	clients          []*kubernetes.Clientset
+	extensionClients []*apiextensions_client.Clientset
+	cur              int
 }
 
 // NewEKS returns a new EKS client.
@@ -228,9 +232,13 @@ func NewEKS(cfg *EKSConfig) (e EKS, err error) {
 	}
 
 	cfg.Logger.Info("creating clients", zap.String("kubeconfig", cfg.KubeConfigPath))
-	ek := &eks{cfg: cfg, clients: make([]*kubernetes.Clientset, cfg.Clients)}
+	ek := &eks{
+		cfg:              cfg,
+		clients:          make([]*kubernetes.Clientset, cfg.Clients),
+		extensionClients: make([]*apiextensions_client.Clientset, cfg.Clients),
+	}
 	for i := 0; i < cfg.Clients; i++ {
-		ek.clients[i], err = createClient(cfg)
+		ek.clients[i], ek.extensionClients[i], err = createClient(cfg)
 		if err != nil {
 			cfg.Logger.Warn("failed to create client", zap.Int("index", i), zap.Error(err))
 			return nil, err
@@ -240,7 +248,7 @@ func NewEKS(cfg *EKSConfig) (e EKS, err error) {
 	return ek, nil
 }
 
-func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, err error) {
+func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, ext *apiextensions_client.Clientset, err error) {
 	var kcfg *restclient.Config
 	if cfg.KubeConfigPath != "" {
 		switch {
@@ -303,7 +311,7 @@ func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, err error) {
 	if kcfg == nil {
 		cfg.Logger.Warn("failed to create restclient.Config config")
 		err = errors.New("failed to create restclient.Config config")
-		return nil, err
+		return nil, nil, err
 	}
 
 	if cfg.ClusterAPIServerEndpoint == "" {
@@ -316,7 +324,7 @@ func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, err error) {
 		)
 	}
 	if cfg.ClusterAPIServerEndpoint == "" {
-		return nil, errors.New("empty ClusterAPIServerEndpoint")
+		return nil, nil, errors.New("empty ClusterAPIServerEndpoint")
 	}
 
 	if cfg.ClusterCADecoded == "" {
@@ -379,10 +387,15 @@ func createClient(cfg *EKSConfig) (cli *kubernetes.Clientset, err error) {
 	cli, err = kubernetes.NewForConfig(kcfg)
 	if err != nil {
 		cfg.Logger.Warn("failed to create kubernetes.ClientSet", zap.Error(err))
-		return nil, err
+		return nil, nil, err
 	}
-	cfg.Logger.Info("successfully created kubernetes.ClientSet", zap.Float32("qps", kcfg.QPS), zap.Int("burst", kcfg.Burst))
-	return cli, nil
+	ext, err = apiextensions_client.NewForConfig(kcfg)
+	if err != nil {
+		cfg.Logger.Warn("failed to create apiextensions_client.ClientSet", zap.Error(err))
+		return nil, nil, err
+	}
+	cfg.Logger.Info("successfully created ClientSet", zap.Float32("qps", kcfg.QPS), zap.Int("burst", kcfg.Burst))
+	return cli, ext, nil
 }
 
 // ServerVersionInfo is the server version info from kube-apiserver
@@ -414,6 +427,23 @@ func (e *eks) getClient() *kubernetes.Clientset {
 // KubernetesClientSet returns a new kubernetes client set.
 func (e *eks) KubernetesClientSet() *kubernetes.Clientset {
 	return e.getClient()
+}
+
+func (e *eks) getAPIExtensionsClient() *apiextensions_client.Clientset {
+	e.mu.Lock()
+	if len(e.extensionClients) == 0 {
+		e.mu.Unlock()
+		return nil
+	}
+	e.cur = (e.cur + 1) % len(e.extensionClients)
+	cli := e.extensionClients[e.cur]
+	e.mu.Unlock()
+	return cli
+}
+
+// APIExtensionsClientSet returns a new extension kubernetes client set.
+func (e *eks) APIExtensionsClientSet() *apiextensions_client.Clientset {
+	return e.getAPIExtensionsClient()
 }
 
 const authProviderName = "eks"

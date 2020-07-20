@@ -4,6 +4,7 @@ go 1.14
 
 // https://github.com/kubernetes/kubernetes/releases
 // https://github.com/kubernetes/client-go/releases
+// https://github.com/kubernetes/apiextensions-apiserver/releases
 
 // https://github.com/aws/aws-sdk-go/releases
 // https://github.com/google/cadvisor/releases
@@ -75,6 +76,7 @@ require (
 	gopkg.in/yaml.v2 v2.2.8
 	helm.sh/helm/v3 v3.2.4
 	k8s.io/api v0.18.7-rc.0
+	k8s.io/apiextensions-apiserver v0.18.7-rc.0
 	k8s.io/apimachinery v0.18.7-rc.0
 	k8s.io/cli-runtime v0.18.7-rc.0
 	k8s.io/client-go v0.18.7-rc.0

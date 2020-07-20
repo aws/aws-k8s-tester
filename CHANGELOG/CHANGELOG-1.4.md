@@ -10,6 +10,12 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.7...v1.4.8
 ### `eksconfig`
 
 - Make [`AddOnPHPApache` ECR image configurable](https://github.com/aws/aws-k8s-tester/commit/f879a495fa1a0b7bbce8a07b25835a4edb436018).
+- Add [`AddOnCNIVPC`](https://github.com/aws/aws-k8s-tester/commit/3f38808140784a06635f86a729edd0885c610136).
+  - https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config.
+
+### `eks`
+
+- Add [`eks/cni-vpc`](https://github.com/aws/aws-k8s-tester/commit/104f581eac40168cc3c73d04b338e995b83e0923).
 
 ### `pkg`
 
