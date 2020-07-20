@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.7...v1.4.8
 
 ### `eksconfig`
 
-- Make [`AddOnPHPApache` ECR image configurable](https://github.com/aws/aws-k8s-tester/commit/).
+- Make [`AddOnPHPApache` ECR image configurable](https://github.com/aws/aws-k8s-tester/commit/f879a495fa1a0b7bbce8a07b25835a4edb436018).
 
 ### `pkg`
 
