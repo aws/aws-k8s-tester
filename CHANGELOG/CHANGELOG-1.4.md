@@ -5,7 +5,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.7...v1.4.8
 
 ### `cmd`
 
-- Add [`cmd/ecr-utils`](https://github.com/aws/aws-k8s-tester/commit/).
+- Add [`cmd/ecr-utils`](https://github.com/aws/aws-k8s-tester/commit/50aa049a3e933c992fcfaeec6c671ec047a910bd).
 
 ### `pkg`
 
