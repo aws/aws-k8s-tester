@@ -12,7 +12,7 @@ import (
 // add-on hollow nodes remote.
 // It generates loads from the remote workers (Pod) in the cluster.
 // Each worker writes serially with no concurrency.
-// Configure "ReplicationControllerReplicas" accordingly to increase the concurrency.
+// Configure "NodeGroups" accordingly to increase the concurrency.
 type AddOnHollowNodesRemote struct {
 	// Enable is 'true' to create this add-on.
 	Enable bool `json:"enable"`
@@ -37,15 +37,13 @@ type AddOnHollowNodesRemote struct {
 	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/aws/aws-k8s-tester:latest"
 	RepositoryImageTag string `json:"repository-image-tag,omitempty"`
 
-	// ReplicationControllerReplicas is the number of replicas to create for workers.
-	// The total number of objects to be created is "ReplicationControllerReplicas" * "Nodes".
-	ReplicationControllerReplicas int32 `json:"replication-controller-replicas,omitempty"`
+	// NodeGroups is the number of replicas to create for workers.
+	// The total number of objects to be created is "NodeGroups" * "Nodes".
+	NodeGroups int `json:"node-groups,omitempty"`
 	// Nodes is the number of hollow nodes to create.
-	// The total number of objects to be created is "ReplicationControllerReplicas" * "Nodes".
+	// The total number of objects to be created is "NodeGroups" * "Nodes".
 	Nodes int `json:"nodes"`
 
-	// NodeNamePrefix is the node name prefix for node names.
-	NodeNamePrefix string `json:"node-name-prefix"`
 	// NodeLabelPrefix is the node prefix.
 	NodeLabelPrefix string `json:"node-label-prefix"`
 
@@ -75,12 +73,11 @@ func (cfg *Config) IsEnabledAddOnHollowNodesRemote() bool {
 
 func getDefaultAddOnHollowNodesRemote() *AddOnHollowNodesRemote {
 	return &AddOnHollowNodesRemote{
-		Enable:                        false,
-		ReplicationControllerReplicas: 5,
-		Nodes:                         2,
-		NodeNamePrefix:                "hollow" + randutil.String(5),
-		NodeLabelPrefix:               "hollow" + randutil.String(5),
-		MaxOpenFiles:                  1000000,
+		Enable:          false,
+		NodeGroups:      5,
+		Nodes:           2,
+		NodeLabelPrefix: "hollow" + randutil.String(5),
+		MaxOpenFiles:    1000000,
 	}
 }
 
@@ -97,7 +94,7 @@ func (cfg *Config) validateAddOnHollowNodesRemote() error {
 	}
 
 	if cfg.AddOnHollowNodesRemote.Namespace == "" {
-		cfg.AddOnHollowNodesRemote.Namespace = cfg.Name + "-hollow-nodes-remote"
+		cfg.AddOnHollowNodesRemote.Namespace = "kubemark"
 	}
 
 	if cfg.AddOnHollowNodesRemote.RepositoryAccountID == "" {
@@ -113,14 +110,11 @@ func (cfg *Config) validateAddOnHollowNodesRemote() error {
 		return errors.New("AddOnHollowNodesRemote.RepositoryImageTag empty")
 	}
 
-	if cfg.AddOnHollowNodesRemote.ReplicationControllerReplicas == 0 {
-		cfg.AddOnHollowNodesRemote.ReplicationControllerReplicas = 5
+	if cfg.AddOnHollowNodesRemote.NodeGroups == 0 {
+		cfg.AddOnHollowNodesRemote.NodeGroups = 5
 	}
 	if cfg.AddOnHollowNodesRemote.Nodes == 0 {
-		cfg.AddOnHollowNodesRemote.Nodes = 2
-	}
-	if cfg.AddOnHollowNodesRemote.NodeNamePrefix == "" {
-		cfg.AddOnHollowNodesRemote.NodeNamePrefix = "hollow" + randutil.String(5)
+		cfg.AddOnHollowNodesRemote.Nodes = 1
 	}
 
 	// e.g. Unable to register node "fake-node-000004-evere" with API server: Node "fake-node-000004-evere" is invalid: [metadata.labels: Invalid value: "...-hollow-nodes-remote-fake-ami-type-duneg": must be no more than 63 characters, metadata.labels: Invalid value: "...-hollow-nodes-remote-fake-ng-name-duneg": must be no more than 63 characters, metadata.labels: Invalid value: "...-hollow-nodes-remote-fake-ng-type-duneg": must be no more than 63 characters]

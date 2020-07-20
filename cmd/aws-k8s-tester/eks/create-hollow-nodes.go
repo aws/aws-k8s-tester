@@ -74,26 +74,19 @@ func createHollowNodesFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	// to randomize node names and labels
-	// when multiple pods are created via deployment
-	// we do not want each pod to assign same node name prefix or labels
-	// we want to avoid conflicts and run checks for each pod
-	// node checking is done via prefix check, so this should be good
-	// enough for make them unique per worker
-	sfx := randutil.String(5)
-
 	stopc := make(chan struct{})
 	ng := hollow_nodes.CreateNodeGroup(hollow_nodes.NodeGroupConfig{
 		Logger:         lg,
 		Client:         cli,
 		Stopc:          stopc,
 		Nodes:          hollowNodesNodes,
-		NodeNamePrefix: hollowNodeNamePrefix + sfx,
+		NodeNamePrefix: hollowNodeNamePrefix,
 		NodeLabels: map[string]string{
-			"NodeType": "hollow-nodes",
-			"AMIType":  hollowNodeLabelPrefix + "-ami-type-" + sfx,
-			"NGType":   hollowNodeLabelPrefix + "-ng-type-" + sfx,
-			"NGName":   hollowNodeLabelPrefix + "-ng-name-" + sfx,
+			"autoscaling.k8s.io/nodegroup": hollowNodeNamePrefix,
+			"NodeType":                     "hollow-nodes",
+			"AMIType":                      hollowNodeLabelPrefix + "-ami-type",
+			"NGType":                       hollowNodeLabelPrefix + "-ng-type",
+			"NGName":                       hollowNodeLabelPrefix + "-ng-name",
 		},
 		Remote: hollowNodesRemote,
 	})

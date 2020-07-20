@@ -904,7 +904,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		totalHollowNodes += int64(cfg.AddOnHollowNodesLocal.Nodes)
 	}
 	if cfg.IsEnabledAddOnHollowNodesRemote() {
-		totalHollowNodes += int64(cfg.AddOnHollowNodesRemote.Nodes) * int64(cfg.AddOnHollowNodesRemote.ReplicationControllerReplicas)
+		totalHollowNodes += int64(cfg.AddOnHollowNodesRemote.Nodes) * int64(cfg.AddOnHollowNodesRemote.NodeGroups)
 	}
 	cfg.TotalHollowNodes = totalHollowNodes
 
