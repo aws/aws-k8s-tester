@@ -57,7 +57,11 @@ func (ts *tester) createCWAgentServiceAccount() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create cw agent ServiceAccount (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created cw agent ServiceAccount")
@@ -194,7 +198,11 @@ func (ts *tester) createCWAgentRBACClusterRole() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create cw agent RBAC ClusterRole (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created cw agent RBAC ClusterRole")
@@ -268,7 +276,11 @@ func (ts *tester) createCWAgentRBACClusterRoleBinding() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create cw agent RBAC ClusterRoleBinding (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created cw agent RBAC ClusterRoleBinding")
@@ -365,7 +377,11 @@ func (ts *tester) createCWAgentConfigMapConfig() (err error) {
 		)
 	cancel()
 	if err != nil {
-		return err
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created cw agent ConfigMap config")
@@ -588,7 +604,11 @@ func (ts *tester) createCWAgentDaemonSet() (err error) {
 		Create(ctx, &dsObj, metav1.CreateOptions{})
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create cw agent DaemonSet (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created cw agent DaemonSet")

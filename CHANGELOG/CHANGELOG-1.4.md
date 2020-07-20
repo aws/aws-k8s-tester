@@ -17,6 +17,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.7...v1.4.8
 
 - Add [`eks/cni-vpc`](https://github.com/aws/aws-k8s-tester/commit/104f581eac40168cc3c73d04b338e995b83e0923).
   - `eks/cni-vpc` is [installed before worker nodes and not deleted](https://github.com/aws/aws-k8s-tester/commit/cb63393b3131a5266deaae2dcfcf417897bc5848).
+- Do not fail [resource creation if returned error `apierrs.IsAlreadyExists(err)`](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `pkg`
 

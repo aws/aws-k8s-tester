@@ -61,7 +61,11 @@ func (ts *tester) createFluentdServiceAccount() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create fluentd ServiceAccount (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created fluentd ServiceAccount")
@@ -143,7 +147,11 @@ func (ts *tester) createFluentdRBACClusterRole() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create fluentd RBAC ClusterRole (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created fluentd RBAC ClusterRole")
@@ -217,7 +225,11 @@ func (ts *tester) createFluentdRBACClusterRoleBinding() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create fluentd RBAC ClusterRoleBinding (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created fluentd RBAC ClusterRoleBinding")
@@ -281,7 +293,11 @@ func (ts *tester) createFluentdConfigMapClusterInfo() (err error) {
 		)
 	cancel()
 	if err != nil {
-		return err
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created fluentd ConfigMap cluster-info")
@@ -698,7 +714,11 @@ func (ts *tester) createFluentdConfigMapConfig() (err error) {
 		)
 	cancel()
 	if err != nil {
-		return err
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created fluentd ConfigMap config")
@@ -951,7 +971,11 @@ func (ts *tester) createFluentdDaemonSet() (err error) {
 		Create(ctx, &dsObj, metav1.CreateOptions{})
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create fluentd DaemonSet (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created fluentd DaemonSet")

@@ -550,8 +550,13 @@ func (ts *tester) createServiceAccount() error {
 		)
 	cancel()
 	if err != nil {
-		return err
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
+
 	ts.cfg.Logger.Info("created service account", zap.String("name", irsaServiceAccountName))
 	return ts.cfg.EKSConfig.Sync()
 }
@@ -705,7 +710,11 @@ func (ts *tester) createConfigMap() error {
 		)
 	cancel()
 	if err != nil {
-		return err
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created configmap", zap.String("name", irsaConfigMapName))
@@ -858,7 +867,11 @@ func (ts *tester) createDeployment() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create IRSA Deployment (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.deploymentCreated = time.Now()

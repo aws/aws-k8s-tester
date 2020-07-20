@@ -318,7 +318,11 @@ func (ts *tester) createServiceAccount() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create configmaps ServiceAccount (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created configmaps ServiceAccount")
@@ -397,7 +401,11 @@ func (ts *tester) createRBACClusterRole() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create configmaps RBAC ClusterRole (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created configmaps RBAC ClusterRole")
@@ -422,9 +430,12 @@ func (ts *tester) deleteRBACClusterRole() error {
 			},
 		)
 	cancel()
-	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
-		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
-		return fmt.Errorf("failed to delete configmaps RBAC ClusterRole (%v)", err)
+	if err != nil {
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("deleted configmaps RBAC ClusterRole", zap.Error(err))
@@ -476,7 +487,11 @@ func (ts *tester) createRBACClusterRoleBinding() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create configmaps RBAC ClusterRoleBinding (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created configmaps RBAC ClusterRoleBinding")
@@ -543,7 +558,11 @@ func (ts *tester) createConfigMap() error {
 		)
 	cancel()
 	if err != nil {
-		return err
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created config map")
@@ -590,7 +609,11 @@ func (ts *tester) createJob() (err error) {
 		Create(ctx, &obj, metav1.CreateOptions{})
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create Job (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created Job")

@@ -272,7 +272,11 @@ func (ts *tester) createALBServiceAccount() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create ALB Ingress Controller ServiceAccount (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created ALB Ingress Controller ServiceAccount")
@@ -375,7 +379,11 @@ func (ts *tester) createALBRBACClusterRole() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create ALB Ingress Controller RBAC ClusterRole (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created ALB Ingress Controller RBAC ClusterRole")
@@ -449,7 +457,11 @@ func (ts *tester) createALBRBACClusterRoleBinding() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create ALB Ingress Controller RBAC ClusterRoleBinding (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created ALB Ingress Controller RBAC ClusterRoleBinding")
@@ -560,7 +572,11 @@ func (ts *tester) createALBDeployment() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create ALB Ingress Controller Deployment (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created ALB Ingress Controller Deployment")
@@ -694,10 +710,14 @@ func (ts *tester) create2048Deployment() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create ALB 2048 Deployment (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
-	ts.cfg.Logger.Info("created ALB 2048 Deployment")
 
+	ts.cfg.Logger.Info("created ALB 2048 Deployment")
 	return ts.cfg.EKSConfig.Sync()
 }
 
@@ -803,7 +823,11 @@ func (ts *tester) create2048Service() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create ALB 2048 Service (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created ALB 2048 Service")
@@ -887,7 +911,11 @@ func (ts *tester) create2048Ingress() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create ALB 2048 Ingress (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 	ts.cfg.Logger.Info("created ALB 2048 Ingress")
 

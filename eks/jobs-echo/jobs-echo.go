@@ -22,6 +22,7 @@ import (
 	"go.uber.org/zap"
 	batch1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -194,7 +195,11 @@ func (ts *tester) createJob() (err error) {
 		Create(ctx, &obj, metav1.CreateOptions{})
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create Job (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created Job")
@@ -273,10 +278,11 @@ func (ts *tester) deleteJob() (err error) {
 			},
 		)
 	cancel()
-	if err == nil {
-		ts.cfg.Logger.Info("deleted Job", zap.String("name", jobName))
-	} else {
-		ts.cfg.Logger.Warn("failed to delete Job", zap.Error(err))
+	if err != nil && !apierrs.IsNotFound(err) && !strings.Contains(err.Error(), "not found") {
+		ts.cfg.Logger.Warn("failed to delete", zap.Error(err))
+		return fmt.Errorf("failed to delete (%v)", err)
 	}
+
+	ts.cfg.Logger.Info("deleted Job", zap.String("name", jobName))
 	return err
 }

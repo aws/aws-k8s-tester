@@ -297,7 +297,11 @@ func (ts *tester) createDeploymentRedisLeader() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create redis leader Deployment (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created redis leader Deployment")
@@ -425,7 +429,11 @@ func (ts *tester) createServiceRedisLeader() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create redis leader Service (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 	ts.cfg.Logger.Info("created redis leader Service")
 
@@ -570,7 +578,11 @@ func (ts *tester) createDeploymentRedisFollower() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create redis follower Deployment (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created redis follower Deployment")
@@ -698,7 +710,11 @@ func (ts *tester) createServiceRedisFollower() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create redis follower Service (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 	ts.cfg.Logger.Info("created redis follower Service")
 
@@ -840,7 +856,11 @@ func (ts *tester) createDeploymentGuestbook() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create NLB guestbook Deployment (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 
 	ts.cfg.Logger.Info("created NLB guestbook Deployment")
@@ -966,7 +986,11 @@ func (ts *tester) createServiceGuestbook() error {
 		)
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create NLB guestbook Service (%v)", err)
+		if !apierrs.IsAlreadyExists(err) { // allow redundant create calls
+			ts.cfg.Logger.Warn("failed to create", zap.Error(err))
+			return fmt.Errorf("failed to create (%v)", err)
+		}
+		ts.cfg.Logger.Info("discarding create failures to allow redundant create calls", zap.Error(err))
 	}
 	ts.cfg.Logger.Info("created NLB guestbook Service")
 
