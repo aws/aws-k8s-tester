@@ -51,6 +51,30 @@ func New(cfg Config) eks_tester.Tester {
 	}
 	ts.creates = []func() error{
 		func() (err error) {
+			if ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryInitAccountID != "" &&
+				ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryInitRegion != "" &&
+				ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryInitName != "" &&
+				ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryInitImageTag != "" {
+				ts.cniInitImg, _, err = aws_ecr.Check(
+					ts.cfg.Logger,
+					ts.cfg.ECRAPI,
+					ts.cfg.EKSConfig.Partition,
+					ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryInitAccountID,
+					ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryInitRegion,
+					ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryInitName,
+					ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryInitImageTag,
+				)
+				if err != nil &&
+					!strings.Contains(err.Error(), "not authorized to perform: ecr:DescribeRepositories") {
+					// e.g. "not authorized to perform: ecr:DescribeRepositories on resource: arn:aws:ecr:us-west-2:602401143452:repository/amazon-k8s-cni-init"
+					return err
+				}
+				if ts.cniInitImg == "" {
+					return errors.New("no amazon-k8s-cni-init ECR image found")
+				}
+				ts.cfg.Logger.Info("found amazon-k8s-cni-init ECR image", zap.String("image", ts.cniInitImg))
+				return nil
+			}
 			if ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryAccountID != "" &&
 				ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryRegion != "" &&
 				ts.cfg.EKSConfig.AddOnCNIVPC.RepositoryName != "" &&
@@ -91,7 +115,8 @@ func New(cfg Config) eks_tester.Tester {
 type tester struct {
 	cfg Config
 
-	cniImg string
+	cniInitImg string
+	cniImg     string
 
 	creates []func() error
 	deletes []func() error
@@ -162,6 +187,7 @@ const (
 	cniServiceAccountName         = "aws-node"
 	cniRBACRoleName               = "aws-node"
 	cniRBACClusterRoleBindingName = "aws-node"
+	cniInitAppName                = "aws-vpc-cni-init"
 	cniAppName                    = "aws-node"
 	cniDaemonSetName              = "aws-node"
 	cniCRDNameSingular            = "eniconfig"
@@ -250,10 +276,12 @@ func (ts *tester) updateCNIRBACClusterRole() error {
 							"crd.k8s.amazonaws.com",
 						},
 						Resources: []string{
-							"*",
+							"eniconfigs",
 						},
 						Verbs: []string{
-							"*",
+							"get",
+							"list",
+							"watch",
 						},
 					},
 					{
@@ -278,7 +306,7 @@ func (ts *tester) updateCNIRBACClusterRole() error {
 							"extensions",
 						},
 						Resources: []string{
-							"daemonsets",
+							"*",
 						},
 						Verbs: []string{
 							"list",
@@ -443,9 +471,9 @@ func (ts *tester) updateCNICRD() (err error) {
 						},
 					},
 					Names: apiextensions_v1beta1.CustomResourceDefinitionNames{
+						Kind:     "ENIConfig",
 						Singular: cniCRDNameSingular,
 						Plural:   cniCRDNamePlural,
-						Kind:     "ENIConfig",
 					},
 				},
 			},
@@ -461,19 +489,64 @@ func (ts *tester) updateCNICRD() (err error) {
 }
 
 // https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
+// https://github.com/aws/amazon-vpc-cni-k8s/blob/release-1.7/config/v1.7/aws-k8s-cni.yaml
 func (ts *tester) updateCNIDaemonSet() (err error) {
 	envVars := []v1.EnvVar{
 		{
+			Name:  "ADDITIONAL_ENI_TAGS",
+			Value: "{}",
+		},
+		{
+			Name:  "AWS_VPC_CNI_NODE_PORT_SUPPORT",
+			Value: "true",
+		},
+		{
+			Name:  "AWS_VPC_ENI_MTU",
+			Value: "9001",
+		},
+		{
+			Name:  "AWS_VPC_K8S_CNI_CONFIGURE_RPFILTER",
+			Value: "false",
+		},
+		{
+			Name:  "AWS_VPC_K8S_CNI_CUSTOM_NETWORK_CFG",
+			Value: "false",
+		},
+		{
+			Name:  "AWS_VPC_K8S_CNI_EXTERNALSNAT",
+			Value: "false",
+		},
+		{
 			Name:  "AWS_VPC_K8S_CNI_LOGLEVEL",
 			Value: "DEBUG",
+		},
+		{
+			Name:  "AWS_VPC_K8S_CNI_LOG_FILE",
+			Value: "/host/var/log/aws-routed-eni/ipamd.log",
+		},
+		{
+			Name:  "AWS_VPC_K8S_CNI_RANDOMIZESNAT",
+			Value: "prng",
 		},
 		{
 			Name:  "AWS_VPC_K8S_CNI_VETHPREFIX",
 			Value: "eni",
 		},
 		{
-			Name:  "AWS_VPC_ENI_MTU",
-			Value: "9001",
+			Name:  "AWS_VPC_K8S_PLUGIN_LOG_FILE",
+			Value: "/var/log/aws-routed-eni/plugin.log",
+		},
+		{
+			Name:  "AWS_VPC_K8S_PLUGIN_LOG_LEVEL",
+			Value: "DEBUG",
+		},
+		{
+			Name:  "DISABLE_INTROSPECTION",
+			Value: "false",
+		},
+		{
+			Name:  "DISABLE_METRICS",
+			Value: "false",
 		},
 		{
 			Name: "MY_NODE_NAME",
@@ -495,7 +568,14 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 			Name:  "WARM_IP_TARGET",
 			Value: fmt.Sprintf("%d", ts.cfg.EKSConfig.AddOnCNIVPC.WarmIPTarget),
 		})
+	} else {
+		envVars = append(envVars, v1.EnvVar{
+			Name:  "WARM_IP_TARGET",
+			Value: "1",
+		})
 	}
+
+	dirOrCreate := v1.HostPathDirectoryOrCreate
 	podSpec := v1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: map[string]string{
@@ -503,7 +583,6 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 			},
 		},
 		Spec: v1.PodSpec{
-			PriorityClassName: "system-node-critical",
 			// Unsupported value: "OnFailure": supported values: "Always"
 			RestartPolicy: v1.RestartPolicyAlways,
 
@@ -512,6 +591,7 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 			// onto a candidate node.
 			// ref. https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
 			NodeSelector: ts.cfg.EKSConfig.AddOnCNIVPC.NodeSelector,
+
 			Affinity: &v1.Affinity{
 				NodeAffinity: &v1.NodeAffinity{
 					RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
@@ -561,15 +641,35 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 				},
 			},
 
-			ServiceAccountName: cniServiceAccountName,
-			HostNetwork:        true,
+			HostNetwork: true,
+
+			PriorityClassName:             "system-node-critical",
+			ServiceAccountName:            cniServiceAccountName,
+			TerminationGracePeriodSeconds: aws.Int64(10),
 			Tolerations: []v1.Toleration{
 				{
 					Operator: v1.TolerationOpExists,
 				},
 			},
 
-			// https://www.eksworkshop.com/intermediate/230_logging/deploy/
+			InitContainers: []v1.Container{
+				{
+					Name:            cniInitAppName,
+					Image:           ts.cniInitImg,
+					ImagePullPolicy: v1.PullAlways,
+
+					SecurityContext: &v1.SecurityContext{
+						Privileged: aws.Bool(true),
+					},
+
+					VolumeMounts: []v1.VolumeMount{
+						{
+							Name:      "cni-bin-dir",
+							MountPath: "/host/opt/cni/bin",
+						},
+					},
+				},
+			},
 			Containers: []v1.Container{
 				{
 					Name:            cniAppName,
@@ -586,18 +686,24 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 					ReadinessProbe: &v1.Probe{
 						Handler: v1.Handler{
 							Exec: &v1.ExecAction{
-								Command: []string{"/app/grpc-health-probe", "-addr=:50051"},
+								Command: []string{
+									"/app/grpc-health-probe",
+									"-addr=:50051",
+								},
 							},
 						},
-						InitialDelaySeconds: 35,
+						InitialDelaySeconds: 1,
 					},
 					LivenessProbe: &v1.Probe{
 						Handler: v1.Handler{
 							Exec: &v1.ExecAction{
-								Command: []string{"/app/grpc-health-probe", "-addr=:50051"},
+								Command: []string{
+									"/app/grpc-health-probe",
+									"-addr=:50051",
+								},
 							},
 						},
-						InitialDelaySeconds: 35,
+						InitialDelaySeconds: 60,
 					},
 
 					Env: envVars,
@@ -609,10 +715,15 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 					},
 
 					SecurityContext: &v1.SecurityContext{
-						Privileged: aws.Bool(true),
+						Capabilities: &v1.Capabilities{
+							Add: []v1.Capability{
+								"NET_ADMIN",
+							},
+						},
 					},
 
 					// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
+					// ref. https://github.com/aws/amazon-vpc-cni-k8s/blob/release-1.7/config/v1.7/aws-k8s-cni.yaml
 					VolumeMounts: []v1.VolumeMount{
 						{
 							Name:      "cni-bin-dir",
@@ -624,7 +735,11 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 						},
 						{
 							Name:      "log-dir",
-							MountPath: "/host/var/log",
+							MountPath: "/host/var/log/aws-routed-eni",
+						},
+						{
+							Name:      "run-dir",
+							MountPath: "/var/run/aws-node",
 						},
 						{
 							Name:      "dockersock",
@@ -657,14 +772,6 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 					},
 				},
 				{
-					Name: "log-dir",
-					VolumeSource: v1.VolumeSource{
-						HostPath: &v1.HostPathVolumeSource{
-							Path: "/var/log",
-						},
-					},
-				},
-				{
 					Name: "dockersock",
 					VolumeSource: v1.VolumeSource{
 						HostPath: &v1.HostPathVolumeSource{
@@ -677,6 +784,26 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 					VolumeSource: v1.VolumeSource{
 						HostPath: &v1.HostPathVolumeSource{
 							Path: "/var/run/dockershim.sock",
+						},
+					},
+				},
+				// ref. https://github.com/aws/amazon-vpc-cni-k8s/blob/release-1.7/config/v1.7/aws-k8s-cni.yaml
+				{
+					Name: "log-dir",
+					VolumeSource: v1.VolumeSource{
+						HostPath: &v1.HostPathVolumeSource{
+							Path: "/var/log/aws-routed-eni",
+							Type: &dirOrCreate,
+						},
+					},
+				},
+				// ref. https://github.com/aws/amazon-vpc-cni-k8s/blob/release-1.7/config/v1.7/aws-k8s-cni.yaml
+				{
+					Name: "run-dir",
+					VolumeSource: v1.VolumeSource{
+						HostPath: &v1.HostPathVolumeSource{
+							Path: "/var/run/aws-node",
+							Type: &dirOrCreate,
 						},
 					},
 				},

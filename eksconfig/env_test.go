@@ -180,6 +180,14 @@ func TestEnv(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_INIT_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_INIT_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_INIT_REGION", "eu-north-1")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_INIT_REGION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_INIT_NAME", "aws-k8s-cni-init")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_INIT_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_INIT_IMAGE_TAG", "latest2")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_INIT_IMAGE_TAG")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_ACCOUNT_ID", "uri")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_ACCOUNT_ID")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_REGION", "eu-north-1")
@@ -931,6 +939,18 @@ func TestEnv(t *testing.T) {
 
 	if !cfg.AddOnCNIVPC.Enable {
 		t.Fatalf("unexpected cfg.AddOnCNIVPC.Enable %v", cfg.AddOnCNIVPC.Enable)
+	}
+	if cfg.AddOnCNIVPC.RepositoryInitAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnCNIVPC.RepositoryInitAccountID %v", cfg.AddOnCNIVPC.RepositoryInitAccountID)
+	}
+	if cfg.AddOnCNIVPC.RepositoryInitRegion != "eu-north-1" {
+		t.Fatalf("unexpected cfg.AddOnCNIVPC.RepositoryInitRegion %v", cfg.AddOnCNIVPC.RepositoryInitRegion)
+	}
+	if cfg.AddOnCNIVPC.RepositoryInitName != "aws-k8s-cni-init" {
+		t.Fatalf("unexpected cfg.AddOnCNIVPC.RepositoryInitName %v", cfg.AddOnCNIVPC.RepositoryInitName)
+	}
+	if cfg.AddOnCNIVPC.RepositoryInitImageTag != "latest2" {
+		t.Fatalf("unexpected cfg.AddOnCNIVPC.RepositoryInitImageTag %v", cfg.AddOnCNIVPC.RepositoryInitImageTag)
 	}
 	if cfg.AddOnCNIVPC.RepositoryAccountID != "uri" {
 		t.Fatalf("unexpected cfg.AddOnCNIVPC.RepositoryAccountID %v", cfg.AddOnCNIVPC.RepositoryAccountID)

@@ -183,21 +183,26 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *--------------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------------*
 
 
-*---------------------------------------------------------*-------------------*--------------------------------------------*--------------------*
-|                 ENVIRONMENTAL VARIABLE                  |     READ ONLY     |                    TYPE                    |      GO TYPE       |
-*---------------------------------------------------------*-------------------*--------------------------------------------*--------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_ENABLE                | read-only "false" | *eksconfig.AddOnCNIVPC.Enable              | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_CREATED               | read-only "true"  | *eksconfig.AddOnCNIVPC.Created             | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_TIME_FRAME_CREATE     | read-only "true"  | *eksconfig.AddOnCNIVPC.TimeFrameCreate     | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_TIME_FRAME_DELETE     | read-only "true"  | *eksconfig.AddOnCNIVPC.TimeFrameDelete     | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_ACCOUNT_ID | read-only "false" | *eksconfig.AddOnCNIVPC.RepositoryAccountID | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_REGION     | read-only "false" | *eksconfig.AddOnCNIVPC.RepositoryRegion    | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_NAME       | read-only "false" | *eksconfig.AddOnCNIVPC.RepositoryName      | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_IMAGE_TAG  | read-only "false" | *eksconfig.AddOnCNIVPC.RepositoryImageTag  | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_MINIMUM_IP_TARGET     | read-only "false" | *eksconfig.AddOnCNIVPC.MinimumIPTarget     | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_WARM_IP_TARGET        | read-only "false" | *eksconfig.AddOnCNIVPC.WarmIPTarget        | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_NODE_SELECTOR         | read-only "false" | *eksconfig.AddOnCNIVPC.NodeSelector        | map[string]string  |
-*---------------------------------------------------------*-------------------*--------------------------------------------*--------------------*
+*--------------------------------------------------------------*-------------------*------------------------------------------------*--------------------*
+|                    ENVIRONMENTAL VARIABLE                    |     READ ONLY     |                      TYPE                      |      GO TYPE       |
+*--------------------------------------------------------------*-------------------*------------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_ENABLE                     | read-only "false" | *eksconfig.AddOnCNIVPC.Enable                  | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_CREATED                    | read-only "true"  | *eksconfig.AddOnCNIVPC.Created                 | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_TIME_FRAME_CREATE          | read-only "true"  | *eksconfig.AddOnCNIVPC.TimeFrameCreate         | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_TIME_FRAME_DELETE          | read-only "true"  | *eksconfig.AddOnCNIVPC.TimeFrameDelete         | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_VERSION                    | read-only "false" | *eksconfig.AddOnCNIVPC.Version                 | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_INIT_ACCOUNT_ID | read-only "false" | *eksconfig.AddOnCNIVPC.RepositoryInitAccountID | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_INIT_REGION     | read-only "false" | *eksconfig.AddOnCNIVPC.RepositoryInitRegion    | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_INIT_NAME       | read-only "false" | *eksconfig.AddOnCNIVPC.RepositoryInitName      | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_INIT_IMAGE_TAG  | read-only "false" | *eksconfig.AddOnCNIVPC.RepositoryInitImageTag  | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_ACCOUNT_ID      | read-only "false" | *eksconfig.AddOnCNIVPC.RepositoryAccountID     | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_REGION          | read-only "false" | *eksconfig.AddOnCNIVPC.RepositoryRegion        | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_NAME            | read-only "false" | *eksconfig.AddOnCNIVPC.RepositoryName          | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_REPOSITORY_IMAGE_TAG       | read-only "false" | *eksconfig.AddOnCNIVPC.RepositoryImageTag      | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_MINIMUM_IP_TARGET          | read-only "false" | *eksconfig.AddOnCNIVPC.MinimumIPTarget         | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_WARM_IP_TARGET             | read-only "false" | *eksconfig.AddOnCNIVPC.WarmIPTarget            | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_NODE_SELECTOR              | read-only "false" | *eksconfig.AddOnCNIVPC.NodeSelector            | map[string]string  |
+*--------------------------------------------------------------*-------------------*------------------------------------------------*--------------------*
 
 
 *------------------------------------------------------*-------------------*-----------------------------------------*--------------------*
