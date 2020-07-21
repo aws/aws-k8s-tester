@@ -1,5 +1,11 @@
 
-## [v1.4.8](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.8) (2020-07)
+
+
+<hr>
+
+
+
+## [v1.4.8](https://github.com/aws/aws-k8s-tester/releases/tag/v1.4.8) (2020-07-20)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.7...v1.4.8).
 
