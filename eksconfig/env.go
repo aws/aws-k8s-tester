@@ -53,6 +53,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *Parameters, got %T", vv)
 	}
 
+	if cfg.AddOnCNIVPC == nil {
+		cfg.AddOnCNIVPC = &AddOnCNIVPC{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCNIVPC, cfg.AddOnCNIVPC)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnCNIVPC); ok {
+		cfg.AddOnCNIVPC = av
+	} else {
+		return fmt.Errorf("expected *AddOnCNIVPC, got %T", vv)
+	}
+
 	if cfg.AddOnNodeGroups == nil {
 		cfg.AddOnNodeGroups = &AddOnNodeGroups{}
 	}
@@ -77,19 +90,6 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnManagedNodeGroups = av
 	} else {
 		return fmt.Errorf("expected *AddOnManagedNodeGroups, got %T", vv)
-	}
-
-	if cfg.AddOnCNIVPC == nil {
-		cfg.AddOnCNIVPC = &AddOnCNIVPC{}
-	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCNIVPC, cfg.AddOnCNIVPC)
-	if err != nil {
-		return err
-	}
-	if av, ok := vv.(*AddOnCNIVPC); ok {
-		cfg.AddOnCNIVPC = av
-	} else {
-		return fmt.Errorf("expected *AddOnCNIVPC, got %T", vv)
 	}
 
 	if cfg.AddOnCWAgent == nil {

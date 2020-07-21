@@ -34,15 +34,15 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCNIVPC, &eksconfig.AddOnCNIVPC{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnNodeGroups, &eksconfig.AddOnNodeGroups{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnManagedNodeGroups, &eksconfig.AddOnManagedNodeGroups{}))
-
-	b.WriteByte('\n')
-	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCNIVPC, &eksconfig.AddOnCNIVPC{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

@@ -187,6 +187,8 @@ type Config struct {
 	ClientTimeout       time.Duration `json:"client-timeout"`
 	ClientTimeoutString string        `json:"client-timeout-string,omitempty" read-only:"true"`
 
+	// AddOnCNIVPC defines parameters for https://github.com/aws/amazon-vpc-cni-k8s.
+	AddOnCNIVPC *AddOnCNIVPC `json:"add-on-cni-vpc"`
 	// AddOnNodeGroups defines EKS "Node Group"
 	// creation parameters.
 	AddOnNodeGroups *AddOnNodeGroups `json:"add-on-node-groups,omitempty"`
@@ -200,8 +202,6 @@ type Config struct {
 	TotalNodes       int64 `json:"total-nodes" read-only:"true"`
 	TotalHollowNodes int64 `json:"total-hollow-nodes" read-only:"true"`
 
-	// AddOnCNIVPC defines parameters for https://github.com/aws/amazon-vpc-cni-k8s.
-	AddOnCNIVPC *AddOnCNIVPC `json:"add-on-cni-vpc"`
 	// AddOnCWAgent defines parameters for EKS cluster
 	// add-on Fluentd.
 	AddOnCWAgent *AddOnCWAgent `json:"add-on-cw-agent,omitempty"`
@@ -791,10 +791,10 @@ func NewDefault() *Config {
 		ClientQPS:   DefaultClientQPS,
 		ClientBurst: DefaultClientBurst,
 
+		AddOnCNIVPC:            getDefaultAddOnCNIVPC(),
 		AddOnNodeGroups:        getDefaultAddOnNodeGroups(name),
 		AddOnManagedNodeGroups: getDefaultAddOnManagedNodeGroups(name),
 
-		AddOnCNIVPC:        getDefaultAddOnCNIVPC(),
 		AddOnCWAgent:       getDefaultAddOnCWAgent(),
 		AddOnFluentd:       getDefaultAddOnFluentd(),
 		AddOnMetricsServer: getDefaultAddOnMetricsServer(),
@@ -882,6 +882,10 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return fmt.Errorf("validateAddOnManagedNodeGroups failed [%v]", err)
 	}
 
+	if err := cfg.validateAddOnCNIVPC(); err != nil {
+		return fmt.Errorf("validateAddOnCNIVPC failed [%v]", err)
+	}
+
 	total := int64(0)
 	if cfg.IsEnabledAddOnNodeGroups() {
 		for _, cur := range cfg.AddOnNodeGroups.ASGs {
@@ -904,9 +908,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	cfg.TotalHollowNodes = totalHollowNodes
 
-	if err := cfg.validateAddOnCNIVPC(); err != nil {
-		return fmt.Errorf("validateAddOnCNIVPC failed [%v]", err)
-	}
 	if err := cfg.validateAddOnCWAgent(); err != nil {
 		return fmt.Errorf("validateAddOnCWAgent failed [%v]", err)
 	}

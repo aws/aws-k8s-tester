@@ -1,4 +1,6 @@
 
+.PHONY: docker
+
 AKT_IMG_NAME ?= aws/aws-k8s-tester
 AKT_TAG ?= latest
 AKT_AWS_ACCOUNT_ID ?= $(shell aws sts get-caller-identity --query Account --output text)
