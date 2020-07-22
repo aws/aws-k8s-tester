@@ -6,120 +6,43 @@ if ! [[ "$0" =~ scripts/build.sh ]]; then
   exit 255
 fi
 
-if [[ -z "${GIT_COMMIT}" ]]; then
-  GIT_COMMIT=$(git rev-parse --short=12 HEAD || echo "GitNotFound")
-fi
-
-if [[ -z "${RELEASE_VERSION}" ]]; then
-  RELEASE_VERSION=v$(date -u '+%Y%m%d.%H%M%S')
-fi
-
-if [[ -z "${BUILD_TIME}" ]]; then
-  BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S')
-fi
-
+GIT_COMMIT=${GIT_COMMIT:-$(git rev-parse --short=12 HEAD || echo "GitNotFound")}
+RELEASE_VERSION=${RELEASE_VERSION:-v$(date -u '+%Y%m%d.%H%M%S')}
+BUILD_TIME=${BUILD_TIME:-$(date -u '+%Y-%m-%d_%H:%M:%S')}
 echo "GIT_COMMIT:" ${GIT_COMMIT}
 echo "RELEASE_VERSION:" ${RELEASE_VERSION}
 echo "BUILD_TIME:" ${BUILD_TIME}
 
+DEFAULT_WHAT='aws-k8s-tester cw-utils ec2-utils ecr-utils eks-utils etcd-utils s3-utils sts-utils'
+DEFAULT_TARGETS='linux darwin'
+
+PACKAGE_NAME='github.com/aws/aws-k8s-tester'
+WHAT=${WHAT:-$DEFAULT_WHAT}
+TARGETS=${TARGETS:-$DEFAULT_TARGETS}
+
+echo ""
+echo "Usage: \`make TARGET='linux' WHAT='aws-k8s-tester cw-utils'\`"
+echo "DEFAULT_TARGETS=$DEFAULT_TARGETS"
+echo "DEFAULT_WHAT=$DEFAULT_WHAT"
+echo ""
+
+
 mkdir -p ./bin
 
-_BUILD_TARGETS=${BUILD_TARGETS:-'linux darwin'}
-
-for os in ${_BUILD_TARGETS}; do
-  CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
-    go build -mod=vendor -v \
-    -ldflags "-s -w \
-    -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
-    -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
-    -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
-    -o ./bin/aws-k8s-tester-${RELEASE_VERSION}-${os}-$(go env GOARCH) \
-    ./cmd/aws-k8s-tester
-
-  CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
-    go build -mod=vendor -v \
-    -ldflags "-s -w \
-    -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
-    -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
-    -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
-    -o ./bin/cw-utils-${RELEASE_VERSION}-${os}-$(go env GOARCH) \
-    ./cmd/cw-utils
-
-  CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
-    go build -mod=vendor -v \
-    -ldflags "-s -w \
-    -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
-    -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
-    -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
-    -o ./bin/ec2-utils-${RELEASE_VERSION}-${os}-$(go env GOARCH) \
-    ./cmd/ec2-utils
-
-  CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
-    go build -mod=vendor -v \
-    -ldflags "-s -w \
-    -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
-    -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
-    -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
-    -o ./bin/ecr-utils-${RELEASE_VERSION}-${os}-$(go env GOARCH) \
-    ./cmd/ecr-utils
-
-  CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
-    go build -mod=vendor -v \
-    -ldflags "-s -w \
-    -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
-    -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
-    -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
-    -o ./bin/eks-utils-${RELEASE_VERSION}-${os}-$(go env GOARCH) \
-    ./cmd/eks-utils
-
-  CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
-    go build -mod=vendor -v \
-    -ldflags "-s -w \
-    -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
-    -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
-    -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
-    -o ./bin/etcd-utils-${RELEASE_VERSION}-${os}-$(go env GOARCH) \
-    ./cmd/etcd-utils
-
-  CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
-    go build -mod=vendor -v \
-    -ldflags "-s -w \
-    -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
-    -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
-    -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
-    -o ./bin/s3-utils-${RELEASE_VERSION}-${os}-$(go env GOARCH) \
-    ./cmd/s3-utils
-
-  CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
-    go build -mod=vendor -v \
-    -ldflags "-s -w \
-    -X github.com/aws/aws-k8s-tester/version.GitCommit=${GIT_COMMIT} \
-    -X github.com/aws/aws-k8s-tester/version.ReleaseVersion=${RELEASE_VERSION} \
-    -X github.com/aws/aws-k8s-tester/version.BuildTime=${BUILD_TIME}" \
-    -o ./bin/sts-utils-${RELEASE_VERSION}-${os}-$(go env GOARCH) \
-    ./cmd/sts-utils
+for os in ${TARGETS}; do
+  for cmd in ${WHAT}; do
+    echo "=== Building target=${cmd}, os=${os} ==="
+    CGO_ENABLED=0 GOOS=${os} GOARCH=$(go env GOARCH) \
+      go build -mod=vendor -v \
+      -ldflags "-s -w \
+      -X ${PACKAGE_NAME}/version.GitCommit=${GIT_COMMIT} \
+      -X ${PACKAGE_NAME}/version.ReleaseVersion=${RELEASE_VERSION} \
+      -X ${PACKAGE_NAME}/version.BuildTime=${BUILD_TIME}" \
+      -o ./bin/${cmd}-${RELEASE_VERSION}-${os}-$(go env GOARCH) \
+      ./cmd/${cmd}
+  done
 done
 
-if [[ "${OSTYPE}" == "linux-gnu" ]]; then
-  ./bin/aws-k8s-tester-${RELEASE_VERSION}-linux-$(go env GOARCH) version
-  ./bin/cw-utils-${RELEASE_VERSION}-linux-$(go env GOARCH) version
-  ./bin/ec2-utils-${RELEASE_VERSION}-linux-$(go env GOARCH) version
-  ./bin/ecr-utils-${RELEASE_VERSION}-linux-$(go env GOARCH) version
-  ./bin/eks-utils-${RELEASE_VERSION}-linux-$(go env GOARCH) version
-  ./bin/etcd-utils-${RELEASE_VERSION}-linux-$(go env GOARCH) version
-  ./bin/s3-utils-${RELEASE_VERSION}-linux-$(go env GOARCH) version
-  ./bin/sts-utils-${RELEASE_VERSION}-linux-$(go env GOARCH) version
-  cp ./bin/aws-k8s-tester-${RELEASE_VERSION}-linux-$(go env GOARCH) ./aws-k8s-tester
-elif [[ "${OSTYPE}" == "darwin"* ]]; then
-  ./bin/aws-k8s-tester-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
-  ./bin/cw-utils-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
-  ./bin/ec2-utils-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
-  ./bin/ecr-utils-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
-  ./bin/eks-utils-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
-  ./bin/etcd-utils-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
-  ./bin/s3-utils-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
-  ./bin/sts-utils-${RELEASE_VERSION}-darwin-$(go env GOARCH) version
-fi
-
-echo "Success!"
-find ./bin
+echo ""
+echo "Success! Your shiny new binaries are ready."
+echo "find ./bin -type f"

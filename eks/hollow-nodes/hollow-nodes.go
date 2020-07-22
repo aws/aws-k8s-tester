@@ -29,6 +29,7 @@ import (
 	kubelet_app "k8s.io/kubernetes/cmd/kubelet/app"
 	kubelet_options "k8s.io/kubernetes/cmd/kubelet/app/options"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
+	"k8s.io/kubernetes/pkg/apis/core"
 	pkg_kubelet "k8s.io/kubernetes/pkg/kubelet"
 	kubelet_config "k8s.io/kubernetes/pkg/kubelet/apis/config"
 	cadvisor_test "k8s.io/kubernetes/pkg/kubelet/cadvisor/testing"
@@ -344,6 +345,7 @@ func newNode(cfg nodeConfig) (kubelet, kubeProxy, error) {
 
 	kubeletFlags.HostnameOverride = cfg.nodeName
 	kubeletFlags.NodeLabels = cfg.nodeLabels
+	kubeletFlags.RegisterWithTaints = []core.Taint{{Key: "provider", Effect: "NoSchedule", Value: "kubemark"}}
 
 	kubeletFlags.MinimumGCAge = metav1.Duration{Duration: 1 * time.Minute}
 	kubeletFlags.MaxContainerCount = 1
@@ -376,8 +378,7 @@ func newNode(cfg nodeConfig) (kubelet, kubeProxy, error) {
 
 	kubeletConfig.SyncFrequency.Duration = 10 * time.Second
 	kubeletConfig.EvictionPressureTransitionPeriod.Duration = 5 * time.Minute
-	kubeletConfig.MaxPods = 1
-	kubeletConfig.PodsPerCore = 1
+	kubeletConfig.MaxPods = 10
 	kubeletConfig.ClusterDNS = []string{}
 	kubeletConfig.ImageGCHighThresholdPercent = 90
 	kubeletConfig.ImageGCLowThresholdPercent = 80
