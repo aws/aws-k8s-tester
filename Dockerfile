@@ -3,7 +3,7 @@ RUN go version
 ADD ./ /go/src/github.com/aws/aws-k8s-tester
 WORKDIR /go/src/github.com/aws/aws-k8s-tester
 ARG RELEASE_VERSION=latest
-ARG BUILD_TARGETS=linux
+ARG OS_TARGETS=linux
 RUN ./scripts/build.sh
 
 FROM amazonlinux:latest
