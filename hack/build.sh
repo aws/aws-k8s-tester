@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-if ! [[ "$0" =~ scripts/build.sh ]]; then
+if ! [[ "$0" =~ hack/build.sh ]]; then
   echo "must be run from repository root"
   exit 255
 fi
@@ -25,7 +25,6 @@ echo "Usage: \`make TARGET='linux' WHAT='aws-k8s-tester cw-utils'\`"
 echo "DEFAULT_TARGETS=$DEFAULT_TARGETS"
 echo "DEFAULT_WHAT=$DEFAULT_WHAT"
 echo ""
-
 
 mkdir -p ./bin
 

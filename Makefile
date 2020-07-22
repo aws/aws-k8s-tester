@@ -15,7 +15,7 @@ WHAT ?= aws-k8s-tester
 TARGETS ?= $(shell uname | awk '{print tolower($0)}')
 
 build:
-	WHAT=$(WHAT) TARGETS=$(TARGETS) RELEASE_VERSION=$(AKT_TAG) ./scripts/build.sh
+	WHAT=$(WHAT) TARGETS=$(TARGETS) RELEASE_VERSION=$(AKT_TAG) ./hack/build.sh
 
 clean:
 	rm -rf ./bin ./_tmp

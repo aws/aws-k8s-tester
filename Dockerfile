@@ -4,7 +4,7 @@ ADD ./ /go/src/github.com/aws/aws-k8s-tester
 WORKDIR /go/src/github.com/aws/aws-k8s-tester
 ARG RELEASE_VERSION=latest
 ARG OS_TARGETS=linux
-RUN ./scripts/build.sh
+RUN ./hack/build.sh
 
 FROM amazonlinux:latest
 RUN yum update -y && yum install -y which python3 pip3 && yum clean all && pip3 install awscli --upgrade --user
