@@ -10,3 +10,15 @@ type Tester interface {
 	// Delete deletes all test objects.
 	Delete() error
 }
+
+// Addon is a new interface similar to tester.
+// Instead of Name() reflection is used for object names
+// IsEnabled() allows for generic addon skipping.
+type Addon interface {
+	// Apply idempotently creates test objects
+	Apply() error
+	// Delete idempotently deletes test objects
+	Delete() error
+	// IsEnabled automatically skips the addon if false
+	IsEnabled() bool
+}

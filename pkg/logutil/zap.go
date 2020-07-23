@@ -1,11 +1,20 @@
 package logutil
 
 import (
+	"log"
 	"sort"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
+
+func init() {
+	logger, err := GetDefaultZapLogger()
+	if err != nil {
+		log.Fatalf("Failed to initialize global logger, %v", err)
+	}
+	_ = zap.ReplaceGlobals(logger)
+}
 
 // GetDefaultZapLoggerConfig returns a new default zap logger configuration.
 func GetDefaultZapLoggerConfig() zap.Config {

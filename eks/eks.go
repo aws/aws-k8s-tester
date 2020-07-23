@@ -15,6 +15,7 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"syscall"
@@ -27,6 +28,7 @@ import (
 	cluster_loader_local "github.com/aws/aws-k8s-tester/eks/cluster-loader/local"
 	cluster_loader_remote "github.com/aws/aws-k8s-tester/eks/cluster-loader/remote"
 	cluster_version_upgrade "github.com/aws/aws-k8s-tester/eks/cluster/version-upgrade"
+	"github.com/aws/aws-k8s-tester/eks/clusterautoscaler"
 	cni_vpc "github.com/aws/aws-k8s-tester/eks/cni-vpc"
 	config_maps_local "github.com/aws/aws-k8s-tester/eks/configmaps/local"
 	config_maps_remote "github.com/aws/aws-k8s-tester/eks/configmaps/remote"
@@ -54,12 +56,14 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/ng"
 	nlb_guestbook "github.com/aws/aws-k8s-tester/eks/nlb-guestbook"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/eks/nlb-hello-world"
+	"github.com/aws/aws-k8s-tester/eks/overprovisioning"
 	php_apache "github.com/aws/aws-k8s-tester/eks/php-apache"
 	prometheus_grafana "github.com/aws/aws-k8s-tester/eks/prometheus-grafana"
 	secrets_local "github.com/aws/aws-k8s-tester/eks/secrets/local"
 	secrets_remote "github.com/aws/aws-k8s-tester/eks/secrets/remote"
 	stresser_local "github.com/aws/aws-k8s-tester/eks/stresser/local"
 	stresser_remote "github.com/aws/aws-k8s-tester/eks/stresser/remote"
+	"github.com/aws/aws-k8s-tester/eks/tester"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eks/wordpress"
 	"github.com/aws/aws-k8s-tester/eksconfig"
@@ -100,6 +104,7 @@ import (
 	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog"
 	"k8s.io/utils/exec"
 )
 
@@ -151,8 +156,11 @@ type Tester struct {
 	mngTester mng.Tester
 	gpuTester gpu.Tester
 
-	// TODO: make order configurable
+	// TODO, Shift to "Addon" api for ordered installation
 	testers []eks_tester.Tester
+
+	// Addons constructs a dependency ordering of Addons
+	addons [][]tester.Addon
 }
 
 // New returns a new EKS kubetest2 Deployer.
@@ -481,6 +489,18 @@ func (ts *Tester) createTesters() (err error) {
 		EKSConfig: ts.cfg,
 		K8SClient: ts.k8sClient,
 	})
+
+	// Groups of installable addons. Addons are installed in groups, where each group installs all components in parallel
+	ts.addons = [][]tester.Addon{{
+		&clusterautoscaler.ClusterAutoscaler{
+			Config:    ts.cfg,
+			K8sClient: ts.k8sClient,
+		},
+		&overprovisioning.Overprovisioning{
+			Config:    ts.cfg,
+			K8sClient: ts.k8sClient,
+		},
+	}}
 
 	ts.testers = []eks_tester.Tester{
 		cw_agent.New(cw_agent.Config{
@@ -1333,6 +1353,16 @@ func (ts *Tester) Up() (err error) {
 		fmt.Fprintf(ts.logWriter, "\nrunCommand output:\n\n%s\n", string(out))
 	}
 
+	// Generic installation of ordered addons. Add your addon to ts.addons
+	for _, order := range ts.addons {
+		if err := ts.runAsync(order, func(a tester.Addon) error {
+			zap.S().Infof("Applying addon %s", reflect.TypeOf(a))
+			return a.Apply()
+		}); err != nil {
+			return fmt.Errorf("while applying addons, %w", err)
+		}
+	}
+
 	return ts.cfg.Sync()
 }
 
@@ -1659,4 +1689,45 @@ func catchInterrupt(lg *zap.Logger, stopc chan struct{}, stopcCloseOnce *sync.On
 		}
 	}
 	return err
+}
+
+// runAsync asynchronously executes a function over a slice of addons.
+// If any function errors, the function will return with the error after all addons have executed
+func (ts *Tester) runAsync(addons []tester.Addon, execute func(a tester.Addon) error) error {
+	errors := make(chan error)
+	done := make(chan bool)
+	var wg sync.WaitGroup
+
+	// Fire off addon functions
+	for _, addon := range addons {
+		if !addon.IsEnabled() {
+			klog.Infof("Skipping disabled addon %s", reflect.TypeOf(addon))
+			continue
+		}
+		wg.Add(1)
+		// Take a copy for the goroutine since addon will be mutated before it executes
+		a := addon
+		go func() {
+			defer wg.Done()
+			if err := execute(a); err != nil {
+				errors <- err
+			}
+		}()
+	}
+
+	// Wait for all routines to exit and signal done
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	// Wait for done or an error to occur
+	select {
+	case <-done:
+		break
+	case err := <-errors:
+		close(errors)
+		return err
+	}
+	return nil
 }

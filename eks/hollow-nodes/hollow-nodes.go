@@ -378,7 +378,6 @@ func newNode(cfg nodeConfig) (kubelet, kubeProxy, error) {
 
 	kubeletConfig.SyncFrequency.Duration = 10 * time.Second
 	kubeletConfig.EvictionPressureTransitionPeriod.Duration = 5 * time.Minute
-	kubeletConfig.MaxPods = 10
 	kubeletConfig.ClusterDNS = []string{}
 	kubeletConfig.ImageGCHighThresholdPercent = 90
 	kubeletConfig.ImageGCLowThresholdPercent = 80

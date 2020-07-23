@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -17,6 +18,8 @@ import (
 	"sync"
 	"text/template"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
@@ -37,6 +40,10 @@ const EnvironmentVariablePrefixParameters = AWS_K8S_TESTER_EKS_PREFIX + "PARAMET
 // Config defines EKS configuration.
 type Config struct {
 	mu *sync.RWMutex
+
+	// TODO, Migrate metadata fields to here
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Name is the cluster name.
 	// If empty, deployer auto-populates it.
@@ -335,6 +342,10 @@ type Config struct {
 	// AddOnClusterVersionUpgrade defines parameters
 	// for EKS cluster version upgrade add-on.
 	AddOnClusterVersionUpgrade *AddOnClusterVersionUpgrade `json:"add-on-cluster-version-upgrade,omitempty"`
+
+	// Spec contains addons and other configuration
+	// Note: New addons should be implemented inside spec
+	Spec Spec `json:"spec,omitempty"`
 
 	// Status represents the current status of AWS resources.
 	// Status is read-only.
@@ -875,6 +886,18 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		cfg.unsafeSync()
 		cfg.mu.Unlock()
 	}()
+
+	// Generically defaults and validates addons that are members of cfg.Spec
+	spec := reflect.ValueOf(cfg.Spec)
+	for i := 0; i < spec.NumField(); i++ {
+		// Skip if the field does not implement Addon or is Nil
+		if addon, ok := spec.Field(i).Interface().(Addon); ok && !reflect.ValueOf(addon).IsNil() {
+			addon.Default(cfg)
+			if err := addon.Validate(cfg); err != nil {
+				return fmt.Errorf("Failed to validate %s, %v", reflect.ValueOf(addon).Type(), err)
+			}
+		}
+	}
 
 	if err := cfg.validateConfig(); err != nil {
 		return fmt.Errorf("validateConfig failed [%v]", err)

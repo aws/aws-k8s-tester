@@ -65,6 +65,11 @@ type Status struct {
 	// ClusterStatus represents the status of the cluster.
 	ClusterStatus []ClusterStatus `json:"cluster-status"`
 
+	// ClusterAutoscaler defines the addon's status
+	ClusterAutoscaler *ClusterAutoscalerStatus `json:"clusterAutoscaler,omitempty"`
+	// Overprovisioning defines the addon's status
+	Overprovisioning *OverprovisioningStatus `json:"overprovisioning,omitempty"`
+
 	// PrivateDNSToNodeInfo maps each worker node's private IP to its public IP,
 	// public DNS, and SSH access user name.
 	// Kubernetes node object name is the node's EC2 instance private DNS.
