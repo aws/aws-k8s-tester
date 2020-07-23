@@ -468,6 +468,13 @@ func Load(p string) (cfg *Config, err error) {
 		return nil, err
 	}
 
+	// Apply overrides from AWS_K8S_TESTER_EKS_CONFIG
+	if env, ok := os.LookupEnv("AWS_K8S_TESTER_EKS_CONFIG"); ok {
+		if err := yaml.Unmarshal([]byte(env), cfg); err != nil {
+			return nil, err
+		}
+	}
+
 	cfg.mu = new(sync.RWMutex)
 	if cfg.ConfigPath != p {
 		cfg.ConfigPath = p
