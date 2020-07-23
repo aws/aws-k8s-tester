@@ -129,6 +129,13 @@ type EKS interface {
 	// APIExtensionsClientSet returns a new apiextensions client set.
 	APIExtensionsClientSet() *apiextensions_client.Clientset
 
+	// Apply raw YAML using kubectl.
+	// Writes to a temporary file and execute kubectl. Returns the complete output or an error.
+	Apply(data string) error
+	// Delete raw YAML using kubectl.
+	// Writes to a temporary file and execute kubectl. Returns the complete output or an error.
+	Delete(data string) error
+
 	// CheckEKSHealth checks the EKS health.
 	CheckHealth() error
 
