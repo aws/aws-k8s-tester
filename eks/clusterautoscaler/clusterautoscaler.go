@@ -96,7 +96,7 @@ func (c *ClusterAutoscaler) buildNodeGroupArguments() (args []string) {
 			args = append(args, fmt.Sprintf(
 				NodeGroupArgumentFormatter,
 				spec.MinNodes,
-				spec.MinNodes,
+				spec.MaxNodes,
 				name,
 			))
 		}
