@@ -43,7 +43,7 @@ replace (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.33.8
+	github.com/aws/aws-sdk-go v1.33.13
 	github.com/briandowns/spinner v1.11.1
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/davecgh/go-spew v1.1.1
@@ -80,6 +80,7 @@ require (
 	k8s.io/apimachinery v0.18.7-rc.0
 	k8s.io/cli-runtime v0.18.7-rc.0
 	k8s.io/client-go v0.18.7-rc.0
+	k8s.io/klog v1.0.0
 	k8s.io/kubernetes v1.18.7-rc.0
 	k8s.io/perf-tests/clusterloader2 v0.0.0-20200615121956-f3cf096d4378
 	k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
