@@ -414,6 +414,16 @@ func (cfg *Config) validateASGs() error {
 			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, cur.AMIType)
 		}
 
+		if cur.ASGDesiredCapacity == 0 {
+			return fmt.Errorf("ASGs[%q].ASGDesiredCapacity must be >0", k)
+		}
+		if cur.ASGMinSize == 0 {
+			cur.ASGMinSize = cur.ASGDesiredCapacity
+		}
+		if cur.ASGMaxSize == 0 {
+			cur.ASGMaxSize = cur.ASGDesiredCapacity
+		}
+
 		if cur.ASGMinSize > cur.ASGMaxSize {
 			return fmt.Errorf("ASGs[%q].ASGMinSize %d > ASGMaxSize %d", k, cur.ASGMinSize, cur.ASGMaxSize)
 		}
