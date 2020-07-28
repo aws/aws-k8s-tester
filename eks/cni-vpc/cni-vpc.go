@@ -739,10 +739,6 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 							MountPath: "/var/run/aws-node",
 						},
 						{
-							Name:      "dockersock",
-							MountPath: "/var/run/docker.sock",
-						},
-						{
 							Name:      "dockershim",
 							MountPath: "/var/run/dockershim.sock",
 						},
@@ -765,14 +761,6 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 					VolumeSource: v1.VolumeSource{
 						HostPath: &v1.HostPathVolumeSource{
 							Path: "/etc/cni/net.d",
-						},
-					},
-				},
-				{
-					Name: "dockersock",
-					VolumeSource: v1.VolumeSource{
-						HostPath: &v1.HostPathVolumeSource{
-							Path: "/var/run/docker.sock",
 						},
 					},
 				},
