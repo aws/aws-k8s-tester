@@ -35,10 +35,14 @@ func (spec *OverprovisioningSpec) Default(cfg *Config) {
 	if spec.Image == "" {
 		spec.Image = "k8s.gcr.io/pause"
 	}
-	if spec.Resources.Requests.Cpu() == nil {
-		spec.Resources = corev1.ResourceRequirements{Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("400m")}}
+
+	if spec.Resources.Requests == nil {
+		spec.Resources.Requests = corev1.ResourceList{}
 	}
-	if spec.Resources.Requests.Memory() == nil {
-		spec.Resources = corev1.ResourceRequirements{Requests: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("1Gi")}}
+	if spec.Resources.Requests.Cpu().IsZero() {
+		spec.Resources.Requests[corev1.ResourceCPU] = resource.MustParse("400m")
+	}
+	if spec.Resources.Requests.Memory().IsZero() {
+		spec.Resources.Requests[corev1.ResourceMemory] = resource.MustParse("1Gi")
 	}
 }
