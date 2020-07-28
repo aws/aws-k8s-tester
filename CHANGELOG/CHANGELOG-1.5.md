@@ -7,9 +7,14 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.8...v1.5.0).
 
+### `ec2config`
+
+- Set [ASG size defaults based on desired capacities](https://github.com/aws/aws-k8s-tester/pull/140).
+
 ### `eksconfig`
 
 - Add [`AWS_K8S_TESTER_EKS_CONFIG`](https://github.com/aws/aws-k8s-tester/pull/138).
+- Set [ASG size defaults based on desired capacities](https://github.com/aws/aws-k8s-tester/pull/140).
 
 ### `eks`
 
