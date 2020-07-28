@@ -43,7 +43,7 @@ replace (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.33.13
+	github.com/aws/aws-sdk-go v1.33.14
 	github.com/briandowns/spinner v1.11.1
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/davecgh/go-spew v1.1.1
