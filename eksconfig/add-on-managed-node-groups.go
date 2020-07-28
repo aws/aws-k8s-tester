@@ -501,6 +501,16 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			}
 		}
 
+		if cur.ASGDesiredCapacity == 0 {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity must be >0", k)
+		}
+		if cur.ASGMinSize == 0 {
+			cur.ASGMinSize = cur.ASGDesiredCapacity
+		}
+		if cur.ASGMaxSize == 0 {
+			cur.ASGMaxSize = cur.ASGDesiredCapacity
+		}
+
 		if cur.ASGMinSize > cur.ASGMaxSize {
 			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMinSize %d > ASGMaxSize %d", k, cur.ASGMinSize, cur.ASGMaxSize)
 		}
