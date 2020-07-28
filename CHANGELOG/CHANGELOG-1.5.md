@@ -14,6 +14,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.8...v1.5.0
 ### `eks`
 
 - Add [`ClusterAutoscaler` addon with kubemark compatibility](https://github.com/aws/aws-k8s-tester/pull/137).
+- Remove [unused `docker.sock`](https://github.com/aws/aws-k8s-tester/pull/141).
 
 ### `Makefile`
 
