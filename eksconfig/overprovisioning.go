@@ -35,7 +35,6 @@ func (spec *OverprovisioningSpec) Default(cfg *Config) {
 	if spec.Image == "" {
 		spec.Image = "k8s.gcr.io/pause"
 	}
-
 	if spec.Resources.Requests == nil {
 		spec.Resources.Requests = corev1.ResourceList{}
 	}
