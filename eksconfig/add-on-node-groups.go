@@ -341,13 +341,13 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			}
 		}
 
-		if cur.ASGDesiredCapacity == 0 {
-			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGDesiredCapacity must be >0", k)
+		if cur.ASGMinSize == 0 && cur.ASGDesiredCapacity == 0 {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGMinSize/ASGDesiredCapacity must be >0", k)
 		}
-		if cur.ASGMinSize == 0 {
+		if cur.ASGDesiredCapacity > 0 && cur.ASGMinSize == 0 {
 			cur.ASGMinSize = cur.ASGDesiredCapacity
 		}
-		if cur.ASGMaxSize == 0 {
+		if cur.ASGDesiredCapacity > 0 && cur.ASGMaxSize == 0 {
 			cur.ASGMaxSize = cur.ASGDesiredCapacity
 		}
 

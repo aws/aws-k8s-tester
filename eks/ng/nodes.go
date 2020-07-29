@@ -124,7 +124,7 @@ Parameters:
 
   ASGDesiredCapacity:
     Type: Number
-    Default: 2
+    Default: 0
     Description: Desired capacity of Node Group ASG.
 
 Conditions:
@@ -216,7 +216,7 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     UpdatePolicy:
       AutoScalingRollingUpdate:
-        MinInstancesInService: !Ref ASGDesiredCapacity
+        MinInstancesInService: !Ref ASGMinSize
         MaxBatchSize: 1
         SuspendProcesses:
         - HealthCheck
@@ -227,8 +227,8 @@ Resources:
     Properties:
       AutoScalingGroupName: !Ref ASGName
       MinSize: !Ref ASGMinSize
-      MaxSize: !Ref ASGMaxSize
-      DesiredCapacity: !Ref ASGDesiredCapacity
+      MaxSize: !Ref ASGMaxSize{{ if ne .ASGDesiredCapacity 0 }}
+      DesiredCapacity: !Ref ASGDesiredCapacity{{ end }}
       VPCZoneIdentifier: !Ref PublicSubnetIDs
       MetricsCollection:
       - Granularity: "1Minute"
@@ -239,7 +239,7 @@ Resources:
       - Key: !Sub kubernetes.io/cluster/${ClusterName}
         Value: owned
         PropagateAtLaunch: true
-{{ if ne .AsgTagData "" }}{{.AsgTagData}}{{ end }}
+{{ if ne .ASGTagData "" }}{{.ASGTagData}}{{ end }}
       MixedInstancesPolicy:
         InstancesDistribution:
           OnDemandAllocationStrategy: "prioritized"
@@ -374,9 +374,10 @@ const asgTagDataNG = `      - Key: !Sub k8s.io/cluster-autoscaler/${ClusterName}
 `
 
 type templateASG struct {
-	Metadata   string
-	UserData   string
-	AsgTagData string
+	Metadata           string
+	UserData           string
+	ASGDesiredCapacity int64
+	ASGTagData         string
 }
 
 func (ts *tester) createASGs() error {
@@ -398,7 +399,9 @@ func (ts *tester) createASGs() error {
 		// TODO: may not be necessary
 		// "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 		// already includes SSM agent + AWS CLI
-		tg := templateASG{}
+		tg := templateASG{
+			ASGDesiredCapacity: cur.ASGDesiredCapacity,
+		}
 		switch cur.AMIType {
 		case ec2config.AMITypeBottleRocketCPU:
 			// "bottlerocket" comes with SSM agent
@@ -448,9 +451,9 @@ func (ts *tester) createASGs() error {
 			tg.UserData += "\n"
 			tg.UserData += `              /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource ASG --region ${AWS::Region}`
 		}
-		tg.AsgTagData = ""
+		tg.ASGTagData = ""
 		if cur.ClusterAutoscaler != nil && cur.ClusterAutoscaler.Enable {
-			tg.AsgTagData = asgTagDataNG
+			tg.ASGTagData = asgTagDataNG
 		}
 		tpl := template.Must(template.New("TemplateASG").Parse(TemplateASG))
 		buf := bytes.NewBuffer(nil)
@@ -586,11 +589,15 @@ func (ts *tester) createASGs() error {
 			return fmt.Errorf("ASG name %q not found after creation", asgName)
 		}
 
-		waitDur := 30*time.Minute + 5*time.Second*time.Duration(cur.ASGDesiredCapacity)
+		checkN := time.Duration(cur.ASGDesiredCapacity)
+		if checkN == 0 {
+			checkN = time.Duration(cur.ASGMinSize)
+		}
+		waitDur := 30*time.Minute + 5*time.Second*checkN
 		for _, it := range cur.InstanceTypes {
 			if strings.Contains(it, ".metal") { // "i3.metal" takes much longer
 				ts.cfg.Logger.Info("increasing wait time for metal instance", zap.String("instance-type", it))
-				waitDur = time.Hour + time.Minute*time.Duration(cur.ASGDesiredCapacity)
+				waitDur = time.Hour + time.Minute*checkN
 			}
 		}
 		timeStart := time.Now()

@@ -258,11 +258,12 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 				}
 				ts.cfg.Logger.Info("nodes",
 					zap.Int64("current-ready-nodes", foundReady),
+					zap.Int64("min-ready-nodes", cur.ASGMinSize),
 					zap.Int64("desired-ready-nodes", cur.ASGDesiredCapacity),
 				)
 				time.Sleep(5 * time.Second)
 
-				if foundReady >= cur.ASGDesiredCapacity {
+				if foundReady >= cur.ASGMinSize {
 					readyNGs[ngName] = struct{}{}
 					break
 				}
@@ -338,11 +339,12 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 				}
 				ts.cfg.Logger.Info("nodes",
 					zap.Int("current-ready-nodes", foundReady),
+					zap.Int("min-ready-nodes", cur.ASGMinSize),
 					zap.Int("desired-ready-nodes", cur.ASGDesiredCapacity),
 				)
 				time.Sleep(5 * time.Second)
 
-				if foundReady >= cur.ASGDesiredCapacity {
+				if foundReady >= cur.ASGMinSize {
 					readyMNGs[mngName] = struct{}{}
 					break
 				}
