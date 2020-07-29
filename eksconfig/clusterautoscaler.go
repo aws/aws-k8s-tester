@@ -50,7 +50,7 @@ func (spec *ClusterAutoscalerSpec) defaultImage() string {
 		return spec.Image
 	}
 	if spec.CloudProvider == CloudProviderKubemark {
-		return "767520670908.dkr.ecr.us-west-2.amazonaws.com/cluster-autoscaler-kubemark:custom-build-20200727"
+		return "197575167141.dkr.ecr.us-west-2.amazonaws.com/cluster-autoscaler-kubemark:latest"
 	}
 	return "k8s.gcr.io/cluster-autoscaler:v1.14.7"
 }
