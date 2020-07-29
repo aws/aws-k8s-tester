@@ -414,13 +414,13 @@ func (cfg *Config) validateASGs() error {
 			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, cur.AMIType)
 		}
 
-		if cur.ASGDesiredCapacity == 0 {
-			return fmt.Errorf("ASGs[%q].ASGDesiredCapacity must be >0", k)
+		if cur.ASGMinSize == 0 && cur.ASGDesiredCapacity == 0 {
+			return fmt.Errorf("ASGs[%q].ASGMinSize/ASGDesiredCapacity must be >0", k)
 		}
-		if cur.ASGMinSize == 0 {
+		if cur.ASGDesiredCapacity > 0 && cur.ASGMinSize == 0 {
 			cur.ASGMinSize = cur.ASGDesiredCapacity
 		}
-		if cur.ASGMaxSize == 0 {
+		if cur.ASGDesiredCapacity > 0 && cur.ASGMaxSize == 0 {
 			cur.ASGMaxSize = cur.ASGDesiredCapacity
 		}
 
@@ -464,7 +464,11 @@ func (cfg *Config) validateASGs() error {
 		case false: // use existing one, or don't run any SSM
 		}
 
-		total += cur.ASGDesiredCapacity
+		expectedN := cur.ASGDesiredCapacity
+		if expectedN == 0 {
+			expectedN = cur.ASGMinSize
+		}
+		total += expectedN
 		processed[k] = cur
 	}
 

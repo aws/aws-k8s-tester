@@ -140,7 +140,11 @@ func (ts *tester) waitForNodes(mngName string, retriesLeft int) error {
 		}
 	}
 
-	waitDur := 3*time.Minute + time.Duration(5*cur.ASGDesiredCapacity)*time.Second
+	checkN := time.Duration(cur.ASGDesiredCapacity)
+	if checkN == 0 {
+		checkN = time.Duration(cur.ASGMinSize)
+	}
+	waitDur := 3*time.Minute + 5*time.Second*checkN
 	ts.cfg.Logger.Info(
 		"describing EC2 instances in ASG",
 		zap.String("asg-name", cur.ASGName),
@@ -315,10 +319,11 @@ func (ts *tester) waitForNodes(mngName string, retriesLeft int) error {
 			zap.String("command", ts.cfg.EKSConfig.KubectlCommand()+" get nodes"),
 			zap.String("mng-name", cur.Name),
 			zap.Int("current-ready-nodes", readies),
+			zap.Int("min-ready-nodes", cur.ASGMinSize),
 			zap.Int("desired-ready-nodes", cur.ASGDesiredCapacity),
 			zap.String("all-csrs", fmt.Sprintf("%+v", allCSRs)),
 		)
-		if readies >= cur.ASGDesiredCapacity {
+		if readies >= cur.ASGMinSize {
 			ready = true
 			break
 		}

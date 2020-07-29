@@ -122,10 +122,12 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		reqID = aws.StringValue(updateOut.Update.Id)
 	}
 
-	// takes TODO
 	initialWait := 5 * time.Minute
-	totalWait := 2*time.Hour + 30*time.Minute + 3*time.Minute*time.Duration(cur.ASGDesiredCapacity)
-
+	checkN := time.Duration(cur.ASGDesiredCapacity)
+	if checkN == 0 {
+		checkN = time.Duration(cur.ASGMinSize)
+	}
+	totalWait := 2*time.Hour + 30*time.Minute + 3*time.Minute*checkN
 	ts.cfg.Logger.Info("sent MNG upgrade request; polling",
 		zap.String("cluster-name", ts.cfg.EKSConfig.Name),
 		zap.String("mng-name", mngName),

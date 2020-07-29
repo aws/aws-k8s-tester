@@ -119,7 +119,7 @@ type MNG struct {
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	ASGMaxSize int `json:"asg-max-size,omitempty"`
-	// ASGDesiredCapacity is is the desired capacity of Node Group ASG.
+	// ASGDesiredCapacity is the desired capacity of Node Group ASG.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
 	ASGDesiredCapacity int `json:"asg-desired-capacity,omitempty"`
@@ -501,13 +501,13 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			}
 		}
 
-		if cur.ASGDesiredCapacity == 0 {
-			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity must be >0", k)
+		if cur.ASGMinSize == 0 && cur.ASGDesiredCapacity == 0 {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMinSize/ASGDesiredCapacity must be >0", k)
 		}
-		if cur.ASGMinSize == 0 {
+		if cur.ASGDesiredCapacity > 0 && cur.ASGMinSize == 0 {
 			cur.ASGMinSize = cur.ASGDesiredCapacity
 		}
-		if cur.ASGMaxSize == 0 {
+		if cur.ASGDesiredCapacity > 0 && cur.ASGMaxSize == 0 {
 			cur.ASGMaxSize = cur.ASGDesiredCapacity
 		}
 

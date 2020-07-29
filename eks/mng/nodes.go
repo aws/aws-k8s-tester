@@ -75,7 +75,7 @@ Parameters:
 
   ASGDesiredCapacity:
     Type: Number
-    Default: 2
+    Default: 0
     Description: Desired capacity of Node Group Auto Scaling Group.
 
   InstanceTypes:
@@ -105,8 +105,8 @@ Resources:
         Ec2SshKey: !Ref RemoteAccessKeyName
       ScalingConfig:
         MinSize: !Ref ASGMinSize
-        MaxSize: !Ref ASGMaxSize
-        DesiredSize: !Ref ASGDesiredCapacity
+        MaxSize: !Ref ASGMaxSize{{ if ne .ASGDesiredCapacity 0 }}
+        DesiredSize: !Ref ASGDesiredCapacity{{ end }}
       Subnets: !Ref PublicSubnetIDs
       Labels:
         NodeType: regular
@@ -130,6 +130,7 @@ const parametersReleaseVersion = `  ReleaseVersion:
 const propertyReleaseVersion = `      ReleaseVersion: !Ref ReleaseVersion`
 
 type templateMNG struct {
+	ASGDesiredCapacity      int64
 	ParameterReleaseVersion string
 	PropertyReleaseVersion  string
 }
@@ -183,9 +184,8 @@ func (ts *tester) createASGs() (err error) {
 					Ec2SshKey: aws.String(ts.cfg.EKSConfig.RemoteAccessKeyName),
 				},
 				ScalingConfig: &aws_eks.NodegroupScalingConfig{
-					MinSize:     aws.Int64(int64(cur.ASGMinSize)),
-					MaxSize:     aws.Int64(int64(cur.ASGMaxSize)),
-					DesiredSize: aws.Int64(int64(cur.ASGDesiredCapacity)),
+					MinSize: aws.Int64(int64(cur.ASGMinSize)),
+					MaxSize: aws.Int64(int64(cur.ASGMaxSize)),
 				},
 				Subnets: aws.StringSlice(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs),
 				Tags: map[string]*string{
@@ -199,6 +199,9 @@ func (ts *tester) createASGs() (err error) {
 					"NGType":   aws.String("managed"),
 					"NGName":   aws.String(cur.Name),
 				},
+			}
+			if cur.ASGDesiredCapacity > 0 {
+				createInput.ScalingConfig.DesiredSize = aws.Int64(int64(cur.ASGDesiredCapacity))
 			}
 			for k, v := range cur.Tags {
 				createInput.Tags[k] = aws.String(v)

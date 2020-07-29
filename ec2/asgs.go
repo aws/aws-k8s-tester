@@ -129,7 +129,7 @@ Parameters:
   ASGDesiredCapacity:
     Type: Number
     Description: Desired size auto scaling group
-    Default: 1
+    Default: 0
     MinValue: 1
     MaxValue: 1000
 
@@ -222,7 +222,7 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     UpdatePolicy:
       AutoScalingRollingUpdate:
-        MinInstancesInService: !Ref ASGDesiredCapacity
+        MinInstancesInService: !Ref ASGMinSize
         MaxBatchSize: 1
         SuspendProcesses:
         - HealthCheck
@@ -233,8 +233,8 @@ Resources:
     Properties:
       AutoScalingGroupName: !Ref ASGName
       MinSize: !Ref ASGMinSize
-      MaxSize: !Ref ASGMaxSize
-      DesiredCapacity: !Ref ASGDesiredCapacity
+      MaxSize: !Ref ASGMaxSize{{ if ne .ASGDesiredCapacity 0 }}
+      DesiredCapacity: !Ref ASGDesiredCapacity{{ end }}
       VPCZoneIdentifier: !Ref PublicSubnetIDs
       MetricsCollection:
       - Granularity: "1Minute"
@@ -367,8 +367,9 @@ const userDataAL2InstallSSM = `        UserData:
               sudo docker info`
 
 type templateASG struct {
-	Metadata string
-	UserData string
+	Metadata           string
+	UserData           string
+	ASGDesiredCapacity int64
 }
 
 func (ts *Tester) createASGs() (err error) {
@@ -391,7 +392,9 @@ func (ts *Tester) createASGs() (err error) {
 		// TODO: may not be necessary
 		// "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 		// already includes SSM agent + AWS CLI
-		tg := templateASG{}
+		tg := templateASG{
+			ASGDesiredCapacity: cur.ASGDesiredCapacity,
+		}
 		switch cur.AMIType {
 		case ec2config.AMITypeBottleRocketCPU:
 			// "bottlerocket" comes with SSM agent
