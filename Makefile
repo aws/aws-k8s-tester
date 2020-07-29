@@ -22,7 +22,10 @@ clean:
 	find **/*.generated.yaml -print0 | xargs -0 rm -f || true
 	find **/*.coverprofile -print0 | xargs -0 rm -f || true
 
-docker-release: docker-build docker-push
+# Publish all components
+publish: s3-release docker-release
+
+docker-publish: docker-build docker-push
 
 docker-build:
 	@if [ ! -f "./_tmp/clusterloader2" ]; then echo "downloading clusterloader2"; aws s3 cp --region us-west-2 s3://aws-k8s-tester-public/clusterloader2-linux-amd64 ./_tmp/clusterloader2; else echo "skipping downloading clusterloader2"; fi;
@@ -38,7 +41,9 @@ docker-push:
 	docker push $(AKT_AWS_ACCOUNT_ID).dkr.ecr.$(AKT_AWS_REGION).$(AKT_ECR_HOST)/$(AKT_IMG_NAME):$(AKT_TAG);
 
 # release latest aws-k8s-tester to S3
-s3-push: build
+s3-publish: build s3-push
+
+s3-push:
 ifeq ("$(AKT_TAG)","latest")
 	echo "skipping uploading tagged $(AKT_TAG) aws-k8s-tester binary";
 else
@@ -46,9 +51,6 @@ else
 endif
 	aws s3 cp --region $(AKT_AWS_REGION) ./bin/aws-k8s-tester-$(AKT_TAG)-linux-amd64 $(AKT_S3_PREFIX)/aws-k8s-tester-latest-linux-amd64
 	aws s3 ls s3://eks-prow/bin/aws-k8s-tester/
-
-release: clean s3-push docker-push
-
 
 ORIGINAL_BUSYBOX_IMG ?= gcr.io/google-containers/busybox:latest
 BUSYBOX_IMG_NAME ?= busybox
