@@ -10,11 +10,17 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.8...v1.5.0
 ### `ec2config`
 
 - Set [ASG size defaults based on desired capacities](https://github.com/aws/aws-k8s-tester/pull/140).
+  - Either ["desired" or "minimum" must be >0](https://github.com/aws/aws-k8s-tester/pull/143).
+    - `desired 10, min 0, max  0 ==> desired 10, min 10, max 10`.
+    - `desired  0, min 1, max 10 ==> desired  0, min  1, max 10`.
 
 ### `eksconfig`
 
 - Add [`AWS_K8S_TESTER_EKS_CONFIG`](https://github.com/aws/aws-k8s-tester/pull/138).
 - Set [ASG size defaults based on desired capacities](https://github.com/aws/aws-k8s-tester/pull/140).
+  - Either ["desired" or "minimum" must be >0](https://github.com/aws/aws-k8s-tester/pull/143).
+    - `desired 10, min 0, max  0 ==> desired 10, min 10, max 10`.
+    - `desired  0, min 1, max 10 ==> desired  0, min  1, max 10`.
 
 ### `eks`
 
