@@ -481,7 +481,7 @@ func Load(p string) (cfg *Config, err error) {
 
 	// Apply overrides from AWS_K8S_TESTER_EKS_CONFIG
 	if env, ok := os.LookupEnv("AWS_K8S_TESTER_EKS_CONFIG"); ok {
-		if err := yaml.Unmarshal([]byte(env), cfg); err != nil {
+		if err := yaml.Unmarshal([]byte(env), cfg, yaml.DisallowUnknownFields); err != nil {
 			return nil, err
 		}
 	}
