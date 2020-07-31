@@ -296,6 +296,7 @@ func (ts *tester) createRBACClusterRole() error {
 					"update",
 					"watch",
 					"patch",
+					"delete",
 				},
 			},
 		},
