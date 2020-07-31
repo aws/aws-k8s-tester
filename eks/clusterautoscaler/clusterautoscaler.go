@@ -81,7 +81,8 @@ func (c *ClusterAutoscaler) buildCommand() string {
 		"--stderrthreshold=info",
 		"--skip-nodes-with-local-storage=false",
 		"--expander=least-waste",
-		"--scale-down-delay-after-add=30s",
+		fmt.Sprintf("--scale-down-unneeded-time=%s", c.Config.Spec.ClusterAutoscaler.ScaleDownDelay),
+		fmt.Sprintf("--scale-down-delay-after-add=%s", c.Config.Spec.ClusterAutoscaler.ScaleDownDelay),
 		fmt.Sprintf("--cloud-provider=%s", c.Config.Spec.ClusterAutoscaler.CloudProvider),
 	}, c.buildNodeGroupArguments()...)
 	json, _ := json.Marshal(args)
