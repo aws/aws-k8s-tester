@@ -24,6 +24,16 @@ func TestEnv(t *testing.T) {
 		os.RemoveAll(cfg.RemoteAccessCommandsOutputPath)
 	}()
 
+	os.Setenv("AWS_K8S_TESTER_EKS_CONFIG", `
+spec:
+  clusterAutoscaler:
+    cloudProvider: kubemark
+    image: 767520670908.dkr.ecr.us-west-2.amazonaws.com/cluster-autoscaler-kubemark:custom-build-20200727
+  overprovisioning:
+    kubemarkEnabled: true
+`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_CONFIG")
+
 	os.Setenv("AWS_K8S_TESTER_EKS_LOG_COLOR", "false")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_LOG_COLOR")
 	os.Setenv("AWS_K8S_TESTER_EKS_LOG_COLOR_OVERRIDE", "true")
@@ -568,6 +578,19 @@ func TestEnv(t *testing.T) {
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
+	}
+
+	expectedSpec := Spec{
+		ClusterAutoscaler: &ClusterAutoscalerSpec{
+			Image:         "767520670908.dkr.ecr.us-west-2.amazonaws.com/cluster-autoscaler-kubemark:custom-build-20200727",
+			CloudProvider: CloudProviderKubemark,
+		},
+		Overprovisioning: &OverprovisioningSpec{
+			KubemarkEnabled: true,
+		},
+	}
+	if !reflect.DeepEqual(expectedSpec, cfg.Spec) {
+		t.Fatalf("expected %+v, got %+v", expectedSpec, cfg.Spec)
 	}
 
 	if cfg.LogColor {
