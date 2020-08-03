@@ -16,7 +16,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.8...v1.5.0
 
 ### `eksconfig`
 
+- `yaml.Unmarshal` with [`yaml.DisallowUnknownFields`](https://github.com/aws/aws-k8s-tester/pull/147).
 - Add [`AWS_K8S_TESTER_EKS_CONFIG`](https://github.com/aws/aws-k8s-tester/pull/138).
+  - `AWS_K8S_TESTER_EKS_CONFIG` can be used in conjunction with existing `AWS_K8S_TESTER_EKS_*` environmental variables.
+  - [`AWS_K8S_TESTER_EKS_CONFIG` is always loaded first](https://github.com/aws/aws-k8s-tester/pull/147) in `eksconfig`.
 - Set [ASG size defaults based on desired capacities](https://github.com/aws/aws-k8s-tester/pull/140).
   - Either ["desired" or "minimum" must be >0](https://github.com/aws/aws-k8s-tester/pull/143).
     - `desired 10, min 0, max  0 ==> desired 10, min 10, max 10`.

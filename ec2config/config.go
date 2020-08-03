@@ -412,7 +412,7 @@ func Load(p string) (cfg *Config, err error) {
 		return nil, err
 	}
 	cfg = new(Config)
-	if err = yaml.Unmarshal(d, cfg); err != nil {
+	if err = yaml.Unmarshal(d, cfg, yaml.DisallowUnknownFields); err != nil {
 		return nil, err
 	}
 
