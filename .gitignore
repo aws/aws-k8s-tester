@@ -1,6 +1,6 @@
 /.DS_Store
 /bin
 /_tmp
-/.idea
+.idea
 *.swp
 /aws-k8s-tester

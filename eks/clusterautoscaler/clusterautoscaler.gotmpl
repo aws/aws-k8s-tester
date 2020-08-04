@@ -148,12 +148,12 @@ spec:
         - image: {{.Image}}
           name: cluster-autoscaler
           resources:
-            limits:
-              cpu: 100m
-              memory: 300Mi
             requests:
-              cpu: 100m
-              memory: 300Mi
+              cpu: {{.Resources.Requests.Cpu}}
+              memory: {{.Resources.Requests.Memory}}
+            limits:
+              cpu: {{.Resources.Limits.Cpu}}
+              memory: {{.Resources.Limits.Memory}}
           command: {{.Command}}
           volumeMounts:
             - name: ssl-certs
