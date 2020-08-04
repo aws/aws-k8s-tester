@@ -1,12 +1,18 @@
 package eksconfig
 
+import (
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+)
+
 // ClusterAutoscalerSpec defines the spec for the Addon
 type ClusterAutoscalerSpec struct {
-	Image          string        `json:"image,omitempty"`
-	CloudProvider  CloudProvider `json:"cloudProvider,omitempty"`
-	MinNodes       int           `json:"minNodes,omitempty"`
-	MaxNodes       int           `json:"maxNodes,omitempty"`
-	ScaleDownDelay string        `json:"scaleDownDelay,omitempty"`
+	Image          string        				`json:"image,omitempty"`
+	CloudProvider  CloudProvider 				`json:"cloudProvider,omitempty"`
+	MinNodes       int           				`json:"minNodes,omitempty"`
+	MaxNodes       int           				`json:"maxNodes,omitempty"`
+	Resources      corev1.ResourceRequirements  `json:"resources,omitempty"`
+	ScaleDownDelay string        				`json:"scaleDownDelay,omitempty"`
 }
 
 // CloudProvider enum for ClusterAutoscaler
@@ -38,6 +44,12 @@ func (spec *ClusterAutoscalerSpec) Default(cfg *Config) {
 	}
 	if spec.MaxNodes == 0 {
 		spec.MaxNodes = 100
+	}
+	if spec.Resources.Requests.Cpu().IsZero() {
+		spec.Resources.Requests[corev1.ResourceCPU] = resource.MustParse("200M")
+	}
+	if spec.Resources.Requests.Memory().IsZero() {
+		spec.Resources.Requests[corev1.ResourceMemory] = resource.MustParse("1Gi")
 	}
 	if spec.ScaleDownDelay == "" {
 		spec.ScaleDownDelay = "30s"
