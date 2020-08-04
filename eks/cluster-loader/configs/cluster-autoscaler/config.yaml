@@ -1,6 +1,10 @@
 # Constants
-{{$PODS_PER_NODE := DefaultParam .PODS_PER_NODE 10}}
-{{$qps := DefaultParam .qps 10}}
+# Currently set to 1 namespace.
+{{$NAMESPACES := DefaultParam .namespaces 1}}
+{{$PODS_PER_NODE := DefaultParam .podsPerNode 10}}
+{{$QPS := DefaultParam .qps 10}}
+{{$POD_RESOURCE_REQUEST_FUZZ_FACTOR := DefaultParam .fuzzFactor .9}}
+{{$POD_GROUP_LABEL := DefaultParam .groupLabel "cluster-loader"}}
 # Adjust the following two for your cluster -
 # kubectl get node -o json | jq -r ".items[].status.allocatable.cpu"
 {{$NODE_FREE_CPU := DefaultParam .NODE_FREE_CPU 1}}
@@ -9,105 +13,114 @@
 {{$NODE_FREE_MEM := DefaultParam .NODE_FREE_MEM 3840}}
 
 # Variables
-{{$podsPerNamespace := MultiplyInt $PODS_PER_NODE .Nodes}}
-{{$totalPods := MultiplyInt $PODS_PER_NODE .Nodes}}
-# Pod Resource proportional to node to ensure consistent triggering of scale-up
-{{$POD_CPU_MILLI := DivideFloat $NODE_FREE_CPU (MultiplyFloat $PODS_PER_NODE .9)}}
-{{$POD_MEMORY_MB := DivideFloat $NODE_FREE_MEM (MultiplyFloat $PODS_PER_NODE .9)}}
+{{$NODES_PER_NAMESPACE := DivideInt .Nodes $NAMESPACES}}
+{{$PODS_PER_NAMESPACE := MultiplyInt $PODS_PER_NODE $NODES_PER_NAMESPACE}}
+{{$TOTAL_PODS := MultiplyInt $PODS_PER_NODE $NAMESPACES}}
 
-name: Simple_Bring_Up
+
+# Pod Resource proportional to node to ensure consistent triggering of scale-up
+{{$POD_CPU_MILLI := DivideFloat $NODE_FREE_CPU (MultiplyFloat $PODS_PER_NODE $POD_RESOURCE_REQUEST_FUZZ_FACTOR)}}
+{{$POD_MEMORY_MB := DivideFloat $NODE_FREE_MEM (MultiplyFloat $PODS_PER_NODE $POD_RESOURCE_REQUEST_FUZZ_FACTOR)}}
+
+name: SimpleBringUp
 namespace:
   number: 1
 tuningSets:
-- name: Uniformqps
+- name: Uniform-QPS
   qpsLoad:
-    qps: {{$qps}}
+    qps: {{$QPS}}
 
 steps:
-- name: Starting Measurements
+- name: Start-Measurements
   measurements:
   - Identifier: ScaleUpTimer
     Method: Timer
     Params:
       action: start
-      label: scale_up_time
+      label: scaleUpTime
   - Identifier: PodStartupLatency
     Method: PodStartupLatency
     Params:
       action: start
-      labelSelector: group = nichotr
+      labelSelector: group = {{$POD_GROUP_LABEL}}
       threshold: 1h
   - Identifier: SchedulingThroughput
     Method: SchedulingThroughput
     Params:
       action: start
-      labelSelector: group = nichotr
+      labelSelector: group = {{$POD_GROUP_LABEL}}
 
-- name: Creating pods
+- name: Create-CL2-Pods
   phases:
     - namespaceRange:
         min: 1
-        max: 1
+        max: {{$NAMESPACES}}
       replicasPerNamespace: 1
-      tuningSet: Uniformqps
+      tuningSet: Uniform-QPS
       objectBundle:
         - basename: deployment
           objectTemplatePath: deployment.yaml
           templateFillMap:
-            Replicas: {{$podsPerNamespace}}
-            Group: nichotr
+            Replicas: {{$PODS_PER_NAMESPACE}}
+            Group: {{$POD_GROUP_LABEL}}
             CpuRequest: {{$POD_CPU_MILLI}}m
             MemoryRequest: {{$POD_MEMORY_MB}}M
 
-- name: Collecting pod measurements
+- name: Wait-For-Scale-Up-Complete
 - measurements:
     - Identifier: WaitingForPods
       Method: WaitForRunningPods
       Params:
-        labelSelector: group = nichotr
-        desiredPodCount: {{$totalPods}}
+        labelSelector: group = {{$POD_GROUP_LABEL}}
+        desiredPodCount: {{$TOTAL_PODS}}
         timeout: 1h
 
-- name: Timing Separation For Scale Up
+- name: Stop-Timing-For-Scale-Up
 - measurements:
     - Identifier: ScaleUpTimer
       Method: Timer
       Params:
         action: stop
-        label: scale_up_time
+        label: scaleUpTime
+
+- name: Start-Timing-For-Scale-Down
+- measurements:
     - Identifier: ScaleDownTimer
       Method: Timer
       Params:
         action: start
-        label: scale_down_time
+        label: scaleDownTime
 
-- name: Deleting pods
+- name: Delete-CL2-Pods
   phases:
     - namespaceRange:
         min: 1
-        max: 1
+        max: {{$NAMESPACES}}
       replicasPerNamespace: 0
-      tuningSet: Uniformqps
+      tuningSet: Uniform-QPS
       objectBundle:
         - basename: deployment
           objectTemplatePath: deployment.yaml
 
-- name: Waiting for Deletion
+- name: Wait-For-Scale-Down-Complete
 - measurements:
     - Identifier: WaitingForPods
       Method: WaitForRunningPods
       Params:
-        labelSelector: group = nichotr
+        labelSelector: group = {{$POD_GROUP_LABEL}}
         desiredPodCount: 0
         timeout: 1h
 
-- name: Timing Separation for Scale Down
+- name: Stop-Timing-For-Scale-Down
 - measurements:
     - Identifier: ScaleDownTimer
       Method: Timer
       Params:
         action: stop
-        label: scale_down_time
+        label: scaleDownTime
+
+- name: Stop-Measurements
+- measurements:
     - Identifier: PodStartupLatency
       Method: PodStartupLatency
       Params:
@@ -116,4 +129,4 @@ steps:
       Method: SchedulingThroughput
       Params:
         action: gather
-        labelSelector: group = nichotr
+        labelSelector: group = {{$POD_GROUP_LABEL}}
