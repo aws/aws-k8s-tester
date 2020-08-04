@@ -1,10 +1,9 @@
 # Constants
 # Currently set to 1 namespace.
-{{$NAMESPACES := DefaultParam .namespaces 1}}
-{{$PODS_PER_NODE := DefaultParam .podsPerNode 10}}
-{{$QPS := DefaultParam .qps 10}}
-{{$POD_RESOURCE_REQUEST_FUZZ_FACTOR := DefaultParam .fuzzFactor .9}}
-{{$POD_GROUP_LABEL := DefaultParam .groupLabel "cluster-loader"}}
+{{$NAMESPACES := DefaultParam .NAMESPACES 1}}
+{{$PODS_PER_NODE := DefaultParam .PODS_PER_NODE 10}}
+{{$QPS := DefaultParam .QPS 100}}
+{{$POD_GROUP_LABEL := DefaultParam .POD_GROUP_LABEL "cluster-loader"}}
 # Adjust the following two for your cluster -
 # kubectl get node -o json | jq -r ".items[].status.allocatable.cpu"
 {{$NODE_FREE_CPU := DefaultParam .NODE_FREE_CPU 1}}
@@ -15,48 +14,47 @@
 # Variables
 {{$NODES_PER_NAMESPACE := DivideInt .Nodes $NAMESPACES}}
 {{$PODS_PER_NAMESPACE := MultiplyInt $PODS_PER_NODE $NODES_PER_NAMESPACE}}
-{{$TOTAL_PODS := MultiplyInt $PODS_PER_NODE $NAMESPACES}}
+{{$TOTAL_PODS := MultiplyInt $PODS_PER_NODE (MultiplyInt $NODES_PER_NAMESPACE $NAMESPACES)}}
 
 
 # Pod Resource proportional to node to ensure consistent triggering of scale-up
-{{$POD_CPU_MILLI := DivideFloat $NODE_FREE_CPU (MultiplyFloat $PODS_PER_NODE $POD_RESOURCE_REQUEST_FUZZ_FACTOR)}}
-{{$POD_MEMORY_MB := DivideFloat $NODE_FREE_MEM (MultiplyFloat $PODS_PER_NODE $POD_RESOURCE_REQUEST_FUZZ_FACTOR)}}
+{{$POD_CPU_MILLI := DivideFloat $NODE_FREE_CPU (MultiplyFloat $PODS_PER_NODE .9)}}
+{{$POD_MEMORY_MB := DivideFloat $NODE_FREE_MEM (MultiplyFloat $PODS_PER_NODE .9)}}
 
-name: SimpleBringUp
+name: simple-bring-up
 namespace:
   number: 1
 tuningSets:
-- name: Uniform-QPS
+- name: uniform-qps
   qpsLoad:
     qps: {{$QPS}}
 
 steps:
-- name: Start-Measurements
+- name: start-measurements
   measurements:
   - Identifier: ScaleUpTimer
     Method: Timer
     Params:
       action: start
-      label: scaleUpTime
+      label: scale-up-time
   - Identifier: PodStartupLatency
     Method: PodStartupLatency
     Params:
       action: start
       labelSelector: group = {{$POD_GROUP_LABEL}}
-      threshold: 1h
   - Identifier: SchedulingThroughput
     Method: SchedulingThroughput
     Params:
       action: start
       labelSelector: group = {{$POD_GROUP_LABEL}}
 
-- name: Create-CL2-Pods
+- name: create-pods
   phases:
     - namespaceRange:
         min: 1
         max: {{$NAMESPACES}}
       replicasPerNamespace: 1
-      tuningSet: Uniform-QPS
+      tuningSet: uniform-qps
       objectBundle:
         - basename: deployment
           objectTemplatePath: deployment.yaml
@@ -66,7 +64,7 @@ steps:
             CpuRequest: {{$POD_CPU_MILLI}}m
             MemoryRequest: {{$POD_MEMORY_MB}}M
 
-- name: Wait-For-Scale-Up-Complete
+- name: wait-for-scale-up-complete
 - measurements:
     - Identifier: WaitingForPods
       Method: WaitForRunningPods
@@ -75,34 +73,38 @@ steps:
         desiredPodCount: {{$TOTAL_PODS}}
         timeout: 1h
 
-- name: Stop-Timing-For-Scale-Up
+- name: stop-timing-for-scale-up
 - measurements:
     - Identifier: ScaleUpTimer
       Method: Timer
       Params:
         action: stop
-        label: scaleUpTime
+        label: scale-up-time
+    - Identifier: PodStartupLatency
+      Method: PodStartupLatency
+      Params:
+        action: gather
 
-- name: Start-Timing-For-Scale-Down
+- name: start-timing-for-scale-down
 - measurements:
     - Identifier: ScaleDownTimer
       Method: Timer
       Params:
         action: start
-        label: scaleDownTime
+        label: scale-down-time
 
-- name: Delete-CL2-Pods
+- name: delete-pods
   phases:
     - namespaceRange:
         min: 1
         max: {{$NAMESPACES}}
       replicasPerNamespace: 0
-      tuningSet: Uniform-QPS
+      tuningSet: uniform-qps
       objectBundle:
         - basename: deployment
           objectTemplatePath: deployment.yaml
 
-- name: Wait-For-Scale-Down-Complete
+- name: wait-for-scale-down-complete
 - measurements:
     - Identifier: WaitingForPods
       Method: WaitForRunningPods
@@ -111,20 +113,13 @@ steps:
         desiredPodCount: 0
         timeout: 1h
 
-- name: Stop-Timing-For-Scale-Down
+- name: stop-measurements
 - measurements:
     - Identifier: ScaleDownTimer
       Method: Timer
       Params:
         action: stop
-        label: scaleDownTime
-
-- name: Stop-Measurements
-- measurements:
-    - Identifier: PodStartupLatency
-      Method: PodStartupLatency
-      Params:
-        action: gather
+        label: scale-down-time
     - Identifier: SchedulingThroughput
       Method: SchedulingThroughput
       Params:
