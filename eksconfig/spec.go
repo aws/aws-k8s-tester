@@ -6,4 +6,6 @@ type Spec struct {
 	ClusterAutoscaler *ClusterAutoscalerSpec `json:"clusterAutoscaler,omitempty"`
 	// Overprovisioning defines the addon's spec
 	Overprovisioning *OverprovisioningSpec `json:"overprovisioning,omitempty"`
+	// MetricsServer defines the addon's spec
+	MetricsServer *MetricsServerSpec `json:"metricsServer,omitempty"`
 }
