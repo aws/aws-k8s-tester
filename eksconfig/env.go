@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"sigs.k8s.io/yaml"
 )
 
 // UpdateFromEnvs updates fields from environmental variables.
@@ -20,6 +22,14 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.unsafeSync()
 		cfg.mu.Unlock()
 	}()
+
+	if env, ok := os.LookupEnv("AWS_K8S_TESTER_EKS_CONFIG"); ok {
+		mu := cfg.mu
+		if err = yaml.Unmarshal([]byte(env), cfg, yaml.DisallowUnknownFields); err != nil {
+			return err
+		}
+		cfg.mu = mu
+	}
 
 	if cfg.Parameters == nil {
 		cfg.Parameters = &Parameters{}

@@ -19,8 +19,6 @@ import (
 	"text/template"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
@@ -28,6 +26,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/terminal"
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/mitchellh/colorstring"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml" // must use "sigs.k8s.io/yaml"
 )
 
@@ -475,15 +474,8 @@ func Load(p string) (cfg *Config, err error) {
 		return nil, err
 	}
 	cfg = new(Config)
-	if err = yaml.Unmarshal(d, cfg); err != nil {
+	if err = yaml.Unmarshal(d, cfg, yaml.DisallowUnknownFields); err != nil {
 		return nil, err
-	}
-
-	// Apply overrides from AWS_K8S_TESTER_EKS_CONFIG
-	if env, ok := os.LookupEnv("AWS_K8S_TESTER_EKS_CONFIG"); ok {
-		if err := yaml.Unmarshal([]byte(env), cfg, yaml.DisallowUnknownFields); err != nil {
-			return nil, err
-		}
 	}
 
 	cfg.mu = new(sync.RWMutex)

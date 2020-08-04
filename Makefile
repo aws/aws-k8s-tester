@@ -69,7 +69,7 @@ PHP_APACHE_IMG_NAME ?= php-apache
 PHP_APACHE_TAG ?= latest
 
 docker-php-apache:
-	docker build --network host -t $(PHP_APACHE_IMG_NAME):$(PHP_APACHE_TAG) ./docker/php-apache
+	docker build --network host -t $(PHP_APACHE_IMG_NAME):$(PHP_APACHE_TAG) ./images/php-apache
 	docker tag $(PHP_APACHE_IMG_NAME):$(PHP_APACHE_TAG) $(AKT_AWS_ACCOUNT_ID).dkr.ecr.$(AKT_AWS_REGION).$(AKT_ECR_HOST)/$(PHP_APACHE_IMG_NAME):$(PHP_APACHE_TAG)
 
 docker-push-php-apache:
