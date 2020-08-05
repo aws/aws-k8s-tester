@@ -500,6 +500,10 @@ func (ts *Tester) createTesters() (err error) {
 			Config:    ts.cfg,
 			K8sClient: ts.k8sClient,
 		},
+		&metrics_server.MetricsServer{
+			Config:    ts.cfg,
+			K8sClient: ts.k8sClient,
+		},
 	}}
 
 	ts.testers = []eks_tester.Tester{
@@ -1361,6 +1365,7 @@ func (ts *Tester) Up() (err error) {
 		}); err != nil {
 			return fmt.Errorf("while applying addons, %w", err)
 		}
+		ts.cfg.Sync()
 	}
 
 	return ts.cfg.Sync()
