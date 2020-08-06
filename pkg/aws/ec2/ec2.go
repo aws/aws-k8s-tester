@@ -4,14 +4,85 @@ package ec2
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/ctxutil"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/autoscaling"
+	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"go.uber.org/zap"
 )
+
+// PollASGUntilRunning describes all EC2 instances for the specified ASG.
+// It waits until all instances are 'running'.
+func PollASGUntilRunning(
+	ctx context.Context,
+	stopc chan struct{},
+	lg *zap.Logger,
+	asgAPI autoscalingiface.AutoScalingAPI,
+	ec2API ec2iface.EC2API,
+	asgName string) (ec2Instances map[string]*ec2.Instance, err error) {
+
+	lg.Info("polling ASG",
+		zap.String("asg-name", asgName),
+		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
+	)
+
+	for ctx.Err() == nil {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-stopc:
+			return nil, errors.New("poll aborted")
+		case <-time.After(10 * time.Second):
+		}
+
+		// When ASG has >500 nodes, some instances may shut down at any moments,
+		// making previous instance ID list stale
+		// thus, fetch latest instance IDs for every iteration
+		var aout *autoscaling.DescribeAutoScalingGroupsOutput
+		aout, err = asgAPI.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
+			AutoScalingGroupNames: aws.StringSlice([]string{asgName}),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("ASG[%q] not found (%v)", asgName, err)
+		}
+		if len(aout.AutoScalingGroups) != 1 {
+			return nil, fmt.Errorf("expected 1 ASG[%q], got %+v", asgName, aout.AutoScalingGroups)
+		}
+		av := aout.AutoScalingGroups[0]
+		instanceIDs := make([]string, 0, len(av.Instances))
+		for _, iv := range av.Instances {
+			lv := aws.StringValue(iv.LifecycleState)
+			switch lv {
+			case autoscaling.LifecycleStatePending,
+				autoscaling.LifecycleStatePendingWait,
+				autoscaling.LifecycleStatePendingProceed,
+				autoscaling.LifecycleStateInService:
+				instanceIDs = append(instanceIDs, aws.StringValue(iv.InstanceId))
+			default:
+				lg.Warn("skipping instance due to lifecycle state",
+					zap.String("instance-id", aws.StringValue(iv.InstanceId)),
+					zap.String("lifecycle-state", lv),
+				)
+			}
+		}
+
+		// 25-minute for 500 nodes
+		waitDur := 3 * time.Second * time.Duration(len(instanceIDs))
+		ctx2, cancel := context.WithTimeout(ctx, waitDur)
+		ec2Instances, err = PollUntilRunning(ctx2, stopc, lg, ec2API, instanceIDs...)
+		cancel()
+		if err == nil {
+			break
+		}
+		lg.Warn("failed to poll instance status; retrying", zap.Error(err))
+	}
+	return ec2Instances, err
+}
 
 // PollUntilRunning describes EC2 instances by batch,
 // and waits until all instances are 'running'.
