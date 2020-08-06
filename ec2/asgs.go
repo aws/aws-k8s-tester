@@ -18,7 +18,6 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/user"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
@@ -586,35 +585,15 @@ func (ts *Tester) createASGs() (err error) {
 		ts.cfg.Up = true
 		ts.cfg.Sync()
 
-		var aout *autoscaling.DescribeAutoScalingGroupsOutput
-		aout, err = ts.asgAPI.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
-			AutoScalingGroupNames: aws.StringSlice([]string{asgName}),
-		})
-		if err != nil {
-			return fmt.Errorf("ASG %q not found (%v)", asgName, err)
-		}
-		if len(aout.AutoScalingGroups) != 1 {
-			return fmt.Errorf("%q expected only 1 ASG, got %+v", asgName, aout.AutoScalingGroups)
-		}
-		av := aout.AutoScalingGroups[0]
-		instanceIDs := make([]string, 0, len(av.Instances))
-		for _, iv := range av.Instances {
-			instanceIDs = append(instanceIDs, aws.StringValue(iv.InstanceId))
-		}
-		waitDur := 3*time.Minute + time.Duration(5*cur.ASGDesiredCapacity)*time.Second
-		ts.lg.Info(
-			"describing EC2 instances in ASG",
-			zap.String("asg-name", asgName),
-			zap.Int("instance-ids", len(instanceIDs)),
-			zap.Duration("wait", waitDur),
-		)
+		waitDur := 10*time.Minute + 10*time.Second*time.Duration(cur.ASGDesiredCapacity)
 		ctx, cancel = context.WithTimeout(context.Background(), waitDur)
-		ec2Instances, err := aws_ec2.PollUntilRunning(
+		ec2Instances, err := aws_ec2.PollASGUntilRunning(
 			ctx,
 			ts.stopCreationCh,
 			ts.lg,
+			ts.asgAPI,
 			ts.ec2API,
-			instanceIDs...,
+			asgName,
 		)
 		cancel()
 		if err != nil {

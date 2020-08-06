@@ -84,42 +84,19 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 		return fmt.Errorf("%q expected only 1 ASG, got %+v", cur.Name, aout.AutoScalingGroups)
 	}
 
-	av := aout.AutoScalingGroups[0]
-	instanceIDs := make([]string, 0, len(av.Instances))
-	for _, iv := range av.Instances {
-		lv := aws.StringValue(iv.LifecycleState)
-		switch lv {
-		case autoscaling.LifecycleStatePending,
-			autoscaling.LifecycleStatePendingWait,
-			autoscaling.LifecycleStatePendingProceed,
-			autoscaling.LifecycleStateInService:
-			instanceIDs = append(instanceIDs, aws.StringValue(iv.InstanceId))
-		default:
-			ts.cfg.Logger.Warn("skipping instance due to lifecycle state",
-				zap.String("instance-id", aws.StringValue(iv.InstanceId)),
-				zap.String("lifecycle-state", lv),
-			)
-		}
-	}
-
 	checkN := time.Duration(cur.ASGDesiredCapacity)
 	if checkN == 0 {
 		checkN = time.Duration(cur.ASGMinSize)
 	}
-	waitDur := 3*time.Minute + 5*time.Second*checkN
-	ts.cfg.Logger.Info(
-		"waiting for EC2 instances in ASG",
-		zap.String("asg-name", cur.Name),
-		zap.Int("instance-ids", len(instanceIDs)),
-		zap.Duration("wait", waitDur),
-	)
+	waitDur := 10*time.Minute + 10*time.Second*checkN
 	ctx, cancel := context.WithTimeout(context.Background(), waitDur)
-	ec2Instances, err := aws_ec2.PollUntilRunning(
+	ec2Instances, err := aws_ec2.PollASGUntilRunning(
 		ctx,
 		ts.cfg.Stopc,
 		ts.cfg.Logger,
+		ts.cfg.ASGAPI,
 		ts.cfg.EC2API,
-		instanceIDs...,
+		cur.Name,
 	)
 	cancel()
 	if err != nil {
