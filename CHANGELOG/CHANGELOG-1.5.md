@@ -38,6 +38,10 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.8...v1.5.0
 
 - Rename [`scripts` to `hack` for parity with Kubernetes projects](https://github.com/aws/aws-k8s-tester/pull/136).
 
+### `pkg/aws`
+
+- Add [`pkg/aws/ec2.WaitUntilRunning`](https://github.com/aws/aws-k8s-tester/pull/153).
+
 ### Dependency
 
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.33.8`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.8) to [`v1.33.18`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.18).
