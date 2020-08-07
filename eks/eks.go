@@ -175,6 +175,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	if err != nil {
 		return nil, err
 	}
+	_ = zap.ReplaceGlobals(lg)
 	lg.Info("set up log writer and file", zap.Strings("outputs", cfg.LogOutputs))
 
 	isColor := cfg.LogColor

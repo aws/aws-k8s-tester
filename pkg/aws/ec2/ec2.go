@@ -16,17 +16,16 @@ import (
 	"go.uber.org/zap"
 )
 
-// PollASGUntilRunning describes all EC2 instances for the specified ASG.
+// WaitUntilRunning describes all EC2 instances for the specified ASG.
 // It waits until all instances are 'running'.
-func PollASGUntilRunning(
+// TODO: make method (e.g. asgClient."WaitUntilRunning")
+func WaitUntilRunning(
 	ctx context.Context,
 	stopc chan struct{},
-	lg *zap.Logger,
 	asgAPI autoscalingiface.AutoScalingAPI,
 	ec2API ec2iface.EC2API,
 	asgName string) (ec2Instances map[string]*ec2.Instance, err error) {
-
-	lg.Info("polling ASG",
+	zap.L().Info("polling ASG until all EC2 instances are running",
 		zap.String("asg-name", asgName),
 		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 	)
@@ -64,7 +63,7 @@ func PollASGUntilRunning(
 				autoscaling.LifecycleStateInService:
 				instanceIDs = append(instanceIDs, aws.StringValue(iv.InstanceId))
 			default:
-				lg.Warn("skipping instance due to lifecycle state",
+				zap.L().Warn("skipping instance due to lifecycle state",
 					zap.String("instance-id", aws.StringValue(iv.InstanceId)),
 					zap.String("lifecycle-state", lv),
 				)
@@ -74,22 +73,21 @@ func PollASGUntilRunning(
 		// 25-minute for 500 nodes
 		waitDur := 3 * time.Second * time.Duration(len(instanceIDs))
 		ctx2, cancel := context.WithTimeout(ctx, waitDur)
-		ec2Instances, err = PollUntilRunning(ctx2, stopc, lg, ec2API, instanceIDs...)
+		ec2Instances, err = pollUntilRunning(ctx2, stopc, ec2API, instanceIDs...)
 		cancel()
 		if err == nil {
 			break
 		}
-		lg.Warn("failed to poll instance status; retrying", zap.Error(err))
+		zap.L().Warn("failed to poll instance status; retrying", zap.Error(err))
 	}
 	return ec2Instances, err
 }
 
-// PollUntilRunning describes EC2 instances by batch,
+// pollUntilRunning describes EC2 instances by batch,
 // and waits until all instances are 'running'.
-func PollUntilRunning(
+func pollUntilRunning(
 	ctx context.Context,
 	stopc chan struct{},
-	lg *zap.Logger,
 	ec2API ec2iface.EC2API,
 	instanceIDs ...string) (ec2Instances map[string]*ec2.Instance, err error) {
 	targetN := len(instanceIDs)
@@ -100,7 +98,7 @@ func PollUntilRunning(
 		left[id] = struct{}{}
 	}
 
-	lg.Info("polling instance status",
+	zap.L().Info("polling instance status",
 		zap.Int("target-total", targetN),
 		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
 	)
@@ -123,13 +121,13 @@ func PollUntilRunning(
 			}
 		}
 
-		lg.Info("describing batch", zap.Int("batch-total", len(batch)))
+		zap.L().Info("describing batch", zap.Int("batch-total", len(batch)))
 		var dout *ec2.DescribeInstancesOutput
 		dout, err = ec2API.DescribeInstances(&ec2.DescribeInstancesInput{
 			InstanceIds: aws.StringSlice(batch),
 		})
 		if err != nil {
-			lg.Warn("failed to describe instances", zap.Error(err))
+			zap.L().Warn("failed to describe instances", zap.Error(err))
 			time.Sleep(5 * time.Second)
 			continue
 		}
@@ -144,7 +142,7 @@ func PollUntilRunning(
 				ec2Instances[instanceID] = iv
 			}
 		}
-		lg.Info("checking ec2 instances",
+		zap.L().Info("checking ec2 instances",
 			zap.Int("reservations", len(dout.Reservations)),
 			zap.Int("running-instances-so-far", len(ec2Instances)),
 			zap.Int("target-total", targetN),

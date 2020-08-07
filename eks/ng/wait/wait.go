@@ -90,10 +90,9 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 	}
 	waitDur := 10*time.Minute + 10*time.Second*checkN
 	ctx, cancel := context.WithTimeout(context.Background(), waitDur)
-	ec2Instances, err := aws_ec2.PollASGUntilRunning(
+	ec2Instances, err := aws_ec2.WaitUntilRunning(
 		ctx,
 		ts.cfg.Stopc,
-		ts.cfg.Logger,
 		ts.cfg.ASGAPI,
 		ts.cfg.EC2API,
 		cur.Name,

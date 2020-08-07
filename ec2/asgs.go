@@ -587,10 +587,9 @@ func (ts *Tester) createASGs() (err error) {
 
 		waitDur := 10*time.Minute + 10*time.Second*time.Duration(cur.ASGDesiredCapacity)
 		ctx, cancel = context.WithTimeout(context.Background(), waitDur)
-		ec2Instances, err := aws_ec2.PollASGUntilRunning(
+		ec2Instances, err := aws_ec2.WaitUntilRunning(
 			ctx,
 			ts.stopCreationCh,
-			ts.lg,
 			ts.asgAPI,
 			ts.ec2API,
 			asgName,

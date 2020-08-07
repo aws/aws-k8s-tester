@@ -3,6 +3,7 @@ package clusterautoscaler
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	gotemplate "github.com/aws/aws-k8s-tester/pkg/util"

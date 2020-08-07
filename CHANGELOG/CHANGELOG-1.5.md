@@ -40,7 +40,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.8...v1.5.0
 
 ### `pkg/aws`
 
-- Add [`pkg/aws/ec2.PollASGUntilRunning`](https://github.com/aws/aws-k8s-tester/pull/153).
+- Add [`pkg/aws/ec2.WaitUntilRunning`](https://github.com/aws/aws-k8s-tester/pull/153).
 
 ### Dependency
 
