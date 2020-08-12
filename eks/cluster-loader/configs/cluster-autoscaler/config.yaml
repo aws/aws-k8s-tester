@@ -42,6 +42,8 @@ steps:
     Params:
       action: start
       labelSelector: group = {{$POD_GROUP_LABEL}}
+      #Set to a high number because default is 5s. Will fail if p99 > 5s
+      threshold: 1h
   - Identifier: SchedulingThroughput
     Method: SchedulingThroughput
     Params:
