@@ -1,8 +1,8 @@
 # Constants
 # Currently set to 1 namespace.
-{{$NAMESPACES := DefaultParam .NAMESPACES 1}}
+{{$NAMESPACES := DefaultParam .NAMESPACES 5}}
 {{$PODS_PER_NODE := DefaultParam .PODS_PER_NODE 10}}
-{{$QPS := DefaultParam .QPS 100}}
+{{$QPS := DefaultParam .QPS 10}}
 {{$POD_GROUP_LABEL := DefaultParam .POD_GROUP_LABEL "cluster-loader"}}
 # Adjust the following two for your cluster -
 # kubectl get node -o json | jq -r ".items[].status.allocatable.cpu"
