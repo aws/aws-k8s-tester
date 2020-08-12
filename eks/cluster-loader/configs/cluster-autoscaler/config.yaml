@@ -23,7 +23,7 @@
 
 name: simple-bring-up
 namespace:
-  number: 1
+  number: {{$NAMESPACES}}
 tuningSets:
 - name: uniform-qps
   qpsLoad:
