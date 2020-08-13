@@ -70,8 +70,9 @@ func WaitUntilRunning(
 			}
 		}
 
-		// 25-minute for 500 nodes
-		waitDur := 3 * time.Second * time.Duration(len(instanceIDs))
+		// minimum waits for small number of node + extra waits for large number of nodes
+		// e.g. 5-minute + 25-minute for 500 nodes
+		waitDur := 5*time.Minute + 3*time.Second*time.Duration(len(instanceIDs))
 		ctx2, cancel := context.WithTimeout(ctx, waitDur)
 		ec2Instances, err = pollUntilRunning(ctx2, stopc, ec2API, instanceIDs...)
 		cancel()
