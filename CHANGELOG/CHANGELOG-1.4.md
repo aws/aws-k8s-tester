@@ -103,7 +103,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.5...v1.4.6
 ### Dependency
 
 - Upgrade [`github.com/kubernetes/kubernetes`](https://github.com/kubernetes/kubernetes/releases) from [`v1.18.6-rc.0`](https://github.com/kubernetes/kubernetes/releases/tag/v1.18.6-rc.0) to [`v1.18.7-rc.0`](https://github.com/kubernetes/kubernetes/releases/tag/v1.18.7-rc.0).
-- Upgrade [`github.com/kubernetes/client-go`](https://github.com/kubernetes/client-go/releases) from [`v0.18.6-rc.0`](https://github.com/kubernetes/clienthttps://github.com/kubernetes/client-go/releases/tag/v0.18.6-rc.0) to [`v0.18.7-rc.0`](https://github.com/kubernetes/client-go/releases/tag/v0.18.7-rc.0).
+- Upgrade [`github.com/kubernetes/client-go`](https://github.com/kubernetes/client-go/releases) from [`v0.18.6-rc.0`](https://github.com/kubernetes/client-go/releases/tag/v0.18.6-rc.0) to [`v0.18.7-rc.0`](https://github.com/kubernetes/client-go/releases/tag/v0.18.7-rc.0).
 - Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.33.5`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.5) to [`v1.33.6`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.6).
 
 ### Go
