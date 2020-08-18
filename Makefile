@@ -75,3 +75,15 @@ docker-php-apache:
 docker-push-php-apache:
 	eval $$(aws ecr get-login --registry-ids $(AKT_AWS_ACCOUNT_ID) --no-include-email --region $(AKT_AWS_REGION))
 	docker push $(AKT_AWS_ACCOUNT_ID).dkr.ecr.$(AKT_AWS_REGION).$(AKT_ECR_HOST)/$(PHP_APACHE_IMG_NAME):$(PHP_APACHE_TAG);
+
+CL2_IMAGE_NAME ?= clusterloader2
+CL2_TAG ?= latest
+CL2_FULL_IMAGE_PATH ?= $(AKT_AWS_ACCOUNT_ID).dkr.ecr.$(AKT_AWS_REGION).$(AKT_ECR_HOST)/$(CL2_IMAGE_NAME):$(AKT_TAG)
+
+docker-build-clusterloader2:
+	docker build -f ./images/clusterloader2/Dockerfile ./images/clusterloader2 -t $(CL2_FULL_IMAGE_PATH)
+
+docker-push-clusterloader2:
+	docker push $(CL2_FULL_IMAGE_PATH)
+
+docker-release-clusterloader2: docker-build-clusterloader2 docker-push-clusterloader2

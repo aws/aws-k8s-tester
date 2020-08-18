@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/aws/aws-k8s-tester/eks/cluster-loader/clusterloader2"
 	"io"
 	"io/ioutil"
 	"os"
@@ -502,6 +503,10 @@ func (ts *Tester) createTesters() (err error) {
 			K8sClient: ts.k8sClient,
 		},
 		&metrics_server.MetricsServer{
+			Config:    ts.cfg,
+			K8sClient: ts.k8sClient,
+		},
+		&clusterloader2.ClusterLoader{
 			Config:    ts.cfg,
 			K8sClient: ts.k8sClient,
 		},

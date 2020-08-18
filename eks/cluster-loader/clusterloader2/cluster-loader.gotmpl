@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: clusterloader2
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: clusterloader2
+  namespace: clusterloader2
+automountServiceAccountToken: true
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: clusterloader2-cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: clusterloader2
+    namespace: clusterloader2
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clusterloader2-config
+  namespace: clusterloader2
+data: 
+  {{ range $file, $data := .ConfigMapData }}
+  {{ $file }}: |
+    {{ $data }}
+  {{ end }}
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: clusterloader2
+  namespace: clusterloader2
+spec:
+  template:
+    spec:
+      containers:
+      - name: clusterloader2
+        image: {{ .Image }}
+        command: ["/clusterloader"]
+        args: {{ .TestArgs }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/config
+      restartPolicy: Never
+      serviceAccountName: clusterloader2
+      volumes:
+        - name: config
+          configMap:
+            name: clusterloader2-config

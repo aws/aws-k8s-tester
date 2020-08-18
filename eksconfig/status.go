@@ -71,6 +71,8 @@ type Status struct {
 	Overprovisioning *OverprovisioningStatus `json:"overprovisioning,omitempty"`
 	// MetricsServer defines the addon's status
 	MetricsServer *MetricsServerStatus `json:"metricsServer,omitempty"`
+	// ClusterLoader defines the addon's status
+	ClusterLoader *ClusterLoaderStatus `json:"clusterLoader,omitempty"`
 
 	// PrivateDNSToNodeInfo maps each worker node's private IP to its public IP,
 	// public DNS, and SSH access user name.
