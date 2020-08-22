@@ -46,17 +46,33 @@ metadata:
 spec:
   template:
     spec:
+      initContainers:
+        - name: clusterloader2
+          image: {{ .Image }}
+          command: ["/clusterloader"]
+          args: {{ .TestArgs }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/config
+            - name: reports
+              mountPath: /var/reports
+              readOnly: false
       containers:
-      - name: clusterloader2
-        image: {{ .Image }}
-        command: ["/clusterloader"]
-        args: {{ .TestArgs }}
-        volumeMounts:
-        - name: config
-          mountPath: /etc/config
+        - name: uploadresults
+          image: amazon/aws-cli:latest
+          command: 
+            - /bin/sh
+            - -c
+          args:
+            - aws s3 cp /var/reports/cluster-loader {{ .S3Uri }} --recursive        
+          volumeMounts: 
+            - name: reports
+              mountPath: /var/reports
       restartPolicy: Never
       serviceAccountName: clusterloader2
       volumes:
         - name: config
           configMap:
             name: clusterloader2-config
+        - name: reports
+          emptyDir: {}
