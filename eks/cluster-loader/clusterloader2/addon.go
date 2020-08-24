@@ -1,7 +1,6 @@
 package clusterloader2
 
 import (
-	//"encoding/json"
 	"fmt"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -42,12 +41,11 @@ func (c *ClusterLoader) Apply() (err error) {
 	if err != nil {
 		return fmt.Errorf("while building templates, %v", err)
 	}
-	// Get Job info from goTemplate. Currently hardcoded.
+	// Get CL2 Job info from goTemplate
 	resources := strings.Split(template.String(), "\n---\n")
 	jobYaml := resources[len(resources)-1]
 	if err := c.K8sClient.Delete(jobYaml); err != nil {
 		//Warn that there was an error, but don't stop process.
-
 		zap.S().Warn("Deleting jobYaml errored out, but is fine: %s", zapcore.Field{String: err.Error()})
 	}
 	if err := c.K8sClient.Apply(template.String()); err != nil {
@@ -99,5 +97,6 @@ func (c *ClusterLoader) buildConfigMapData() (map[string]string, error) {
 }
 
 func (c *ClusterLoader) buildArgs() string {
-	return fmt.Sprintf("[%s]", strings.Join(c.Config.Spec.ClusterLoader.TestParams, ","))
+	// add report-dir argument for CL2 tests. If one wants to change, check the gotemplate, and look at the job's initContainer's volumes.
+	return fmt.Sprintf("[%s]", strings.Join(append(c.Config.Spec.ClusterLoader.TestParams, "--report-dir=/var/reports/cluster-loader"), ","))
 }
