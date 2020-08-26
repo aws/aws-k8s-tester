@@ -6,6 +6,7 @@ type ClusterLoaderSpec struct {
 	TestConfigUris []string `json:"testConfigUris,omitempty"`
 	TestParams     []string `json:"testParams,omitempty"`
 	S3Uri          string   `json:"s3Uri,omitempty"`
+	TestOverrides  []string `json:"testOverrides,omitempty"`
 }
 
 // MetricsServerStatus defines the status for the Addon

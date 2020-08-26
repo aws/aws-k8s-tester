@@ -13,6 +13,8 @@ import (
 	"strings"
 )
 
+const IndentedNewline = "\n    "
+
 type ClusterLoader struct {
 	Config    *eksconfig.Config
 	K8sClient k8sclient.EKS
@@ -79,6 +81,7 @@ func (c *ClusterLoader) Delete() (err error) {
 }
 
 func (c *ClusterLoader) buildConfigMapData() (map[string]string, error) {
+	// Any file in this map is at /etc/config in the mounted volume of CL2
 	dataMap := make(map[string]string)
 	for _, uri := range c.Config.Spec.ClusterLoader.TestConfigUris {
 		resp, err := http.Get(uri)
@@ -90,13 +93,21 @@ func (c *ClusterLoader) buildConfigMapData() (map[string]string, error) {
 			return nil, fmt.Errorf("while reading downloaded uri %s content: %v", uri, err)
 		}
 		// Indents the content by four spaces for valid YAML formatting
-		bodyString := strings.ReplaceAll(string(body), "\n", "\n    ")
+		bodyString := strings.ReplaceAll(string(body), "\n", IndentedNewline)
 		dataMap[path.Base(uri)] = bodyString
+	}
+	overrides := c.Config.Spec.ClusterLoader.TestOverrides
+	if len(overrides) > 0 {
+		dataMap["overrides.yaml"] = strings.Join(overrides, IndentedNewline)
 	}
 	return dataMap, nil
 }
 
 func (c *ClusterLoader) buildArgs() string {
-	// add report-dir argument for CL2 tests. If one wants to change, check the gotemplate, and look at the job's initContainer's volumes.
-	return fmt.Sprintf("[%s]", strings.Join(append(c.Config.Spec.ClusterLoader.TestParams, "--report-dir=/var/reports/cluster-loader"), ","))
+	// add report-dir and testOverrides for CL2 tests. If one wants to change, check the gotemplate, and look at the job's initContainer's volumes
+	arguments := append(c.Config.Spec.ClusterLoader.TestParams, "--report-dir=/var/reports/cluster-loader")
+	if len(c.Config.Spec.ClusterLoader.TestOverrides) > 0 {
+		arguments = append(arguments, "--testoverrides=/etc/config/overrides.yaml")
+	}
+	return fmt.Sprintf("[%s]", strings.Join(arguments, ","))
 }
