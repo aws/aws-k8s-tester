@@ -88,7 +88,7 @@ steps:
     - Identifier: WaitingForPods
       Method: WaitForRunningPod
       Params:
-        labelSelector: group = {{$POD TOTAL_PODS to be created in the test. _GROUP_LABEL}}
+        labelSelector: group = {{$POD_GROUP_LABEL}}
         desiredPodCount: {{$TOTAL_PODS}}
         timeout: 1h
 
