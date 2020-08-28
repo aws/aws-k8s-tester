@@ -2,8 +2,9 @@
 # Currently set to 1 namespace.
 {{$NAMESPACES := DefaultParam .NAMESPACES 5}}
 {{$PODS_PER_NODE := DefaultParam .PODS_PER_NODE 10}}
-{{$QPS := DefaultParam .QPS 10}}
+{{$QPS := DefaultParam .QPS 20}}
 {{$POD_GROUP_LABEL := DefaultParam .POD_GROUP_LABEL "cluster-loader"}}
+{{$REPLICAS := DefaultParam .REPLICAS 20}}
 # Adjust the following two for your cluster -
 # kubectl get node -o json | jq -r ".items[].status.allocatable.cpu"
 {{$NODE_FREE_CPU := DefaultParam .NODE_FREE_CPU 1}}
@@ -15,7 +16,8 @@
 {{$NODES_PER_NAMESPACE := DivideInt .Nodes $NAMESPACES}}
 {{$PODS_PER_NAMESPACE := MultiplyInt $PODS_PER_NODE $NODES_PER_NAMESPACE}}
 {{$TOTAL_PODS := MultiplyInt $PODS_PER_NODE (MultiplyInt $NODES_PER_NAMESPACE $NAMESPACES)}}
-
+{{$PODS_PER_REPLICA := DivideInt $TOTAL_PODS $REPLICAS}}
+{{$REPLICAS_PER_NAMESPACE := DivideInt $REPLICAS $NAMESPACES}}
 
 # Pod Resource proportional to node to ensure consistent triggering of scale-up
 {{$POD_CPU_MILLI := DivideFloat $NODE_FREE_CPU (MultiplyFloat $PODS_PER_NODE .9)}}
@@ -55,13 +57,13 @@ steps:
     - namespaceRange:
         min: 1
         max: {{$NAMESPACES}}
-      replicasPerNamespace: 1
+      replicasPerNamespace: {{$REPLICAS_PER_NAMESPACE}}
       tuningSet: uniform-qps
       objectBundle:
         - basename: deployment
           objectTemplatePath: deployment.yaml
           templateFillMap:
-            Replicas: {{$PODS_PER_NAMESPACE}}
+            Replicas: {{$PODS_PER_REPLICA}}
             Group: {{$POD_GROUP_LABEL}}
             CpuRequest: {{$POD_CPU_MILLI}}m
             MemoryRequest: {{$POD_MEMORY_MB}}M
