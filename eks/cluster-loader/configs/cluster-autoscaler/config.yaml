@@ -17,7 +17,7 @@
 
 # PODS_PER_DEPLOYMENT is the number of pods in each deployment
 # This value is used to drive PODS_PER_SECOND
-{{ $PODS_PER_DEPLOYMENT := DivideFloat $PODS_PER_SECOND $QPS }}
+{{ $PODS_PER_DEPLOYMENT := DivideFloat $PODS_PER_SECOND $CLIENT_QPS }}
 
 
 {{ $POD_GROUP_LABEL := DefaultParam .POD_GROUP_LABEL "cluster-loader" }}
@@ -44,7 +44,7 @@ namespace:
 tuningSets:
 - name: uniform-qps
   qpsLoad:
-    qps:  {{$CLIENT_QPS}}
+    qps: {{$CLIENT_QPS}}
 
 steps:
 - name: start-measurements
