@@ -1,25 +1,42 @@
-# Constants
-# Currently set to 1 namespace.
-{{$NAMESPACES := DefaultParam .NAMESPACES 5}}
-{{$PODS_PER_NODE := DefaultParam .PODS_PER_NODE 10}}
-{{$QPS := DefaultParam .QPS 10}}
-{{$POD_GROUP_LABEL := DefaultParam .POD_GROUP_LABEL "cluster-loader"}}
-# Adjust the following two for your cluster -
+##### Constants; these shouldn't typically be configured #####
+
+# CLIENT_QPS from the clusterloader2 client to the Kubernetes API Server
+# Keep this value reasonably low to avoid the case where your test is bottlenecked on client throughput.
+{{ $CLIENT_QPS := DefaultParam .CLIENT_QPS 1 }}
+
+# Pods per second should not exceed Kubernetes Control Plane limits.
+{{ $PODS_PER_SECOND := DefaultParam .PODS_PER_SECOND 20 }}
+
+# NODE_CPU is the amount of schedulable cpu on the nodes
 # kubectl get node -o json | jq -r ".items[].status.allocatable.cpu"
-{{$NODE_FREE_CPU := DefaultParam .NODE_FREE_CPU 1}}
+{{ $NODE_CPU := DefaultParam .NODE_CPU 1 }}
+
+# NODE_MEMORY_MB is the amount of schedulable memory on the nodes, represented in MB.
 # kubectl get node -o json | jq -r ".items[].status.allocatable.memory"
-# In MB
-{{$NODE_FREE_MEM := DefaultParam .NODE_FREE_MEM 3840}}
+{{ $NODE_MEMORY_MB := DefaultParam .NODE_MEMORY_MB 3840 }}
 
-# Variables
-{{$NODES_PER_NAMESPACE := DivideInt .Nodes $NAMESPACES}}
-{{$PODS_PER_NAMESPACE := MultiplyInt $PODS_PER_NODE $NODES_PER_NAMESPACE}}
-{{$TOTAL_PODS := MultiplyInt $PODS_PER_NODE (MultiplyInt $NODES_PER_NAMESPACE $NAMESPACES)}}
+# PODS_PER_DEPLOYMENT is the number of pods in each deployment
+# This value is used to drive PODS_PER_SECOND
+{{ $PODS_PER_DEPLOYMENT := DivideFloat $PODS_PER_SECOND $QPS }}
 
 
-# Pod Resource proportional to node to ensure consistent triggering of scale-up
-{{$POD_CPU_MILLI := DivideFloat $NODE_FREE_CPU (MultiplyFloat $PODS_PER_NODE .9)}}
-{{$POD_MEMORY_MB := DivideFloat $NODE_FREE_MEM (MultiplyFloat $PODS_PER_NODE .9)}}
+{{ $POD_GROUP_LABEL := DefaultParam .POD_GROUP_LABEL "cluster-loader" }}
+
+##### Test Parameters, these variables are used to drive our test cases #####
+
+# NODES is the total number of nodes for the test. It is passed in by clusterloader2 command line arguments.
+{{ $NODES := .Nodes }}
+
+# POD_PER_NODE determines the average pod density for nodes
+{{ $POD_PER_NODE := DefaultParam .POD_PER_NODE 10 }}
+
+##### Computed, these are not configurable and are only used in our template #####
+# TOTAL_PODS to be created in the test.
+{{ $TOTAL_PODS := MultiplyInt $NODES $POD_PER_NODE }}
+
+# Pod Resources ensure that the scheduler correctly schedules PODS_PER_NODE.
+{{$POD_CPU_MILLIS := DivideFloat (MultiplyFloat $POD_PER_NODE .9) $NODE_CPU }}
+{{$POD_MEMORY_MB := DivideFloat (MultiplyFloat $POD_PER_NODE .9) $NODE_MEMORY_MB }}
 
 name: simple-bring-up
 namespace:
@@ -27,7 +44,7 @@ namespace:
 tuningSets:
 - name: uniform-qps
   qpsLoad:
-    qps: {{$QPS}}
+    qps:  {{$CLIENT_QPS}}
 
 steps:
 - name: start-measurements
@@ -54,24 +71,24 @@ steps:
   phases:
     - namespaceRange:
         min: 1
-        max: {{$NAMESPACES}}
+        max: 1
       replicasPerNamespace: 1
       tuningSet: uniform-qps
       objectBundle:
         - basename: deployment
           objectTemplatePath: deployment.yaml
           templateFillMap:
-            Replicas: {{$PODS_PER_NAMESPACE}}
+            Replicas: {{$PODS_PER_DEPLOYMENT}}
             Group: {{$POD_GROUP_LABEL}}
-            CpuRequest: {{$POD_CPU_MILLI}}m
-            MemoryRequest: {{$POD_MEMORY_MB}}M
+            CpuRequest: {{$POD_CPU_MILLIS}}m
+            MemoryRequest: {{$POD_MEMORY_MB}}Mi
 
 - name: wait-for-scale-up-complete
 - measurements:
     - Identifier: WaitingForPods
-      Method: WaitForRunningPods
+      Method: WaitForRunningPod
       Params:
-        labelSelector: group = {{$POD_GROUP_LABEL}}
+        labelSelector: group = {{$POD TOTAL_PODS to be created in the test. _GROUP_LABEL}}
         desiredPodCount: {{$TOTAL_PODS}}
         timeout: 1h
 
