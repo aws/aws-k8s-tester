@@ -38,8 +38,8 @@
 {{ $DEPLOYMENTS_PER_NAMESPACE := DivideFloat $DEPLOYMENTS $NAMESPACES }}
 
 # Pod Resources ensure that the scheduler correctly schedules PODS_PER_NODE.
-{{ $POD_CPU_MILLIS := DivideFloat (MultiplyFloat $POD_PER_NODE .9) $NODE_CPU }}
-{{ $POD_MEMORY_MB := DivideFloat (MultiplyFloat $POD_PER_NODE .9) $NODE_MEMORY_MB }}
+{{ $POD_CPU_MILLIS := DivideFloat (MultiplyFloat $NODE_CPU .9) $POD_PER_NODE }}
+{{ $POD_MEMORY_MB := DivideFloat (MultiplyFloat $NODE_MEMORY_MB .9) $POD_PER_NODE }}
 
 name: simple-bring-up
 namespace:
