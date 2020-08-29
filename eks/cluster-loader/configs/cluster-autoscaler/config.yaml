@@ -1,5 +1,5 @@
 ##### Constants; these shouldn't typically be configured #####
-
+{{ $NAMESPACES := DefaultParam .NAMESPACES 10}}
 # CLIENT_QPS from the clusterloader2 client to the Kubernetes API Server
 # Keep this value reasonably low to avoid the case where your test is bottlenecked on client throughput.
 {{ $CLIENT_QPS := DefaultParam .CLIENT_QPS 1 }}
@@ -34,17 +34,20 @@
 # TOTAL_PODS to be created in the test.
 {{ $TOTAL_PODS := MultiplyInt $NODES $POD_PER_NODE }}
 
+{{ $DEPLOYMENTS := DivideFloat $TOTAL_PODS $PODS_PER_DEPLOYMENT }}
+{{ $DEPLOYMENTS_PER_NAMESPACE := DivideFloat $DEPLOYMENTS $NAMESPACES }}
+
 # Pod Resources ensure that the scheduler correctly schedules PODS_PER_NODE.
-{{$POD_CPU_MILLIS := DivideFloat (MultiplyFloat $POD_PER_NODE .9) $NODE_CPU }}
-{{$POD_MEMORY_MB := DivideFloat (MultiplyFloat $POD_PER_NODE .9) $NODE_MEMORY_MB }}
+{{ $POD_CPU_MILLIS := DivideFloat (MultiplyFloat $POD_PER_NODE .9) $NODE_CPU }}
+{{ $POD_MEMORY_MB := DivideFloat (MultiplyFloat $POD_PER_NODE .9) $NODE_MEMORY_MB }}
 
 name: simple-bring-up
 namespace:
-  number: {{$NAMESPACES}}
+  number: {{ $NAMESPACES }}
 tuningSets:
 - name: uniform-qps
   qpsLoad:
-    qps: {{$CLIENT_QPS}}
+    qps: {{ $CLIENT_QPS }}
 
 steps:
 - name: start-measurements
@@ -71,25 +74,25 @@ steps:
   phases:
     - namespaceRange:
         min: 1
-        max: 1
-      replicasPerNamespace: 1
+        max: {{ $NAMESPACES }}
+      replicasPerNamespace: {{ $DEPLOYMENTS_PER_NAMESPACE }}
       tuningSet: uniform-qps
       objectBundle:
         - basename: deployment
           objectTemplatePath: deployment.yaml
           templateFillMap:
-            Replicas: {{$PODS_PER_DEPLOYMENT}}
-            Group: {{$POD_GROUP_LABEL}}
-            CpuRequest: {{$POD_CPU_MILLIS}}m
-            MemoryRequest: {{$POD_MEMORY_MB}}Mi
+            Replicas: {{ $PODS_PER_DEPLOYMENT }}
+            Group: {{ $POD_GROUP_LABEL }}
+            CpuRequest: {{ $POD_CPU_MILLIS }}m
+            MemoryRequest: {{ $POD_MEMORY_MB }}Mi
 
 - name: wait-for-scale-up-complete
 - measurements:
     - Identifier: WaitingForPods
       Method: WaitForRunningPod
       Params:
-        labelSelector: group = {{$POD_GROUP_LABEL}}
-        desiredPodCount: {{$TOTAL_PODS}}
+        labelSelector: group = {{ $POD_GROUP_LABEL }}
+        desiredPodCount: {{ $TOTAL_PODS }}
         timeout: 1h
 
 - name: stop-timing-for-scale-up
@@ -116,7 +119,7 @@ steps:
   phases:
     - namespaceRange:
         min: 1
-        max: {{$NAMESPACES}}
+        max: {{ $NAMESPACES }}
       replicasPerNamespace: 0
       tuningSet: uniform-qps
       objectBundle:
@@ -128,7 +131,7 @@ steps:
     - Identifier: WaitingForPods
       Method: WaitForRunningPods
       Params:
-        labelSelector: group = {{$POD_GROUP_LABEL}}
+        labelSelector: group = {{ $POD_GROUP_LABEL }}
         desiredPodCount: 0
         timeout: 1h
 
@@ -143,4 +146,4 @@ steps:
       Method: SchedulingThroughput
       Params:
         action: gather
-        labelSelector: group = {{$POD_GROUP_LABEL}}
+        labelSelector: group = {{ $POD_GROUP_LABEL }}
