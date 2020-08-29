@@ -27,19 +27,19 @@
 # NODES is the total number of nodes for the test. It is passed in by clusterloader2 command line arguments.
 {{ $NODES := .Nodes }}
 
-# POD_PER_NODE determines the average pod density for nodes
-{{ $POD_PER_NODE := DefaultParam .POD_PER_NODE 10 }}
+# PODS_PER_NODE determines the average pod density for nodes
+{{ $PODS_PER_NODE := DefaultParam .PODS_PER_NODE 10 }}
 
 ##### Computed, these are not configurable and are only used in our template #####
 # TOTAL_PODS to be created in the test.
-{{ $TOTAL_PODS := MultiplyInt $NODES $POD_PER_NODE }}
+{{ $TOTAL_PODS := MultiplyInt $NODES $PODS_PER_NODE }}
 
 {{ $DEPLOYMENTS := DivideFloat $TOTAL_PODS $PODS_PER_DEPLOYMENT }}
 {{ $DEPLOYMENTS_PER_NAMESPACE := DivideFloat $DEPLOYMENTS $NAMESPACES }}
 
 # Pod Resources ensure that the scheduler correctly schedules PODS_PER_NODE.
-{{ $POD_CPU_MILLIS := DivideFloat (MultiplyFloat $NODE_CPU .9) $POD_PER_NODE }}
-{{ $POD_MEMORY_MB := DivideFloat (MultiplyFloat $NODE_MEMORY_MB .9) $POD_PER_NODE }}
+{{ $POD_CPU_MILLIS := DivideFloat (MultiplyFloat $NODE_CPU .9) $PODS_PER_NODE }}
+{{ $POD_MEMORY_MB := DivideFloat (MultiplyFloat $NODE_MEMORY_MB .9) $PODS_PER_NODE }}
 
 name: simple-bring-up
 namespace:
