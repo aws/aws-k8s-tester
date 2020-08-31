@@ -1,4 +1,6 @@
-# Adjust the following two for your cluster -
+##### README #####
+# If (nodes*pods_per_node*client_qps % (pods_per_second*namespaces) != 0), test will fail.
+# This is a clusterloader2 restriction, so ensure your parameters meet this condition.
 ##### Constants; these shouldn't typically be configured #####
 {{ $NAMESPACES := DefaultParam .NAMESPACES 10}}
 # CLIENT_QPS from the clusterloader2 client to the Kubernetes API Server
@@ -90,7 +92,7 @@ steps:
 - name: wait-for-scale-up-complete
 - measurements:
     - Identifier: WaitingForPods
-      Method: WaitForRunningPod
+      Method: WaitForRunningPods
       Params:
         labelSelector: group = {{ $POD_GROUP_LABEL }}
         desiredPodCount: {{ $TOTAL_PODS }}
