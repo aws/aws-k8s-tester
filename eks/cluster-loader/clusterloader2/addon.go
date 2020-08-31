@@ -1,6 +1,7 @@
 package clusterloader2
 
 import (
+	"context"
 	"fmt"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -8,13 +9,18 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"io/ioutil"
+	v1 "k8s.io/api/batch/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"path"
 	"strings"
+	"time"
 )
 
+// IndentedNewline covers formatting issues with gotemplates
 const IndentedNewline = "\n    "
 
+// ClusterLoader struct is currently only needed in this directory. May change with future additions.
 type ClusterLoader struct {
 	Config    *eksconfig.Config
 	K8sClient k8sclient.EKS
@@ -47,7 +53,7 @@ func (c *ClusterLoader) Apply() (err error) {
 	resources := strings.Split(template.String(), "\n---\n")
 	jobYaml := resources[len(resources)-1]
 	if err := c.K8sClient.Delete(jobYaml); err != nil {
-		//Warn that there was an error, but don't stop process.
+		// Warn that there was an error, but don't stop process.
 		zap.S().Warn("Deleting jobYaml errored out, but is fine: %s", zapcore.Field{String: err.Error()})
 	}
 	if err := c.K8sClient.Apply(template.String()); err != nil {
@@ -59,6 +65,22 @@ func (c *ClusterLoader) Apply() (err error) {
 			Ready:     true,
 		},
 	}
+
+	// Wait for job to complete -- 2 hours because larger tests take a very long time.
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour)
+	job := &v1.Job{}
+	for job.Status.Succeeded < 1 {
+		job, err = c.K8sClient.KubernetesClientSet().
+			BatchV1().
+			Jobs("clusterloader2").
+			Get(ctx, "clusterloader2", metav1.GetOptions{})
+		if err != nil {
+			cancel()
+			return fmt.Errorf("failed to get cl2 job (%v)", err)
+		}
+		time.Sleep(10 * time.Second)
+	}
+	cancel()
 	return nil
 }
 
