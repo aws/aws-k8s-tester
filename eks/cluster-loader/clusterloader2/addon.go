@@ -3,18 +3,19 @@ package clusterloader2
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"path"
+	"strings"
+	"time"
+
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	gotemplate "github.com/aws/aws-k8s-tester/pkg/util"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"io/ioutil"
 	v1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net/http"
-	"path"
-	"strings"
-	"time"
 )
 
 // IndentedNewline covers formatting issues with gotemplates
