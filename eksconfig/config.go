@@ -449,6 +449,12 @@ func getDefaultParameters() *Parameters {
 	return &Parameters{
 		RoleCreate:          true,
 		VPCCreate:           true,
+		VPCCIDR:             "192.168.0.0/16",
+		PublicSubnetCIDR1:   "192.168.64.0/19",
+		PublicSubnetCIDR2:   "192.168.128.0/19",
+		PublicSubnetCIDR3:   "192.168.192.0/19",
+		PrivateSubnetCIDR1:  "192.168.32.0/19",
+		PrivateSubnetCIDR2:  "192.168.96.0/19",
 		SigningName:         "eks",
 		Version:             "1.17",
 		EncryptionCMKCreate: true,

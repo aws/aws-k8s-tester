@@ -429,27 +429,9 @@ func (ts *tester) createASGs() error {
 		case ec2config.AMITypeAL2X8664,
 			ec2config.AMITypeAL2X8664GPU:
 			// https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh
-			var clusterVpcIP string
-			if ts.cfg.EKSConfig.Parameters.VPCCIDR != "" {
-				clusterVpcIP = ts.cfg.EKSConfig.Parameters.VPCCIDR
-			} else {
-				output, err := ts.cfg.CFNAPI.DescribeStacks(&cloudformation.DescribeStacksInput{
-					StackName: aws.String(ts.cfg.EKSConfig.Parameters.VPCCFNStackID),
-				})
-				if err != nil {
-					ts.cfg.Logger.Error("Unable to find the VPC stack")
-					return err
-				}
-				stack := output.Stacks[0]
-				for _, parameters := range stack.Parameters {
-					if aws.StringValue(parameters.ParameterKey) == "VPCCIDR" {
-						clusterVpcIP = aws.StringValue(parameters.ParameterValue)
-						break
-					}
-				}
-			}
+			clusterVPCIP := ts.cfg.EKSConfig.Parameters.VPCCIDR
 			dnsClusterIP := "10.100.0.10"
-			if clusterVpcIP[:strings.IndexByte(clusterVpcIP, '.')] == "10" {
+			if clusterVPCIP[:strings.IndexByte(clusterVPCIP, '.')] == "10" {
 				dnsClusterIP = "172.20.0.10"
 			}
 			tg.Metadata = metadataAL2InstallSSM
