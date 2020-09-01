@@ -429,6 +429,29 @@ func (ts *tester) createASGs() error {
 		case ec2config.AMITypeAL2X8664,
 			ec2config.AMITypeAL2X8664GPU:
 			// https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh
+			var clusterVpcIP string
+			if ts.cfg.EKSConfig.Parameters.VPCCIDR != "" {
+				clusterVpcIP = ts.cfg.EKSConfig.Parameters.VPCCIDR
+			} else {
+				output, err := ts.cfg.CFNAPI.DescribeStacks(&cloudformation.DescribeStacksInput{
+					StackName: aws.String(ts.cfg.EKSConfig.Parameters.VPCCFNStackID),
+				})
+				if err != nil {
+					ts.cfg.Logger.Error("Unable to find the VPC stack")
+					return err
+				}
+				stack := output.Stacks[0]
+				for _, parameters := range stack.Parameters {
+					if aws.StringValue(parameters.ParameterKey) == "VPCCIDR" {
+						clusterVpcIP = aws.StringValue(parameters.ParameterValue)
+						break
+					}
+				}
+			}
+			dnsClusterIP := "10.100.0.10"
+			if clusterVpcIP[:strings.IndexByte(clusterVpcIP, '.')] == "10" {
+				dnsClusterIP = "172.20.0.10"
+			}
 			tg.Metadata = metadataAL2InstallSSM
 			tg.UserData = userDataAL2InstallSSM
 			tg.UserData += `              /etc/eks/bootstrap.sh ${ClusterName}`
@@ -437,7 +460,7 @@ func (ts *tester) createASGs() error {
 					zap.String("b64-cluster-ca", ts.cfg.EKSConfig.Status.ClusterCA),
 					zap.String("apiserver-endpoint", ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint),
 				)
-				tg.UserData += fmt.Sprintf(` --b64-cluster-ca %s --apiserver-endpoint %s`, ts.cfg.EKSConfig.Status.ClusterCA, ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint)
+				tg.UserData += fmt.Sprintf(` --b64-cluster-ca %s --apiserver-endpoint %s --dns-cluster-ip %s`, ts.cfg.EKSConfig.Status.ClusterCA, ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint, dnsClusterIP)
 			}
 			// https://aws.amazon.com/blogs/opensource/improvements-eks-worker-node-provisioning/
 			tg.UserData += fmt.Sprintf(` --kubelet-extra-args '--node-labels=NodeType=regular,AMIType=%s,NGType=custom,NGName=%s`, cur.AMIType, asgName)
