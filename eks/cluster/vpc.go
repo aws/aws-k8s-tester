@@ -567,6 +567,10 @@ Outputs:
     Value: !Ref VPC
     Description: VPC ID
 
+  VPCCIDR:
+    Value: !Ref VPCCIDR
+    Description: VPCCIDR
+
   PublicSubnetIDs:
     Value:
       Fn::If:
@@ -832,6 +836,11 @@ func (ts *tester) createVPC() error {
 		switch k {
 		case "VPCID":
 			ts.cfg.EKSConfig.Parameters.VPCID = v
+		case "VPCCIDR":
+			// to avoid additional CFN describe stack call
+			// to look for VPCCIDR parameter value
+			// ref. https://github.com/aws/aws-k8s-tester/pull/162
+			ts.cfg.EKSConfig.Parameters.VPCCIDR = v
 		case "PublicSubnetIDs":
 			ts.cfg.EKSConfig.Parameters.PublicSubnetIDs = strings.Split(v, ",")
 		case "PrivateSubnetIDs":
@@ -843,10 +852,14 @@ func (ts *tester) createVPC() error {
 	ts.cfg.Logger.Info("created a VPC",
 		zap.String("vpc-cfn-stack-id", ts.cfg.EKSConfig.Parameters.VPCCFNStackID),
 		zap.String("vpc-id", ts.cfg.EKSConfig.Parameters.VPCID),
+		zap.String("vpc-cidr", ts.cfg.EKSConfig.Parameters.VPCCIDR),
 		zap.Strings("public-subnet-ids", ts.cfg.EKSConfig.Parameters.PublicSubnetIDs),
 		zap.Strings("private-subnet-ids", ts.cfg.EKSConfig.Parameters.PrivateSubnetIDs),
 		zap.String("control-plane-security-group-id", ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID),
 	)
+	if ts.cfg.EKSConfig.Parameters.VPCCIDR == "" {
+		return errors.New("unexpected empty EKSConfig.Parameters.VPCCIDR")
+	}
 	return ts.cfg.EKSConfig.Sync()
 }
 
