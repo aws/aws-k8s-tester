@@ -43,7 +43,7 @@ replace (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.34.14
+	github.com/aws/aws-sdk-go v1.34.18
 	github.com/briandowns/spinner v1.11.1
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/davecgh/go-spew v1.1.1
@@ -68,7 +68,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	// etcd v3.4.9
 	go.etcd.io/etcd v0.5.0-alpha.5.0.20200520232829-54ba9589114f
-	go.uber.org/zap v1.15.0
+	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0

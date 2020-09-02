@@ -3,7 +3,7 @@
 
 
 
-## [v1.5.0](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.0) (2020-09-01)
+## [v1.5.0](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.0) (2020-09-04)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.8...v1.5.0).
 
@@ -46,13 +46,14 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.4.8...v1.5.0
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.33.8`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.8) to [`v1.34.14`](https://github.com/aws/aws-sdk-go/releases/tag/v1.34.14).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.33.8`](https://github.com/aws/aws-sdk-go/releases/tag/v1.33.8) to [`v1.34.18`](https://github.com/aws/aws-sdk-go/releases/tag/v1.34.18).
 - Upgrade [`github.com/kubernetes/kubernetes`](https://github.com/kubernetes/kubernetes/releases) from [`v1.18.7-rc.0`](https://github.com/kubernetes/kubernetes/releases/tag/v1.18.7-rc.0) to [`v1.18.9-rc.0`](https://github.com/kubernetes/kubernetes/releases/tag/v1.18.9-rc.0).
 - Upgrade [`github.com/kubernetes/client-go`](https://github.com/kubernetes/client-go/releases) from [`v0.18.7-rc.0`](https://github.com/kubernetes/client-go/releases/tag/v0.18.7-rc.0) to [`v0.18.9-rc.0`](https://github.com/kubernetes/client-go/releases/tag/v0.18.9-rc.0).
+- Upgrade [`github.com/uber-go/zap`](https://github.com/uber-go/zap/releases) from [`v1.15.0`](https://github.com/uber-go/zap/releases/tag/v1.15.0) to [`v1.16.0`](https://github.com/uber-go/zap/releases/tag/v1.16.0).
 
 ### Go
 
-- Compile with [*Go 1.15*](https://golang.org/doc/devel/release.html#go1.15).
+- Compile with [*Go 1.15.1*](https://golang.org/doc/devel/release.html#go1.15).
 
 
 
