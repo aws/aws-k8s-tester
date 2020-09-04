@@ -15,7 +15,9 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	v1 "k8s.io/api/batch/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 )
 
 // IndentedNewline covers formatting issues with gotemplates
@@ -69,6 +71,7 @@ func (c *ClusterLoader) Apply() (err error) {
 
 	// Wait for job to complete -- 2 hours because larger tests take a very long time.
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour)
+	defer cancel()
 	job := &v1.Job{}
 	for job.Status.Succeeded < 1 {
 		job, err = c.K8sClient.KubernetesClientSet().
@@ -76,12 +79,20 @@ func (c *ClusterLoader) Apply() (err error) {
 			Jobs("clusterloader2").
 			Get(ctx, "clusterloader2", metav1.GetOptions{})
 		if err != nil {
-			cancel()
-			return fmt.Errorf("failed to get cl2 job (%v)", err)
+			if errors.IsTimeout(err) {
+				err = retry.OnError(retry.DefaultRetry, errors.IsTimeout, func() error {
+					job, err = c.K8sClient.KubernetesClientSet().
+						BatchV1().
+						Jobs("clusterloader2").
+						Get(ctx, "clusterloader2", metav1.GetOptions{})
+					return fmt.Errorf("failed to get cl2 job (%v)", err)
+				})
+			} else if !errors.IsTimeout(err) {
+				return fmt.Errorf("failed to get cl2 job (%v)", err)
+			}
 		}
 		time.Sleep(10 * time.Second)
 	}
-	cancel()
 	return nil
 }
 
