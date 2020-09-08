@@ -74,22 +74,11 @@ func (c *ClusterLoader) Apply() (err error) {
 	defer cancel()
 	job := &v1.Job{}
 	for job.Status.Succeeded < 1 {
-		job, err = c.K8sClient.KubernetesClientSet().
-			BatchV1().
-			Jobs("clusterloader2").
-			Get(ctx, "clusterloader2", metav1.GetOptions{})
-		if err != nil {
-			if errors.IsTimeout(err) {
-				err = retry.OnError(retry.DefaultRetry, errors.IsTimeout, func() error {
-					job, err = c.K8sClient.KubernetesClientSet().
-						BatchV1().
-						Jobs("clusterloader2").
-						Get(ctx, "clusterloader2", metav1.GetOptions{})
-					return fmt.Errorf("failed to get cl2 job (%v)", err)
-				})
-			} else if !errors.IsTimeout(err) {
-				return fmt.Errorf("failed to get cl2 job (%v)", err)
-			}
+		if err := retry.OnError(retry.DefaultRetry, errors.IsTimeout, func() (err error) {
+			job, err = c.K8sClient.KubernetesClientSet().BatchV1().Jobs("clusterloader2").Get(ctx, "clusterloader2", metav1.GetOptions{})
+			return err
+		}); err != nil {
+			return fmt.Errorf("failed to get cl2 job (%v)", err)
 		}
 		time.Sleep(10 * time.Second)
 	}
@@ -138,8 +127,21 @@ func (c *ClusterLoader) buildConfigMapData() (map[string]string, error) {
 }
 
 func (c *ClusterLoader) buildArgs() string {
-	// add report-dir and testOverrides for CL2 tests. If one wants to change, check the gotemplate, and look at the job's initContainer's volumes
-	arguments := append(c.Config.Spec.ClusterLoader.TestParams, "--report-dir=/var/reports/cluster-loader")
+	arguments := []string{}
+
+	// Standard arguments for clusterloader2
+	for _, argument := range []string{
+		fmt.Sprintf("--nodes=%d", c.Config.Spec.ClusterLoader.Nodes),
+		"--provider=eks",
+		"--testconfig=/etc/config/config.yaml",
+		"--run-from-cluster",
+		"--report-dir=/var/reports/cluster-loader",
+		"--alsologtostderr",
+	} {
+		arguments = append(arguments, argument)
+	}
+
+	// Additional optional arguments
 	if len(c.Config.Spec.ClusterLoader.TestOverrides) > 0 {
 		arguments = append(arguments, "--testoverrides=/etc/config/overrides.yaml")
 	}
