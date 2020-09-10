@@ -340,6 +340,7 @@ func (ts *tester) createASGs() (err error) {
 				})
 			}
 			if cur.ASGDesiredCapacity > 0 {
+				tg.ASGDesiredCapacity = int64(cur.ASGDesiredCapacity)
 				stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 					ParameterKey:   aws.String("ASGDesiredCapacity"),
 					ParameterValue: aws.String(fmt.Sprintf("%d", cur.ASGDesiredCapacity)),

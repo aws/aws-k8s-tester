@@ -1,4 +1,22 @@
 
+
+<hr>
+
+
+## [v1.5.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.1) (2020-09)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.0...v1.5.1).
+
+### `eks`
+
+- Fix [`eks/mng` `desiredSize` parameter in CloudFormation](https://github.com/aws/aws-k8s-tester/pull/168).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.34.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.34.20) to [`v1.34.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.34.20).
+
+
+
 <hr>
 
 
