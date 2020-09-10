@@ -77,6 +77,7 @@ type Config struct {
 	LogOutputs []string `json:"log-outputs,omitempty"`
 
 	// AWSCLIPath is the path for AWS CLI path.
+	// Required for 'aws eks update-kubeconfig'.
 	AWSCLIPath string `json:"aws-cli-path,omitempty"`
 
 	// KubectlPath is the path to download the "kubectl".
@@ -861,7 +862,7 @@ func NewDefault() *Config {
 	var err error
 	cfg.AWSCLIPath, err = exec.LookPath("aws")
 	if err != nil {
-		panic(fmt.Errorf("aws CLI is not installed (%v)", err))
+		panic(fmt.Errorf("aws CLI is not installed (%v); required for 'aws eks update-kubeconfig'", err))
 	}
 
 	if runtime.GOOS == "darwin" {
