@@ -214,7 +214,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	vo, err = exec.New().CommandContext(ctx, cfg.AWSCLIPath, "--version").CombinedOutput()
 	cancel()
 	if err != nil {
-		return nil, fmt.Errorf("'aws --version' failed (output %q, error %v)", string(vo), err)
+		return nil, fmt.Errorf("'aws --version' failed (output %q, error %v); required for 'aws eks update-kubeconfig'", string(vo), err)
 	}
 	lg.Info(
 		"aws version",
