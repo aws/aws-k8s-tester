@@ -3,6 +3,29 @@
 <hr>
 
 
+## [v1.5.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.2) (2020-09-12)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.1...v1.5.2).
+
+### `eks`
+
+- Fix [`eks/mng` `desiredSize` parameter in CloudFormation](https://github.com/aws/aws-k8s-tester/pull/170).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.34.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.34.20) to [`v1.34.22`](https://github.com/aws/aws-sdk-go/releases/tag/v1.34.22).
+
+### Go
+
+- Compile with [*Go 1.15.2*](https://golang.org/doc/devel/release.html#go1.15).
+
+
+
+<hr>
+
+
+
+
 ## [v1.5.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.1) (2020-09-10)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.0...v1.5.1).
@@ -13,7 +36,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.0...v1.5.1
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.34.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.34.20) to [`v1.34.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.34.20).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.34.18`](https://github.com/aws/aws-sdk-go/releases/tag/v1.34.18) to [`v1.34.20`](https://github.com/aws/aws-sdk-go/releases/tag/v1.34.20).
 
 ### Go
 
