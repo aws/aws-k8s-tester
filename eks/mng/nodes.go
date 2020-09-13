@@ -290,11 +290,26 @@ func (ts *tester) createASGs() (err error) {
 
 			tg := templateMNG{}
 			if cur.ReleaseVersion != "" {
+				ts.cfg.Logger.Info("adding release version parameter",
+					zap.String("mng-name", mngName),
+					zap.String("release-version", cur.ReleaseVersion),
+				)
 				tg.ParameterReleaseVersion = parametersReleaseVersion
 				tg.PropertyReleaseVersion = propertyReleaseVersion
 				stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 					ParameterKey:   aws.String("ReleaseVersion"),
 					ParameterValue: aws.String(cur.ReleaseVersion),
+				})
+			}
+			if cur.ASGDesiredCapacity > 0 {
+				ts.cfg.Logger.Info("adding desired capacity parameter",
+					zap.String("mng-name", mngName),
+					zap.Int("desired-capacity", cur.ASGDesiredCapacity),
+				)
+				tg.ASGDesiredCapacity = int64(cur.ASGDesiredCapacity)
+				stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+					ParameterKey:   aws.String("ASGDesiredCapacity"),
+					ParameterValue: aws.String(fmt.Sprintf("%d", cur.ASGDesiredCapacity)),
 				})
 			}
 			tpl := template.Must(template.New("TemplateMNG").Parse(TemplateMNG))
@@ -337,13 +352,6 @@ func (ts *tester) createASGs() (err error) {
 				stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 					ParameterKey:   aws.String("ASGMaxSize"),
 					ParameterValue: aws.String(fmt.Sprintf("%d", cur.ASGMaxSize)),
-				})
-			}
-			if cur.ASGDesiredCapacity > 0 {
-				tg.ASGDesiredCapacity = int64(cur.ASGDesiredCapacity)
-				stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-					ParameterKey:   aws.String("ASGDesiredCapacity"),
-					ParameterValue: aws.String(fmt.Sprintf("%d", cur.ASGDesiredCapacity)),
 				})
 			}
 			if len(cur.InstanceTypes) > 0 {
