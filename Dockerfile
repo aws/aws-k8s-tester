@@ -28,6 +28,7 @@ COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/sts
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/_tmp/clusterloader2-testing-load/ /
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/_tmp/clusterloader2-testing-load/config.yaml /clusterloader2-test-config.yaml
 COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/_tmp/clusterloader2 /clusterloader2
+COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/eks /eks
 RUN rm -rf /go/src/github.com/aws/aws-k8s-tester
 RUN chmod +x /aws-k8s-tester /cw-utils /ec2-utils /eks-utils /etcd-utils /s3-utils /sts-utils /clusterloader2
 WORKDIR /
