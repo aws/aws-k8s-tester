@@ -715,16 +715,28 @@ func (ts *tester) updateClusterStatus(v wait.ClusterStatus, desired string) {
 					Proxy:           http.ProxyFromEnvironment,
 				},
 			}
-			resp, err := httpClient.Get(ts.cfg.EKSConfig.Status.ClusterOIDCIssuerURL)
-			if err != nil {
+			var resp *http.Response
+			for i := 0; i < 5; i++ {
+				resp, err = httpClient.Get(ts.cfg.EKSConfig.Status.ClusterOIDCIssuerURL)
+				if err == nil {
+					break
+				}
+				code := 0
+				if resp != nil {
+					code = resp.StatusCode
+				}
+				// TODO: parse response status code to decide retries?
 				ts.cfg.Logger.Warn("failed to fetch OIDC CA thumbprint",
 					zap.String("url", ts.cfg.EKSConfig.Status.ClusterOIDCIssuerURL),
+					zap.Int("status-code", code),
 					zap.Error(err),
 				)
+				time.Sleep(5 * time.Second)
 			}
-			defer resp.Body.Close()
-
-			if resp.TLS != nil {
+			if resp != nil && resp.Body != nil {
+				defer resp.Body.Close()
+			}
+			if resp != nil && resp.TLS != nil {
 				certs := len(resp.TLS.PeerCertificates)
 				if certs >= 1 {
 					root := resp.TLS.PeerCertificates[certs-1]
