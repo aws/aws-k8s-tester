@@ -103,11 +103,15 @@ func (c *ClusterAutoscaler) buildNodeGroupArguments() (args []string) {
 		}
 	}
 	if spec.CloudProvider == eksconfig.CloudProviderAWS {
-		for _, asg := range c.Config.AddOnNodeGroups.ASGs {
-			args = append(args, fmt.Sprintf(NodeGroupArgumentFormatter, spec.MinNodes, spec.MinNodes, asg.Name))
+		if c.Config.AddOnNodeGroups != nil {
+			for _, asg := range c.Config.AddOnNodeGroups.ASGs {
+				args = append(args, fmt.Sprintf(NodeGroupArgumentFormatter, spec.MinNodes, spec.MinNodes, asg.Name))
+			}
 		}
-		for _, mng := range c.Config.AddOnManagedNodeGroups.MNGs {
-			args = append(args, fmt.Sprintf(NodeGroupArgumentFormatter, spec.MinNodes, spec.MinNodes, mng.Name))
+		if c.Config.AddOnManagedNodeGroups != nil {
+			for _, mng := range c.Config.AddOnManagedNodeGroups.MNGs {
+				args = append(args, fmt.Sprintf(NodeGroupArgumentFormatter, spec.MinNodes, spec.MinNodes, mng.Name))
+			}
 		}
 	}
 	return args
