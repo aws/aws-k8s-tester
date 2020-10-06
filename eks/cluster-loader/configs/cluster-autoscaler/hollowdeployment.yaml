@@ -23,6 +23,15 @@ spec:
             requests:
               cpu: {{.CpuRequest}}
               memory: {{.MemoryRequest}}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: NodeType
+                    operator: In
+                    values:
+                      - hollow-nodes
       # Add not-ready/unreachable tolerations for 15 minutes so that node
       # failure doesn't trigger pod deletion.
       tolerations:
@@ -34,3 +43,7 @@ spec:
           operator: "Exists"
           effect: "NoExecute"
           tolerationSeconds: 900
+        - key: "provider"
+          value: "kubemark"
+          operator: "Equal"
+          effect: "NoSchedule"
