@@ -96,7 +96,7 @@ steps:
       Params:
         labelSelector: group = {{ $POD_GROUP_LABEL }}
         desiredPodCount: {{ $TOTAL_PODS }}
-        timeout: 1h
+        timeout: 4h
 
 - name: stop-timing-for-scale-up
 - measurements:
@@ -136,7 +136,7 @@ steps:
       Params:
         labelSelector: group = {{ $POD_GROUP_LABEL }}
         desiredPodCount: 0
-        timeout: 1h
+        timeout: 4h
 
 - name: stop-measurements
 - measurements:

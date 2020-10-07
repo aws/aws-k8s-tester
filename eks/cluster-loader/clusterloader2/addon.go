@@ -1,23 +1,17 @@
 package clusterloader2
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8sclient "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	gotemplate "github.com/aws/aws-k8s-tester/pkg/util"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	v1 "k8s.io/api/batch/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/util/retry"
 )
 
 // IndentedNewline covers formatting issues with gotemplates
@@ -44,10 +38,12 @@ func (c *ClusterLoader) Apply() (err error) {
 		*eksconfig.ClusterLoaderSpec
 		ConfigMapData map[string]string
 		TestArgs      string
+		InstanceTypes []string
 	}{
 		ClusterLoaderSpec: c.Config.Spec.ClusterLoader,
 		ConfigMapData:     configMapData,
 		TestArgs:          c.buildArgs(),
+		InstanceTypes:     c.Config.Spec.ClusterLoader.InstanceTypes,
 	})
 	if err != nil {
 		return fmt.Errorf("while building templates, %v", err)
@@ -67,20 +63,6 @@ func (c *ClusterLoader) Apply() (err error) {
 			Installed: true,
 			Ready:     true,
 		},
-	}
-
-	// Wait for job to complete -- 2 hours because larger tests take a very long time.
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Hour)
-	defer cancel()
-	job := &v1.Job{}
-	for job.Status.Succeeded < 1 {
-		if err := retry.OnError(retry.DefaultRetry, errors.IsTimeout, func() (err error) {
-			job, err = c.K8sClient.KubernetesClientSet().BatchV1().Jobs("clusterloader2").Get(ctx, "clusterloader2", metav1.GetOptions{})
-			return err
-		}); err != nil {
-			return fmt.Errorf("failed to get cl2 job (%v)", err)
-		}
-		time.Sleep(10 * time.Second)
 	}
 	return nil
 }
@@ -135,7 +117,6 @@ func (c *ClusterLoader) buildArgs() string {
 		"--provider=eks",
 		"--testconfig=/etc/config/config.yaml",
 		"--run-from-cluster",
-		"--report-dir=/var/reports/cluster-loader",
 		"--alsologtostderr",
 	} {
 		arguments = append(arguments, argument)

@@ -404,9 +404,18 @@ type Parameters struct {
 	VPCCFNStackID        string `json:"vpc-cfn-stack-id" read-only:"true"`
 	VPCCFNStackYAMLPath  string `json:"vpc-cfn-stack-yaml-path" read-only:"true"`
 	VPCCFNStackYAMLS3Key string `json:"vpc-cfn-stack-yaml-s3-key" read-only:"true"`
-	// VpcCIDR is the IP range (CIDR notation) for VPC, must be a valid private
+	// VpcBlock1 is the IP range (CIDR notation) for the primary VPC Block, must be a valid private
 	// (RFC 1918) CIDR range.
-	VPCCIDR string `json:"vpc-cidr,omitempty"`
+	VPCBlock1 string `json:"vpc-cidr-block1,omitempty"`
+	// VpcBlock2 is the IP range (CIDR notation) for the secondary VPC Block, must be a valid private
+	// (RFC 1918) CIDR range.
+	VPCBlock2 string `json:"vpc-cidr-block2,omitempty"`
+	// VpcBlock3 is the IP range (CIDR notation) for the secondary VPC Block, must be a valid private
+	// (RFC 1918) CIDR range.
+	VPCBlock3 string `json:"vpc-cidr-block3,omitempty"`
+	// VpcBlock4 is the IP range (CIDR notation) for the secondary VPC Block, must be a valid private
+	// (RFC 1918) CIDR range.
+	VPCBlock4 string `json:"vpc-cidr-block4,omitempty"`
 	// PublicSubnetCIDR1 is the CIDR Block for subnet 1 within the VPC.
 	PublicSubnetCIDR1 string `json:"public-subnet-cidr-1,omitempty"`
 	// PublicSubnetCIDR2 is the CIDR Block for subnet 2 within the VPC.
@@ -450,12 +459,15 @@ func getDefaultParameters() *Parameters {
 	return &Parameters{
 		RoleCreate:          true,
 		VPCCreate:           true,
-		VPCCIDR:             "192.168.0.0/16",
-		PublicSubnetCIDR1:   "192.168.64.0/19",
-		PublicSubnetCIDR2:   "192.168.128.0/19",
-		PublicSubnetCIDR3:   "192.168.192.0/19",
-		PrivateSubnetCIDR1:  "192.168.32.0/19",
-		PrivateSubnetCIDR2:  "192.168.96.0/19",
+		VPCBlock1:           "10.0.0.0/16",
+		VPCBlock2:           "10.1.0.0/16",
+		VPCBlock3:           "10.2.0.0/16",
+		VPCBlock4:           "10.3.0.0/16",
+		PublicSubnetCIDR1:   "10.0.0.0/16",
+		PublicSubnetCIDR2:   "10.1.0.0/16",
+		PublicSubnetCIDR3:   "10.2.0.0/16",
+		PrivateSubnetCIDR1:  "10.3.0.0/17",
+		PrivateSubnetCIDR2:  "10.3.128.0/17",
 		SigningName:         "eks",
 		Version:             "1.17",
 		EncryptionCMKCreate: true,
@@ -1317,32 +1329,44 @@ func (cfg *Config) validateParameters() error {
 	}
 
 	switch {
-	case cfg.Parameters.VPCCIDR != "":
+	case cfg.Parameters.VPCBlock1 != "":
+		if cfg.Parameters.PublicSubnetCIDR1 == "" {
+			return fmt.Errorf("empty Parameters.PublicSubnetCIDR1 when VPCBlock1 is %q", cfg.Parameters.VPCBlock1)
+		}
+	case cfg.Parameters.VPCBlock2 != "":
+		if cfg.Parameters.PublicSubnetCIDR2 == "" {
+			return fmt.Errorf("empty Parameters.PublicSubnetCIDR2 when VPCBlock2 is %q", cfg.Parameters.VPCBlock2)
+		}
+	case cfg.Parameters.VPCBlock3 != "":
+		if cfg.Parameters.PublicSubnetCIDR3 == "" {
+			return fmt.Errorf("empty Parameters.PublicSubnetCIDR3 when VPCBlock3 is %q", cfg.Parameters.VPCBlock3)
+		}
+	case cfg.Parameters.VPCBlock4 != "":
 		switch {
-		case cfg.Parameters.PublicSubnetCIDR1 == "":
-			return fmt.Errorf("empty Parameters.PublicSubnetCIDR1 when VPCCIDR is %q", cfg.Parameters.VPCCIDR)
-		case cfg.Parameters.PublicSubnetCIDR2 == "":
-			return fmt.Errorf("empty Parameters.PublicSubnetCIDR2 when VPCCIDR is %q", cfg.Parameters.VPCCIDR)
-		case cfg.Parameters.PublicSubnetCIDR3 == "":
-			return fmt.Errorf("empty Parameters.PublicSubnetCIDR3 when VPCCIDR is %q", cfg.Parameters.VPCCIDR)
 		case cfg.Parameters.PrivateSubnetCIDR1 == "":
-			return fmt.Errorf("empty Parameters.PrivateSubnetCIDR1 when VPCCIDR is %q", cfg.Parameters.VPCCIDR)
+			return fmt.Errorf("empty Parameters.PrivateSubnetCIDR1 when VPCBlock4 is %q", cfg.Parameters.VPCBlock4)
 		case cfg.Parameters.PrivateSubnetCIDR2 == "":
-			return fmt.Errorf("empty Parameters.PrivateSubnetCIDR2 when VPCCIDR is %q", cfg.Parameters.VPCCIDR)
+			return fmt.Errorf("empty Parameters.PrivateSubnetCIDR2 when VPCBlock4 is %q", cfg.Parameters.VPCBlock4)
 		}
 
-	case cfg.Parameters.VPCCIDR == "":
+	case cfg.Parameters.VPCBlock1 == "":
+		if cfg.Parameters.PublicSubnetCIDR1 != "" {
+			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR1 %q when VPCBlock1 is empty", cfg.Parameters.PublicSubnetCIDR1)
+		}
+	case cfg.Parameters.VPCBlock2 == "":
+		if cfg.Parameters.PublicSubnetCIDR2 != "" {
+			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR2 %q when VPCBlock2 is empty", cfg.Parameters.PublicSubnetCIDR2)
+		}
+	case cfg.Parameters.VPCBlock3 == "":
+		if cfg.Parameters.PublicSubnetCIDR3 != "" {
+			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR3 %q when VPCBlock3 is empty", cfg.Parameters.PublicSubnetCIDR3)
+		}
+	case cfg.Parameters.VPCBlock4 == "":
 		switch {
-		case cfg.Parameters.PublicSubnetCIDR1 != "":
-			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR1 %q when VPCCIDR is empty", cfg.Parameters.PublicSubnetCIDR1)
-		case cfg.Parameters.PublicSubnetCIDR2 != "":
-			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR2 %q when VPCCIDR is empty", cfg.Parameters.PublicSubnetCIDR2)
-		case cfg.Parameters.PublicSubnetCIDR3 != "":
-			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR3 %q when VPCCIDR is empty", cfg.Parameters.PublicSubnetCIDR3)
 		case cfg.Parameters.PrivateSubnetCIDR1 != "":
-			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR1 %q when VPCCIDR is empty", cfg.Parameters.PrivateSubnetCIDR1)
+			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR1 %q when VPCBlock4 is empty", cfg.Parameters.PrivateSubnetCIDR1)
 		case cfg.Parameters.PrivateSubnetCIDR2 != "":
-			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR2 %q when VPCCIDR is empty", cfg.Parameters.PrivateSubnetCIDR2)
+			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR2 %q when VPCBlock4 is empty", cfg.Parameters.PrivateSubnetCIDR1)
 		}
 	}
 

@@ -83,40 +83,58 @@ Parameters:
     Type: String
     Default: aws-k8s-tester-eks-vpc
 
-  VPCCIDR:
-    Description: IP range (CIDR notation) for VPC, must be a valid (RFC 1918) CIDR range (from 192.168.0.0 to 192.168.255.255)
+  VPCBlock1: 
     Type: String
-    Default: 192.168.0.0/16
+    Default: 10.0.0.0/16
+    Description: The primary CIDR range for the VPC. This should be a valid private (RFC 1918) CIDR range.
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+  VPCBlock2:
+    Type: String
+    Default: 10.1.0.0/16
+    Description: The secondary CIDR range for the VPC. This should be a valid private (RFC 1918) CIDR range.
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+  VPCBlock3: 
+    Type: String
+    Default: 10.2.0.0/16
+    Description: The secondary CIDR range for the VPC. This should be a valid private (RFC 1918) CIDR range.
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+  VPCBlock4:
+    Type: String
+    Default: 10.3.0.0/16
+    Description: The secondary CIDR range for the VPC. This should be a valid private (RFC 1918) CIDR range.
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
   PublicSubnetCIDR1:
-    Description: CIDR block for public subnet 1 within the VPC (from 192.168.64.0 to 192.168.95.255)
+    Description: CIDR block for public subnet 1 within the VPC (from 10.0.0.0 to 10.0.255.255)
     Type: String
-    Default: 192.168.64.0/19
+    Default: 10.0.0.0/16
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
   PublicSubnetCIDR2:
-    Description: CIDR block for public subnet 2 within the VPC (from 192.168.128.0 to 192.168.159.255)
+    Description: CIDR block for public subnet 2 within the VPC (from 10.1.0.0 to 10.1.255.255)
     Type: String
-    Default: 192.168.128.0/19
+    Default: 10.1.0.0/16
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
   PublicSubnetCIDR3:
-    Description: CIDR block for public subnet 2 within the VPC (from 192.168.192.0 to 192.168.223.255)
+    Description: CIDR block for public subnet 2 within the VPC (from 10.2.0.0 to 10.2.255.255)
     Type: String
-    Default: 192.168.192.0/19
+    Default: 10.2.0.0/16
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
   PrivateSubnetCIDR1:
-    Description: CIDR block for private subnet 1 within the VPC (from 192.168.32.0 to 192.168.63.255)
+    Description: CIDR block for private subnet 1 within the VPC (from 10.3.0.0 to 10.3.127.255)
     Type: String
-    Default: 192.168.32.0/19
+    Default: 10.3.0.0/17
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
   PrivateSubnetCIDR2:
-    Description: CIDR block for private subnet 2 within the VPC (from 192.168.96.0 to 192.168.127.255)
+    Description: CIDR block for private subnet 2 within the VPC (from 10.3.128.0 to 10.3.255.255)
     Type: String
-    Default: 192.168.96.0/19
+    Default: 10.3.128.0/17
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
 
   DHCPOptionsDomainName:
@@ -204,12 +222,28 @@ Resources:
   VPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Ref VPCCIDR
+      CidrBlock: !Ref VPCBlock1
       EnableDnsSupport: true
       EnableDnsHostnames: true
       Tags:
       - Key: Name
         Value: !Ref VPCName
+
+  VPCCIDRBlock2:
+    Type: AWS::EC2::VPCCidrBlock
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref VPCBlock2
+  VPCCIDRBlock3:
+    Type: AWS::EC2::VPCCidrBlock
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref VPCBlock3
+  VPCCIDRBlock4:
+    Type: AWS::EC2::VPCCidrBlock
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref VPCBlock4
 
   VPCGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -567,9 +601,18 @@ Outputs:
     Value: !Ref VPC
     Description: VPC ID
 
-  VPCCIDR:
-    Value: !Ref VPCCIDR
-    Description: VPCCIDR
+  VPCBlock1:
+    Value: !Ref VPCBlock1
+    Description: Primary VPC Block
+  VPCBlock2:
+    Value: !Ref VPCBlock2
+    Description: Secondary VPC Block
+  VPCBlock3:
+    Value: !Ref VPCBlock3
+    Description: Secondary VPC Block
+  VPCBlock4:
+    Value: !Ref VPCBlock4
+    Description: Secondary VPC Block
 
   PublicSubnetIDs:
     Value:
@@ -746,10 +789,28 @@ func (ts *tester) createVPC() error {
 			},
 		},
 	}
-	if ts.cfg.EKSConfig.Parameters.VPCCIDR != "" {
+	if ts.cfg.EKSConfig.Parameters.VPCBlock1 != "" {
 		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-			ParameterKey:   aws.String("VPCCIDR"),
-			ParameterValue: aws.String(ts.cfg.EKSConfig.Parameters.VPCCIDR),
+			ParameterKey:   aws.String("VPCBlock1"),
+			ParameterValue: aws.String(ts.cfg.EKSConfig.Parameters.VPCBlock1),
+		})
+	}
+	if ts.cfg.EKSConfig.Parameters.VPCBlock2 != "" {
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("VPCBlock2"),
+			ParameterValue: aws.String(ts.cfg.EKSConfig.Parameters.VPCBlock2),
+		})
+	}
+	if ts.cfg.EKSConfig.Parameters.VPCBlock3 != "" {
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("VPCBlock3"),
+			ParameterValue: aws.String(ts.cfg.EKSConfig.Parameters.VPCBlock3),
+		})
+	}
+	if ts.cfg.EKSConfig.Parameters.VPCBlock4 != "" {
+		stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
+			ParameterKey:   aws.String("VPCBlock4"),
+			ParameterValue: aws.String(ts.cfg.EKSConfig.Parameters.VPCBlock4),
 		})
 	}
 	if ts.cfg.EKSConfig.Parameters.PublicSubnetCIDR1 != "" {
@@ -836,11 +897,17 @@ func (ts *tester) createVPC() error {
 		switch k {
 		case "VPCID":
 			ts.cfg.EKSConfig.Parameters.VPCID = v
-		case "VPCCIDR":
+		case "VPCBlock1":
 			// to avoid additional CFN describe stack call
-			// to look for VPCCIDR parameter value
+			// to look for VPCBlock1 parameter value (also follows for VPCBlocks 2, 3, 4)
 			// ref. https://github.com/aws/aws-k8s-tester/pull/162
-			ts.cfg.EKSConfig.Parameters.VPCCIDR = v
+			ts.cfg.EKSConfig.Parameters.VPCBlock1 = v
+		case "VPCBlock2":
+			ts.cfg.EKSConfig.Parameters.VPCBlock2 = v
+		case "VPCBlock3":
+			ts.cfg.EKSConfig.Parameters.VPCBlock3 = v
+		case "VPCBlock4":
+			ts.cfg.EKSConfig.Parameters.VPCBlock4 = v
 		case "PublicSubnetIDs":
 			ts.cfg.EKSConfig.Parameters.PublicSubnetIDs = strings.Split(v, ",")
 		case "PrivateSubnetIDs":
@@ -852,13 +919,25 @@ func (ts *tester) createVPC() error {
 	ts.cfg.Logger.Info("created a VPC",
 		zap.String("vpc-cfn-stack-id", ts.cfg.EKSConfig.Parameters.VPCCFNStackID),
 		zap.String("vpc-id", ts.cfg.EKSConfig.Parameters.VPCID),
-		zap.String("vpc-cidr", ts.cfg.EKSConfig.Parameters.VPCCIDR),
+		zap.String("vpc-cidr-block1", ts.cfg.EKSConfig.Parameters.VPCBlock1),
+		zap.String("vpc-cidr-block2", ts.cfg.EKSConfig.Parameters.VPCBlock2),
+		zap.String("vpc-cidr-block3", ts.cfg.EKSConfig.Parameters.VPCBlock3),
+		zap.String("vpc-cidr-block4", ts.cfg.EKSConfig.Parameters.VPCBlock4),
 		zap.Strings("public-subnet-ids", ts.cfg.EKSConfig.Parameters.PublicSubnetIDs),
 		zap.Strings("private-subnet-ids", ts.cfg.EKSConfig.Parameters.PrivateSubnetIDs),
 		zap.String("control-plane-security-group-id", ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID),
 	)
-	if ts.cfg.EKSConfig.Parameters.VPCCIDR == "" {
-		return errors.New("unexpected empty EKSConfig.Parameters.VPCCIDR")
+	if ts.cfg.EKSConfig.Parameters.VPCBlock1 == "" {
+		return errors.New("unexpected empty EKSConfig.Parameters.VPCBlock1")
+	}
+	if ts.cfg.EKSConfig.Parameters.VPCBlock2 == "" {
+		return errors.New("unexpected empty EKSConfig.Parameters.VPCBlock2")
+	}
+	if ts.cfg.EKSConfig.Parameters.VPCBlock3 == "" {
+		return errors.New("unexpected empty EKSConfig.Parameters.VPCBlock3")
+	}
+	if ts.cfg.EKSConfig.Parameters.VPCBlock4 == "" {
+		return errors.New("unexpected empty EKSConfig.Parameters.VPCBlock4")
 	}
 	return ts.cfg.EKSConfig.Sync()
 }

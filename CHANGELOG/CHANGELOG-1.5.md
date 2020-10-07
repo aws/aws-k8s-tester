@@ -1,3 +1,19 @@
+## [v1.5.4]
+
+See [code changes]
+
+### `VPC`
+
+- Expanded VPC default CIDR range in order to support more pods for larger scale tests
+  - Previous VPC defaults had one /19 CIDR Block, allowing for 8k pods. Added multiple blocks of max VPC Block size (/16).
+  - Changed VPCs from 192 space to 10 space.
+- Subnets are by default same CIDR range as VPC Blocks, but can be changed with environment variables
+  - Public Subnets are /16 blocks by default
+  - Private Subnets are /17 blocks by default
+  
+### `Clusterloader2`
+
+- Allowed to specify which type of node to place the clusterloader2 pod (as to not have the pod be removed in scale down)
 
 
 <hr>

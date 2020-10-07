@@ -429,7 +429,7 @@ func (ts *tester) createASGs() error {
 		case ec2config.AMITypeAL2X8664,
 			ec2config.AMITypeAL2X8664GPU:
 			// https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh
-			clusterVPCIP := ts.cfg.EKSConfig.Parameters.VPCCIDR
+			clusterVPCIP := ts.cfg.EKSConfig.Parameters.VPCBlock1
 			dnsClusterIP := "10.100.0.10"
 			if clusterVPCIP[:strings.IndexByte(clusterVPCIP, '.')] == "10" {
 				dnsClusterIP = "172.20.0.10"
