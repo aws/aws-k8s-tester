@@ -44,10 +44,10 @@ metadata:
   name: clusterloader2
   namespace: clusterloader2
 spec:
-  backoffLimit: 0
+  backoffLimit: 1
   template:
     spec:
-      initContainers:
+      containers:
         - name: clusterloader2
           image: {{ .Image }}
           command: ["/clusterloader"]
@@ -55,25 +55,19 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /etc/config
-            - name: reports
-              mountPath: /var/reports
-              readOnly: false
-      containers:
-        - name: uploadresults
-          image: amazon/aws-cli:latest
-          command: 
-            - /bin/sh
-            - -c
-          args:
-            - aws s3 cp /var/reports/cluster-loader {{ .S3Uri }} --recursive        
-          volumeMounts: 
-            - name: reports
-              mountPath: /var/reports
       restartPolicy: Never
       serviceAccountName: clusterloader2
       volumes:
         - name: config
           configMap:
             name: clusterloader2-config
-        - name: reports
-          emptyDir: {}
+    {{ if gt (len .InstanceTypes) 0 }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: beta.kubernetes.io/instance-type
+                operator: In
+                values: {{ .InstanceTypes }}
+    {{ end }}
