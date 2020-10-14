@@ -1,35 +1,33 @@
-## [v1.5.4]
-
-See [code changes]
-
-### `VPC`
-
-- Expanded VPC default CIDR range in order to support more pods for larger scale tests
-  - Previous VPC defaults had one /19 CIDR Block, allowing for 8k pods. Added multiple blocks of max VPC Block size (/16).
-  - Changed VPCs from 192 space to 10 space.
-- Subnets are by default same CIDR range as VPC Blocks, but can be changed with environment variables
-  - Public Subnets are /16 blocks by default
-  - Private Subnets are /17 blocks by default
-  
-### `Clusterloader2`
-
-- Allowed to specify which type of node to place the clusterloader2 pod (as to not have the pod be removed in scale down)
 
 
 <hr>
 
 
-## [v1.5.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.3) (2020-09)
+## [v1.5.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.3) (2020-10-14)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.2...v1.5.3).
 
 ### `eks`
 
-- Fix [`eks/cluster` status update panic issue](https://github.com/aws/aws-k8s-tester/pull/TODO).
+- Fix [`eks/cluster` status update panic issue](https://github.com/aws/aws-k8s-tester/pull/172).
+- Expanded [VPC default CIDR range in order to support more pods for larger scale tests](https://github.com/aws/aws-k8s-tester/pull/175).
+  - Previous VPC defaults had one /19 CIDR Block, allowing for 8k pods. Added multiple blocks of max VPC Block size (/16).
+  - Changed VPCs from 192 space to 10 space.
+
+### `eks/clusterloader2`
+
+- Allowed to [specify which type of node to place the `clusterloader2` pod](https://github.com/aws/aws-k8s-tester/pull/175) (as to not have the pod be removed in scale down).
+
+### `eksconfig`
+
+- Use [EKS 1.18](https://github.com/aws/aws-k8s-tester/pull/176) by default.
+- Subnets are by default [same CIDR range as VPC Blocks](https://github.com/aws/aws-k8s-tester/pull/175), but can be changed with environment variables.
+  - Public Subnets are /16 blocks by default.
+  - Private Subnets are /17 blocks by default.
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.34.22`](https://github.com/aws/aws-sdk-go/releases/tag/v1.34.22) to [`v1.34.32`](https://github.com/aws/aws-sdk-go/releases/tag/v1.34.32).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.34.22`](https://github.com/aws/aws-sdk-go/releases/tag/v1.34.22) to [`v1.35.7`](https://github.com/aws/aws-sdk-go/releases/tag/v1.35.7).
 
 ### Go
 

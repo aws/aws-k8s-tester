@@ -87,8 +87,6 @@ spec:
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID", "vpc-id")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR", "my-cidr")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_1", "public-cidr1")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_1")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_2", "public-cidr2")
@@ -121,7 +119,7 @@ spec:
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_SERVICE_PRINCIPALS")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS", "arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION", "1.17")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION", "1.18")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE", "false")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE")
@@ -132,7 +130,7 @@ spec:
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_WAIT_BEFORE_UPGRADE", "1h27m")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_WAIT_BEFORE_UPGRADE_UPGRADE_VERSION")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_VERSION", "1.18")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_VERSION", "1.19")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_VERSION")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE", "true")
@@ -183,7 +181,7 @@ spec:
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_RESOLVER_URL")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS", `{"mng-test-name-cpu":{"name":"mng-test-name-cpu","tags":{"cpu":"hello-world"},"remote-access-user-name":"ec2-user","release-version":"","ami-type":"AL2_x86_64","asg-min-size":17,"scale-updates":[{"enable":true,"asg-min-size":500,"asg-max-size":700,  "asg-desired-capacity":600, "initial-wait-string":"1h33m"}, {"enable":true,"asg-min-size":555,"asg-max-size":755,  "asg-desired-capacity":655, "initial-wait-string":"2h33m", "id":"hello1"}],"version-upgrade":{"enable":true,"initial-wait-string":"13m","version":"1.18"},"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-1","type-cpu-2"],"volume-size":40},"mng-test-name-gpu":{"name":"mng-test-name-gpu","remote-access-user-name":"ec2-user","tags":{"gpu":"hello-world"},"release-version":"1.16.8-20200609","ami-type":"AL2_x86_64_GPU","version-upgrade":{"enable":true,"initial-wait-string":"100ms",   "version":"1.17"},"scale-updates":[{"enable":true,"asg-min-size":500,"asg-max-size":700,  "asg-desired-capacity":600, "initial-wait-string":"1h33m"}, {"enable":true,"asg-min-size":555,"asg-max-size":755,  "asg-desired-capacity":655, "initial-wait-string":"2h33m", "id":"hello2"}],"asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-1","type-gpu-2"],"volume-size":500}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS", `{"mng-test-name-cpu":{"name":"mng-test-name-cpu","tags":{"cpu":"hello-world"},"remote-access-user-name":"ec2-user","release-version":"","ami-type":"AL2_x86_64","asg-min-size":17,"scale-updates":[{"enable":true,"asg-min-size":500,"asg-max-size":700,  "asg-desired-capacity":600, "initial-wait-string":"1h33m"}, {"enable":true,"asg-min-size":555,"asg-max-size":755,  "asg-desired-capacity":655, "initial-wait-string":"2h33m", "id":"hello1"}],"version-upgrade":{"enable":true,"initial-wait-string":"13m","version":"1.19"},"asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-1","type-cpu-2"],"volume-size":40},"mng-test-name-gpu":{"name":"mng-test-name-gpu","remote-access-user-name":"ec2-user","tags":{"gpu":"hello-world"},"release-version":"1.18.8-20200609","ami-type":"AL2_x86_64_GPU","version-upgrade":{"enable":true,"initial-wait-string":"100ms",   "version":"1.19"},"scale-updates":[{"enable":true,"asg-min-size":500,"asg-max-size":700,  "asg-desired-capacity":600, "initial-wait-string":"1h33m"}, {"enable":true,"asg-min-size":555,"asg-max-size":755,  "asg-desired-capacity":655, "initial-wait-string":"2h33m", "id":"hello2"}],"asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-1","type-gpu-2"],"volume-size":500}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR")
@@ -673,9 +671,6 @@ spec:
 	if cfg.Parameters.VPCID != "vpc-id" {
 		t.Fatalf("unexpected Parameters.VPCID %q", cfg.Parameters.VPCID)
 	}
-	if cfg.Parameters.VPCCIDR != "my-cidr" {
-		t.Fatalf("unexpected Parameters.VPCCIDR %q", cfg.Parameters.VPCCIDR)
-	}
 	if cfg.Parameters.PublicSubnetCIDR1 != "public-cidr1" {
 		t.Fatalf("unexpected Parameters.PublicSubnetCIDR1 %q", cfg.Parameters.PublicSubnetCIDR1)
 	}
@@ -735,7 +730,7 @@ spec:
 	if !reflect.DeepEqual(expectedRoleManagedPolicyARNs, cfg.Parameters.RoleManagedPolicyARNs) {
 		t.Fatalf("unexpected Parameters.RoleManagedPolicyARNs %+v", cfg.Parameters.RoleManagedPolicyARNs)
 	}
-	if cfg.Parameters.Version != "1.17" {
+	if cfg.Parameters.Version != "1.18" {
 		t.Fatalf("unexpected Parameters.Version %q", cfg.Parameters.Version)
 	}
 	if cfg.Parameters.EncryptionCMKCreate {
@@ -751,7 +746,7 @@ spec:
 	if cfg.AddOnClusterVersionUpgrade.WaitBeforeUpgrade != time.Hour+27*time.Minute {
 		t.Fatalf("unexpected AddOnClusterVersionUpgrade.WaitBeforeUpgrade %v", cfg.AddOnClusterVersionUpgrade.WaitBeforeUpgrade)
 	}
-	if cfg.AddOnClusterVersionUpgrade.Version != "1.18" {
+	if cfg.AddOnClusterVersionUpgrade.Version != "1.19" {
 		t.Fatalf("unexpected AddOnClusterVersionUpgrade.Version %q", cfg.AddOnClusterVersionUpgrade.Version)
 	}
 
@@ -913,14 +908,14 @@ spec:
 			VersionUpgrade: &MNGVersionUpgrade{
 				Enable:            true,
 				InitialWaitString: "13m",
-				Version:           "1.18",
+				Version:           "1.19",
 			},
 		},
 		gpuName: {
 			Name:                 gpuName,
 			RemoteAccessUserName: "ec2-user",
 			Tags:                 map[string]string{"gpu": "hello-world"},
-			ReleaseVersion:       "1.16.8-20200609",
+			ReleaseVersion:       "1.18.8-20200609",
 			AMIType:              eks.AMITypesAl2X8664Gpu,
 			ASGMinSize:           30,
 			ASGMaxSize:           35,
@@ -949,7 +944,7 @@ spec:
 			VersionUpgrade: &MNGVersionUpgrade{
 				Enable:            true,
 				InitialWaitString: "100ms",
-				Version:           "1.17",
+				Version:           "1.19",
 			},
 		},
 	}
