@@ -20,7 +20,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.2...v1.5.3
 
 ### `eksconfig`
 
-- Use [EKS 1.18]() by default.
+- Use [EKS 1.18](https://github.com/aws/aws-k8s-tester/pull/176) by default.
 - Subnets are by default [same CIDR range as VPC Blocks](https://github.com/aws/aws-k8s-tester/pull/175), but can be changed with environment variables.
   - Public Subnets are /16 blocks by default.
   - Private Subnets are /17 blocks by default.
