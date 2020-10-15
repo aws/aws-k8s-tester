@@ -61,13 +61,18 @@ spec:
         - name: config
           configMap:
             name: clusterloader2-config
-    {{ if gt (len .InstanceTypes) 0 }}
+    {{ if gt (len .Affinities) 0 }}
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
+          {{ range $key, $vals := .Affinities }}
             - matchExpressions:
-              - key: beta.kubernetes.io/instance-type
+              - key: {{ $key }}
                 operator: In
-                values: {{ .InstanceTypes }}
+                values:
+                {{ range $val := $vals }}
+                - {{ $val }}
+                {{ end }}
+          {{ end }}
     {{ end }}

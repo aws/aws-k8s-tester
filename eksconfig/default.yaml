@@ -1,33 +1,33 @@
 add-on-cni-vpc: null
-aws-cli-path: /home/ANT.AMAZON.COM/leegyuho/.local/bin/aws
+aws-cli-path: /usr/local/bin/aws
 client-burst: 20
 client-qps: 10
 client-timeout: 15000000000
 client-timeout-string: 15s
 clients: 2
 command-after-create-add-ons: ""
-command-after-create-add-ons-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.after-create-add-ons.out.log
+command-after-create-add-ons-output-path: /Volumes/workplace/go/src/github.com/aws-k8s-tester/eksconfig/default.after-create-add-ons.out.log
 command-after-create-add-ons-timeout: 180000000000
 command-after-create-add-ons-timeout-string: 3m0s
 command-after-create-cluster: ""
-command-after-create-cluster-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.after-create-cluster.out.log
+command-after-create-cluster-output-path: /Volumes/workplace/go/src/github.com/aws-k8s-tester/eksconfig/default.after-create-cluster.out.log
 command-after-create-cluster-timeout: 180000000000
 command-after-create-cluster-timeout-string: 3m0s
-config-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.yaml
+config-path: /Volumes/workplace/go/src/github.com/aws-k8s-tester/eksconfig/default.yaml
 cw-namespace: aws-k8s-tester-eks
-kubeconfig-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.kubeconfig.yaml
-kubectl-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.kubectl.sh
-kubectl-download-url: https://storage.googleapis.com/kubernetes-release/release/v1.17.6/bin/linux/amd64/kubectl
-kubectl-path: /tmp/kubectl-test-v1.17.6
+kubeconfig-path: /Volumes/workplace/go/src/github.com/aws-k8s-tester/eksconfig/default.kubeconfig.yaml
+kubectl-commands-output-path: /Volumes/workplace/go/src/github.com/aws-k8s-tester/eksconfig/default.kubectl.sh
+kubectl-download-url: https://storage.googleapis.com/kubernetes-release/release/v1.18.9/bin/darwin/amd64/kubectl
+kubectl-path: /tmp/kubectl-test-v1.18.9
 log-color: true
 log-color-override: false
 log-level: info
 log-outputs:
 - stderr
-- /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.log
+- /Volumes/workplace/go/src/github.com/aws-k8s-tester/eksconfig/default.log
 metadata:
   creationTimestamp: null
-name: eks-2020101412-snowflakex8g
+name: eks-2020101516-integritymo5
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 parameters:
@@ -47,19 +47,19 @@ parameters:
   resolver-url: ""
   role-arn: ""
   role-cfn-stack-id: ""
-  role-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.role.cfn.yaml
-  role-cfn-stack-yaml-s3-key: eks-2020101412-snowflakex8g/default.role.cfn.yaml
+  role-cfn-stack-yaml-path: /Volumes/workplace/go/src/github.com/aws-k8s-tester/eksconfig/default.role.cfn.yaml
+  role-cfn-stack-yaml-s3-key: eks-2020101516-integritymo5/default.role.cfn.yaml
   role-create: true
   role-managed-policy-arns: null
-  role-name: eks-2020101412-snowflakex8g-role
+  role-name: eks-2020101516-integritymo5-role
   role-service-principals: null
   signing-name: eks
   tags: null
-  version: "1.17"
-  version-value: 1.17
+  version: "1.18"
+  version-value: 1.18
   vpc-cfn-stack-id: ""
-  vpc-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.vpc.cfn.yaml
-  vpc-cfn-stack-yaml-s3-key: eks-2020101412-snowflakex8g/default.vpc.cfn.yaml
+  vpc-cfn-stack-yaml-path: /Volumes/workplace/go/src/github.com/aws-k8s-tester/eksconfig/default.vpc.cfn.yaml
+  vpc-cfn-stack-yaml-s3-key: eks-2020101516-integritymo5/default.vpc.cfn.yaml
   vpc-cidr-block1: 10.0.0.0/16
   vpc-cidr-block2: 10.1.0.0/16
   vpc-cidr-block3: 10.2.0.0/16
@@ -68,14 +68,14 @@ parameters:
   vpc-id: ""
 partition: aws
 region: us-west-2
-remote-access-commands-output-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.ssh.sh
+remote-access-commands-output-path: /Volumes/workplace/go/src/github.com/aws-k8s-tester/eksconfig/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: eks-2020101412-snowflakex8g-remote-access-key
-remote-access-private-key-path: /tmp/waterms36gzy3u2.insecure.key
+remote-access-key-name: eks-2020101516-integritymo5-remote-access-key
+remote-access-private-key-path: /var/folders/hk/xl6wn6f946n6_l4qzxsk6xx82bpcvk/T/nitrod5t6a1xehy.insecure.key
 s3-bucket-create: true
 s3-bucket-create-keep: true
 s3-bucket-lifecycle-expiration-days: 0
-s3-bucket-name: eks-2020101412-snowflakex8g-s3-bucket
+s3-bucket-name: eks-2020101516-integritymo5-s3-bucket
 skip-delete-cluster-and-nodes: false
 spec: {}
 status:
@@ -88,8 +88,8 @@ status:
   cluster-ca: ""
   cluster-ca-decoded: ""
   cluster-cfn-stack-id: ""
-  cluster-cfn-stack-yaml-path: /home/ANT.AMAZON.COM/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.cluster.cfn.yaml
-  cluster-cfn-stack-yaml-s3-key: eks-2020101412-snowflakex8g/default.cluster.cfn.yaml
+  cluster-cfn-stack-yaml-path: /Volumes/workplace/go/src/github.com/aws-k8s-tester/eksconfig/default.cluster.cfn.yaml
+  cluster-cfn-stack-yaml-s3-key: eks-2020101516-integritymo5/default.cluster.cfn.yaml
   cluster-control-plane-security-group-id: ""
   cluster-oidc-issuer-arn: ""
   cluster-oidc-issuer-ca-thumbprint: ""

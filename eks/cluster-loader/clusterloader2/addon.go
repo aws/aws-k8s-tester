@@ -38,12 +38,12 @@ func (c *ClusterLoader) Apply() (err error) {
 		*eksconfig.ClusterLoaderSpec
 		ConfigMapData map[string]string
 		TestArgs      string
-		InstanceTypes []string
+		Affinities    map[string][]string
 	}{
 		ClusterLoaderSpec: c.Config.Spec.ClusterLoader,
 		ConfigMapData:     configMapData,
 		TestArgs:          c.buildArgs(),
-		InstanceTypes:     c.Config.Spec.ClusterLoader.InstanceTypes,
+		Affinities:        c.Config.Spec.ClusterLoader.Affinities,
 	})
 	if err != nil {
 		return fmt.Errorf("while building templates, %v", err)
