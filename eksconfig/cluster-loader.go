@@ -12,7 +12,7 @@ type ClusterLoaderSpec struct {
 	TestOverrides  []string `json:"testOverrides,omitempty"`
 	// Specifies which instance type the clusterloader2 pod will be able to be scheduled on
 	// Leaving this empty will allow it to be scheduled on any instance type
-	InstanceTypes []string `json:"instanceTypes,omitempty"`
+	Affinities map[string][]string `json:"affinities,omitempty"`
 }
 
 // ClusterLoaderStatus defines the status for the Addon
@@ -36,7 +36,7 @@ func (spec *ClusterLoaderSpec) Default(cfg *Config) {
 	if spec.Image == "" {
 		spec.Image = "197575167141.dkr.ecr.us-west-2.amazonaws.com/clusterloader2:latest"
 	}
-	if spec.InstanceTypes == nil {
-		spec.InstanceTypes = []string{}
+	if spec.Affinities == nil {
+		spec.Affinities = make(map[string][]string)
 	}
 }
