@@ -148,30 +148,16 @@ Parameters:
     Description: The IPv4 addresses of up to four domain name servers, or AmazonProvidedDNS.
 
 Conditions:
-  Has2Azs:
-    Fn::Or:
-      - Fn::Equals:
-        - {Ref: 'AWS::Region'}
-        - ap-south-1
-      - Fn::Equals:
-        - {Ref: 'AWS::Region'}
-        - ap-northeast-2
-      - Fn::Equals:
-        - {Ref: 'AWS::Region'}
-        - ca-central-1
-      - Fn::Equals:
-        - {Ref: 'AWS::Region'}
-        - cn-north-1
-      - Fn::Equals:
-        - {Ref: 'AWS::Region'}
-        - sa-east-1
-      - Fn::Equals:
-        - {Ref: 'AWS::Region'}
-        - us-west-1
 
   HasMoreThan2Azs:
     Fn::Not:
-      - Condition: Has2Azs
+      - Fn::Or:
+        - Fn::Equals:
+          - Ref: AWS::Region
+          - cn-north-1
+        - Fn::Equals:
+          - Ref: AWS::Region
+          - us-isob-east-1
 
   HasDHCPOptionsOnlyDomainName:
     Fn::And:
