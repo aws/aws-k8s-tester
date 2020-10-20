@@ -220,11 +220,13 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       CidrBlock: !Ref VPCBlock2
+
   VPCCIDRBlock3:
     Type: AWS::EC2::VPCCidrBlock
     Properties:
       VpcId: !Ref VPC
       CidrBlock: !Ref VPCBlock3
+
   VPCCIDRBlock4:
     Type: AWS::EC2::VPCCidrBlock
     Properties:
@@ -245,6 +247,9 @@ Resources:
     DependsOn:
     - VPC
     - VPCGatewayAttachment
+    - VPCCIDRBlock2
+    - VPCCIDRBlock3
+    - VPCCIDRBlock4
     Metadata:
       Comment: Public Subnet 1, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
     Properties:
@@ -267,6 +272,9 @@ Resources:
     DependsOn:
     - VPC
     - VPCGatewayAttachment
+    - VPCCIDRBlock2
+    - VPCCIDRBlock3
+    - VPCCIDRBlock4
     Metadata:
       Comment: Public Subnet 2, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
     Properties:
@@ -290,6 +298,9 @@ Resources:
     DependsOn:
     - VPC
     - VPCGatewayAttachment
+    - VPCCIDRBlock2
+    - VPCCIDRBlock3
+    - VPCCIDRBlock4
     Metadata:
       Comment: Public Subnet 3, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
     Properties:
@@ -365,6 +376,9 @@ Resources:
     DependsOn:
     - VPC
     - VPCGatewayAttachment
+    - VPCCIDRBlock2
+    - VPCCIDRBlock3
+    - VPCCIDRBlock4
     Metadata:
       Comment: Private Subnet 1
     Properties:
@@ -383,6 +397,9 @@ Resources:
     DependsOn:
     - VPC
     - VPCGatewayAttachment
+    - VPCCIDRBlock2
+    - VPCCIDRBlock3
+    - VPCCIDRBlock4
     Metadata:
       Comment: Private Subnet 2
     Properties:
