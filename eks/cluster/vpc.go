@@ -148,30 +148,16 @@ Parameters:
     Description: The IPv4 addresses of up to four domain name servers, or AmazonProvidedDNS.
 
 Conditions:
-  Has2Azs:
-    Fn::Or:
-      - Fn::Equals:
-        - {Ref: 'AWS::Region'}
-        - ap-south-1
-      - Fn::Equals:
-        - {Ref: 'AWS::Region'}
-        - ap-northeast-2
-      - Fn::Equals:
-        - {Ref: 'AWS::Region'}
-        - ca-central-1
-      - Fn::Equals:
-        - {Ref: 'AWS::Region'}
-        - cn-north-1
-      - Fn::Equals:
-        - {Ref: 'AWS::Region'}
-        - sa-east-1
-      - Fn::Equals:
-        - {Ref: 'AWS::Region'}
-        - us-west-1
 
   HasMoreThan2Azs:
     Fn::Not:
-      - Condition: Has2Azs
+      - Fn::Or:
+        - Fn::Equals:
+          - Ref: AWS::Region
+          - cn-north-1
+        - Fn::Equals:
+          - Ref: AWS::Region
+          - us-isob-east-1
 
   HasDHCPOptionsOnlyDomainName:
     Fn::And:
@@ -234,11 +220,13 @@ Resources:
     Properties:
       VpcId: !Ref VPC
       CidrBlock: !Ref VPCBlock2
+
   VPCCIDRBlock3:
     Type: AWS::EC2::VPCCidrBlock
     Properties:
       VpcId: !Ref VPC
       CidrBlock: !Ref VPCBlock3
+
   VPCCIDRBlock4:
     Type: AWS::EC2::VPCCidrBlock
     Properties:
@@ -259,6 +247,9 @@ Resources:
     DependsOn:
     - VPC
     - VPCGatewayAttachment
+    - VPCCIDRBlock2
+    - VPCCIDRBlock3
+    - VPCCIDRBlock4
     Metadata:
       Comment: Public Subnet 1, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
     Properties:
@@ -281,6 +272,9 @@ Resources:
     DependsOn:
     - VPC
     - VPCGatewayAttachment
+    - VPCCIDRBlock2
+    - VPCCIDRBlock3
+    - VPCCIDRBlock4
     Metadata:
       Comment: Public Subnet 2, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
     Properties:
@@ -304,6 +298,9 @@ Resources:
     DependsOn:
     - VPC
     - VPCGatewayAttachment
+    - VPCCIDRBlock2
+    - VPCCIDRBlock3
+    - VPCCIDRBlock4
     Metadata:
       Comment: Public Subnet 3, https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
     Properties:
@@ -379,6 +376,9 @@ Resources:
     DependsOn:
     - VPC
     - VPCGatewayAttachment
+    - VPCCIDRBlock2
+    - VPCCIDRBlock3
+    - VPCCIDRBlock4
     Metadata:
       Comment: Private Subnet 1
     Properties:
@@ -397,6 +397,9 @@ Resources:
     DependsOn:
     - VPC
     - VPCGatewayAttachment
+    - VPCCIDRBlock2
+    - VPCCIDRBlock3
+    - VPCCIDRBlock4
     Metadata:
       Comment: Private Subnet 2
     Properties:

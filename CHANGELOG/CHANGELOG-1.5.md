@@ -3,7 +3,7 @@
 <hr>
 
 
-## [v1.5.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.3) (2020-10-14)
+## [v1.5.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.3) (2020-10-20)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.2...v1.5.3).
 
@@ -27,7 +27,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.2...v1.5.3
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.34.22`](https://github.com/aws/aws-sdk-go/releases/tag/v1.34.22) to [`v1.35.8`](https://github.com/aws/aws-sdk-go/releases/tag/v1.35.8).
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.34.22`](https://github.com/aws/aws-sdk-go/releases/tag/v1.34.22) to [`v1.35.10`](https://github.com/aws/aws-sdk-go/releases/tag/v1.35.10).
 
 ### Go
 
