@@ -198,6 +198,7 @@ spec:
 var caImages = map[string]string{
 	"1.16": `        - image: us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler:v1.16.5`,
 	"1.17": `        - image: us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler:v1.17.2`,
+	"1.18": `        - image: us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler:v1.18.0`,
 }
 
 const (
