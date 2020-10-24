@@ -537,7 +537,7 @@ ENABLE_SYSTEM_POD_METRICS: {{ .EnableSystemPodMetrics }}
 // takes about 2-minute
 func (ld *loader) run(idx int, args []string) (err error) {
 	ld.cfg.Logger.Info("running cluster loader", zap.Int("index", idx), zap.String("command", strings.Join(args, " ")))
-	ctx, cancel := context.WithTimeout(ld.rootCtx, 20*time.Minute)
+	ctx, cancel := context.WithTimeout(ld.rootCtx, 120*time.Minute)
 	cmd := exec.New().CommandContext(ctx, args[0], args[1:]...)
 	cmd.SetStderr(ld.testLogsFile)
 	cmd.SetStdout(ld.testLogsFile)
