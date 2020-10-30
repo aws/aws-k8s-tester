@@ -60,15 +60,20 @@ func createBucket(
 	lifecycleExpirationDays int64) (retry bool, err error) {
 
 	lg.Info("creating S3 bucket", zap.String("name", bucket))
-	_, err = s3API.CreateBucket(&s3.CreateBucketInput{
+	createBucketInput := &s3.CreateBucketInput{
 		Bucket: aws.String(bucket),
-		CreateBucketConfiguration: &s3.CreateBucketConfiguration{
-			LocationConstraint: aws.String(region),
-		},
 		// https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl
 		// vs. "public-read"
 		ACL: aws.String("private"),
-	})
+	}
+	// Setting LocationConstraint to us-east-1 fails with InvalidLocationConstraint. This region is handled differerntly and must be omitted.
+	// https://github.com/boto/boto3/issues/125
+	if region != "us-east-1" {
+		createBucketInput.CreateBucketConfiguration = &s3.CreateBucketConfiguration{
+			LocationConstraint: aws.String(region),
+		}
+	}
+	_, err = s3API.CreateBucket(createBucketInput)
 	alreadyExist := false
 	if err != nil {
 		// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
