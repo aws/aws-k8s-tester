@@ -158,6 +158,9 @@ Conditions:
         - Fn::Equals:
           - Ref: AWS::Region
           - us-isob-east-1
+        - Fn::Equals:
+          - Ref: AWS::Region
+          - us-west-1
 
   HasDHCPOptionsOnlyDomainName:
     Fn::And:
