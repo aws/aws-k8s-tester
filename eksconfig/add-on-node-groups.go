@@ -208,14 +208,17 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 				})
 			*/
 			found := false
+			validSps := []string{"ec2.amazonaws.com", "ec2.amazonaws.com.cn", "ec2.c2s.ic.gov", "ec2.sc2s.sgov.gov"}
 			for _, pv := range cfg.AddOnNodeGroups.RoleServicePrincipals {
-				if pv == "ec2.amazonaws.com" || pv == "ec2.amazonaws.com.cn" {
-					found = true
-					break
+				for _, vsp := range validSps {
+					if pv == vsp {
+						found = true
+						break
+					}
 				}
 			}
 			if !found {
-				return fmt.Errorf("AddOnNodeGroups.RoleServicePrincipals %q must include 'ec2.amazonaws.com' or 'ec2.amazonaws.com.cn'", cfg.AddOnNodeGroups.RoleServicePrincipals)
+				return fmt.Errorf("AddOnNodeGroups.RoleServicePrincipals %q must include one of: %q", cfg.AddOnNodeGroups.RoleServicePrincipals, validSps)
 			}
 		}
 
