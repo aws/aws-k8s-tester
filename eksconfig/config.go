@@ -560,6 +560,7 @@ func (cfg *Config) evaluateCommandRefs() error {
 }
 
 // Sync persists current configuration and states to disk.
+// Every call overwrites the previous contents if any.
 func (cfg *Config) Sync() (err error) {
 	cfg.mu.Lock()
 	defer cfg.mu.Unlock()

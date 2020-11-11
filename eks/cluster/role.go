@@ -237,7 +237,8 @@ func (ts *tester) createClusterRole() error {
 		return errors.New("cannot create a cluster role with an empty Parameters.RoleName")
 	}
 
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.Parameters.RoleCFNStackYAMLPath, []byte(TemplateClusterRole), 0400); err != nil {
+	// grant write permission in case of overwrites
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.Parameters.RoleCFNStackYAMLPath, []byte(TemplateClusterRole), 0600); err != nil {
 		return err
 	}
 	if err := aws_s3.Upload(

@@ -466,7 +466,8 @@ func (ts *tester) createASGs() error {
 			return err
 		}
 
-		if err := ioutil.WriteFile(cur.ASGCFNStackYAMLPath, buf.Bytes(), 0400); err != nil {
+		// grant write permission in case of overwrites
+		if err := ioutil.WriteFile(cur.ASGCFNStackYAMLPath, buf.Bytes(), 0600); err != nil {
 			return err
 		}
 		ts.cfg.Logger.Info("creating a new NG using CFN",

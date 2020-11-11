@@ -112,7 +112,8 @@ func (ts *tester) createSSMDocument() error {
 			continue
 		}
 
-		if err := ioutil.WriteFile(cur.SSMDocumentCFNStackYAMLPath, []byte(TemplateSSMDocument), 0400); err != nil {
+		// grant write permission in case of overwrites
+		if err := ioutil.WriteFile(cur.SSMDocumentCFNStackYAMLPath, []byte(TemplateSSMDocument), 0600); err != nil {
 			return err
 		}
 		if err := aws_s3.Upload(

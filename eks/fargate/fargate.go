@@ -260,7 +260,8 @@ func (ts *tester) createRole() error {
 		return errors.New("cannot create a cluster role with an empty AddOnFargate.RoleName")
 	}
 
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackYAMLPath, []byte(TemplateRole), 0400); err != nil {
+	// grant write permission in case of overwrites
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackYAMLPath, []byte(TemplateRole), 0600); err != nil {
 		return err
 	}
 	if err := aws_s3.Upload(
