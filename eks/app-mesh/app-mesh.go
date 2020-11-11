@@ -232,7 +232,8 @@ func (ts *tester) createPolicy() error {
 		return errors.New("roles not found from node group or managed node group")
 	}
 
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackYAMLPath, []byte(templatePolicy), 0400); err != nil {
+	// grant write permission in case of overwrites
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackYAMLPath, []byte(templatePolicy), 0600); err != nil {
 		return err
 	}
 	if err := aws_s3.Upload(

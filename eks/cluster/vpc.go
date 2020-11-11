@@ -757,7 +757,8 @@ func (ts *tester) createVPC() error {
 
 	vpcName := ts.cfg.EKSConfig.Name + "-vpc"
 
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.Parameters.VPCCFNStackYAMLPath, []byte(TemplateVPCPublicPrivate), 0400); err != nil {
+	// grant write permission in case of overwrites
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.Parameters.VPCCFNStackYAMLPath, []byte(TemplateVPCPublicPrivate), 0600); err != nil {
 		return err
 	}
 	if err := aws_s3.Upload(

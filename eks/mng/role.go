@@ -286,7 +286,8 @@ func (ts *tester) createRole() error {
 	if err := tpl.Execute(buf, tr); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLPath, buf.Bytes(), 0400); err != nil {
+	// grant write permission in case of overwrites
+	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLPath, buf.Bytes(), 0600); err != nil {
 		return err
 	}
 	if err := aws_s3.Upload(

@@ -319,7 +319,8 @@ func (ts *tester) createASGs() (err error) {
 			}
 			stackInput.TemplateBody = aws.String(buf.String())
 
-			if err = ioutil.WriteFile(cur.MNGCFNStackYAMLPath, buf.Bytes(), 0400); err != nil {
+			// grant write permission in case of overwrites
+			if err = ioutil.WriteFile(cur.MNGCFNStackYAMLPath, buf.Bytes(), 0600); err != nil {
 				return err
 			}
 			if err = aws_s3.Upload(

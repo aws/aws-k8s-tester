@@ -11426,7 +11426,25 @@ func (c *SSM) PutParameterRequest(input *PutParameterInput) (req *request.Reques
 //   The request does not meet the regular expression requirement.
 //
 //   * ParameterMaxVersionLimitExceeded
-//   The parameter exceeded the maximum number of allowed versions.
+//   Parameter Store retains the 100 most recently created versions of a parameter.
+//   After this number of versions has been created, Parameter Store deletes the
+//   oldest version when a new one is created. However, if the oldest version
+//   has a label attached to it, Parameter Store will not delete the version and
+//   instead presents this error message:
+//
+//   An error occurred (ParameterMaxVersionLimitExceeded) when calling the PutParameter
+//   operation: You attempted to create a new version of parameter-name by calling
+//   the PutParameter API with the overwrite flag. Version version-number, the
+//   oldest version, can't be deleted because it has a label associated with it.
+//   Move the label to another version of the parameter, and try again.
+//
+//   This safeguard is to prevent parameter versions with mission critical labels
+//   assigned to them from being deleted. To continue creating new parameters,
+//   first move the label from the oldest version of the parameter to a newer
+//   one for use in your operations. For information about moving parameter labels,
+//   see Move a parameter label (console) (http://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-paramstore-labels.html#sysman-paramstore-labels-console-move)
+//   or Move a parameter label (CLI) (http://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-paramstore-labels.html#sysman-paramstore-labels-cli-move)
+//   in the AWS Systems Manager User Guide.
 //
 //   * ParameterPatternMismatchException
 //   The parameter name is not valid.
@@ -15279,6 +15297,8 @@ type AssociationFilter struct {
 
 	// The name of the filter.
 	//
+	// InstanceId has been deprecated.
+	//
 	// Key is a required field
 	Key *string `locationName:"key" type:"string" required:"true" enum:"AssociationFilterKey"`
 
@@ -16278,7 +16298,7 @@ type AutomationExecutionFilter struct {
 
 	// One or more keys to limit the results. Valid filter keys include the following:
 	// DocumentNamePrefix, ExecutionStatus, ExecutionId, ParentExecutionId, CurrentAction,
-	// StartTimeBefore, StartTimeAfter.
+	// StartTimeBefore, StartTimeAfter, TargetResourceGroup.
 	//
 	// Key is a required field
 	Key *string `type:"string" required:"true" enum:"AutomationExecutionFilterKey"`
@@ -33999,6 +34019,11 @@ type ListAssociationsInput struct {
 	_ struct{} `type:"structure"`
 
 	// One or more filters. Use a filter to return a more specific list of results.
+	//
+	// Filtering associations using the InstanceID attribute only returns legacy
+	// associations created using the InstanceID attribute. Associations targeting
+	// the instance that are part of the Target Attributes ResourceGroup or Tags
+	// are not returned.
 	AssociationFilterList []*AssociationFilter `min:"1" type:"list"`
 
 	// The maximum number of items to return for this call. The call also returns
@@ -38179,7 +38204,25 @@ func (s *ParameterLimitExceeded) RequestID() string {
 	return s.RespMetadata.RequestID
 }
 
-// The parameter exceeded the maximum number of allowed versions.
+// Parameter Store retains the 100 most recently created versions of a parameter.
+// After this number of versions has been created, Parameter Store deletes the
+// oldest version when a new one is created. However, if the oldest version
+// has a label attached to it, Parameter Store will not delete the version and
+// instead presents this error message:
+//
+// An error occurred (ParameterMaxVersionLimitExceeded) when calling the PutParameter
+// operation: You attempted to create a new version of parameter-name by calling
+// the PutParameter API with the overwrite flag. Version version-number, the
+// oldest version, can't be deleted because it has a label associated with it.
+// Move the label to another version of the parameter, and try again.
+//
+// This safeguard is to prevent parameter versions with mission critical labels
+// assigned to them from being deleted. To continue creating new parameters,
+// first move the label from the oldest version of the parameter to a newer
+// one for use in your operations. For information about moving parameter labels,
+// see Move a parameter label (console) (http://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-paramstore-labels.html#sysman-paramstore-labels-console-move)
+// or Move a parameter label (CLI) (http://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-paramstore-labels.html#sysman-paramstore-labels-cli-move)
+// in the AWS Systems Manager User Guide.
 type ParameterMaxVersionLimitExceeded struct {
 	_            struct{}                  `type:"structure"`
 	RespMetadata protocol.ResponseMetadata `json:"-" xml:"-"`
@@ -43145,6 +43188,8 @@ type SessionFilter struct {
 	//    with that status. Status values you can specify include: Connected Connecting
 	//    Disconnected Terminated Terminating Failed
 	//
+	//    * SessionId: Specify a session ID to return details about the session.
+	//
 	// Value is a required field
 	Value *string `locationName:"value" min:"1" type:"string" required:"true"`
 }
@@ -47661,6 +47706,9 @@ const (
 
 	// AutomationExecutionFilterKeyTagKey is a AutomationExecutionFilterKey enum value
 	AutomationExecutionFilterKeyTagKey = "TagKey"
+
+	// AutomationExecutionFilterKeyTargetResourceGroup is a AutomationExecutionFilterKey enum value
+	AutomationExecutionFilterKeyTargetResourceGroup = "TargetResourceGroup"
 )
 
 // AutomationExecutionFilterKey_Values returns all elements of the AutomationExecutionFilterKey enum
@@ -47675,6 +47723,7 @@ func AutomationExecutionFilterKey_Values() []string {
 		AutomationExecutionFilterKeyStartTimeAfter,
 		AutomationExecutionFilterKeyAutomationType,
 		AutomationExecutionFilterKeyTagKey,
+		AutomationExecutionFilterKeyTargetResourceGroup,
 	}
 }
 
@@ -49154,6 +49203,9 @@ const (
 
 	// SessionFilterKeyStatus is a SessionFilterKey enum value
 	SessionFilterKeyStatus = "Status"
+
+	// SessionFilterKeySessionId is a SessionFilterKey enum value
+	SessionFilterKeySessionId = "SessionId"
 )
 
 // SessionFilterKey_Values returns all elements of the SessionFilterKey enum
@@ -49164,6 +49216,7 @@ func SessionFilterKey_Values() []string {
 		SessionFilterKeyTarget,
 		SessionFilterKeyOwner,
 		SessionFilterKeyStatus,
+		SessionFilterKeySessionId,
 	}
 }
 

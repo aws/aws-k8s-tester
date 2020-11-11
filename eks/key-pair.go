@@ -67,7 +67,7 @@ func (ts *Tester) createKeyPair() (err error) {
 	if err = ioutil.WriteFile(
 		ts.cfg.RemoteAccessPrivateKeyPath,
 		[]byte(*output.KeyMaterial),
-		0400,
+		0600, // grant write permission in case of overwrites
 	); err != nil {
 		return err
 	}
