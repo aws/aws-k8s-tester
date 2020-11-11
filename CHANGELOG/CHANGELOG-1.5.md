@@ -3,6 +3,36 @@
 <hr>
 
 
+## [v1.5.4](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.4) (2020-11-11)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.3...v1.5.4).
+
+### `eks`
+
+- Fix [configuration file overwrite permission errors](https://github.com/aws/aws-k8s-tester/pull/185).
+- Fix [VPC creation for us-west-1 region](https://github.com/aws/aws-k8s-tester/pull/183).
+- Increase [`clusterloader2` test timeouts](https://github.com/aws/aws-k8s-tester/pull/181).
+
+### `eksconfig`
+
+- Fix [EC2 service principals checks](https://github.com/aws/aws-k8s-tester/pull/184).
+
+### `pkg/aws`
+
+- Fix [S3 bucket creation for us-east-1 region](https://github.com/aws/aws-k8s-tester/pull/182).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.35.10`](https://github.com/aws/aws-sdk-go/releases/tag/v1.35.10) to [`v1.35.25`](https://github.com/aws/aws-sdk-go/releases/tag/v1.35.25).
+
+### Go
+
+- Compile with [*Go 1.15.4*](https://golang.org/doc/devel/release.html#go1.15).
+
+
+<hr>
+
+
 ## [v1.5.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.3) (2020-10-20)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.2...v1.5.3).
