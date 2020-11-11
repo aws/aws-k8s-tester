@@ -31,6 +31,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/user"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
@@ -192,15 +193,21 @@ func (ts *tester) Delete() error {
 
 	if err := ts.deleteEKS(); err != nil {
 		errs = append(errs, err.Error())
-	}
-	if err := ts.deleteEncryption(); err != nil {
-		errs = append(errs, err.Error())
-	}
-	if err := ts.deleteClusterRole(); err != nil {
-		errs = append(errs, err.Error())
-	}
-	if err := ts.deleteVPC(); err != nil {
-		errs = append(errs, err.Error())
+		ts.cfg.Logger.Warn("EKS cluster delete failed -- please try delete again to clean up other resources!!!", zap.Error(err))
+	} else {
+		// only proceed when the cluster delete succeeded
+		// otherwise, it's not safe to delete non-EKS resources
+		// (e.g. delete CMK can fail other dependent components
+		// under the same account)
+		if err := ts.deleteEncryption(); err != nil {
+			errs = append(errs, err.Error())
+		}
+		if err := ts.deleteClusterRole(); err != nil {
+			errs = append(errs, err.Error())
+		}
+		if err := ts.deleteVPC(); err != nil {
+			errs = append(errs, err.Error())
+		}
 	}
 
 	if len(errs) > 0 {
@@ -226,7 +233,7 @@ Parameters:
 
   Version:
     Type: String
-    Default: 1.16
+    Default: 1.18
     Description: Specify the EKS version
 
   RoleARN:
@@ -549,6 +556,8 @@ func (ts *tester) createEKS() (err error) {
 	return ts.cfg.EKSConfig.Sync()
 }
 
+// deleteEKS returns error if EKS cluster delete fails.
+// It returns nil if the cluster has already been deleted.
 func (ts *tester) deleteEKS() error {
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteEKS [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
@@ -611,6 +620,14 @@ func (ts *tester) deleteEKS() error {
 			Name: aws.String(ts.cfg.EKSConfig.Name),
 		})
 		if err != nil {
+			awsErr, ok := err.(awserr.Error)
+			if ok && awsErr.Code() == "ResourceNotFoundException" &&
+				strings.HasPrefix(awsErr.Message(), "No cluster found for") {
+				ts.cfg.EKSConfig.RecordStatus(eksconfig.ClusterStatusDELETEDORNOTEXIST)
+				ts.cfg.Logger.Warn("cluster is already deleted", zap.Error(err))
+				return nil
+			}
+
 			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete cluster (%v)", err))
 			ts.cfg.Logger.Warn("failed to delete cluster", zap.Error(err))
 			return err
