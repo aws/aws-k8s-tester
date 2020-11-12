@@ -278,6 +278,7 @@ type ASG struct {
 	AMIType string `json:"ami-type,omitempty"`
 	// ImageID is the Amazon Machine Image (AMI).
 	// This value overrides any AWS Systems Manager Parameter Store value.
+	// NOTE: THIS FIELD IS SET TO EMPTY IF "ImageIDSSMParameter" IS NOT EMPTY.
 	ImageID string `json:"image-id"`
 	// ImageIDSSMParameter is the AWS Systems Manager Parameter Store
 	// parameter of the AMI ID.

@@ -3,6 +3,35 @@
 <hr>
 
 
+## [v1.5.5](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.5) (2020-11-12)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.4...v1.5.5).
+
+### `ec2config`
+
+- Overwrite [ASG AMI ID if SSM parameter is specified](https://github.com/aws/aws-k8s-tester/pull/187).
+
+### `eksconfig`
+
+- Overwrite [node group AMI ID if SSM parameter is specified](https://github.com/aws/aws-k8s-tester/pull/187).
+
+### `eks`
+
+- Do [not include `AWS::SSM::Parameter` in node group CFN template if the parameter is empty](https://github.com/aws/aws-k8s-tester/pull/187).
+- Skip [deleting CMK, VPC, IAM role if EKS cluster delete fails](https://github.com/aws/aws-k8s-tester/pull/186).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.35.25`](https://github.com/aws/aws-sdk-go/releases/tag/v1.35.25) to [`v1.35.27`](https://github.com/aws/aws-sdk-go/releases/tag/v1.35.27).
+
+### Go
+
+- Compile with [*Go 1.15.5*](https://golang.org/doc/devel/release.html#go1.15).
+
+
+<hr>
+
+
 ## [v1.5.4](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.4) (2020-11-11)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.3...v1.5.4).

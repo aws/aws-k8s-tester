@@ -33,14 +33,41 @@ e.g.
 aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
 
 e.g.
-aws ssm get-parameters --names /aws/service/eks/optimized-ami/1.16/amazon-linux-2/recommended/image_id
-aws ssm get-parameters --names /aws/service/bottlerocket/aws-k8s-1.16/x86_64/latest/image_id
+aws ssm get-parameters --names /aws/service/eks/optimized-ami/1.18/amazon-linux-2/recommended/image_id
+aws ssm get-parameters --names /aws/service/bottlerocket/aws-k8s-1.18/x86_64/latest/image_id
 
 TODO
 
   BootstrapArguments:
     Type: String
     Description: Arguments to pass to the bootstrap script. See files/bootstrap.sh in https://github.com/awslabs/amazon-eks-ami
+
+
+NOTE for new regions
+"AWS::SSM::Parameter" may not be onboarded yet, so we need templatize CFN template
+so that we do not pass invalid "AWS::SSM::Parameter" at all in those regions
+
+  ImageID:
+    Type: String
+    Default: ""
+    Description: (Optional) Specify your own custom image ID. This value overrides any AWS Systems Manager Parameter Store value specified above.
+
+  ImageIDSSMParameter:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/eks/optimized-ami/1.18/amazon-linux-2/recommended/image_id
+    Description: AWS Systems Manager Parameter Store parameter of the AMI ID for the worker node instances.
+
+  HasImageID:
+    Fn::Not:
+      - Fn::Equals:
+          - Ref: ImageID
+          - ""
+
+        ImageId:
+          Fn::If:
+            - HasImageID
+            - !Ref ImageID
+            - !Ref ImageIDSSMParameter
 */
 
 // TemplateASG is the CloudFormation template for EKS node group.
@@ -83,15 +110,13 @@ Parameters:
     Type: AWS::EC2::KeyPair::KeyName
     Description: The EC2 Key Pair to allow SSH access to the instances
 
-  ImageID:
+{{ if ne .ImageID "" }}  ImageID:
     Type: String
     Default: ""
-    Description: (Optional) Specify your own custom image ID. This value overrides any AWS Systems Manager Parameter Store value specified above.
-
-  ImageIDSSMParameter:
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/eks/optimized-ami/1.15/amazon-linux-2/recommended/image_id
-    Description: AWS Systems Manager Parameter Store parameter of the AMI ID for the worker node instances.
+    Description: Specify your own custom image ID. This value overrides any AWS Systems Manager Parameter Store value specified above.{{ end }}{{ if ne .ImageIDSSMParameter "" }}  ImageIDSSMParameter:
+  Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+  Default: /aws/service/eks/optimized-ami/1.18/amazon-linux-2/recommended/image_id
+  Description: AWS Systems Manager Parameter Store parameter of the AMI ID for the worker node instances.{{ end }}
 
   InstanceTypes:
     Type: CommaDelimitedList
@@ -128,12 +153,6 @@ Parameters:
     Description: Desired capacity of Node Group ASG.
 
 Conditions:
-
-  HasImageID:
-    Fn::Not:
-      - Fn::Equals:
-          - Ref: ImageID
-          - ""
 
   Has2InstanceTypes:
     Fn::Or:
@@ -181,11 +200,7 @@ Resources:
       LaunchTemplateData:
         IamInstanceProfile:
           Arn: !GetAtt InstanceProfile.Arn
-        ImageId:
-          Fn::If:
-            - HasImageID
-            - !Ref ImageID
-            - !Ref ImageIDSSMParameter
+{{ if ne .ImageID "" }}        ImageId: !Ref ImageID{{ end }}{{ if ne .ImageIDSSMParameter "" }}        ImageId: !Ref ImageIDSSMParameter{{ end }}
         KeyName: !Ref RemoteAccessKeyName
         BlockDeviceMappings:
         - DeviceName: /dev/xvda
@@ -374,10 +389,12 @@ const asgTagDataNG = `      - Key: !Sub k8s.io/cluster-autoscaler/${ClusterName}
 `
 
 type templateASG struct {
-	Metadata           string
-	UserData           string
-	ASGDesiredCapacity int64
-	ASGTagData         string
+	ImageID             string
+	ImageIDSSMParameter string
+	Metadata            string
+	UserData            string
+	ASGDesiredCapacity  int64
+	ASGTagData          string
 }
 
 func (ts *tester) createASGs() error {
@@ -400,7 +417,9 @@ func (ts *tester) createASGs() error {
 		// "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 		// already includes SSM agent + AWS CLI
 		tg := templateASG{
-			ASGDesiredCapacity: cur.ASGDesiredCapacity,
+			ImageID:             cur.ImageID,
+			ImageIDSSMParameter: cur.ImageIDSSMParameter,
+			ASGDesiredCapacity:  cur.ASGDesiredCapacity,
 		}
 		switch cur.AMIType {
 		case ec2config.AMITypeBottleRocketCPU:
@@ -517,6 +536,9 @@ func (ts *tester) createASGs() error {
 				},
 			},
 		}
+
+		// "eksconfig" validate already ensures that either "ImageID" or "ImageIDSSMParameter" is non-empty
+		// both cannot be non-empty at the same time!
 		if cur.ImageID != "" {
 			ts.cfg.Logger.Info("added image ID", zap.String("image-id", cur.ImageID))
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
