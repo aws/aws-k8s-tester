@@ -379,6 +379,10 @@ func (cfg *Config) validateASGs() error {
 		if cur.ImageID == "" && cur.ImageIDSSMParameter == "" {
 			return fmt.Errorf("%q both ImageID and ImageIDSSMParameter are empty", cur.Name)
 		}
+		// prefer "ImageIDSSMParameter"
+		if cur.ImageID != "" && cur.ImageIDSSMParameter != "" {
+			cur.ImageID = ""
+		}
 
 		switch cur.AMIType {
 		case AMITypeBottleRocketCPU:

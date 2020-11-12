@@ -280,6 +280,10 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		if cur.ImageID == "" && cur.ImageIDSSMParameter == "" {
 			return fmt.Errorf("%q both ImageID and ImageIDSSMParameter are empty", cur.Name)
 		}
+		// prefer "ImageIDSSMParameter"
+		if cur.ImageID != "" && cur.ImageIDSSMParameter != "" {
+			cur.ImageID = ""
+		}
 
 		if !cfg.AddOnNodeGroups.RoleCreate {
 			if cur.ClusterAutoscaler != nil && cur.ClusterAutoscaler.Enable {

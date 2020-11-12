@@ -3,6 +3,7 @@ package ng
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"testing"
 	"text/template"
 )
@@ -17,11 +18,16 @@ func TestTemplateASG(t *testing.T) {
 
 	buf.Reset()
 	if err := tpl.Execute(buf, templateASG{
-		Metadata:           metadataAL2InstallSSM,
-		UserData:           userDataAL2InstallSSM,
-		ASGDesiredCapacity: 1,
+		ImageID:             "abc",
+		ImageIDSSMParameter: "",
+		Metadata:            metadataAL2InstallSSM,
+		UserData:            userDataAL2InstallSSM,
+		ASGDesiredCapacity:  1,
 	}); err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println(buf.String())
+	if strings.Contains(buf.String(), "AWS::SSM::Parameter") {
+		t.Fatal("unexpected AWS::SSM::Parameter in CFN template")
+	}
 }
