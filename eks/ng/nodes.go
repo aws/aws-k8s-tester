@@ -108,7 +108,7 @@ Parameters:
     Default: ""
     Description: Specify your own custom image ID. This value overrides any AWS Systems Manager Parameter Store value specified above.{{ end }}{{ if ne .ImageIDSSMParameter "" }}  ImageIDSSMParameter:
   Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-  Default: /aws/service/eks/optimized-ami/1.18/amazon-linux-2/recommended/image_idssss
+  Default: /aws/service/eks/optimized-ami/1.18/amazon-linux-2/recommended/image_id
   Description: AWS Systems Manager Parameter Store parameter of the AMI ID for the worker node instances.{{ end }}
 
   InstanceTypes:
@@ -301,7 +301,7 @@ const metadataAL2InstallSSM = `    Metadata:
             01InstallAWSCLI:
               # AL2 doesn't have aws cli installed
               command: |
-                curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+                curl "https://s3.${AWS::Region}.${AWS::URLSuffix}/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
                 unzip awscli-bundle.zip
                 sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/bin/aws
                 which aws
@@ -350,11 +350,14 @@ const userDataAL2InstallSSM = `        UserData:
               EOF
 
               # https://docs.aws.amazon.com/inspector/latest/userguide/inspector_installing-uninstalling-agents.html
-              curl -O https://inspector-agent.amazonaws.com/linux/latest/install
-              chmod +x install
-              sudo ./install -u false
-              rm install
-
+              if [[ "${AWS::Partition}" == "aws-iso-b" ]] || [[ "${AWS::Partition}" == "aws-iso" ]]; then
+                echo "skipping inspector installation"
+              else
+                curl -O https://inspector-agent.amazonaws.com/linux/latest/install
+                chmod +x install
+                sudo ./install -u false
+                rm install
+              fi
               sudo yum install -y yum-utils device-mapper-persistent-data lvm2
               sudo amazon-linux-extras install docker -y
 
@@ -472,7 +475,7 @@ func (ts *tester) createASGs() error {
 				tg.UserData += fmt.Sprintf(` %s`, cur.BootstrapArgs)
 			}
 			tg.UserData += "\n"
-			tg.UserData += `              /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource ASG --region ${AWS::Region} --url='https://cloudformation.${AWS::Region}.${AWS::URLSuffix}' --role='${RoleName}' \`
+			tg.UserData += `              /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource ASG --region ${AWS::Region} --url='https://cloudformation.${AWS::Region}.${AWS::URLSuffix}' --role='${RoleName}'`
 		}
 		tg.ASGTagData = ""
 		if cur.ClusterAutoscaler != nil && cur.ClusterAutoscaler.Enable {
