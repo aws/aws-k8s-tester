@@ -36,13 +36,6 @@ e.g.
 aws ssm get-parameters --names /aws/service/eks/optimized-ami/1.18/amazon-linux-2/recommended/image_id
 aws ssm get-parameters --names /aws/service/bottlerocket/aws-k8s-1.18/x86_64/latest/image_id
 
-TODO
-
-  BootstrapArguments:
-    Type: String
-    Description: Arguments to pass to the bootstrap script. See files/bootstrap.sh in https://github.com/awslabs/amazon-eks-ami
-
-
 NOTE for new regions
 "AWS::SSM::Parameter" may not be onboarded yet, so we need templatize CFN template
 so that we do not pass invalid "AWS::SSM::Parameter" at all in those regions
@@ -115,7 +108,7 @@ Parameters:
     Default: ""
     Description: Specify your own custom image ID. This value overrides any AWS Systems Manager Parameter Store value specified above.{{ end }}{{ if ne .ImageIDSSMParameter "" }}  ImageIDSSMParameter:
   Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-  Default: /aws/service/eks/optimized-ami/1.18/amazon-linux-2/recommended/image_id
+  Default: /aws/service/eks/optimized-ami/1.18/amazon-linux-2/recommended/image_idssss
   Description: AWS Systems Manager Parameter Store parameter of the AMI ID for the worker node instances.{{ end }}
 
   InstanceTypes:
@@ -472,8 +465,14 @@ func (ts *tester) createASGs() error {
 				tg.UserData += fmt.Sprintf(` %s`, cur.KubeletExtraArgs)
 			}
 			tg.UserData += "'"
+			if cur.BootstrapArgs != "" {
+				ts.cfg.Logger.Info("adding further additional bootstrap arguments to user data",
+					zap.String("bootstrap-args", cur.BootstrapArgs),
+				)
+				tg.UserData += fmt.Sprintf(` %s`, cur.BootstrapArgs)
+			}
 			tg.UserData += "\n"
-			tg.UserData += `              /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource ASG --region ${AWS::Region}`
+			tg.UserData += `              /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource ASG --region ${AWS::Region} --url='https://cloudformation.${AWS::Region}.${AWS::URLSuffix}' --role='${RoleName}' \`
 		}
 		tg.ASGTagData = ""
 		if cur.ClusterAutoscaler != nil && cur.ClusterAutoscaler.Enable {
