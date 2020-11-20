@@ -86,6 +86,10 @@ type ASG struct {
 	// ref. https://github.com/kubernetes/kubernetes/issues/64659
 	KubeletExtraArgs string `json:"kubelet-extra-args"`
 
+	// BootstrapArgs additional bootstrap arguments.
+	// e.g. '--pause-container-account 012345678901 --pause-container-version 3.3'
+	BootstrapArgs string `json:"bootstrap-args"`
+
 	// ClusterAutoscaler is enabled to run cluster auto-scaler per node group.
 	// ref. https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler
 	ClusterAutoscaler *NGClusterAutoscaler `json:"cluster-autoscaler,omitempty"`
@@ -132,6 +136,7 @@ func getDefaultAddOnNodeGroups(name string) *AddOnNodeGroups {
 					ASGDesiredCapacity:                 1,
 				},
 				KubeletExtraArgs:  "",
+				BootstrapArgs:     "",
 				ClusterAutoscaler: &NGClusterAutoscaler{Enable: false},
 			},
 		},

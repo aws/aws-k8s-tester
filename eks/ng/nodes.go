@@ -36,13 +36,6 @@ e.g.
 aws ssm get-parameters --names /aws/service/eks/optimized-ami/1.18/amazon-linux-2/recommended/image_id
 aws ssm get-parameters --names /aws/service/bottlerocket/aws-k8s-1.18/x86_64/latest/image_id
 
-TODO
-
-  BootstrapArguments:
-    Type: String
-    Description: Arguments to pass to the bootstrap script. See files/bootstrap.sh in https://github.com/awslabs/amazon-eks-ami
-
-
 NOTE for new regions
 "AWS::SSM::Parameter" may not be onboarded yet, so we need templatize CFN template
 so that we do not pass invalid "AWS::SSM::Parameter" at all in those regions
@@ -308,7 +301,7 @@ const metadataAL2InstallSSM = `    Metadata:
             01InstallAWSCLI:
               # AL2 doesn't have aws cli installed
               command: |
-                curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+                curl "https://s3.${AWS::Region}.${AWS::URLSuffix}/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
                 unzip awscli-bundle.zip
                 sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/bin/aws
                 which aws
@@ -357,11 +350,14 @@ const userDataAL2InstallSSM = `        UserData:
               EOF
 
               # https://docs.aws.amazon.com/inspector/latest/userguide/inspector_installing-uninstalling-agents.html
-              curl -O https://inspector-agent.amazonaws.com/linux/latest/install
-              chmod +x install
-              sudo ./install -u false
-              rm install
-
+              if [[ "${AWS::Partition}" == "aws-iso-b" ]] || [[ "${AWS::Partition}" == "aws-iso" ]]; then
+                echo "skipping inspector installation"
+              else
+                curl -O https://inspector-agent.amazonaws.com/linux/latest/install
+                chmod +x install
+                sudo ./install -u false
+                rm install
+              fi
               sudo yum install -y yum-utils device-mapper-persistent-data lvm2
               sudo amazon-linux-extras install docker -y
 
@@ -472,8 +468,14 @@ func (ts *tester) createASGs() error {
 				tg.UserData += fmt.Sprintf(` %s`, cur.KubeletExtraArgs)
 			}
 			tg.UserData += "'"
+			if cur.BootstrapArgs != "" {
+				ts.cfg.Logger.Info("adding further additional bootstrap arguments to user data",
+					zap.String("bootstrap-args", cur.BootstrapArgs),
+				)
+				tg.UserData += fmt.Sprintf(` %s`, cur.BootstrapArgs)
+			}
 			tg.UserData += "\n"
-			tg.UserData += `              /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource ASG --region ${AWS::Region}`
+			tg.UserData += `              /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource ASG --region ${AWS::Region} --url='https://cloudformation.${AWS::Region}.${AWS::URLSuffix}' --role='${RoleName}'`
 		}
 		tg.ASGTagData = ""
 		if cur.ClusterAutoscaler != nil && cur.ClusterAutoscaler.Enable {

@@ -154,7 +154,7 @@ spec:
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"ng-test-name-cpu":{"name":"ng-test-name-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id-ssm-parameter":"/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id","asg-min-size":17,"kubelet-extra-args":"bbb qq", "cluster-autoscaler" : {"enable" : false}, "asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-2"],"volume-size":40},"ng-test-name-gpu":{"name":"ng-test-name-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-2"],"image-id":"my-gpu-ami","volume-size":500, "cluster-autoscaler": {"enable":false},"kubelet-extra-args":"aaa aa"}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"ng-test-name-cpu":{"name":"ng-test-name-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id-ssm-parameter":"/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id","asg-min-size":17,"kubelet-extra-args":"bbb qq","bootstrap-args":"--pause-container-account 012345678901", "cluster-autoscaler" : {"enable" : false}, "asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-2"],"volume-size":40},"ng-test-name-gpu":{"name":"ng-test-name-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-2"],"image-id":"my-gpu-ami","volume-size":500, "cluster-autoscaler": {"enable":false},"kubelet-extra-args":"aaa aa"}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR")
@@ -805,6 +805,7 @@ spec:
 				InstanceTypes:        []string{"type-cpu-2"},
 				VolumeSize:           40,
 			},
+			BootstrapArgs:     "--pause-container-account 012345678901",
 			KubeletExtraArgs:  "bbb qq",
 			ClusterAutoscaler: &NGClusterAutoscaler{Enable: false},
 		},
