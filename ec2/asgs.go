@@ -128,7 +128,7 @@ Parameters:
   ASGDesiredCapacity:
     Type: Number
     Description: Desired size auto scaling group
-    Default: 0
+    Default: {{.ASGDesiredCapacity}}
     MinValue: 1
     MaxValue: 1000
 
