@@ -1696,6 +1696,10 @@ func TestEnvAddOnConformance(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE", "hello.com/v1")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_IMAGE", "sonobuoy/sonobuoy:v0.18.3")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_IMAGE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SYSTEMD_LOGS_IMAGE", "sonobuoy/systemd-logs:v0.3")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SYSTEMD_LOGS_IMAGE")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -1727,6 +1731,12 @@ func TestEnvAddOnConformance(t *testing.T) {
 	}
 	if cfg.AddOnConformance.SonobuoyRunKubeConformanceImage != "hello.com/v1" {
 		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunKubeConformanceImage %q", cfg.AddOnConformance.SonobuoyRunKubeConformanceImage)
+	}
+	if cfg.AddOnConformance.SonobuoyImage != "sonobuoy/sonobuoy:v0.18.3" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyImage %q", cfg.AddOnConformance.SonobuoyImage)
+	}
+	if cfg.AddOnConformance.SystemdLogsImage != "sonobuoy/systemd-logs:v0.3" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SystemdLogsImage %q", cfg.AddOnConformance.SystemdLogsImage)
 	}
 }
 

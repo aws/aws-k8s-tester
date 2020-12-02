@@ -38,6 +38,10 @@ type AddOnConformance struct {
 	// SonobuoyDownloadURL is the download URL to download "sonobuoy" binary from.
 	// ref. https://github.com/vmware-tanzu/sonobuoy/releases
 	SonobuoyDownloadURL string `json:"sonobuoy-download-url,omitempty"`
+	// SonobuoyImage Container override for the sonobuoy worker image
+	SonobuoyImage string `json:"sonobuoy-image"`
+	// SystemdLogsImage Container override for systemd-logs plugin image
+	SystemdLogsImage string `json:"systemd-logs-image"`
 
 	SonobuoyDeleteTimeout       time.Duration `json:"sonobuoy-delete-timeout"`
 	SonobuoyDeleteTimeoutString string        `json:"sonobuoy-delete-timeout-string" read-only:"true"`
@@ -81,6 +85,8 @@ func getDefaultAddOnConformance() *AddOnConformance {
 		Enable:              false,
 		SonobuoyPath:        "/tmp/sonobuoy-v0.18.3",
 		SonobuoyDownloadURL: "https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.18.3/sonobuoy_0.18.3_linux_amd64.tar.gz",
+		SonobuoyImage:       "",
+		SystemdLogsImage:    "",
 	}
 	if runtime.GOOS == "darwin" {
 		addOn.SonobuoyDownloadURL = strings.Replace(addOn.SonobuoyDownloadURL, "linux", "darwin", -1)
