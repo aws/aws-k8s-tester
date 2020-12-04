@@ -243,10 +243,10 @@ func (ts *tester) runSonobuoy() (err error) {
 		fmt.Sprintf("--timeout=%d", timeoutSeconds), // default "10800", 3-hour
 	}
 	if ts.cfg.EKSConfig.AddOnConformance.SonobuoyImage != "" {
-		args = append(args, "--sonobuoy-image=" + ts.cfg.EKSConfig.AddOnConformance.SonobuoyImage)
+		args = append(args, "--sonobuoy-image="+ts.cfg.EKSConfig.AddOnConformance.SonobuoyImage)
 	}
 	if ts.cfg.EKSConfig.AddOnConformance.SystemdLogsImage != "" {
-		args = append(args, "--systemd-logs-image=" + ts.cfg.EKSConfig.AddOnConformance.SystemdLogsImage)
+		args = append(args, "--systemd-logs-image="+ts.cfg.EKSConfig.AddOnConformance.SystemdLogsImage)
 	}
 	cmd := strings.Join(args, " ")
 
