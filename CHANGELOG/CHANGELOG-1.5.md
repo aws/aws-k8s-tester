@@ -10,6 +10,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.5...v1.5.6
 ### `eksconfig`
 
 - Expose [configuration of sonobuoy worker/systemd-logs container](https://github.com/aws/aws-k8s-tester/pull/190).
+- Warn [file open errors in configuration validator, rather than error out](https://github.com/aws/aws-k8s-tester/pull/191).
 
 ### Dependency
 
