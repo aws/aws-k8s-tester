@@ -814,7 +814,11 @@ func (ts *Tester) createTesters() (err error) {
 			EKSAPI:    ts.eksAPI,
 		}),
 	}
-	return ts.cfg.Sync()
+	if serr := ts.cfg.Sync(); serr != nil {
+		fmt.Fprintf(ts.logWriter, ts.color("[light_magenta]cfg.Sync failed [default]%v\n"), serr)
+	}
+
+	return nil
 }
 
 // Up should provision a new cluster for testing.
@@ -1352,12 +1356,12 @@ func (ts *Tester) Up() (err error) {
 		if err != nil {
 			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)+"\n\n# error\n"+err.Error()), 0600)
 			if err != nil {
-				return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateAddOnsOutputPath, err)
+				ts.lg.Warn("failed to write CommandAfterCreateAddOnsOutputPath", zap.Error(err))
 			}
 		} else {
 			err = ioutil.WriteFile(ts.cfg.CommandAfterCreateAddOnsOutputPath, []byte(ts.cfg.CommandAfterCreateAddOns+"\n\n# output\n"+string(out)), 0600)
 			if err != nil {
-				return fmt.Errorf("failed to write file %q (%v)", ts.cfg.CommandAfterCreateAddOnsOutputPath, err)
+				ts.lg.Warn("failed to write CommandAfterCreateAddOnsOutputPath", zap.Error(err))
 			}
 		}
 		fmt.Fprintf(ts.logWriter, "\nrunCommand output:\n\n%s\n", string(out))
@@ -1373,8 +1377,11 @@ func (ts *Tester) Up() (err error) {
 		}
 		ts.cfg.Sync()
 	}
+	if serr := ts.cfg.Sync(); serr != nil {
+		fmt.Fprintf(ts.logWriter, ts.color("[light_magenta]cfg.Sync failed [default]%v\n"), serr)
+	}
 
-	return ts.cfg.Sync()
+	return nil
 }
 
 // Down cancels the cluster creation and destroy the test cluster if any.
