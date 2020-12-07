@@ -122,7 +122,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnConformance.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) downloadInstallSonobuoy() (err error) {
@@ -243,10 +244,10 @@ func (ts *tester) runSonobuoy() (err error) {
 		fmt.Sprintf("--timeout=%d", timeoutSeconds), // default "10800", 3-hour
 	}
 	if ts.cfg.EKSConfig.AddOnConformance.SonobuoyImage != "" {
-		args = append(args, "--sonobuoy-image=" + ts.cfg.EKSConfig.AddOnConformance.SonobuoyImage)
+		args = append(args, "--sonobuoy-image="+ts.cfg.EKSConfig.AddOnConformance.SonobuoyImage)
 	}
 	if ts.cfg.EKSConfig.AddOnConformance.SystemdLogsImage != "" {
-		args = append(args, "--systemd-logs-image=" + ts.cfg.EKSConfig.AddOnConformance.SystemdLogsImage)
+		args = append(args, "--systemd-logs-image="+ts.cfg.EKSConfig.AddOnConformance.SystemdLogsImage)
 	}
 	cmd := strings.Join(args, " ")
 
@@ -423,7 +424,8 @@ func (ts *tester) checkSonobuoy() (err error) {
 		}
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) checkResults() (err error) {

@@ -296,7 +296,8 @@ func (ts *tester) waitForNodes(mngName string, retriesLeft int) error {
 		return fmt.Errorf("MNG %q not ready", mngName)
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // "pkg/printers/internalversion/printers.go"

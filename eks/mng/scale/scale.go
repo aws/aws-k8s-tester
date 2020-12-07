@@ -104,7 +104,8 @@ func (ts *tester) Scale(mngName string) (err error) {
 	}
 
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) scaleMNG(mngName string, update eksconfig.MNGScaleUpdate) (err error) {
@@ -201,5 +202,6 @@ func (ts *tester) scaleMNG(mngName string, update eksconfig.MNGScaleUpdate) (err
 	}
 
 	ts.cfg.Logger.Info("successfully scale updated MNG", zap.String("update-id", update.ID), zap.String("mng-name", mngName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

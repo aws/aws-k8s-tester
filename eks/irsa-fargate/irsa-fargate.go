@@ -140,7 +140,8 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -214,7 +215,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnIRSAFargate.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) createS3Object() (err error) {
@@ -274,7 +276,8 @@ func (ts *tester) createOIDCProvider() error {
 		ts.cfg.EKSConfig.Sync()
 		ts.cfg.Logger.Info("created IAM Open ID Connect provider", zap.String("provider-arn", ts.cfg.EKSConfig.Status.ClusterOIDCIssuerARN))
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteOIDCProvider() error {
@@ -296,7 +299,8 @@ func (ts *tester) deleteOIDCProvider() error {
 			zap.String("provider-arn", ts.cfg.EKSConfig.Status.ClusterOIDCIssuerARN),
 		)
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // TemplateRole is the CloudFormation template for EKS IRSA Fargate role.
@@ -512,7 +516,8 @@ func (ts *tester) createRole() error {
 		zap.String("role-name", ts.cfg.EKSConfig.AddOnIRSAFargate.RoleName),
 		zap.String("role-arn", ts.cfg.EKSConfig.AddOnIRSAFargate.RoleARN),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteRole() error {
@@ -554,7 +559,8 @@ func (ts *tester) deleteRole() error {
 	ts.cfg.Logger.Info("deleted a IRSA role",
 		zap.String("role-cfn-stack-id", ts.cfg.EKSConfig.AddOnIRSAFargate.RoleCFNStackID),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 const (
@@ -596,7 +602,8 @@ func (ts *tester) createServiceAccount() error {
 		return err
 	}
 	ts.cfg.Logger.Info("created service account", zap.String("name", irsaFargateServiceAccountName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteServiceAccount() error {
@@ -619,7 +626,8 @@ func (ts *tester) deleteServiceAccount() error {
 		return err
 	}
 	ts.cfg.Logger.Info("deleted service account", zap.String("name", irsaFargateServiceAccountName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // TemplateConfigMap is the IRSA Fargate config map.
@@ -748,7 +756,8 @@ func (ts *tester) createConfigMap() error {
 	}
 
 	ts.cfg.Logger.Info("created IRSA config map", zap.String("name", irsaFargateConfigMapName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteConfigMaps() error {
@@ -772,7 +781,8 @@ func (ts *tester) deleteConfigMaps() error {
 	}
 
 	ts.cfg.Logger.Info("deleted config map", zap.String("name", irsaFargateConfigMapName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) createProfile() error {
@@ -823,7 +833,8 @@ func (ts *tester) createProfile() error {
 	}
 
 	ts.cfg.Logger.Info("created fargate profile", zap.String("name", ts.cfg.EKSConfig.AddOnIRSAFargate.ProfileName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteProfile() error {
@@ -872,7 +883,8 @@ func (ts *tester) deleteProfile() error {
 	}
 
 	ts.cfg.Logger.Info("deleted fargate profile", zap.String("name", ts.cfg.EKSConfig.AddOnIRSAFargate.ProfileName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // TemplatePodScript is the script to run in Deployment.
@@ -954,7 +966,8 @@ func (ts *tester) createPod() error {
 	}
 
 	ts.cfg.Logger.Info("created Pod")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 var propagationBackground = metav1.DeletePropagationBackground
@@ -980,7 +993,8 @@ func (ts *tester) deletePod() error {
 		return fmt.Errorf("failed to delete Pod %q (%v)", irsaFargatePodName, err)
 	}
 	ts.cfg.Logger.Info("deleted Pod", zap.String("name", irsaFargatePodName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://aws.amazon.com/blogs/opensource/introducing-fine-grained-iam-roles-service-accounts/
@@ -1036,7 +1050,8 @@ foundBreak:
 	}
 
 	ts.cfg.Logger.Info("checked IRSA Pod spec for webhook")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) checkResults() (err error) {
@@ -1073,7 +1088,8 @@ func (ts *tester) checkResults() (err error) {
 		// return errors.New("failed to check IRSA Fargate Pod")
 	}
 	ts.cfg.Logger.Info("checked results")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) checkPodLogs() error {
@@ -1148,7 +1164,8 @@ func (ts *tester) checkPodLogs() error {
 		zap.String("pod-name", irsaFargatePodName),
 		zap.String("container-name", irsaFargateContainerName),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) checkNodeReadiness() error {
@@ -1187,7 +1204,8 @@ func (ts *tester) checkNodeReadiness() error {
 	)
 	if readies >= desired {
 		ts.cfg.Logger.Info("checked node readiness", zap.Int("desired", desired), zap.Int("readies", readies))
-		return ts.cfg.EKSConfig.Sync()
+		ts.cfg.EKSConfig.Sync()
+		return nil
 	}
 
 	ts.cfg.Logger.Info("failed to check node readiness", zap.Int("desired", desired), zap.Int("readies", readies))

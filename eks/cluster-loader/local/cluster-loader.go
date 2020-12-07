@@ -127,7 +127,8 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() (err error) {
@@ -159,7 +160,8 @@ func (ts *tester) Delete() (err error) {
 	}
 
 	ts.cfg.EKSConfig.AddOnClusterLoaderLocal.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 /*

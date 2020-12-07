@@ -703,7 +703,8 @@ func (ts *tester) createASGs() error {
 		)
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteASGs() error {
@@ -769,5 +770,6 @@ func (ts *tester) deleteASGs() error {
 		ts.cfg.EKSConfig.Sync()
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

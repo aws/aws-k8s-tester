@@ -133,7 +133,8 @@ func (ts *tester) Create() error {
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -242,7 +243,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnALB2048.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
@@ -276,7 +278,8 @@ func (ts *tester) createALBServiceAccount() error {
 	}
 
 	ts.cfg.Logger.Info("created ALB Ingress Controller ServiceAccount")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
@@ -303,7 +306,8 @@ func (ts *tester) deleteALBServiceAccount() error {
 	}
 	ts.cfg.Logger.Info("deleted ALB Ingress Controller ServiceAccount", zap.Error(err))
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
@@ -379,7 +383,8 @@ func (ts *tester) createALBRBACClusterRole() error {
 	}
 
 	ts.cfg.Logger.Info("created ALB Ingress Controller RBAC ClusterRole")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
@@ -406,7 +411,8 @@ func (ts *tester) deleteALBRBACClusterRole() error {
 	}
 
 	ts.cfg.Logger.Info("deleted ALB Ingress Controller RBAC ClusterRole", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
@@ -453,7 +459,8 @@ func (ts *tester) createALBRBACClusterRoleBinding() error {
 	}
 
 	ts.cfg.Logger.Info("created ALB Ingress Controller RBAC ClusterRoleBinding")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
@@ -480,7 +487,8 @@ func (ts *tester) deleteALBRBACClusterRoleBinding() error {
 	}
 
 	ts.cfg.Logger.Info("deleted ALB Ingress Controller RBAC ClusterRoleBinding", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
@@ -564,7 +572,8 @@ func (ts *tester) createALBDeployment() error {
 	}
 
 	ts.cfg.Logger.Info("created ALB Ingress Controller Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
@@ -591,7 +600,8 @@ func (ts *tester) deleteALBDeployment() error {
 	}
 
 	ts.cfg.Logger.Info("deleted ALB Ingress Controller Deployment", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) waitDeploymentALB() (err error) {
@@ -698,7 +708,8 @@ func (ts *tester) create2048Deployment() error {
 	}
 	ts.cfg.Logger.Info("created ALB 2048 Deployment")
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
@@ -725,7 +736,8 @@ func (ts *tester) delete2048Deployment() error {
 	}
 
 	ts.cfg.Logger.Info("deleted ALB 2048 Deployment", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) waitDeployment2048() (err error) {
@@ -807,7 +819,8 @@ func (ts *tester) create2048Service() error {
 	}
 
 	ts.cfg.Logger.Info("created ALB 2048 Service")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
@@ -834,7 +847,8 @@ func (ts *tester) delete2048Service() error {
 	}
 
 	ts.cfg.Logger.Info("deleted ALB 2048 Service", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
@@ -1056,7 +1070,8 @@ func (ts *tester) create2048Ingress() error {
 	if !htmlChecked {
 		return fmt.Errorf("ALB 2048 %q did not return expected HTML output", ts.cfg.EKSConfig.AddOnALB2048.URL)
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
@@ -1083,5 +1098,6 @@ func (ts *tester) delete2048Ingress() error {
 	}
 	ts.cfg.Logger.Info("deleted ALB 2048 Ingress", zap.Error(err))
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

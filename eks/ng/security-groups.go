@@ -279,7 +279,8 @@ func (ts *tester) createSG() error {
 		zap.String("cfn-stack-id", ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID),
 		zap.String("role-arn", ts.cfg.EKSConfig.AddOnNodeGroups.RoleARN),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteSG() error {
@@ -321,5 +322,6 @@ func (ts *tester) deleteSG() error {
 	ts.cfg.Logger.Info("deleted a node group security group",
 		zap.String("role-cfn-stack-id", ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

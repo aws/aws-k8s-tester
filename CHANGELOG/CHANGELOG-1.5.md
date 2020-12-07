@@ -1,5 +1,27 @@
 
 
+
+<hr>
+
+## [v1.5.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.6) (2020-12)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.5...v1.5.6).
+
+### `eksconfig`
+
+- Expose [configuration of sonobuoy worker/systemd-logs container](https://github.com/aws/aws-k8s-tester/pull/190).
+- Warn [file open errors in configuration validator, rather than error out](https://github.com/aws/aws-k8s-tester/pull/191).
+
+### Dependency
+
+- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.35.27`](https://github.com/aws/aws-sdk-go/releases/tag/v1.35.27) to [`v1.35.30`](https://github.com/aws/aws-sdk-go/releases/tag/v1.35.30).
+  - `v1.36.2` breaks darwin builds.
+### Go
+
+- Compile with [*Go 1.15.6*](https://golang.org/doc/devel/release.html#go1.15).
+
+
+
 <hr>
 
 

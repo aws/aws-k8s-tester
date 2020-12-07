@@ -96,7 +96,8 @@ func (ts *tester) Create() error {
 	if err := ts.createService(); err != nil {
 		return err
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -168,7 +169,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnNLBHelloWorld.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) createDeployment() error {
@@ -238,7 +240,8 @@ func (ts *tester) createDeployment() error {
 	}
 
 	ts.cfg.Logger.Info("created NLB hello-world Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteDeployment() error {
@@ -263,7 +266,8 @@ func (ts *tester) deleteDeployment() error {
 	}
 
 	ts.cfg.Logger.Info("deleted NLB hello-world Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) waitDeployment() (err error) {
@@ -472,7 +476,8 @@ func (ts *tester) createService() error {
 	if !htmlChecked {
 		return fmt.Errorf("NLB hello-world %q did not return expected HTML output", ts.cfg.EKSConfig.AddOnNLBHelloWorld.URL)
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteService() error {
@@ -497,5 +502,6 @@ func (ts *tester) deleteService() error {
 	}
 
 	ts.cfg.Logger.Info("deleted NLB hello-world Service", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

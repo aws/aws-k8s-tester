@@ -114,7 +114,8 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Client() k8s_client.EKS { return ts.k8sClient }
@@ -214,7 +215,8 @@ func (ts *tester) Delete() error {
 		return errors.New(strings.Join(errs, ", "))
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // MAKE SURE TO SYNC THE DEFAULT VALUES in "eksconfig"
@@ -553,7 +555,8 @@ func (ts *tester) createEKS() (err error) {
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // deleteEKS returns error if EKS cluster delete fails.
@@ -657,7 +660,8 @@ func (ts *tester) deleteEKS() error {
 		zap.String("cluster-cfn-stack-id", ts.cfg.EKSConfig.Status.ClusterCFNStackID),
 		zap.String("cluster-name", ts.cfg.EKSConfig.Name),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) describeCluster() {

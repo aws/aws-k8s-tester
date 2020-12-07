@@ -335,7 +335,8 @@ func (ts *tester) createClusterRole() error {
 		zap.String("cluster-role-cfn-stack-id", ts.cfg.EKSConfig.Parameters.RoleCFNStackID),
 		zap.String("cluster-role-arn", ts.cfg.EKSConfig.Parameters.RoleARN),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteClusterRole() error {
@@ -387,5 +388,6 @@ func (ts *tester) deleteClusterRole() error {
 		zap.String("cluster-role-arn", ts.cfg.EKSConfig.Parameters.RoleARN),
 		zap.String("cluster-role-name", ts.cfg.EKSConfig.Parameters.RoleName),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

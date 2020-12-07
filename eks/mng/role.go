@@ -383,7 +383,8 @@ func (ts *tester) createRole() error {
 		zap.String("cfn-stack-id", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackID),
 		zap.String("role-arn", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleARN),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteRole() error {
@@ -429,5 +430,6 @@ func (ts *tester) deleteRole() error {
 	ts.cfg.Logger.Info("deleted a managed node group role",
 		zap.String("role-cfn-stack-id", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackID),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

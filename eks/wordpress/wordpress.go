@@ -93,7 +93,8 @@ func (ts *tester) Create() error {
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -163,7 +164,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnWordpress.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://github.com/helm/charts/blob/master/stable/wordpress/values.yaml
@@ -382,7 +384,8 @@ func (ts *tester) waitService() error {
 	fmt.Fprintf(ts.cfg.LogWriter, "WordPress UserName: %s\n", ts.cfg.EKSConfig.AddOnWordpress.UserName)
 	fmt.Fprintf(ts.cfg.LogWriter, "WordPress Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnWordpress.Password))
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 const wordpressServiceName = "wordpress"
@@ -409,5 +412,6 @@ func (ts *tester) deleteService() error {
 	}
 
 	ts.cfg.Logger.Info("deleted wordpress Service", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

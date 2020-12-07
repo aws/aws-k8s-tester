@@ -145,7 +145,8 @@ func (ts *tester) Create() (err error) {
 		}
 	}
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = true
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Scale() (err error) {
@@ -157,7 +158,8 @@ func (ts *tester) Scale() (err error) {
 			return err
 		}
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) UpgradeVersion() (err error) {
@@ -176,7 +178,8 @@ func (ts *tester) UpgradeVersion() (err error) {
 			return err
 		}
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -289,5 +292,6 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

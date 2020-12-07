@@ -21,7 +21,7 @@ WHAT=${WHAT:-$DEFAULT_WHAT}
 TARGETS=${TARGETS:-$DEFAULT_TARGETS}
 
 echo ""
-echo "Usage: \`make TARGET='linux' WHAT='aws-k8s-tester cw-utils'\`"
+echo "Usage: \`make TARGETS='linux' WHAT='aws-k8s-tester cw-utils'\`"
 echo "DEFAULT_TARGETS=$DEFAULT_TARGETS"
 echo "DEFAULT_WHAT=$DEFAULT_WHAT"
 echo ""

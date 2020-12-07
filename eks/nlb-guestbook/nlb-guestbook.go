@@ -134,7 +134,8 @@ func (ts *tester) Create() error {
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -227,7 +228,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnNLBGuestbook.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) createDeploymentRedisLeader() error {
@@ -301,7 +303,8 @@ func (ts *tester) createDeploymentRedisLeader() error {
 	}
 
 	ts.cfg.Logger.Info("created redis leader Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteDeploymentRedisLeader() error {
@@ -326,7 +329,8 @@ func (ts *tester) deleteDeploymentRedisLeader() error {
 	}
 
 	ts.cfg.Logger.Info("deleted redis leader Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) waitDeploymentRedisLeader() (err error) {
@@ -475,7 +479,8 @@ func (ts *tester) createServiceRedisLeader() error {
 		break
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteServiceRedisLeader() error {
@@ -500,7 +505,8 @@ func (ts *tester) deleteServiceRedisLeader() error {
 	}
 
 	ts.cfg.Logger.Info("deleted redis leader Service", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) createDeploymentRedisFollower() error {
@@ -574,7 +580,8 @@ func (ts *tester) createDeploymentRedisFollower() error {
 	}
 
 	ts.cfg.Logger.Info("created redis follower Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteDeploymentRedisFollower() error {
@@ -599,7 +606,8 @@ func (ts *tester) deleteDeploymentRedisFollower() error {
 	}
 
 	ts.cfg.Logger.Info("deleted redis follower Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) waitDeploymentRedisFollower() (err error) {
@@ -748,7 +756,8 @@ func (ts *tester) createServiceRedisFollower() error {
 		break
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteServiceRedisFollower() error {
@@ -773,7 +782,8 @@ func (ts *tester) deleteServiceRedisFollower() error {
 	}
 
 	ts.cfg.Logger.Info("deleted redis follower Service", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) createDeploymentGuestbook() error {
@@ -844,7 +854,8 @@ func (ts *tester) createDeploymentGuestbook() error {
 	}
 
 	ts.cfg.Logger.Info("created NLB guestbook Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteDeploymentGuestbook() error {
@@ -869,7 +880,8 @@ func (ts *tester) deleteDeploymentGuestbook() error {
 	}
 
 	ts.cfg.Logger.Info("deleted NLB guestbook Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) waitDeploymentGuestbook() (err error) {
@@ -1097,7 +1109,8 @@ func (ts *tester) createServiceGuestbook() error {
 	if !htmlChecked {
 		return fmt.Errorf("NLB hello-world %q did not return expected HTML output", ts.cfg.EKSConfig.AddOnNLBGuestbook.URL)
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteServiceGuestbook() error {
@@ -1122,5 +1135,6 @@ func (ts *tester) deleteServiceGuestbook() error {
 	}
 
 	ts.cfg.Logger.Info("deleted NLB guestbook Service", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

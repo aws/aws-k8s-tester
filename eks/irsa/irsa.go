@@ -140,7 +140,8 @@ func (ts *tester) Create() (err error) {
 
 	ts.cfg.EKSConfig.AddOnIRSA.DeploymentTook = time.Since(ts.deploymentCreated)
 	ts.cfg.EKSConfig.AddOnIRSA.DeploymentTookString = ts.cfg.EKSConfig.AddOnIRSA.DeploymentTook.String()
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -208,7 +209,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnIRSA.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) createS3Object() (err error) {
@@ -268,7 +270,8 @@ func (ts *tester) createOIDCProvider() error {
 		ts.cfg.EKSConfig.Sync()
 		ts.cfg.Logger.Info("created IAM Open ID Connect provider", zap.String("provider-arn", ts.cfg.EKSConfig.Status.ClusterOIDCIssuerARN))
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteOIDCProvider() error {
@@ -290,7 +293,8 @@ func (ts *tester) deleteOIDCProvider() error {
 			zap.String("provider-arn", ts.cfg.EKSConfig.Status.ClusterOIDCIssuerARN),
 		)
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // TemplateRole is the CloudFormation template for EKS IRSA role.
@@ -470,7 +474,8 @@ func (ts *tester) createRole() error {
 		zap.String("role-name", ts.cfg.EKSConfig.AddOnIRSA.RoleName),
 		zap.String("role-arn", ts.cfg.EKSConfig.AddOnIRSA.RoleARN),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteRole() error {
@@ -512,7 +517,8 @@ func (ts *tester) deleteRole() error {
 	ts.cfg.Logger.Info("deleted a IRSA role",
 		zap.String("role-cfn-stack-id", ts.cfg.EKSConfig.AddOnIRSA.RoleCFNStackID),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 const (
@@ -554,7 +560,8 @@ func (ts *tester) createServiceAccount() error {
 		return err
 	}
 	ts.cfg.Logger.Info("created service account", zap.String("name", irsaServiceAccountName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteServiceAccount() error {
@@ -577,7 +584,8 @@ func (ts *tester) deleteServiceAccount() error {
 		return err
 	}
 	ts.cfg.Logger.Info("deleted service account", zap.String("name", irsaServiceAccountName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // TemplateConfigMap is the IRSA config map.
@@ -710,7 +718,8 @@ func (ts *tester) createConfigMap() error {
 	}
 
 	ts.cfg.Logger.Info("created configmap", zap.String("name", irsaConfigMapName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteConfigMaps() error {
@@ -734,7 +743,8 @@ func (ts *tester) deleteConfigMaps() error {
 	}
 
 	ts.cfg.Logger.Info("deleted configmap", zap.String("name", irsaConfigMapName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // TemplateDeploymentScript is the script to run in Deployment.
@@ -864,7 +874,8 @@ func (ts *tester) createDeployment() error {
 
 	ts.deploymentCreated = time.Now()
 	ts.cfg.Logger.Info("created IRSA Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteDeployment() error {
@@ -889,7 +900,8 @@ func (ts *tester) deleteDeployment() error {
 	}
 
 	ts.cfg.Logger.Info("deleted IRSA Deployment", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) waitDeployment() (err error) {
@@ -1035,7 +1047,8 @@ foundBreak:
 	}
 
 	ts.cfg.Logger.Info("checked IRSA Pod spec for webhook")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) checkResults() (err error) {
@@ -1060,7 +1073,8 @@ func (ts *tester) checkResults() (err error) {
 		return errors.New("failed to check results for IRSA Pod")
 	}
 	ts.cfg.Logger.Info("checked results")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // 1. check pod logs if configmap run succeeds
@@ -1163,5 +1177,6 @@ func (ts *tester) checkLogs() error {
 		zap.Int("success", success),
 		zap.Int("expects", expects),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

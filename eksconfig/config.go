@@ -507,7 +507,9 @@ func Load(p string) (cfg *Config, err error) {
 		return nil, err
 	}
 	cfg.ConfigPath = ap
-	cfg.unsafeSync()
+	if serr := cfg.unsafeSync(); serr != nil {
+		fmt.Fprintf(os.Stderr, "[WARN] failed to sync config files %v\n", serr)
+	}
 
 	return cfg, nil
 }
@@ -555,8 +557,11 @@ func (cfg *Config) evaluateCommandRefs() error {
 	if cfg.Status != nil && cfg.Status.ClusterARN != "" && strings.Contains(cfg.CommandAfterCreateAddOns, "GetRef.ClusterARN") {
 		cfg.CommandAfterCreateAddOns = strings.ReplaceAll(cfg.CommandAfterCreateAddOns, "GetRef.ClusterARN", cfg.Status.ClusterARN)
 	}
+	if serr := cfg.unsafeSync(); serr != nil {
+		fmt.Fprintf(os.Stderr, "[WARN] failed to sync config files %v\n", serr)
+	}
 
-	return cfg.unsafeSync()
+	return nil
 }
 
 // Sync persists current configuration and states to disk.
@@ -895,7 +900,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	cfg.mu.Lock()
 	defer func() {
-		cfg.unsafeSync()
+		if serr := cfg.unsafeSync(); serr != nil {
+			fmt.Fprintf(os.Stderr, "[WARN] failed to sync config files %v\n", serr)
+		}
 		cfg.mu.Unlock()
 	}()
 

@@ -75,7 +75,8 @@ func (ts *tester) Create() error {
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -107,7 +108,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnMetricsServer.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://docs.aws.amazon.com/eks/latest/userguide/dashboard-tutorial.html
@@ -429,7 +431,8 @@ func (ts *tester) checkMetrics() error {
 	if !topNodeReady {
 		return fmt.Errorf("%q not ready", topNodeCmd)
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteDeployment() error {
@@ -453,5 +456,6 @@ func (ts *tester) deleteDeployment() error {
 		return err
 	}
 	ts.cfg.Logger.Info("deleted deployment")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
