@@ -43,7 +43,7 @@ replace (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.36.2
+	github.com/aws/aws-sdk-go v1.35.30
 	github.com/briandowns/spinner v1.11.1
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/davecgh/go-spew v1.1.1
@@ -71,6 +71,8 @@ require (
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+	golang.org/x/sys v0.0.0-20200826173525-f9321e4c35a6 // indirect
+	golang.org/x/text v0.3.3 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	gopkg.in/ini.v1 v1.46.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8
