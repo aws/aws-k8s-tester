@@ -1533,7 +1533,10 @@ func (ts *Tester) down() (err error) {
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
-	return ts.cfg.Sync()
+	if serr := ts.cfg.Sync(); serr != nil {
+		fmt.Fprintf(ts.logWriter, ts.color("[light_magenta]cfg.Sync failed [default]%v\n"), serr)
+	}
+	return nil
 }
 
 // IsUp should return true if a test cluster is successfully provisioned.
