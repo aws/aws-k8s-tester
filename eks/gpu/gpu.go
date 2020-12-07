@@ -352,7 +352,8 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 		}
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 /*
@@ -505,7 +506,8 @@ func (ts *tester) CreateNvidiaSMI() error {
 
 	if installed {
 		ts.cfg.Logger.Info("checked nvidia-smi")
-		return ts.cfg.EKSConfig.Sync()
+		ts.cfg.EKSConfig.Sync()
+		return nil
 	}
 	ts.cfg.Logger.Warn("failed to test nvidia-smi")
 	return errors.New("nvidia-smi failed")

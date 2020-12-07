@@ -65,7 +65,8 @@ func (ts *tester) createFluentdServiceAccount() error {
 	}
 
 	ts.cfg.Logger.Info("created fluentd ServiceAccount")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -92,7 +93,8 @@ func (ts *tester) deleteFluentdServiceAccount() error {
 	}
 	ts.cfg.Logger.Info("deleted fluentd ServiceAccount", zap.Error(err))
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -147,7 +149,8 @@ func (ts *tester) createFluentdRBACClusterRole() error {
 	}
 
 	ts.cfg.Logger.Info("created fluentd RBAC ClusterRole")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -174,7 +177,8 @@ func (ts *tester) deleteFluentdRBACClusterRole() error {
 	}
 
 	ts.cfg.Logger.Info("deleted fluentd RBAC ClusterRole", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -221,7 +225,8 @@ func (ts *tester) createFluentdRBACClusterRoleBinding() error {
 	}
 
 	ts.cfg.Logger.Info("created fluentd RBAC ClusterRoleBinding")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -248,7 +253,8 @@ func (ts *tester) deleteFluentdRBACClusterRoleBinding() error {
 	}
 
 	ts.cfg.Logger.Info("deleted fluentd RBAC ClusterRoleBinding", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) createFluentdConfigMapClusterInfo() (err error) {
@@ -285,7 +291,8 @@ func (ts *tester) createFluentdConfigMapClusterInfo() (err error) {
 	}
 
 	ts.cfg.Logger.Info("created fluentd ConfigMap cluster-info")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteFluentdConfigMapClusterInfo() error {
@@ -308,7 +315,8 @@ func (ts *tester) deleteFluentdConfigMapClusterInfo() error {
 		return err
 	}
 	ts.cfg.Logger.Info("deleted fluentd ConfigMap cluster-info")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 const TemplateFluentdConf = `
@@ -702,7 +710,8 @@ func (ts *tester) createFluentdConfigMapConfig() (err error) {
 	}
 
 	ts.cfg.Logger.Info("created fluentd ConfigMap config")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteFluentdConfigMapConfig() error {
@@ -725,7 +734,8 @@ func (ts *tester) deleteFluentdConfigMapConfig() error {
 		return err
 	}
 	ts.cfg.Logger.Info("deleted fluentd ConfigMap config")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // FluentdImageName is the image name of Fluentd daemon set.

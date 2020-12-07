@@ -119,7 +119,8 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -158,7 +159,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnConfigmapsLocal.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // 1. if previous summary exists, download and compare

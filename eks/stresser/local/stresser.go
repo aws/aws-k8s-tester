@@ -168,7 +168,8 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -207,7 +208,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnStresserLocal.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // 1. if previous summary exists, download and compare
@@ -476,7 +478,8 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations, curReadLaten
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) publishResults() (err error) {

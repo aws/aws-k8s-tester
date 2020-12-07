@@ -740,7 +740,8 @@ func (ts *tester) createVPC() error {
 			return fmt.Errorf("no security group found for VPC ID %q", ts.cfg.EKSConfig.Parameters.VPCID)
 		}
 
-		return ts.cfg.EKSConfig.Sync()
+		ts.cfg.EKSConfig.Sync()
+		return nil
 	}
 
 	if !ts.cfg.EKSConfig.Parameters.VPCCreate {
@@ -946,7 +947,8 @@ func (ts *tester) createVPC() error {
 	if ts.cfg.EKSConfig.Parameters.VPCBlock4 == "" {
 		return errors.New("unexpected empty EKSConfig.Parameters.VPCBlock4")
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteVPC() error {
@@ -1054,7 +1056,8 @@ func (ts *tester) deleteVPC() error {
 		zap.String("vpc-cfn-stack-id", ts.cfg.EKSConfig.Parameters.VPCCFNStackID),
 		zap.String("vpc-id", ts.cfg.EKSConfig.Parameters.VPCID),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteELBv2(deletedResources map[string]struct{}) bool {

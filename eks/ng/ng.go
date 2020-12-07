@@ -140,7 +140,8 @@ func (ts *tester) Create() (err error) {
 	}
 
 	ts.cfg.EKSConfig.AddOnNodeGroups.Created = true
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -187,5 +188,6 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnNodeGroups.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

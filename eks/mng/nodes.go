@@ -502,7 +502,8 @@ func (ts *tester) createASGs() (err error) {
 			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 		)
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteASG(mngName string) (err error) {
@@ -681,5 +682,6 @@ func (ts *tester) setStatus(sv wait.ManagedNodeGroupStatus) (err error) {
 	}
 
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[name] = cur
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

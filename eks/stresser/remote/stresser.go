@@ -247,7 +247,8 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -326,7 +327,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnStresserRemote.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 const (
@@ -370,7 +372,8 @@ func (ts *tester) createServiceAccount() error {
 	}
 
 	ts.cfg.Logger.Info("created stresser ServiceAccount")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -397,7 +400,8 @@ func (ts *tester) deleteServiceAccount() error {
 	}
 	ts.cfg.Logger.Info("deleted stresser ServiceAccount", zap.Error(err))
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -463,7 +467,8 @@ func (ts *tester) createRBACClusterRole() error {
 	}
 
 	ts.cfg.Logger.Info("created stresser RBAC ClusterRole")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -490,7 +495,8 @@ func (ts *tester) deleteRBACClusterRole() error {
 	}
 
 	ts.cfg.Logger.Info("deleted stresser RBAC ClusterRole", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -542,7 +548,8 @@ func (ts *tester) createRBACClusterRoleBinding() error {
 	}
 
 	ts.cfg.Logger.Info("created stresser RBAC ClusterRoleBinding")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -569,7 +576,8 @@ func (ts *tester) deleteRBACClusterRoleBinding() error {
 	}
 
 	ts.cfg.Logger.Info("deleted stresser RBAC ClusterRoleBinding", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) createConfigMap() error {
@@ -609,7 +617,8 @@ func (ts *tester) createConfigMap() error {
 	}
 
 	ts.cfg.Logger.Info("created config map")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteConfigMap() error {
@@ -632,7 +641,8 @@ func (ts *tester) deleteConfigMap() error {
 		return err
 	}
 	ts.cfg.Logger.Info("deleted config map")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) createJob() (err error) {
@@ -1397,7 +1407,8 @@ func (ts *tester) checkResults() (err error) {
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) publishResults() (err error) {

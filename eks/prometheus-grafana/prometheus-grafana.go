@@ -106,7 +106,8 @@ func (ts *tester) Create() error {
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -193,7 +194,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnPrometheusGrafana.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://eksworkshop.com/intermediate/240_monitoring/deploy-prometheus
@@ -537,7 +539,8 @@ func (ts *tester) waitServiceGrafana() error {
 	fmt.Fprintf(ts.cfg.LogWriter, "Grafana Admin User Name: %s\n", ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminUserName)
 	fmt.Fprintf(ts.cfg.LogWriter, "Grafana Admin Password: %d characters\n\n", len(ts.cfg.EKSConfig.AddOnPrometheusGrafana.GrafanaAdminPassword))
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 const grafanaServiceName = "grafana"
@@ -564,5 +567,6 @@ func (ts *tester) deleteGrafanaService() error {
 	}
 
 	ts.cfg.Logger.Info("deleted grafana Service", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

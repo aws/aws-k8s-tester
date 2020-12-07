@@ -200,5 +200,6 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.Logger.Info("starting tester.Delete", zap.String("tester", pkgName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

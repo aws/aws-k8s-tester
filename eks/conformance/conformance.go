@@ -122,7 +122,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnConformance.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) downloadInstallSonobuoy() (err error) {
@@ -423,7 +424,8 @@ func (ts *tester) checkSonobuoy() (err error) {
 		}
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) checkResults() (err error) {

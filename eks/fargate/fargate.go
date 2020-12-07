@@ -125,7 +125,8 @@ func (ts *tester) Create() (err error) {
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -185,7 +186,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnFargate.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // TemplateRole is the CloudFormation template for EKS Fargate role.
@@ -356,7 +358,8 @@ func (ts *tester) createRole() error {
 		zap.String("role-name", ts.cfg.EKSConfig.AddOnFargate.RoleName),
 		zap.String("role-arn", ts.cfg.EKSConfig.AddOnFargate.RoleARN),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteRole() error {
@@ -398,7 +401,8 @@ func (ts *tester) deleteRole() error {
 	ts.cfg.Logger.Info("deleted a Fargate role",
 		zap.String("role-cfn-stack-id", ts.cfg.EKSConfig.AddOnFargate.RoleCFNStackID),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 const secretReadTxt = "HELLO-WORLD-SECRET-IN-FARGATE"
@@ -429,7 +433,8 @@ func (ts *tester) createSecret() error {
 	}
 
 	ts.cfg.Logger.Info("created secret", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.SecretName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 var propagationBackground = metav1.DeletePropagationBackground
@@ -455,7 +460,8 @@ func (ts *tester) deleteSecret() error {
 		return fmt.Errorf("failed to delete Secret %q (%v)", ts.cfg.EKSConfig.AddOnFargate.SecretName, err)
 	}
 	ts.cfg.Logger.Info("deleted Secret", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.SecretName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) createProfile() error {
@@ -506,7 +512,8 @@ func (ts *tester) createProfile() error {
 	}
 
 	ts.cfg.Logger.Info("created fargate profile", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.ProfileName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteProfile() error {
@@ -555,7 +562,8 @@ func (ts *tester) deleteProfile() error {
 	}
 
 	ts.cfg.Logger.Info("deleted fargate profile", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.ProfileName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 const (
@@ -633,7 +641,8 @@ func (ts *tester) createPod() error {
 	}
 
 	ts.cfg.Logger.Info("created Pod")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deletePod() error {
@@ -657,7 +666,8 @@ func (ts *tester) deletePod() error {
 		return fmt.Errorf("failed to delete Pod %q (%v)", fargatePodName, err)
 	}
 	ts.cfg.Logger.Info("deleted Pod", zap.String("name", fargatePodName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) listPods(ns string) error {
@@ -809,7 +819,8 @@ func (ts *tester) checkPod() error {
 		ts.cfg.Logger.Warn("failed to find expected output from kubectl logs; fail!", zap.String("expected", secretReadTxt))
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) checkNodeReadiness() error {
@@ -863,5 +874,6 @@ func (ts *tester) checkNodeReadiness() error {
 	}
 
 	ts.cfg.Logger.Info("checked node")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

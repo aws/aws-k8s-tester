@@ -104,7 +104,8 @@ func (ts *tester) Create() error {
 		return err
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -182,7 +183,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnJupyterHub.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://zero-to-jupyterhub.readthedocs.io/en/latest/setup-jupyterhub/setup-helm.html
@@ -212,7 +214,8 @@ func (ts *tester) createTillerServiceAccount() error {
 	}
 
 	ts.cfg.Logger.Info("created Tiller ServiceAccount")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://zero-to-jupyterhub.readthedocs.io/en/latest/setup-jupyterhub/setup-helm.html
@@ -238,7 +241,8 @@ func (ts *tester) deleteTillerServiceAccount() error {
 	}
 	ts.cfg.Logger.Info("deleted Tiller ServiceAccount", zap.Error(err))
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/master/jupyterhub/values.yaml
@@ -281,7 +285,8 @@ func (ts *tester) createTillerRBACClusterRoleBinding() error {
 	}
 
 	ts.cfg.Logger.Info("created Tiller RBAC ClusterRoleBinding")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/master/jupyterhub/values.yaml
@@ -307,7 +312,8 @@ func (ts *tester) deleteTillerRBACClusterRoleBinding() error {
 	}
 
 	ts.cfg.Logger.Info("deleted Tiller RBAC ClusterRoleBinding", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/master/jupyterhub/values.yaml
@@ -537,7 +543,8 @@ func (ts *tester) waitService() error {
 	fmt.Fprintf(ts.cfg.LogWriter, "NLB JupyterHub Name: %s\n", ts.cfg.EKSConfig.AddOnJupyterHub.NLBName)
 	fmt.Fprintf(ts.cfg.LogWriter, "NLB JupyterHub URL: %s\n\n", ts.cfg.EKSConfig.AddOnJupyterHub.URL)
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 const jupyterHubServiceName = "proxy-public"
@@ -564,5 +571,6 @@ func (ts *tester) deleteService() error {
 	}
 
 	ts.cfg.Logger.Info("deleted JupyterHub Service", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

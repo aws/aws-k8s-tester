@@ -216,5 +216,6 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		return fmt.Errorf("MNGs[%q] update failed %v", mngName, err)
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

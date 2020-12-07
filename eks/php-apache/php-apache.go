@@ -107,7 +107,8 @@ func (ts *tester) Create() (err error) {
 	if err := ts.waitDeployment(); err != nil {
 		return err
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -152,7 +153,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnPHPApache.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) createDeployment() error {
@@ -216,7 +218,8 @@ func (ts *tester) createDeployment() error {
 	}
 
 	ts.cfg.Logger.Info("created php-apache Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteDeployment() error {
@@ -241,7 +244,8 @@ func (ts *tester) deleteDeployment() error {
 	}
 
 	ts.cfg.Logger.Info("deleted php-apache Deployment")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) waitDeployment() (err error) {

@@ -75,7 +75,8 @@ func (ts *tester) FetchLogs() (err error) {
 	sz := humanize.Bytes(uint64(stat.Size()))
 	ts.cfg.Logger.Info("gzipped logs dir", zap.String("logs-dir", ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogsDir), zap.String("file-path", ts.cfg.EKSConfig.AddOnManagedNodeGroups.LogsTarGzPath), zap.String("file-size", sz))
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) fetchLogs(qps float32, burst int) error {
@@ -394,7 +395,8 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 		case data = <-rch:
 		case <-ts.cfg.Stopc:
 			ts.cfg.Logger.Warn("exiting fetch logger")
-			return ts.cfg.EKSConfig.Sync()
+			ts.cfg.EKSConfig.Sync()
+			return nil
 		}
 		if len(data.errs) > 0 {
 			ts.cfg.Logger.Warn("failed to fetch logs, but keeping whatever available",
@@ -452,7 +454,8 @@ func (ts *tester) fetchLogs(qps float32, burst int) error {
 		zap.String("log-dir", logsDir),
 		zap.Int("total-downloaded-files", total),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 type instanceLogs struct {

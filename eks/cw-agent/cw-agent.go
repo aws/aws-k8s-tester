@@ -61,7 +61,8 @@ func (ts *tester) createCWAgentServiceAccount() error {
 	}
 
 	ts.cfg.Logger.Info("created cw agent ServiceAccount")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -88,7 +89,8 @@ func (ts *tester) deleteCWAgentServiceAccount() error {
 	}
 	ts.cfg.Logger.Info("deleted cw agent ServiceAccount", zap.Error(err))
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -198,7 +200,8 @@ func (ts *tester) createCWAgentRBACClusterRole() error {
 	}
 
 	ts.cfg.Logger.Info("created cw agent RBAC ClusterRole")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -225,7 +228,8 @@ func (ts *tester) deleteCWAgentRBACClusterRole() error {
 	}
 
 	ts.cfg.Logger.Info("deleted cw agent RBAC ClusterRole", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -272,7 +276,8 @@ func (ts *tester) createCWAgentRBACClusterRoleBinding() error {
 	}
 
 	ts.cfg.Logger.Info("created cw agent RBAC ClusterRoleBinding")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -299,7 +304,8 @@ func (ts *tester) deleteCWAgentRBACClusterRoleBinding() error {
 	}
 
 	ts.cfg.Logger.Info("deleted cw agent RBAC ClusterRoleBinding", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Container-Insights-setup-metrics.html
@@ -369,7 +375,8 @@ func (ts *tester) createCWAgentConfigMapConfig() (err error) {
 	}
 
 	ts.cfg.Logger.Info("created cw agent ConfigMap config")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteCWAgentConfigMapConfig() error {
@@ -392,7 +399,8 @@ func (ts *tester) deleteCWAgentConfigMapConfig() error {
 		return err
 	}
 	ts.cfg.Logger.Info("deleted cw agent ConfigMap config")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // CWAgentImageName is the image name of CloudWatch agent daemon set.

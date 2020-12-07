@@ -27,14 +27,16 @@ func (ts *tester) createSSM() error {
 	if err := ts.sendSSMDocumentCommand(); err != nil {
 		return err
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteSSM() error {
 	if err := ts.deleteSSMDocument(); err != nil {
 		return err
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // TemplateSSMDocument is the CFN template for SSM Document.
@@ -211,7 +213,8 @@ func (ts *tester) createSSMDocument() error {
 		ts.cfg.EKSConfig.Sync()
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteSSMDocument() error {
@@ -268,7 +271,8 @@ func (ts *tester) deleteSSMDocument() error {
 		)
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) sendSSMDocumentCommand() error {
@@ -352,5 +356,6 @@ func (ts *tester) sendSSMDocumentCommand() error {
 		ts.cfg.EKSConfig.Sync()
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

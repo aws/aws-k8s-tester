@@ -94,7 +94,8 @@ func (ts *tester) Create() error {
 	if err := ts.createInjector(); err != nil {
 		return err
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -167,7 +168,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnAppMesh.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 const templatePolicy = `
@@ -307,7 +309,8 @@ func (ts *tester) createPolicy() error {
 		zap.String("policy-name", policyName),
 	)
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deletePolicy() error {
@@ -355,7 +358,8 @@ func (ts *tester) deletePolicy() error {
 	)
 	ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackID = ""
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 const (

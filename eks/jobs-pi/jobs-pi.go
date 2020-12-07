@@ -148,7 +148,8 @@ func (ts *tester) Delete() (err error) {
 	}
 
 	ts.cfg.EKSConfig.AddOnJobsPi.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 const (

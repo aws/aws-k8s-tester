@@ -120,5 +120,6 @@ func (ts *tester) fetchAuthenticationToken() error {
 	ts.cfg.EKSConfig.AddOnKubernetesDashboard.AuthenticationToken = string(token)
 	fmt.Fprintf(ts.cfg.LogWriter, "\n\n\nKubernetes Dashboard Token:\n%s\n\n\n", ts.cfg.EKSConfig.AddOnKubernetesDashboard.AuthenticationToken)
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

@@ -51,7 +51,8 @@ func (ts *tester) createEncryption() error {
 			zap.String("cmk-arn", keyARN),
 			zap.String("cmk-id", keyID),
 		)
-		return ts.cfg.EKSConfig.Sync()
+		ts.cfg.EKSConfig.Sync()
+		return nil
 	}
 
 	ts.cfg.Logger.Info("creating a new KMS CMK")
@@ -75,7 +76,8 @@ func (ts *tester) createEncryption() error {
 		zap.String("cmk-arn", keyARN),
 		zap.String("cmk-id", keyID),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteEncryption() error {
@@ -118,11 +120,13 @@ func (ts *tester) deleteEncryption() error {
 			return err
 		}
 		ts.cfg.Logger.Info("key already has been deleted or scheduled to delete", zap.Error(err))
-		return ts.cfg.EKSConfig.Sync()
+		ts.cfg.EKSConfig.Sync()
+		return nil
 	}
 
 	ts.cfg.Logger.Info("scheduled to delete", zap.String("deletion-date", aws.TimeValue(dresp.DeletionDate).String()))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // get "330e3b1a-61c4-4be6-93e0-244180c9f169" from "arn:aws:kms:us-west-2:123:key/330e3b1a-61c4-4be6-93e0-244180c9f169"

@@ -299,7 +299,8 @@ func (ts *tester) createSG(name string) error {
 		zap.String("mng-name", name),
 		zap.String("cfn-stack-id", cur.RemoteAccessSecurityGroupIngressEgressCFNStackID),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteSG(name string) error {
@@ -353,5 +354,6 @@ func (ts *tester) deleteSG(name string) error {
 		zap.String("mng-name", name),
 		zap.String("cfn-stack-id", cur.RemoteAccessSecurityGroupIngressEgressCFNStackID),
 	)
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }

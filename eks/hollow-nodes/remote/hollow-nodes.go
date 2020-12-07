@@ -106,7 +106,8 @@ func (ts *tester) Create() (err error) {
 		}
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() (err error) {
@@ -166,7 +167,8 @@ func (ts *tester) Delete() (err error) {
 	}
 
 	ts.cfg.EKSConfig.AddOnHollowNodesRemote.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 const (
@@ -210,7 +212,8 @@ func (ts *tester) createServiceAccount() error {
 	}
 
 	ts.cfg.Logger.Info("created ServiceAccount")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -237,7 +240,8 @@ func (ts *tester) deleteServiceAccount() error {
 	}
 	ts.cfg.Logger.Info("deleted kubemark ServiceAccount", zap.Error(err))
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // need RBAC, otherwise
@@ -314,7 +318,8 @@ func (ts *tester) createRBACClusterRole() error {
 	}
 
 	ts.cfg.Logger.Info("created kubemark RBAC ClusterRole")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -341,7 +346,8 @@ func (ts *tester) deleteRBACClusterRole() error {
 	}
 
 	ts.cfg.Logger.Info("deleted kubemark RBAC ClusterRole", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -391,7 +397,8 @@ func (ts *tester) createRBACClusterRoleBinding() (err error) {
 	}
 
 	ts.cfg.Logger.Info("created kubemark RBAC ClusterRoleBinding")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
@@ -418,7 +425,8 @@ func (ts *tester) deleteRBACClusterRoleBinding() error {
 	}
 
 	ts.cfg.Logger.Info("deleted kubemark RBAC ClusterRoleBinding", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) createConfigMap() (err error) {
@@ -456,7 +464,8 @@ func (ts *tester) createConfigMap() (err error) {
 		return fmt.Errorf("while creating configmap %v", err)
 	}
 	ts.cfg.Logger.Info("created config map")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteConfigMap() error {
@@ -480,7 +489,8 @@ func (ts *tester) deleteConfigMap() error {
 		return err
 	}
 	ts.cfg.Logger.Info("deleted config map")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) createHollowNodes() error {
@@ -650,7 +660,8 @@ func (ts *tester) deleteReplicationController() error {
 		return err
 	}
 	ts.cfg.Logger.Info("deleted replicationcontroller")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) checkNodes() error {
@@ -741,7 +752,8 @@ func (ts *tester) checkNodes() error {
 		return fmt.Errorf("NG %q not ready", ts.cfg.EKSConfig.AddOnHollowNodesRemote.NodeLabelPrefix)
 	}
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) deleteCreatedNodes() error {

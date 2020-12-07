@@ -170,7 +170,8 @@ func (ts *tester) Delete() (err error) {
 	}
 
 	ts.cfg.EKSConfig.AddOnJobsEcho.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 const jobName = "job-echo"

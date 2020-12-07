@@ -61,7 +61,8 @@ func (ts *tester) createConfigMap() error {
 	}
 
 	ts.cfg.Logger.Info("created ConfigMap")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // TODO: use client-go

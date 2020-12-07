@@ -144,7 +144,8 @@ func (ts *tester) Create() (err error) {
 			return err
 		}
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) Delete() error {
@@ -176,7 +177,8 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnCNIVPC.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
@@ -218,7 +220,8 @@ func (ts *tester) updateCNIServiceAccount() error {
 	}
 
 	ts.cfg.Logger.Info("updated CNI ServiceAccount")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
@@ -244,7 +247,8 @@ func (ts *tester) deleteCNIServiceAccount() error {
 	}
 	ts.cfg.Logger.Info("deleted CNI ServiceAccount", zap.Error(err))
 
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
@@ -320,7 +324,8 @@ func (ts *tester) updateCNIRBACClusterRole() error {
 	}
 
 	ts.cfg.Logger.Info("updated CNI RBAC ClusterRole")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
@@ -346,7 +351,8 @@ func (ts *tester) deleteCNIRBACClusterRole() error {
 	}
 
 	ts.cfg.Logger.Info("deleted CNI RBAC ClusterRole", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
@@ -389,7 +395,8 @@ func (ts *tester) updateCNIRBACClusterRoleBinding() error {
 	}
 
 	ts.cfg.Logger.Info("updated CNI RBAC ClusterRoleBinding")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
@@ -415,7 +422,8 @@ func (ts *tester) deleteCNIRBACClusterRoleBinding() error {
 	}
 
 	ts.cfg.Logger.Info("deleted CNI RBAC ClusterRoleBinding", zap.Error(err))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config
@@ -482,7 +490,8 @@ func (ts *tester) updateCNICRD() (err error) {
 	}
 
 	ts.cfg.Logger.Info("updated CNI CRD")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 // https://github.com/aws/amazon-vpc-cni-k8s/tree/master/config

@@ -83,7 +83,8 @@ func (ts *tester) Create() (err error) {
 	}
 
 	ts.cfg.Logger.Info("successfully created Pod", zap.String("pod-name", podName))
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) createPod() (err error) {
@@ -125,7 +126,8 @@ func (ts *tester) createPod() (err error) {
 	}
 
 	ts.cfg.Logger.Info("created Pod")
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 func (ts *tester) checkPod() error {
@@ -220,7 +222,8 @@ func (ts *tester) checkPod() error {
 	if !succeeded {
 		return fmt.Errorf("failed to created Pod %q", podName)
 	}
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
 
 /*
@@ -306,5 +309,6 @@ func (ts *tester) Delete() error {
 	}
 
 	ts.cfg.EKSConfig.AddOnCUDAVectorAdd.Created = false
-	return ts.cfg.EKSConfig.Sync()
+	ts.cfg.EKSConfig.Sync()
+	return nil
 }
