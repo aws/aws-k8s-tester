@@ -249,6 +249,9 @@ func (ts *tester) runSonobuoy() (err error) {
 	if ts.cfg.EKSConfig.AddOnConformance.SystemdLogsImage != "" {
 		args = append(args, "--systemd-logs-image="+ts.cfg.EKSConfig.AddOnConformance.SystemdLogsImage)
 	}
+	if ts.cfg.EKSConfig.AddOnConformance.SonobuoyE2eRepoConfig != "" {
+		args = append(args, "--e2e-repo-config" + ts.cfg.EKSConfig.AddOnConformance.SonobuoyE2eRepoConfig)
+	}
 	cmd := strings.Join(args, " ")
 
 	ts.cfg.Logger.Info("running sonobuoy",

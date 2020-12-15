@@ -1700,6 +1700,8 @@ func TestEnvAddOnConformance(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_IMAGE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SYSTEMD_LOGS_IMAGE", "sonobuoy/systemd-logs:v0.3")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SYSTEMD_LOGS_IMAGE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_E2E_REPO_CONFIG", "/path/to/config.yml")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_E2E_REPO_CONFIG")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -1737,6 +1739,9 @@ func TestEnvAddOnConformance(t *testing.T) {
 	}
 	if cfg.AddOnConformance.SystemdLogsImage != "sonobuoy/systemd-logs:v0.3" {
 		t.Fatalf("unexpected cfg.AddOnConformance.SystemdLogsImage %q", cfg.AddOnConformance.SystemdLogsImage)
+	}
+	if cfg.AddOnConformance.SonobuoyE2eRepoConfig != "/path/to/config.yml" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyE2eRepoConfig %q", cfg.AddOnConformance.SonobuoyE2eRepoConfig)
 	}
 }
 
