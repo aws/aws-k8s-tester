@@ -38,6 +38,9 @@ type AddOnConformance struct {
 	// SonobuoyDownloadURL is the download URL to download "sonobuoy" binary from.
 	// ref. https://github.com/vmware-tanzu/sonobuoy/releases
 	SonobuoyDownloadURL string `json:"sonobuoy-download-url,omitempty"`
+	// SonobuoyE2eRepoConfig File path to e2e registry config
+	// ref. https://sonobuoy.io/docs/master/airgap/
+	SonobuoyE2eRepoConfig string `json:"sonobuoy-e2e-repo-config"`
 	// SonobuoyImage Container override for the sonobuoy worker image
 	SonobuoyImage string `json:"sonobuoy-image"`
 	// SystemdLogsImage Container override for systemd-logs plugin image
