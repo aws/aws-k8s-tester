@@ -554,6 +554,22 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnClusterVersionUpgrade, got %T", vv)
 	}
 
+	if cfg.AddOnAmiSoftLockupIssue454 == nil {
+		cfg.AddOnAmiSoftLockupIssue454 = &AddOnAmiSoftLockupIssue454{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnAmiSoftLockupIssue454, cfg.AddOnAmiSoftLockupIssue454)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnAmiSoftLockupIssue454); ok {
+		cfg.AddOnAmiSoftLockupIssue454 = av
+		if !cfg.AddOnAmiSoftLockupIssue454.Enable {
+			return fmt.Errorf("WTF %T", cfg)
+		}
+	} else {
+		return fmt.Errorf("expected *AddOnAmiSoftLockupIssue454, got %T", vv)
+	}
+
 	return nil
 }
 

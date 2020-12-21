@@ -23,6 +23,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	alb_2048 "github.com/aws/aws-k8s-tester/eks/alb-2048"
+	ami_soft_lockup_issue_454 "github.com/aws/aws-k8s-tester/eks/amazon-eks-ami-issue-454"
 	app_mesh "github.com/aws/aws-k8s-tester/eks/app-mesh"
 	"github.com/aws/aws-k8s-tester/eks/cluster"
 	"github.com/aws/aws-k8s-tester/eks/cluster-loader/clusterloader2"
@@ -812,6 +813,13 @@ func (ts *Tester) createTesters() (err error) {
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
 			EKSAPI:    ts.eksAPI,
+		}),
+		ami_soft_lockup_issue_454.New(ami_soft_lockup_issue_454.Config{
+			Logger:    ts.lg,
+			LogWriter: ts.logWriter,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
 		}),
 	}
 	if serr := ts.cfg.Sync(); serr != nil {

@@ -343,6 +343,10 @@ type Config struct {
 	// for EKS cluster version upgrade add-on.
 	AddOnClusterVersionUpgrade *AddOnClusterVersionUpgrade `json:"add-on-cluster-version-upgrade,omitempty"`
 
+	// AddOnAmiSoftLockupIssue454 defines parameters
+	// for testing the AMI soft lockup issue.
+	AddOnAmiSoftLockupIssue454 *AddOnAmiSoftLockupIssue454 `json:"add-on-ami-soft-lockup-issue-454,omitempty"`
+
 	// Spec contains addons and other configuration
 	// Note: New addons should be implemented inside spec
 	Spec Spec `json:"spec,omitempty"`
@@ -867,6 +871,7 @@ func NewDefault() *Config {
 		AddOnStresserLocal:         getDefaultAddOnStresserLocal(),
 		AddOnStresserRemote:        getDefaultAddOnStresserRemote(),
 		AddOnClusterVersionUpgrade: getDefaultAddOnClusterVersionUpgrade(),
+		AddOnAmiSoftLockupIssue454: getDefaultAddOnAmiSoftLockupIssue454(),
 
 		// read-only
 		Status: &Status{
@@ -1071,6 +1076,10 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 
 	if err := cfg.validateAddOnClusterVersionUpgrade(); err != nil {
+		return fmt.Errorf("validateAddOnClusterVersionUpgrade failed [%v]", err)
+	}
+
+	if err := cfg.validateAddOnAmiSoftLockupIssue454(); err != nil {
 		return fmt.Errorf("validateAddOnClusterVersionUpgrade failed [%v]", err)
 	}
 
