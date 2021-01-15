@@ -85,11 +85,12 @@ func (cfg *Config) IsEnabledAddOnConformance() bool {
 
 func getDefaultAddOnConformance() *AddOnConformance {
 	addOn := &AddOnConformance{
-		Enable:              false,
-		SonobuoyPath:        "/tmp/sonobuoy-v0.18.3",
-		SonobuoyDownloadURL: "https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.18.3/sonobuoy_0.18.3_linux_amd64.tar.gz",
-		SonobuoyImage:       "",
-		SystemdLogsImage:    "",
+		Enable:                false,
+		SonobuoyPath:          "/tmp/sonobuoy-v0.18.3",
+		SonobuoyDownloadURL:   "https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.18.3/sonobuoy_0.18.3_linux_amd64.tar.gz",
+		SonobuoyImage:         "",
+		SystemdLogsImage:      "",
+		SonobuoyE2eRepoConfig: "",
 	}
 	if runtime.GOOS == "darwin" {
 		addOn.SonobuoyDownloadURL = strings.Replace(addOn.SonobuoyDownloadURL, "linux", "darwin", -1)
