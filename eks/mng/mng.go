@@ -208,36 +208,24 @@ func (ts *tester) Delete() error {
 			errs = append(errs, err.Error())
 		}
 	}
-	err = nil
 	failedMNGs := make(map[string]struct{})
 	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		var derr error
 		for i := 0; i < 5; i++ { // retry, leakly ENI may take awhile to be deleted
-			derr = ts.deleteASG(name)
-			if derr != nil {
-				failedMNGs[name] = struct{}{}
-				ts.cfg.Logger.Warn("failed to delete mng; retrying", zap.String("name", name), zap.Error(derr))
-				select {
-				case <-ts.cfg.Stopc:
-					ts.cfg.Logger.Warn("aborted")
-					return nil
-				case <-time.After(time.Minute):
-				}
+			derr := ts.deleteASG(name)
+			if derr == nil {
+				ts.cfg.Logger.Info("successfully deleted mng", zap.String("name", name))
+				delete(failedMNGs, name)
+				break
 			}
-			break
-		}
-		if derr != nil {
-			if err == nil {
-				err = derr
-			} else {
-				err = fmt.Errorf("%v; %v", err, derr)
+			ts.cfg.Logger.Warn("failed to delete mng; retrying", zap.String("name", name), zap.Error(derr))
+			failedMNGs[name] = struct{}{}
+			select {
+			case <-ts.cfg.Stopc:
+				ts.cfg.Logger.Warn("aborted")
+				return nil
+			case <-time.After(time.Minute):
 			}
-			continue
 		}
-		delete(failedMNGs, name)
-	}
-	if err != nil {
-		errs = append(errs, err.Error())
 	}
 
 	waitDur := time.Minute
@@ -250,21 +238,25 @@ func (ts *tester) Delete() error {
 			time.Sleep(10 * time.Second)
 		}
 	}
+
 	err = nil
 	for name := range failedMNGs {
+		ts.cfg.Logger.Warn("retrying mng delete after failure", zap.String("name", name))
 		var derr error
 		for i := 0; i < 5; i++ { // retry, leakly ENI may take awhile to be deleted
 			derr = ts.deleteASG(name)
-			if derr != nil {
-				ts.cfg.Logger.Warn("failed to retry-delete mng; retrying", zap.String("name", name), zap.Error(derr))
-				select {
-				case <-ts.cfg.Stopc:
-					ts.cfg.Logger.Warn("aborted")
-					return nil
-				case <-time.After(time.Minute):
-				}
+			if derr == nil {
+				ts.cfg.Logger.Info("successfully deleted mng (previously failed for delete)", zap.String("name", name))
+				delete(failedMNGs, name)
+				break
 			}
-			break
+			ts.cfg.Logger.Warn("failed to retry-delete mng; retrying", zap.String("name", name), zap.Error(derr))
+			select {
+			case <-ts.cfg.Stopc:
+				ts.cfg.Logger.Warn("aborted")
+				return nil
+			case <-time.After(time.Minute):
+			}
 		}
 		if derr != nil {
 			if err == nil {
@@ -272,9 +264,7 @@ func (ts *tester) Delete() error {
 			} else {
 				err = fmt.Errorf("%v; %v", err, derr)
 			}
-			continue
 		}
-		delete(failedMNGs, name)
 	}
 	if err != nil {
 		errs = append(errs, err.Error())
