@@ -3,7 +3,7 @@
 
 <hr>
 
-## [v1.5.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.6) (2020-12)
+## [v1.5.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.6) (2021-01)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.5...v1.5.6).
 
@@ -11,6 +11,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.5...v1.5.6
 
 - Expose [configuration of sonobuoy worker/systemd-logs container](https://github.com/aws/aws-k8s-tester/pull/190).
 - Warn [file open errors in configuration validator, rather than error out](https://github.com/aws/aws-k8s-tester/pull/191).
+
+### `eks`
+
+- Fix [`eks/mng` delete retries](https://github.com/aws/aws-k8s-tester/pull/196).
+  - See https://github.com/aws/aws-k8s-tester/issues/195.
 
 ### Dependency
 
