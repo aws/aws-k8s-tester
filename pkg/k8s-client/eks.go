@@ -164,11 +164,11 @@ type EKS interface {
 	// ListNamespaces returns the list of existing namespace names.
 	ListNamespaces(batchLimit int64, batchInterval time.Duration) ([]v1.Namespace, error)
 	// ListNodes returns the list of existing nodes.
-	ListNodes(batchLimit int64, batchInterval time.Duration) ([]v1.Node, error)
-	// ListNodes returns the list of existing CSRs.
+	ListNodes(batchLimit int64, batchInterval time.Duration, opts ...OpOption) ([]v1.Node, error)
+	// ListCSRs returns the list of existing CSRs.
 	ListCSRs(batchLimit int64, batchInterval time.Duration) ([]certificatesv1beta1.CertificateSigningRequest, error)
 	// ListPods returns the list of existing namespace names.
-	ListPods(namespace string, batchLimit int64, batchInterval time.Duration) ([]v1.Pod, error)
+	ListPods(namespace string, batchLimit int64, batchInterval time.Duration, opts ...OpOption) ([]v1.Pod, error)
 	// ListConfigMaps returns the list of existing config maps.
 	ListConfigMaps(namespace string, batchLimit int64, batchInterval time.Duration) ([]v1.ConfigMap, error)
 	// ListSecrets returns the list of existing Secret objects.
@@ -917,20 +917,31 @@ func (e *eks) listNamespaces(batchLimit int64, batchInterval time.Duration) (ns 
 	return ns, err
 }
 
-func (e *eks) ListNodes(batchLimit int64, batchInterval time.Duration) ([]v1.Node, error) {
-	ns, err := e.listNodes(batchLimit, batchInterval)
+func (e *eks) ListNodes(batchLimit int64, batchInterval time.Duration, opts ...OpOption) ([]v1.Node, error) {
+	ns, err := e.listNodes(batchLimit, batchInterval, opts...)
 	return ns, err
 }
 
-func (e *eks) listNodes(batchLimit int64, batchInterval time.Duration) (nodes []v1.Node, err error) {
+func (e *eks) listNodes(batchLimit int64, batchInterval time.Duration, opts ...OpOption) (nodes []v1.Node, err error) {
+	ret := Op{}
+	ret.applyOpts(opts)
+
 	e.cfg.Logger.Info("listing nodes",
 		zap.Int64("batch-limit", batchLimit),
 		zap.Duration("batch-interval", batchInterval),
+		zap.String("label-selector", ret.labelSelector),
+		zap.String("field-selector", ret.fieldSelector),
 	)
 	rs := &v1.NodeList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().CoreV1().Nodes().List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
+		rs, err = e.getClient().CoreV1().Nodes().List(ctx, metav1.ListOptions{
+			Limit:    batchLimit,
+			Continue: rs.Continue,
+
+			LabelSelector: ret.labelSelector,
+			FieldSelector: ret.fieldSelector,
+		})
 		cancel()
 		if err != nil {
 			return nil, err
@@ -986,8 +997,8 @@ func (e *eks) listCSRs(batchLimit int64, batchInterval time.Duration) (csrs []ce
 	return csrs, err
 }
 
-func (e *eks) ListPods(namespace string, batchLimit int64, batchInterval time.Duration) ([]v1.Pod, error) {
-	ns, err := e.listPods(namespace, batchLimit, batchInterval, 5)
+func (e *eks) ListPods(namespace string, batchLimit int64, batchInterval time.Duration, opts ...OpOption) ([]v1.Pod, error) {
+	ns, err := e.listPods(namespace, batchLimit, batchInterval, 5, opts...)
 	return ns, err
 }
 
@@ -995,11 +1006,17 @@ func (e *eks) listPods(
 	namespace string,
 	batchLimit int64,
 	batchInterval time.Duration,
-	retryLeft int) (pods []v1.Pod, err error) {
+	retryLeft int,
+	opts ...OpOption) (pods []v1.Pod, err error) {
+	ret := Op{}
+	ret.applyOpts(opts)
+
 	e.cfg.Logger.Info("listing pods",
 		zap.String("namespace", namespace),
 		zap.Int64("batch-limit", batchLimit),
 		zap.Duration("batch-interval", batchInterval),
+		zap.String("label-selector", ret.labelSelector),
+		zap.String("field-selector", ret.fieldSelector),
 	)
 	rs := &v1.PodList{ListMeta: metav1.ListMeta{Continue: ""}}
 	for {
@@ -1014,7 +1031,7 @@ func (e *eks) listPods(
 				// e.g. The provided continue parameter is too old to display a consistent list result. You can start a new list without the continue parameter, or use the continue token in this response to retrieve the remainder of the results. Continuing with the provided token results in an inconsistent list - objects that were created, modified, or deleted between the time the first chunk was returned and now may show up in the list.
 				e.cfg.Logger.Warn("stale list response, retrying for consistent list", zap.Error(err))
 				time.Sleep(15 * time.Second)
-				return e.listPods(namespace, batchLimit, batchInterval, retryLeft-1)
+				return e.listPods(namespace, batchLimit, batchInterval, retryLeft-1, opts...)
 			}
 			return nil, err
 		}

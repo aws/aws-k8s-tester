@@ -911,14 +911,26 @@ func WaitForDeploymentCompletes(
 
 // Op represents a Kubernetes client operation.
 type Op struct {
+	labelSelector   string
+	fieldSelector   string
 	queryFunc       func()
 	podFunc         func(v1.Pod)
 	forceDelete     bool
 	forceDeleteFunc func()
 }
 
-// OpOption configures archiver operations.
+// OpOption configures Kubernetes client operations.
 type OpOption func(*Op)
+
+// WithLabelSelector configures label selector for list operations.
+func WithLabelSelector(s string) OpOption {
+	return func(op *Op) { op.labelSelector = s }
+}
+
+// WithFieldSelector configures field selector for list operations.
+func WithFieldSelector(s string) OpOption {
+	return func(op *Op) { op.fieldSelector = s }
+}
 
 // WithQueryFunc configures query function to be called in retry func.
 func WithQueryFunc(f func()) OpOption {
