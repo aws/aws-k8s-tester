@@ -44,7 +44,7 @@ for arch in ${ARCHS}; do
         -X ${PACKAGE_NAME}/version.GitCommit=${GIT_COMMIT} \
         -X ${PACKAGE_NAME}/version.ReleaseVersion=${RELEASE_VERSION} \
         -X ${PACKAGE_NAME}/version.BuildTime=${BUILD_TIME}" \
-        -o ./bin/${bin}-${RELEASE_VERSION}-${os}-$(go env GOARCH) \
+        -o ./bin/${bin}-${RELEASE_VERSION}-${os}-${arch} \
         ./cmd/${bin}
     done
   done
