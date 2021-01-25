@@ -275,10 +275,13 @@ func (ts *tester) waitDeployment() (err error) {
 
 func (ts *tester) validateNodesStayHealthy() (err error) {
 	nodeSelector := ts.getNodeSelector()
-
-	nodes, err := ts.cfg.K8SClient.ListNodesWithSelector(1000, 5*time.Second, nodeSelector)
+	nodes, err := ts.cfg.K8SClient.ListNodes(
+		1000,
+		5*time.Second,
+		k8s_client.WithFieldSelector(nodeSelector),
+	)
 	if err != nil {
-		ts.cfg.Logger.Warn("get nodes failed", zap.Error(err))
+		ts.cfg.Logger.Warn("list nodes failed", zap.Error(err))
 		return err
 	}
 

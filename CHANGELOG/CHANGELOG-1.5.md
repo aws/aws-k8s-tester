@@ -3,9 +3,13 @@
 
 <hr>
 
-## [v1.5.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.6) (2021-01)
+## [v1.5.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.6) (2021-01-25)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.5...v1.5.6).
+
+### Release
+
+- Add [arm64 (Apple M1) builds](https://github.com/aws/aws-k8s-tester/pull/193).
 
 ### `eksconfig`
 
@@ -16,6 +20,8 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.5...v1.5.6
 
 - Fix [`eks/mng` delete retries](https://github.com/aws/aws-k8s-tester/pull/196).
   - See https://github.com/aws/aws-k8s-tester/issues/195.
+- Add [`eks/amazon-eks-ami-issue-454`](https://github.com/aws/aws-k8s-tester/pull/193).
+  - Fix [list nodes](https://github.com/aws/aws-k8s-tester/pull/197).
 
 ### Dependency
 
@@ -23,7 +29,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.5...v1.5.6
   - `v1.36.2` breaks darwin builds.
 ### Go
 
-- Compile with [*Go 1.15.6*](https://golang.org/doc/devel/release.html#go1.15).
+- Compile with [*Go 1.16beta1*](https://golang.org/doc/devel/release.html#go1.16).
 
 
 
