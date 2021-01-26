@@ -266,6 +266,9 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_NAMESPACE                           | read-only "false" | *eksconfig.AddOnConformance.Namespace                       | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_PATH                       | read-only "false" | *eksconfig.AddOnConformance.SonobuoyPath                    | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL               | read-only "false" | *eksconfig.AddOnConformance.SonobuoyDownloadURL             | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_E2E_REPO_CONFIG            | read-only "false" | *eksconfig.AddOnConformance.SonobuoyE2eRepoConfig           | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_IMAGE                      | read-only "false" | *eksconfig.AddOnConformance.SonobuoyImage                   | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SYSTEMD_LOGS_IMAGE                  | read-only "false" | *eksconfig.AddOnConformance.SystemdLogsImage                | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT             | read-only "false" | *eksconfig.AddOnConformance.SonobuoyDeleteTimeout           | time.Duration      |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT_STRING      | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyDeleteTimeoutString     | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT                | read-only "false" | *eksconfig.AddOnConformance.SonobuoyRunTimeout              | time.Duration      |

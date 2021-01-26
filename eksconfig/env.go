@@ -563,9 +563,6 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 	}
 	if av, ok := vv.(*AddOnAmiSoftLockupIssue454); ok {
 		cfg.AddOnAmiSoftLockupIssue454 = av
-		if !cfg.AddOnAmiSoftLockupIssue454.Enable {
-			return fmt.Errorf("WTF %T", cfg)
-		}
 	} else {
 		return fmt.Errorf("expected *AddOnAmiSoftLockupIssue454, got %T", vv)
 	}
