@@ -888,7 +888,7 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 				return nil, errors.New("update-kubeconfig aborted")
 			case <-time.After(5 * time.Second):
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 			output, err = exec.New().CommandContext(ctx, args[0], args[1:]...).CombinedOutput()
 			cancel()
 			out := string(output)
