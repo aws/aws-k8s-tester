@@ -107,9 +107,9 @@ Parameters:
     Type: String
     Default: ""
     Description: Specify your own custom image ID. This value overrides any AWS Systems Manager Parameter Store value specified above.{{ end }}{{ if ne .ImageIDSSMParameter "" }}  ImageIDSSMParameter:
-  Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-  Default: /aws/service/eks/optimized-ami/1.18/amazon-linux-2/recommended/image_id
-  Description: AWS Systems Manager Parameter Store parameter of the AMI ID for the worker node instances.{{ end }}
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/eks/optimized-ami/1.18/amazon-linux-2/recommended/image_id
+    Description: AWS Systems Manager Parameter Store parameter of the AMI ID for the worker node instances.{{ end }}
 
   InstanceTypes:
     Type: CommaDelimitedList
