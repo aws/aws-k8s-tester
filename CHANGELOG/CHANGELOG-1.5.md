@@ -9,7 +9,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.7...v1.5.8
 ### `eks`
 
 - Fix [`eks/ng` CFN template](https://github.com/aws/aws-k8s-tester/pull/200).
-
+- Test [`aws-sdk-go-v2`](https://github.com/aws/aws-k8s-tester/pull/201).
 ### Dependency
 
 - Add [`github.com/aws/aws-sdk-go-v2`](https://github.com/aws/aws-sdk-go-v2/releases) [`v1.0.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.0.0).
