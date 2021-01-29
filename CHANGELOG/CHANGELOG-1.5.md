@@ -12,8 +12,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.7...v1.5.8
 
 ### Dependency
 
-- Upgrade [`github.com/aws/aws-sdk-go`](https://github.com/aws/aws-sdk-go/releases) from [`v1.35.30`](https://github.com/aws/aws-sdk-go/releases/tag/v1.35.30) to [`vX`](https://github.com/aws/aws-sdk-go/releases/tag/vX).
-  - `v1.36.2` breaks darwin builds.
+- Add [`github.com/aws/aws-sdk-go-v2`](https://github.com/aws/aws-sdk-go-v2/releases) [`v1.0.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.0.0).
 
 ### Go
 
