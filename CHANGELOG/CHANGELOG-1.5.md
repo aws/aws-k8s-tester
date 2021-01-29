@@ -3,6 +3,40 @@
 <hr>
 
 
+## [v1.5.8](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.8) (2021-01)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.7...v1.5.8).
+### `eks`
+
+- Fix [`eks/ng` CFN template](https://github.com/aws/aws-k8s-tester/pull/200).
+- Test [`aws-sdk-go-v2`](https://github.com/aws/aws-k8s-tester/pull/201).
+### Dependency
+
+- Add [`github.com/aws/aws-sdk-go-v2`](https://github.com/aws/aws-sdk-go-v2/releases) [`v1.0.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.0.0).
+
+### Go
+
+- Compile with [*Go 1.16rc1*](https://golang.org/doc/devel/release.html#go1.16).
+
+
+<hr>
+
+
+## [v1.5.7](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.7) (2021-01-25)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.6...v1.5.7).
+### `eksconfig`
+
+- Fix ["AddOnAmiSoftLockupIssue454" parsing](https://github.com/aws/aws-k8s-tester/pull/199).
+### Go
+
+- Compile with [*Go 1.16beta1*](https://golang.org/doc/devel/release.html#go1.16).
+
+
+
+<hr>
+
+
 ## [v1.5.7](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.7) (2021-01-25)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.6...v1.5.7).
