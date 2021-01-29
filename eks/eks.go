@@ -77,6 +77,18 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/terminal"
 	"github.com/aws/aws-k8s-tester/pkg/user"
 	"github.com/aws/aws-k8s-tester/version"
+	aws_v2 "github.com/aws/aws-sdk-go-v2/aws"
+	aws_asg_v2 "github.com/aws/aws-sdk-go-v2/service/autoscaling"
+	aws_cfn_v2 "github.com/aws/aws-sdk-go-v2/service/cloudformation"
+	aws_cw_v2 "github.com/aws/aws-sdk-go-v2/service/cloudwatch"
+	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
+	aws_ecr_v2 "github.com/aws/aws-sdk-go-v2/service/ecr"
+	aws_eks_v2 "github.com/aws/aws-sdk-go-v2/service/eks"
+	aws_elbv2_v2 "github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2"
+	aws_iam_v2 "github.com/aws/aws-sdk-go-v2/service/iam"
+	aws_kms_v2 "github.com/aws/aws-sdk-go-v2/service/kms"
+	aws_s3_v2 "github.com/aws/aws-sdk-go-v2/service/s3"
+	aws_ssm_v2 "github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -131,20 +143,39 @@ type Tester struct {
 	awsSession *session.Session
 
 	iamAPI   iamiface.IAMAPI
+	iamAPIV2 *aws_iam_v2.Client
+
 	kmsAPI   kmsiface.KMSAPI
+	kmsAPIV2 *aws_kms_v2.Client
+
 	ssmAPI   ssmiface.SSMAPI
+	ssmAPIV2 *aws_ssm_v2.Client
+
 	cfnAPI   cloudformationiface.CloudFormationAPI
+	cfnAPIV2 *aws_cfn_v2.Client
+
 	ec2API   ec2iface.EC2API
-	s3API    s3iface.S3API
-	cwAPI    cloudwatchiface.CloudWatchAPI
+	ec2APIV2 *aws_ec2_v2.Client
+
+	s3API   s3iface.S3API
+	s3APIV2 *aws_s3_v2.Client
+
+	cwAPI   cloudwatchiface.CloudWatchAPI
+	cwAPIV2 *aws_cw_v2.Client
+
 	asgAPI   autoscalingiface.AutoScalingAPI
-	elbv2API elbv2iface.ELBV2API
+	asgAPIV2 *aws_asg_v2.Client
+
+	elbv2API   elbv2iface.ELBV2API
+	elbv2APIV2 *aws_elbv2_v2.Client
 
 	ecrAPISameRegion ecriface.ECRAPI
+	ecrAPIV2         *aws_ecr_v2.Client
 
 	// used for EKS + EKS MNG API calls
 	eksSession *session.Session
 	eksAPI     eksiface.EKSAPI
+	eksAPIV2   *aws_eks_v2.Client
 
 	s3Uploaded bool
 
@@ -310,14 +341,14 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 
 	defer ts.cfg.Sync()
 
-	awsCfg := &pkg_aws.Config{
+	awsCfg := pkg_aws.Config{
 		Logger:        ts.lg,
 		DebugAPICalls: ts.cfg.LogLevel == "debug",
 		Partition:     ts.cfg.Partition,
 		Region:        ts.cfg.Region,
 	}
 	var stsOutput *sts.GetCallerIdentityOutput
-	ts.awsSession, stsOutput, ts.cfg.Status.AWSCredentialPath, err = pkg_aws.New(awsCfg)
+	ts.awsSession, stsOutput, ts.cfg.Status.AWSCredentialPath, err = pkg_aws.New(&awsCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -326,35 +357,79 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	ts.cfg.Status.AWSIAMRoleARN = aws.StringValue(stsOutput.Arn)
 	ts.cfg.Sync()
 
+	ts.lg.Info("checking AWS SDK Go v2")
+	awsCfgV2, _, err := pkg_aws.NewV2(&awsCfg)
+	if err != nil {
+		return nil, err
+	}
+
 	ts.iamAPI = iam.New(ts.awsSession)
+	ts.iamAPIV2 = aws_iam_v2.NewFromConfig(awsCfgV2)
+
 	ts.kmsAPI = kms.New(ts.awsSession)
+	ts.kmsAPIV2 = aws_kms_v2.NewFromConfig(awsCfgV2)
+
 	ts.ssmAPI = ssm.New(ts.awsSession)
+	ts.ssmAPIV2 = aws_ssm_v2.NewFromConfig(awsCfgV2)
+
 	ts.cfnAPI = cloudformation.New(ts.awsSession)
+	ts.cfnAPIV2 = aws_cfn_v2.NewFromConfig(awsCfgV2)
 
 	ts.ec2API = ec2.New(ts.awsSession)
 	if _, err = ts.ec2API.DescribeInstances(&ec2.DescribeInstancesInput{MaxResults: aws.Int64(5)}); err != nil {
-		return nil, fmt.Errorf("failed to describe instances using EC2 API (%v)", err)
+		return nil, fmt.Errorf("failed to describe instances using EC2 API v1 (%v)", err)
 	}
-	fmt.Fprintln(ts.logWriter, "EC2 API available!")
+	fmt.Fprintln(ts.logWriter, "EC2 API v1 available!")
+
+	ts.ec2APIV2 = aws_ec2_v2.NewFromConfig(awsCfgV2)
+	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+	_, err = ts.ec2APIV2.DescribeInstances(ctx, &aws_ec2_v2.DescribeInstancesInput{MaxResults: 5})
+	cancel()
+	if err != nil {
+		return nil, fmt.Errorf("failed to describe instances using EC2 API v2 (%v)", err)
+	}
+	fmt.Fprintln(ts.logWriter, "EC2 API v2 available!")
 
 	ts.s3API = s3.New(ts.awsSession)
+	ts.s3APIV2 = aws_s3_v2.NewFromConfig(awsCfgV2)
+
 	ts.cwAPI = cloudwatch.New(ts.awsSession)
+	ts.cwAPIV2 = aws_cw_v2.NewFromConfig(awsCfgV2)
+
 	ts.asgAPI = autoscaling.New(ts.awsSession)
+	ts.asgAPIV2 = aws_asg_v2.NewFromConfig(awsCfgV2)
+
 	ts.elbv2API = elbv2.New(ts.awsSession)
+	ts.elbv2APIV2 = aws_elbv2_v2.NewFromConfig(awsCfgV2)
 
+	ts.lg.Info("checking ECR API v1 availability; listing repositories")
 	ts.ecrAPISameRegion = ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.Region))
-
-	ts.lg.Info("checking ECR API availability; listing repositories")
 	var ecrResp *ecr.DescribeRepositoriesOutput
 	ecrResp, err = ts.ecrAPISameRegion.DescribeRepositories(&ecr.DescribeRepositoriesInput{
-		MaxResults: aws.Int64(20),
+		MaxResults: aws.Int64(5),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to describe repositories using ECR API (%v)", err)
 	}
-	ts.lg.Info("listed repositories with limit 20", zap.Int("repositories", len(ecrResp.Repositories)))
+	ts.lg.Info("listed repositories with limit 5", zap.Int("repositories", len(ecrResp.Repositories)))
 	for _, v := range ecrResp.Repositories {
-		ts.lg.Info("EKS repository", zap.String("repository-uri", aws.StringValue(v.RepositoryUri)))
+		ts.lg.Info("ECR repository", zap.String("repository-uri", aws.StringValue(v.RepositoryUri)))
+	}
+
+	ts.lg.Info("checking ECR API v2 availability; listing repositories")
+	ts.ecrAPIV2 = aws_ecr_v2.NewFromConfig(awsCfgV2)
+	var ecrRespV2 *aws_ecr_v2.DescribeRepositoriesOutput
+	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+	ecrRespV2, err = ts.ecrAPIV2.DescribeRepositories(ctx, &aws_ecr_v2.DescribeRepositoriesInput{
+		MaxResults: aws.Int32(5),
+	})
+	cancel()
+	if err != nil {
+		return nil, fmt.Errorf("failed to describe repositories using ECR API (%v)", err)
+	}
+	ts.lg.Info("listed repositories with limit 5", zap.Int("repositories", len(ecrRespV2.Repositories)))
+	for _, v := range ecrRespV2.Repositories {
+		ts.lg.Info("ECR repository", zap.String("repository-uri", aws.StringValue(v.RepositoryUri)))
 	}
 
 	// create a separate session for EKS (for resolver endpoint)
@@ -371,17 +446,54 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	}
 	ts.eksAPI = aws_eks.New(ts.eksSession)
 
-	ts.lg.Info("checking EKS API availability; listing clusters")
+	ts.lg.Info("checking AWS SDK Go v2 for EKS")
+	optFns := []func(o *aws_eks_v2.Options){}
+	if ts.cfg.Parameters.ResolverURL != "" {
+		ts.lg.Info(
+			"setting EKS endpoint resolver",
+			zap.String("resolver-url", ts.cfg.Parameters.ResolverURL),
+			zap.String("signing-name", ts.cfg.Parameters.SigningName),
+		)
+		rsFn := aws_eks_v2.EndpointResolverFunc(func(region string, option aws_eks_v2.EndpointResolverOptions) (aws_v2.Endpoint, error) {
+			return aws_v2.Endpoint{
+				URL:         ts.cfg.Parameters.ResolverURL,
+				SigningName: ts.cfg.Parameters.SigningName,
+			}, nil
+		})
+		optFns = append(optFns, func(o *aws_eks_v2.Options) {
+			o.EndpointResolver = rsFn
+		})
+	}
+	ts.eksAPIV2 = aws_eks_v2.NewFromConfig(awsCfgV2, optFns...)
+
+	ts.lg.Info("checking EKS API v1 availability; listing clusters")
 	var eksListResp *aws_eks.ListClustersOutput
 	eksListResp, err = ts.eksAPI.ListClusters(&aws_eks.ListClustersInput{
 		MaxResults: aws.Int64(20),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to list clusters using EKS API (%v)", err)
+		return nil, fmt.Errorf("failed to list clusters using EKS API v1 (%v)", err)
 	}
-	ts.lg.Info("listed clusters with limit 20", zap.Int("clusters", len(eksListResp.Clusters)))
+	ts.lg.Info("listed clusters with limit 20 with v1", zap.Int("clusters", len(eksListResp.Clusters)))
 	for _, v := range eksListResp.Clusters {
 		ts.lg.Info("EKS cluster", zap.String("name", aws.StringValue(v)))
+	}
+
+	ts.lg.Info("checking EKS API v2 availability; listing clusters")
+	var eksListRespV2 *aws_eks_v2.ListClustersOutput
+	cctx, ccancel := context.WithTimeout(context.Background(), 10*time.Second)
+	eksListRespV2, err = ts.eksAPIV2.ListClusters(cctx, &aws_eks_v2.ListClustersInput{
+		MaxResults: aws.Int32(20),
+	})
+	ccancel()
+	if err != nil {
+		// return nil, fmt.Errorf("failed to list clusters using EKS API v2 (%v)", err)
+		ts.lg.Warn("failed to list clusters using EKS API v2", zap.Error(err))
+	} else {
+		ts.lg.Info("listed clusters with limit 20 with v2", zap.Int("clusters", len(eksListResp.Clusters)))
+		for _, v := range eksListRespV2.Clusters {
+			ts.lg.Info("EKS cluster", zap.String("name", v))
+		}
 	}
 
 	// update k8s client if cluster has already been created

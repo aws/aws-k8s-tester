@@ -11,7 +11,7 @@ import (
 
 func TestAMI(t *testing.T) {
 	if os.Getenv("RUN_AWS_TESTS") != "1" {
-		// t.Skip()
+		t.Skip()
 	}
 
 	if _, _, _, err := New(nil); err == nil {
