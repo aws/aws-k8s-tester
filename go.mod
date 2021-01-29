@@ -45,6 +45,20 @@ replace (
 require (
 	github.com/aws/aws-sdk-go v1.35.30
 	github.com/aws/aws-sdk-go-v2 v1.0.0
+	github.com/aws/aws-sdk-go-v2/config v1.0.0
+	github.com/aws/aws-sdk-go-v2/service/autoscaling v1.0.0
+	github.com/aws/aws-sdk-go-v2/service/cloudformation v1.0.0
+	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.0.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.0.0
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.0.0
+	github.com/aws/aws-sdk-go-v2/service/eks v1.0.0
+	github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2 v1.0.0
+	github.com/aws/aws-sdk-go-v2/service/iam v1.0.0
+	github.com/aws/aws-sdk-go-v2/service/kms v1.0.0
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.0.0
+	github.com/aws/aws-sdk-go-v2/service/ssm v1.0.0
+	github.com/aws/aws-sdk-go-v2/service/sts v1.0.0
+	github.com/aws/smithy-go v1.0.0
 	github.com/briandowns/spinner v1.11.1
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/davecgh/go-spew v1.1.1
@@ -52,7 +66,7 @@ require (
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/go-ini/ini v1.55.0
 	github.com/gofrs/flock v0.7.1
-	github.com/google/go-cmp v0.5.0
+	github.com/google/go-cmp v0.5.4
 	github.com/manifoldco/promptui v0.7.0
 	github.com/mattn/go-runewidth v0.0.8 // indirect
 	github.com/mholt/archiver/v3 v3.3.0
