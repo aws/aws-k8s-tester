@@ -456,8 +456,9 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		)
 		rsFn := aws_eks_v2.EndpointResolverFunc(func(region string, option aws_eks_v2.EndpointResolverOptions) (aws_v2.Endpoint, error) {
 			return aws_v2.Endpoint{
-				URL:         ts.cfg.Parameters.ResolverURL,
-				SigningName: ts.cfg.Parameters.SigningName,
+				URL:           ts.cfg.Parameters.ResolverURL,
+				SigningName:   ts.cfg.Parameters.SigningName,
+				SigningRegion: ts.cfg.Region,
 			}, nil
 		})
 		optFns = append(optFns, func(o *aws_eks_v2.Options) {
