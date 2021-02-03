@@ -3,7 +3,7 @@
 <hr>
 
 
-## [v1.5.8](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.8) (2021-01)
+## [v1.5.8](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.8) (2021-02-02)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.7...v1.5.8).
 ### `eks`
