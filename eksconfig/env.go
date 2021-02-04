@@ -585,7 +585,7 @@ func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
 			continue
 		}
 		if tp.Field(i).Tag.Get("read-only") == "true" { // error when read-only field is set for update
-			return nil, fmt.Errorf("'%s=%s' is 'read-only' field; should not be set!", env, sv)
+			return nil, fmt.Errorf("'%s=%s' is 'read-only' field; should not be set", env, sv)
 		}
 		fieldName := tp.Field(i).Name
 

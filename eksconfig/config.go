@@ -100,6 +100,17 @@ type Config struct {
 	// all resources on creation fail.
 	OnFailureDeleteWaitSeconds uint64 `json:"on-failure-delete-wait-seconds"`
 
+	// InternalKubeControllerManagerQPS is the internal EKS kube-controller-manager qps
+	InternalKubeControllerManagerQPS   string `json:"internal-kube-controller-manager-qps,omitempty"`
+	// InternalKubeControllerManagerBurst is the internal EKS kube-controller-manager burst
+	InternalKubeControllerManagerBurst string `json:"internal-kube-controller-manager-burst,omitempty"`
+	// InternalKubeSchedulerQPS is the internal EKS kube-scheduler qps
+	InternalKubeSchedulerQPS           string `json:"internal-kube-scheduler-qps,omitempty"`
+	// InternalKubeSchedulerBurst is the internal EKS kube-scheduler burst
+	InternalKubeSchedulerBurst         string `json:"internal-kube-scheduler-burst,omitempty"`
+	// InternalFEUpdateMasterFlagsURL is the internal EKS update master flags endpoint
+	InternalFEUpdateMasterFlagsURL     string `json:"internal-fe-update-master-flags-url,omitempty"`
+
 	// CommandAfterCreateCluster is the command to execute after creating clusters.
 	// Currently supported variables are:
 	//  - "GetRef.Name" for cluster name
@@ -816,6 +827,12 @@ func NewDefault() *Config {
 		// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
 		// RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
 		RemoteAccessPrivateKeyPath: filepath.Join(os.TempDir(), randutil.String(15)+".insecure.key"),
+
+		InternalKubeControllerManagerQPS:   "",
+		InternalKubeControllerManagerBurst: "",
+		InternalKubeSchedulerQPS:           "",
+		InternalKubeSchedulerBurst:         "",
+		InternalFEUpdateMasterFlagsURL:     "",
 
 		// Kubernetes client DefaultQPS is 5.
 		// Kubernetes client DefaultBurst is 10.

@@ -56,6 +56,16 @@ spec:
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE_WAIT_SECONDS", "780")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE_WAIT_SECONDS")
+	os.Setenv("AWS_K8S_TESTER_EKS_INTERNAL_KUBE_CONTROLLER_MANAGER_QPS", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_INTERNAL_KUBE_CONTROLLER_MANAGER_QPS")
+	os.Setenv("AWS_K8S_TESTER_EKS_INTERNAL_KUBE_CONTROLLER_MANAGER_BURST", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_INTERNAL_KUBE_CONTROLLER_MANAGER_BURST")
+	os.Setenv("AWS_K8S_TESTER_EKS_INTERNAL_KUBE_SCHEDULER_QPS", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_INTERNAL_KUBE_SCHEDULER_QPS")
+	os.Setenv("AWS_K8S_TESTER_EKS_INTERNAL_KUBE_SCHEDULER_BURST", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_INTERNAL_KUBE_SCHEDULER_BURST")
+	os.Setenv("AWS_K8S_TESTER_EKS_INTERNAL_FE_UPDATE_MASTER_FLAGS_URL", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_INTERNAL_FE_UPDATE_MASTER_FLAGS_URL")
 	os.Setenv("AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER", "echo hello1")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER")
 	os.Setenv("AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER_TIMEOUT", "7m")
@@ -623,6 +633,21 @@ spec:
 	}
 	if cfg.OnFailureDeleteWaitSeconds != 780 {
 		t.Fatalf("unexpected OnFailureDeleteWaitSeconds %d", cfg.OnFailureDeleteWaitSeconds)
+	}
+	if cfg.InternalKubeControllerManagerQPS != "500" {
+		t.Fatalf("unexpected InternalKubeControllerManagerQPS %s", cfg.InternalKubeControllerManagerQPS)
+	}
+	if cfg.InternalKubeControllerManagerBurst != "500" {
+		t.Fatalf("unexpected InternalKubeControllerManagerBurst %s", cfg.InternalKubeControllerManagerBurst)
+	}
+	if cfg.InternalKubeSchedulerQPS != "500" {
+		t.Fatalf("unexpected InternalKubeSchedulerQPS %s", cfg.InternalKubeSchedulerQPS)
+	}
+	if cfg.InternalKubeSchedulerBurst != "500" {
+		t.Fatalf("unexpected InternalKubeSchedulerBurst %s", cfg.InternalKubeSchedulerBurst)
+	}
+	if cfg.InternalFEUpdateMasterFlagsURL != "uri" {
+		t.Fatalf("unexpected InternalFEUpdateMasterFlagsURL %s", cfg.InternalFEUpdateMasterFlagsURL)
 	}
 	if cfg.CommandAfterCreateCluster != "echo hello1" {
 		t.Fatalf("unexpected CommandAfterCreateCluster %q", cfg.CommandAfterCreateCluster)
