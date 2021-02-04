@@ -457,6 +457,26 @@ type Parameters struct {
 	// If not empty, the cluster is created with encryption feature
 	// enabled.
 	EncryptionCMKARN string `json:"encryption-cmk-arn"`
+
+	// EKS internal only
+	// If empty, use default kube-controller-manager and kube-scheduler qps and burst
+	// ref. https://kubernetes.io/docs/reference/command-line-tools-reference/kube-controller-manager/
+	// ref. https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/
+
+	// KubeControllerManagerQPS is the EKS kube-controller-manager qps
+	// --kube-api-qps float32     Default: 20
+	KubeControllerManagerQPS   string `json:"kube-controller-manager-qps,omitempty"`
+	// KubeControllerManagerBurst is the EKS kube-controller-manager burst
+	// --kube-api-burst int32     Default: 30
+	KubeControllerManagerBurst string `json:"kube-controller-manager-burst,omitempty"`
+	// KubeSchedulerQPS is the internal EKS kube-scheduler qps
+	// --kube-api-qps float32     Default: 50
+	KubeSchedulerQPS           string `json:"kube-scheduler-qps,omitempty"`
+	// KubeSchedulerBurst is the internal EKS kube-scheduler burst
+	// --kube-api-burst int32     Default: 100
+	KubeSchedulerBurst         string `json:"kube-scheduler-burst,omitempty"`
+	// FEUpdateMasterFlagsURL is the internal EKS update master flags endpoint
+	FEUpdateMasterFlagsURL     string `json:"fe-update-master-flags-url,omitempty"`
 }
 
 func getDefaultParameters() *Parameters {

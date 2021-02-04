@@ -283,6 +283,7 @@ func (ts *tester) createObject() (batch_v1beta1.CronJob, string, error) {
 			SuccessfulJobsHistoryLimit: aws.Int32(ts.cfg.EKSConfig.AddOnCronJobs.SuccessfulJobsHistoryLimit),
 			FailedJobsHistoryLimit:     aws.Int32(ts.cfg.EKSConfig.AddOnCronJobs.FailedJobsHistoryLimit),
 			JobTemplate:                jobSpec,
+			ConcurrencyPolicy:          batch_v1beta1.ReplaceConcurrent,
 		},
 	}
 	b, err := yaml.Marshal(cronObj)

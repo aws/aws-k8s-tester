@@ -70,6 +70,7 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/wordpress"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	pkg_aws "github.com/aws/aws-k8s-tester/pkg/aws"
+	"github.com/aws/aws-k8s-tester/pkg/aws/awscurl"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
@@ -1112,6 +1113,32 @@ func (ts *Tester) Up() (err error) {
 	ts.k8sClient = ts.clusterTester.Client()
 	if err := ts.createTesters(); err != nil {
 		return err
+	}
+
+	if ts.cfg.Parameters.KubeControllerManagerQPS != "" &&
+		ts.cfg.Parameters.KubeControllerManagerBurst != "" &&
+		ts.cfg.Parameters.KubeSchedulerQPS != "" &&
+		ts.cfg.Parameters.KubeSchedulerBurst != "" &&
+		ts.cfg.Parameters.FEUpdateMasterFlagsURL != "" {
+
+		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]run awscurl Command.CommandAfterCreateCluster\n"))
+		curl := awscurl.New(awscurl.Config{
+			ClusterArn:                 ts.cfg.Status.ClusterARN,
+			KubeControllerManagerQPS:   ts.cfg.Parameters.KubeControllerManagerQPS,
+			KubeControllerManagerBurst: ts.cfg.Parameters.KubeControllerManagerBurst,
+			KubeSchedulerQPS:           ts.cfg.Parameters.KubeSchedulerQPS,
+			KubeSchedulerBurst:         ts.cfg.Parameters.KubeSchedulerBurst,
+			URI:                        ts.cfg.Parameters.FEUpdateMasterFlagsURL,
+			Service:                    "eks-internal",
+			Region:                     ts.cfg.Region,
+			Method:                     "POST",
+		})
+		res, err := curl.Do()
+		if err != nil {
+			return fmt.Errorf("failed to curl request %v", err)
+		}
+		fmt.Fprintf(ts.logWriter, "\nrun awscurl Command output:\n\n%s\n", res)
 	}
 
 	if ts.cfg.CommandAfterCreateCluster != "" {

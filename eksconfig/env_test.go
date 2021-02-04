@@ -125,6 +125,16 @@ spec:
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN", "key-arn")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_QPS", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_QPS")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_BURST", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_BURST")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_SCHEDULER_QPS", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_SCHEDULER_QPS")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_SCHEDULER_BURST", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_SCHEDULER_BURST")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_FE_UPDATE_MASTER_FLAGS_URL", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_FE_UPDATE_MASTER_FLAGS_URL")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE")
@@ -738,6 +748,21 @@ spec:
 	}
 	if cfg.Parameters.EncryptionCMKARN != "key-arn" {
 		t.Fatalf("unexpected Parameters.EncryptionCMKARN %q", cfg.Parameters.EncryptionCMKARN)
+	}
+	if cfg.Parameters.KubeControllerManagerQPS != "500" {
+		t.Fatalf("unexpected Parameters.KubeControllerManagerQPS %s", cfg.Parameters.KubeControllerManagerQPS)
+	}
+	if cfg.Parameters.KubeControllerManagerBurst != "500" {
+		t.Fatalf("unexpected Parameters.KubeControllerManagerBurst %s", cfg.Parameters.KubeControllerManagerBurst)
+	}
+	if cfg.Parameters.KubeSchedulerQPS != "500" {
+		t.Fatalf("unexpected Parameters.KubeSchedulerQPS %s", cfg.Parameters.KubeSchedulerQPS)
+	}
+	if cfg.Parameters.KubeSchedulerBurst != "500" {
+		t.Fatalf("unexpected Parameters.KubeSchedulerBurst %s", cfg.Parameters.KubeSchedulerBurst)
+	}
+	if cfg.Parameters.FEUpdateMasterFlagsURL != "uri" {
+		t.Fatalf("unexpected Parameters.FEUpdateMasterFlagsURL %s", cfg.Parameters.FEUpdateMasterFlagsURL)
 	}
 
 	if !cfg.AddOnClusterVersionUpgrade.Enable {
