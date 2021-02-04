@@ -100,17 +100,6 @@ type Config struct {
 	// all resources on creation fail.
 	OnFailureDeleteWaitSeconds uint64 `json:"on-failure-delete-wait-seconds"`
 
-	// InternalKubeControllerManagerQPS is the internal EKS kube-controller-manager qps
-	InternalKubeControllerManagerQPS   string `json:"internal-kube-controller-manager-qps,omitempty"`
-	// InternalKubeControllerManagerBurst is the internal EKS kube-controller-manager burst
-	InternalKubeControllerManagerBurst string `json:"internal-kube-controller-manager-burst,omitempty"`
-	// InternalKubeSchedulerQPS is the internal EKS kube-scheduler qps
-	InternalKubeSchedulerQPS           string `json:"internal-kube-scheduler-qps,omitempty"`
-	// InternalKubeSchedulerBurst is the internal EKS kube-scheduler burst
-	InternalKubeSchedulerBurst         string `json:"internal-kube-scheduler-burst,omitempty"`
-	// InternalFEUpdateMasterFlagsURL is the internal EKS update master flags endpoint
-	InternalFEUpdateMasterFlagsURL     string `json:"internal-fe-update-master-flags-url,omitempty"`
-
 	// CommandAfterCreateCluster is the command to execute after creating clusters.
 	// Currently supported variables are:
 	//  - "GetRef.Name" for cluster name
@@ -468,6 +457,26 @@ type Parameters struct {
 	// If not empty, the cluster is created with encryption feature
 	// enabled.
 	EncryptionCMKARN string `json:"encryption-cmk-arn"`
+
+	// EKS internal only
+	// If empty, use default kube-controller-manager and kube-scheduler qps and burst
+	// ref. https://kubernetes.io/docs/reference/command-line-tools-reference/kube-controller-manager/
+	// ref. https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/
+
+	// KubeControllerManagerQPS is the EKS kube-controller-manager qps
+	// --kube-api-qps float32     Default: 20
+	KubeControllerManagerQPS   string `json:"kube-controller-manager-qps,omitempty"`
+	// KubeControllerManagerBurst is the EKS kube-controller-manager burst
+	// --kube-api-burst int32     Default: 30
+	KubeControllerManagerBurst string `json:"kube-controller-manager-burst,omitempty"`
+	// KubeSchedulerQPS is the internal EKS kube-scheduler qps
+	// --kube-api-qps float32     Default: 50
+	KubeSchedulerQPS           string `json:"kube-scheduler-qps,omitempty"`
+	// KubeSchedulerBurst is the internal EKS kube-scheduler burst
+	// --kube-api-burst int32     Default: 100
+	KubeSchedulerBurst         string `json:"kube-scheduler-burst,omitempty"`
+	// FEUpdateMasterFlagsURL is the internal EKS update master flags endpoint
+	FEUpdateMasterFlagsURL     string `json:"fe-update-master-flags-url,omitempty"`
 }
 
 func getDefaultParameters() *Parameters {
@@ -827,12 +836,6 @@ func NewDefault() *Config {
 		// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
 		// RemoteAccessPrivateKeyPath: filepath.Join(homedir.HomeDir(), ".ssh", "kube_aws_rsa"),
 		RemoteAccessPrivateKeyPath: filepath.Join(os.TempDir(), randutil.String(15)+".insecure.key"),
-
-		InternalKubeControllerManagerQPS:   "",
-		InternalKubeControllerManagerBurst: "",
-		InternalKubeSchedulerQPS:           "",
-		InternalKubeSchedulerBurst:         "",
-		InternalFEUpdateMasterFlagsURL:     "",
 
 		// Kubernetes client DefaultQPS is 5.
 		// Kubernetes client DefaultBurst is 10.

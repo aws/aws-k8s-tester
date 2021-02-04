@@ -16,7 +16,7 @@ import (
 )
 
 type client struct {
-	cfg Config
+	cfg         Config
 	http1Client *http.Client
 
 	payload []byte
