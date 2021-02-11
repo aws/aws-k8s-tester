@@ -1123,6 +1123,9 @@ func (ts *Tester) Up() (err error) {
 		ts.cfg.Parameters.KubeSchedulerBurst != "" &&
 		ts.cfg.Parameters.FEUpdateMasterFlagsURL != "" {
 
+		time.Sleep(5*time.Minute)
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]waiting 5 minutes for another control plane instance in service\n"))
+
 		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Fprintf(ts.logWriter, ts.color("[light_green]run awscurl Command.CommandAfterCreateCluster\n"))
 		curl := awscurl.New(awscurl.Config{
