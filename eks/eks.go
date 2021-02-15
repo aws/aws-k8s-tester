@@ -353,9 +353,11 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	if err != nil {
 		return nil, err
 	}
-	ts.cfg.Status.AWSAccountID = aws.StringValue(stsOutput.Account)
-	ts.cfg.Status.AWSUserID = aws.StringValue(stsOutput.UserId)
-	ts.cfg.Status.AWSIAMRoleARN = aws.StringValue(stsOutput.Arn)
+	if stsOutput != nil {
+		ts.cfg.Status.AWSAccountID = aws.StringValue(stsOutput.Account)
+		ts.cfg.Status.AWSUserID = aws.StringValue(stsOutput.UserId)
+		ts.cfg.Status.AWSIAMRoleARN = aws.StringValue(stsOutput.Arn)
+	}
 	ts.cfg.Sync()
 
 	ts.lg.Info("checking AWS SDK Go v2")

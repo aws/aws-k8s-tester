@@ -1131,7 +1131,8 @@ func (cfg *Config) validateConfig() error {
 	}
 	regions := partition.Regions()
 	if _, ok := regions[cfg.Region]; !ok {
-		return fmt.Errorf("region %q for partition %q not found in %+v", cfg.Region, cfg.Partition, regions)
+		// we will get this error when the Go AWS SDK is not updated to support a new region
+		fmt.Fprintf(os.Stderr, "[WARN] region %q for partition %q not found in %+v", cfg.Region, cfg.Partition, regions)
 	}
 
 	_, cerr := terminal.IsColor()
