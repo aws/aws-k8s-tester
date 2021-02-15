@@ -116,57 +116,56 @@ func New(cfg *Config) (ss *session.Session, stsOutput *sts.GetCallerIdentityOutp
 	}
 	regions := partition.Regions()
 	region, ok := regions[cfg.Region]
-	if !ok {
-		return nil, nil, "", fmt.Errorf("region %q for partition %q not found in %+v", cfg.Region, cfg.Partition, regions)
-	}
-	stsEndpoint, err := region.ResolveEndpoint(endpoints.StsServiceID)
-	if err != nil {
-		return nil, nil, "", fmt.Errorf("failed to resolve endpoints for sts %q (%v)", cfg.Region, err)
-	}
-	stsConfig := awsConfig
-	stsConfig.STSRegionalEndpoint = endpoints.RegionalSTSEndpoint
-	var stsSession *session.Session
-	stsSession, err = session.NewSession(&stsConfig)
-	if err != nil {
-		return nil, nil, "", err
-	}
-	/*
-		iamSvc := iam.New(stsSession)
-		if _, err = iamSvc.SetSecurityTokenServicePreferences(&iam.SetSecurityTokenServicePreferencesInput{
-			GlobalEndpointTokenVersion: aws.String("v2Token"),
-		}); err != nil {
-			cfg.Logger.Warn("failed to enable v2 security token", zap.Error(err))
+	if ok {
+		stsEndpoint, err := region.ResolveEndpoint(endpoints.StsServiceID)
+		if err != nil {
+			return nil, nil, "", fmt.Errorf("failed to resolve endpoints for sts %q (%v)", cfg.Region, err)
 		}
-	*/
-	stsSvc := sts.New(stsSession)
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	stsOutput, err = stsSvc.GetCallerIdentityWithContext(
-		ctx,
-		&sts.GetCallerIdentityInput{},
-		request.WithLogLevel(aws.LogDebug),
-		request.WithResponseReadTimeout(15*time.Second),
-	)
-	cancel()
-	if err != nil {
-		cfg.Logger.Warn("failed to get sts caller identity",
-			zap.String("partition", cfg.Partition),
-			zap.String("region", cfg.Region),
-			zap.String("region-id", region.ID()),
-			zap.String("region-description", region.Description()),
-			zap.String("region-resolved-sts-endpoint", stsEndpoint.URL),
-			zap.Error(err),
+		stsConfig := awsConfig
+		stsConfig.STSRegionalEndpoint = endpoints.RegionalSTSEndpoint
+		var stsSession *session.Session
+		stsSession, err = session.NewSession(&stsConfig)
+		if err != nil {
+			return nil, nil, "", err
+		}
+		/*
+			iamSvc := iam.New(stsSession)
+			if _, err = iamSvc.SetSecurityTokenServicePreferences(&iam.SetSecurityTokenServicePreferencesInput{
+				GlobalEndpointTokenVersion: aws.String("v2Token"),
+			}); err != nil {
+				cfg.Logger.Warn("failed to enable v2 security token", zap.Error(err))
+			}
+		*/
+		stsSvc := sts.New(stsSession)
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		stsOutput, err = stsSvc.GetCallerIdentityWithContext(
+			ctx,
+			&sts.GetCallerIdentityInput{},
+			request.WithLogLevel(aws.LogDebug),
+			request.WithResponseReadTimeout(15*time.Second),
 		)
-	} else {
-		cfg.Logger.Info("successfully get sts caller identity",
-			zap.String("partition", cfg.Partition),
-			zap.String("region", cfg.Region),
-			zap.String("region-id", region.ID()),
-			zap.String("region-description", region.Description()),
-			zap.String("region-resolved-sts-endpoint", stsEndpoint.URL),
-			zap.String("account-id", aws.StringValue(stsOutput.Account)),
-			zap.String("user-id", aws.StringValue(stsOutput.UserId)),
-			zap.String("arn", aws.StringValue(stsOutput.Arn)),
-		)
+		cancel()
+		if err != nil {
+			cfg.Logger.Warn("failed to get sts caller identity",
+				zap.String("partition", cfg.Partition),
+				zap.String("region", cfg.Region),
+				zap.String("region-id", region.ID()),
+				zap.String("region-description", region.Description()),
+				zap.String("region-resolved-sts-endpoint", stsEndpoint.URL),
+				zap.Error(err),
+			)
+		} else {
+			cfg.Logger.Info("successfully get sts caller identity",
+				zap.String("partition", cfg.Partition),
+				zap.String("region", cfg.Region),
+				zap.String("region-id", region.ID()),
+				zap.String("region-description", region.Description()),
+				zap.String("region-resolved-sts-endpoint", stsEndpoint.URL),
+				zap.String("account-id", aws.StringValue(stsOutput.Account)),
+				zap.String("user-id", aws.StringValue(stsOutput.UserId)),
+				zap.String("arn", aws.StringValue(stsOutput.Arn)),
+			)
+		}
 	}
 
 	resolver := endpoints.DefaultResolver()
