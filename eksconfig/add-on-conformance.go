@@ -86,8 +86,8 @@ func (cfg *Config) IsEnabledAddOnConformance() bool {
 func getDefaultAddOnConformance() *AddOnConformance {
 	addOn := &AddOnConformance{
 		Enable:                false,
-		SonobuoyPath:          "/tmp/sonobuoy-v0.18.3",
-		SonobuoyDownloadURL:   "https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.18.3/sonobuoy_0.18.3_linux_amd64.tar.gz",
+		SonobuoyPath:          "/tmp/sonobuoy-v0.19.0",
+		SonobuoyDownloadURL:   "https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.19.0/sonobuoy_0.19.0_linux_amd64.tar.gz",
 		SonobuoyImage:         "",
 		SystemdLogsImage:      "",
 		SonobuoyE2eRepoConfig: "",
@@ -171,7 +171,7 @@ func (cfg *Config) validateAddOnConformance() error {
 	}
 
 	if cfg.AddOnConformance.SonobuoyRunKubeConformanceImage == "" {
-		cfg.AddOnConformance.SonobuoyRunKubeConformanceImage = fmt.Sprintf("gcr.io/google-containers/conformance:v%s.0", cfg.Parameters.Version)
+		cfg.AddOnConformance.SonobuoyRunKubeConformanceImage = fmt.Sprintf("k8s.gcr.io/conformance:v%s.0", cfg.Parameters.Version)
 	}
 
 	cfg.AddOnConformance.SonobuoyResultDir = filepath.Join(
