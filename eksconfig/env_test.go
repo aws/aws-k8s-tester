@@ -125,6 +125,8 @@ spec:
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN", "key-arn")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_APISERVER_MAX_REQUESTS_INFLIGHT", "3000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_APISERVER_MAX_REQUESTS_INFLIGHT")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_QPS", "500")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_QPS")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_BURST", "500")
@@ -748,6 +750,9 @@ spec:
 	}
 	if cfg.Parameters.EncryptionCMKARN != "key-arn" {
 		t.Fatalf("unexpected Parameters.EncryptionCMKARN %q", cfg.Parameters.EncryptionCMKARN)
+	}
+	if cfg.Parameters.KubeAPIServerMaxRequestsInflight != "3000" {
+		t.Fatalf("unexpected Parameters.KubeAPIServerMaxRequestsInflight %s", cfg.Parameters.KubeAPIServerMaxRequestsInflight)
 	}
 	if cfg.Parameters.KubeControllerManagerQPS != "500" {
 		t.Fatalf("unexpected Parameters.KubeControllerManagerQPS %s", cfg.Parameters.KubeControllerManagerQPS)
