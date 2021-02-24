@@ -541,6 +541,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnStresserRemote, got %T", vv)
 	}
 
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnStresserRemoteV2, cfg.AddOnStresserRemoteV2)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*AddOnStresserRemoteV2); ok {
+		cfg.AddOnStresserRemoteV2 = av
+	} else {
+		return fmt.Errorf("expected *AddOnStresserRemoteV2, got %T", vv)
+	}
+
 	if cfg.AddOnClusterVersionUpgrade == nil {
 		cfg.AddOnClusterVersionUpgrade = &AddOnClusterVersionUpgrade{}
 	}

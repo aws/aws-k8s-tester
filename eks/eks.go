@@ -65,6 +65,7 @@ import (
 	secrets_remote "github.com/aws/aws-k8s-tester/eks/secrets/remote"
 	stresser_local "github.com/aws/aws-k8s-tester/eks/stresser/local"
 	stresser_remote "github.com/aws/aws-k8s-tester/eks/stresser/remote"
+	stresser_remote_v2 "github.com/aws/aws-k8s-tester/eks/stresser2"
 	"github.com/aws/aws-k8s-tester/eks/tester"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eks/wordpress"
@@ -921,6 +922,13 @@ func (ts *Tester) createTesters() (err error) {
 			S3API:     ts.s3API,
 			CWAPI:     ts.cwAPI,
 			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnStresserRemoteRepositoryRegion())),
+		}),
+		stresser_remote_v2.New(stresser_remote_v2.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnStresserRemoteV2RepositoryRegion())),
 		}),
 		cluster_version_upgrade.New(cluster_version_upgrade.Config{
 			Logger:    ts.lg,

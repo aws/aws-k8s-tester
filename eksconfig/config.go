@@ -338,6 +338,11 @@ type Config struct {
 	// It generates loads from the remote workers (Pod) in the cluster.
 	// ref. https://github.com/kubernetes/perf-tests
 	AddOnStresserRemote *AddOnStresserRemote `json:"add-on-stresser-remote,omitempty"`
+	// AddOnStresserRemoteV2 defines parameters for EKS cluster
+	// add-on cluster loader remote v2.
+	// It generates loads from the remote workers (Pod) in the cluster.
+	// ref. https://github.com/kubernetes/perf-tests
+	AddOnStresserRemoteV2 *AddOnStresserRemoteV2 `json:"add-on-stresser-remote-v2,omitempty"`
 
 	// AddOnClusterVersionUpgrade defines parameters
 	// for EKS cluster version upgrade add-on.
@@ -894,6 +899,7 @@ func NewDefault() *Config {
 		AddOnHollowNodesRemote:     getDefaultAddOnHollowNodesRemote(),
 		AddOnStresserLocal:         getDefaultAddOnStresserLocal(),
 		AddOnStresserRemote:        getDefaultAddOnStresserRemote(),
+		AddOnStresserRemoteV2:      getDefaultAddOnStresserRemoteV2(),
 		AddOnClusterVersionUpgrade: getDefaultAddOnClusterVersionUpgrade(),
 		AddOnAmiSoftLockupIssue454: getDefaultAddOnAmiSoftLockupIssue454(),
 
@@ -1097,6 +1103,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if err := cfg.validateAddOnStresserRemote(); err != nil {
 		return fmt.Errorf("validateAddOnStresserRemote failed [%v]", err)
+	}
+	if err := cfg.validateAddOnStresserRemoteV2(); err != nil {
+		return fmt.Errorf("validateAddOnStresserRemoteV2 failed [%v]", err)
 	}
 
 	if err := cfg.validateAddOnClusterVersionUpgrade(); err != nil {
