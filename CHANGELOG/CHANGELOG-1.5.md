@@ -2,6 +2,8 @@
 
 <hr>
 
+## [v1.5.9](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.9) (TODO)
+- Add [`stresser V2`](https://github.com/aws/aws-k8s-tester/pull/206).
 
 ## [v1.5.8](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.8) (2021-02-02)
 
