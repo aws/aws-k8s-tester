@@ -1129,6 +1129,7 @@ func (ts *Tester) Up() (err error) {
 		ts.cfg.Parameters.KubeControllerManagerBurst != "" &&
 		ts.cfg.Parameters.KubeSchedulerQPS != "" &&
 		ts.cfg.Parameters.KubeSchedulerBurst != "" &&
+		ts.cfg.Parameters.KubeAPIServerMaxRequestsInflight != "" &&
 		ts.cfg.Parameters.FEUpdateMasterFlagsURL != "" {
 
 		time.Sleep(5 * time.Minute)
