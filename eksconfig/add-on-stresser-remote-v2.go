@@ -2,8 +2,9 @@ package eksconfig
 
 import (
 	"errors"
-	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"time"
+
+	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 )
 
 type AddOnStresserRemoteV2 struct {
@@ -38,7 +39,7 @@ type AddOnStresserRemoteV2 struct {
 	RepositoryBusyBoxImageTag string `json:"repository-busybox-image-tag,omitempty"`
 
 	// Schedule is the cron schedule (e.g. "*/5 * * * *").
-	Schedule  string `json:"schedule"`
+	Schedule string `json:"schedule"`
 	// Completes is the desired number of successfully finished pods.
 	Completes int `json:"completes"`
 	// Parallels is the the maximum desired number of pods the
@@ -56,13 +57,13 @@ type AddOnStresserRemoteV2 struct {
 	ObjectSize int `json:"object-size"`
 
 	// Duration is the duration to run stress2 testing.
-	Duration   time.Duration `json:"duration,omitempty"`
-	DurationString string    `json:"duration-string,omitempty" read-only:"true"`
+	Duration       time.Duration `json:"duration,omitempty"`
+	DurationString string        `json:"duration-string,omitempty" read-only:"true"`
 
-	// Coroutine is the number of concurrent go routines run per job
-	Coroutine  int `json:"coroutine"`
-	// SecretNum is the number of secrets generated per job
-	SecretNum  int `json:"secret-num"`
+	// Coroutines is the number of concurrent go routines run per job
+	Coroutines int `json:"coroutines"`
+	// Secrets is the number of secrets generated per job
+	Secrets int `json:"secrets"`
 }
 
 // EnvironmentVariablePrefixAddOnStresserRemoteV2 is the environment variable prefix used for "eksconfig".
@@ -83,16 +84,16 @@ func (cfg *Config) IsEnabledAddOnStresserRemoteV2() bool {
 
 func getDefaultAddOnStresserRemoteV2() *AddOnStresserRemoteV2 {
 	return &AddOnStresserRemoteV2{
-		Enable:                                false,
-		Schedule:                              "0 */6 * * *", // every 6 hours align with etcd defrag interval
-		Completes:                             10,
-		Parallels:                             10,
-		SuccessfulJobsHistoryLimit:            3,
-		FailedJobsHistoryLimit:                1,
-		ObjectSize:                            8, // 8 bytes
-		Duration:                              10*time.Minute,
-		Coroutine:                             10,
-		SecretNum:                             10,
+		Enable:                     false,
+		Schedule:                   "0 */6 * * *", // every 6 hours align with etcd defrag interval
+		Completes:                  10,
+		Parallels:                  10,
+		SuccessfulJobsHistoryLimit: 3,
+		FailedJobsHistoryLimit:     1,
+		ObjectSize:                 8, // 8 bytes
+		Duration:                   10 * time.Minute,
+		Coroutines:                 10,
+		Secrets:                    10,
 	}
 }
 
@@ -132,14 +133,14 @@ func (cfg *Config) validateAddOnStresserRemoteV2() error {
 	}
 
 	if cfg.AddOnStresserRemoteV2.Duration == time.Duration(0) {
-		cfg.AddOnStresserRemoteV2.Duration = 10*time.Minute
+		cfg.AddOnStresserRemoteV2.Duration = 10 * time.Minute
 	}
 	cfg.AddOnStresserRemoteV2.DurationString = cfg.AddOnStresserRemoteV2.Duration.String()
-	if cfg.AddOnStresserRemoteV2.Coroutine <= 0 {
-		cfg.AddOnStresserRemoteV2.Coroutine = 10
+	if cfg.AddOnStresserRemoteV2.Coroutines <= 0 {
+		cfg.AddOnStresserRemoteV2.Coroutines = 10
 	}
-	if cfg.AddOnStresserRemoteV2.SecretNum >= 0 {
-		cfg.AddOnStresserRemoteV2.SecretNum = 10
+	if cfg.AddOnStresserRemoteV2.Secrets >= 0 {
+		cfg.AddOnStresserRemoteV2.Secrets = 10
 	}
 
 	return nil

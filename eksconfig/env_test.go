@@ -614,10 +614,10 @@ spec:
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_OBJECT_SIZE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_DURATION", "7m30s")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_DURATION")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_COROUTINE", "10")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_COROUTINE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_SECRET_NUM", "10")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_SECRET_NUM")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_COROUTINES", "10")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_COROUTINES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_SECRETS", "10")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_SECRETS")
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
 	}
@@ -1625,11 +1625,11 @@ spec:
 	if cfg.AddOnStresserRemoteV2.Duration != 7*time.Minute+30*time.Second {
 		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.Duration %v", cfg.AddOnStresserRemoteV2.Duration)
 	}
-	if cfg.AddOnStresserRemoteV2.Coroutine != 10{
-		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.Coroutine %d", cfg.AddOnStresserRemoteV2.Coroutine)
+	if cfg.AddOnStresserRemoteV2.Coroutines != 10 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.Coroutines %d", cfg.AddOnStresserRemoteV2.Coroutines)
 	}
-	if cfg.AddOnStresserRemoteV2.SecretNum != 10 {
-		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.SecretNum %d", cfg.AddOnStresserRemoteV2.SecretNum)
+	if cfg.AddOnStresserRemoteV2.Secrets != 10 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.Secrets %d", cfg.AddOnStresserRemoteV2.Secrets)
 	}
 
 	cfg.Parameters.RoleManagedPolicyARNs = nil

@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	rbacv1 "k8s.io/api/rbac/v1"
-	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"reflect"
 	"strings"
 	"time"
@@ -23,19 +21,21 @@ import (
 	batch_v1 "k8s.io/api/batch/v1"
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 	"sigs.k8s.io/yaml"
 )
 
 type Config struct {
-	Logger     *zap.Logger
-	LogWriter  io.Writer
+	Logger    *zap.Logger
+	LogWriter io.Writer
 
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
-	ECRAPI      ecriface.ECRAPI
+	ECRAPI    ecriface.ECRAPI
 }
 
 var pkgName = reflect.TypeOf(tester{}).PkgPath()
@@ -53,10 +53,10 @@ type tester struct {
 }
 
 const (
-	stresserV2AppName = "stresser2-app"
-	stresserV2ServiceAccountName          = "stresser2-remote-service-account"
-	stresserV2RBACRoleName                = "stresser2-remote-rbac-role"
-	stresserV2RBACClusterRoleBindingName  = "stresser2-remote-rbac-role-binding"
+	stresserV2AppName                    = "stresser2-app"
+	stresserV2ServiceAccountName         = "stresser2-remote-service-account"
+	stresserV2RBACRoleName               = "stresser2-remote-rbac-role"
+	stresserV2RBACClusterRoleBindingName = "stresser2-remote-rbac-role-binding"
 )
 
 func (ts *tester) Create() (err error) {
@@ -112,7 +112,6 @@ func (ts *tester) Create() (err error) {
 	}
 
 	// TODO waits for all the job spawned by cronJob up and running
-
 
 	ts.cfg.EKSConfig.Sync()
 	return nil
@@ -445,11 +444,11 @@ func (ts *tester) createCronJob() (err error) {
 	return nil
 }
 func (ts *tester) createObject() (batch_v1beta1.CronJob, string, error) {
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create stresser2 --number=%d --duration=%s --object-size=%d --secret-num=%d --busybox-image=%s",
-		ts.cfg.EKSConfig.AddOnStresserRemoteV2.Coroutine,
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create stresser2 --number=%d --duration=%s --object-size=%d --secrets=%d --busybox-image=%s",
+		ts.cfg.EKSConfig.AddOnStresserRemoteV2.Coroutines,
 		ts.cfg.EKSConfig.AddOnStresserRemoteV2.Duration,
 		ts.cfg.EKSConfig.AddOnStresserRemoteV2.ObjectSize,
-		ts.cfg.EKSConfig.AddOnStresserRemoteV2.SecretNum,
+		ts.cfg.EKSConfig.AddOnStresserRemoteV2.Secrets,
 		fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s:%s",
 			ts.cfg.EKSConfig.AddOnStresserRemoteV2.RepositoryAccountID,
 			ts.cfg.EKSConfig.AddOnStresserRemoteV2.RepositoryRegion,
@@ -554,4 +553,3 @@ func (ts *tester) deleteCronJob() (err error) {
 	ts.cfg.Logger.Info("deleted CronJob", zap.String("name", stresserV2AppName))
 	return nil
 }
-

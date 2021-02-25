@@ -3,24 +3,24 @@ package eks
 import (
 	"context"
 	"fmt"
-	"github.com/aws/aws-k8s-tester/pkg/randutil"
-	"github.com/dustin/go-humanize"
-	"github.com/google/uuid"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	restclient "k8s.io/client-go/rest"
-	"k8s.io/client-go/util/retry"
 	"os"
 	"os/signal"
-	"sigs.k8s.io/yaml"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/pkg/randutil"
+	"github.com/dustin/go-humanize"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/yaml"
 )
 
 var cfg = stresser2{}
@@ -34,21 +34,21 @@ func newCreateStresserV2() *cobra.Command {
 	cmd.PersistentFlags().IntVar(&cfg.N, "number", 5, "number of go routines")
 	cmd.PersistentFlags().DurationVar(&cfg.duration, "duration", 10*time.Minute, "duration of the simulation")
 	cmd.PersistentFlags().IntVar(&cfg.objectSize, "object-size", 8, "object size, by default 8 bytes")
-	cmd.PersistentFlags().IntVar(&cfg.secretNum, "secret-num", 10, "secret object in default namespace, no more than 500")
+	cmd.PersistentFlags().IntVar(&cfg.secrets, "secrets", 10, "secret object in default namespace, no more than 500")
 	cmd.PersistentFlags().StringVar(&cfg.busyboxImage, "busybox-image", "", "busy box ecr image uri")
 	return cmd
 }
 
 type stresser2 struct {
-	N int
-	duration time.Duration
-	objectSize int
-	secretNum int
+	N            int
+	duration     time.Duration
+	objectSize   int
+	secrets      int
 	busyboxImage string
 }
 
 func createStresserFuncV2(cmd *cobra.Command, args []string) {
-	if cfg.secretNum > 500 {
+	if cfg.secrets > 500 {
 		fmt.Fprintf(os.Stderr, "fail to start stresser v2, due to secret-num bigger than 500")
 		os.Exit(1)
 	}
@@ -71,22 +71,22 @@ func createStresserFuncV2(cmd *cobra.Command, args []string) {
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
 	terminateC := make(chan struct{}, 1)
 
-	go func(){
+	go func() {
 		select {
-		case sig := <- sigs:
+		case sig := <-sigs:
 			fmt.Println(fmt.Sprintf("received signal, %s", sig.String()))
-			for i := 0; i < 2 * cfg.N + cfg.secretNum; i++ {
+			for i := 0; i < 2*cfg.N+cfg.secrets; i++ {
 				terminateC <- struct{}{}
 			}
 
-		case <- time.After(cfg.duration):
+		case <-time.After(cfg.duration):
 		}
 	}()
 
 	var wg sync.WaitGroup
-	wg.Add(2 * cfg.N + cfg.secretNum)
+	wg.Add(2*cfg.N + cfg.secrets)
 
-	for i := 0; i < cfg.secretNum; i++ {
+	for i := 0; i < cfg.secrets; i++ {
 		go startWriteSecrets(config, &wg, cfg.duration, cfg.objectSize, terminateC)
 	}
 
@@ -122,15 +122,15 @@ func startWriteSecrets(config *restclient.Config, wg *sync.WaitGroup, duration t
 		defer ticker.Stop()
 		for {
 			select {
-			case <- stopc:
+			case <-stopc:
 				fmt.Println("received stop signal")
 				return
-			case <- ticker.C:
+			case <-ticker.C:
 				func() {
 					ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
 					defer cancel()
 					defer func() {
-						time.Sleep(2*time.Second)
+						time.Sleep(2 * time.Second)
 						fmt.Println("Deleting deployment...")
 						err := secretsClient.Delete(context.TODO(), secretName, metav1.DeleteOptions{})
 						if err != nil {
@@ -144,7 +144,7 @@ func startWriteSecrets(config *restclient.Config, wg *sync.WaitGroup, duration t
 					secret := &corev1.Secret{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "v1",
-							Kind: "Secret",
+							Kind:       "Secret",
 						},
 						ObjectMeta: metav1.ObjectMeta{
 							// create random number to distinguish between multiple deployment
@@ -169,11 +169,11 @@ func startWriteSecrets(config *restclient.Config, wg *sync.WaitGroup, duration t
 					// forever loop to update deployment
 					for {
 						select {
-						case <- ctx.Done():
+						case <-ctx.Done():
 							fmt.Println(fmt.Sprintf("time out stop updating the secret %s", secretName))
 							cancel()
 							return
-						case <- stopc:
+						case <-stopc:
 							fmt.Println("received stop signal")
 							return
 						default:
@@ -226,7 +226,7 @@ func startWriteSecrets(config *restclient.Config, wg *sync.WaitGroup, duration t
 	}()
 
 	select {
-	case <- time.After(duration):
+	case <-time.After(duration):
 		fmt.Println(fmt.Sprintf("exit after timeout %v", duration))
 		donecCloseOnce.Do(func() {
 			close(stopc)
@@ -234,7 +234,7 @@ func startWriteSecrets(config *restclient.Config, wg *sync.WaitGroup, duration t
 		// enough time to gracefully shutdown and clean up spawned deployments
 		time.Sleep(30 * time.Second)
 		return
-	case <- terminateC:
+	case <-terminateC:
 		fmt.Println("startWriteSecrets received signal from terminateC, stopping")
 		donecCloseOnce.Do(func() {
 			close(stopc)
@@ -268,15 +268,15 @@ func startWriteConfigMaps(config *restclient.Config, wg *sync.WaitGroup, duratio
 		defer ticker.Stop()
 		for {
 			select {
-			case <- stopc:
+			case <-stopc:
 				fmt.Println("received stop signal")
 				return
-			case <- ticker.C:
+			case <-ticker.C:
 				func() {
 					ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
 					defer cancel()
 					defer func() {
-						time.Sleep(2*time.Second)
+						time.Sleep(2 * time.Second)
 						fmt.Println("Deleting configmap...")
 						err := cmClient.Delete(context.TODO(), cmName, metav1.DeleteOptions{})
 						if err != nil {
@@ -290,7 +290,7 @@ func startWriteConfigMaps(config *restclient.Config, wg *sync.WaitGroup, duratio
 					cm := &corev1.ConfigMap{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "v1",
-							Kind: "ConfigMap",
+							Kind:       "ConfigMap",
 						},
 						ObjectMeta: metav1.ObjectMeta{
 							// create random number to distinguish between multiple deployment
@@ -315,11 +315,11 @@ func startWriteConfigMaps(config *restclient.Config, wg *sync.WaitGroup, duratio
 					// forever loop to update configmap
 					for {
 						select {
-						case <- ctx.Done():
+						case <-ctx.Done():
 							fmt.Println(fmt.Sprintf("time out stop updating the secret %s", cmName))
 							cancel()
 							return
-						case <- stopc:
+						case <-stopc:
 							fmt.Println("received stop signal")
 							return
 						default:
@@ -372,7 +372,7 @@ func startWriteConfigMaps(config *restclient.Config, wg *sync.WaitGroup, duratio
 	}()
 
 	select {
-	case <- time.After(duration):
+	case <-time.After(duration):
 		fmt.Println(fmt.Sprintf("exit after timeout %v", duration))
 		donecCloseOnce.Do(func() {
 			close(stopc)
@@ -380,7 +380,7 @@ func startWriteConfigMaps(config *restclient.Config, wg *sync.WaitGroup, duratio
 		// enough time to gracefully shutdown and clean up spawned deployments
 		time.Sleep(30 * time.Second)
 		return
-	case <- terminateC:
+	case <-terminateC:
 		fmt.Println("startWriteConfigMaps received signal from terminateC, stopping")
 		donecCloseOnce.Do(func() {
 			close(stopc)
@@ -401,7 +401,7 @@ func startWritePods(config *restclient.Config, wg *sync.WaitGroup, duration time
 	}
 
 	podNamespace := "pod-namespace"
-	_, err = clientset.CoreV1().Namespaces().Create(context.TODO(),  &corev1.Namespace{
+	_, err = clientset.CoreV1().Namespaces().Create(context.TODO(), &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      podNamespace,
 			Namespace: "",
@@ -430,15 +430,15 @@ func startWritePods(config *restclient.Config, wg *sync.WaitGroup, duration time
 		defer ticker.Stop()
 		for {
 			select {
-			case <- stopc:
+			case <-stopc:
 				fmt.Println("received stop signal")
 				return
-			case <- ticker.C:
+			case <-ticker.C:
 				func() {
 					ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
 					defer cancel()
 					defer func() {
-						time.Sleep(2*time.Second)
+						time.Sleep(2 * time.Second)
 						fmt.Println("Deleting pod...")
 						err := podClient.Delete(context.TODO(), podName, metav1.DeleteOptions{})
 						if err != nil {
@@ -452,7 +452,7 @@ func startWritePods(config *restclient.Config, wg *sync.WaitGroup, duration time
 					po := &corev1.Pod{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "v1",
-							Kind: "Pod",
+							Kind:       "Pod",
 						},
 						ObjectMeta: metav1.ObjectMeta{
 							// create random number to distinguish between multiple deployment
@@ -507,11 +507,11 @@ func startWritePods(config *restclient.Config, wg *sync.WaitGroup, duration time
 					// forever loop to update configmap
 					for {
 						select {
-						case <- ctx.Done():
+						case <-ctx.Done():
 							fmt.Println(fmt.Sprintf("time out stop updating the pod %s", podName))
 							cancel()
 							return
-						case <- stopc:
+						case <-stopc:
 							fmt.Println("received stop signal")
 							return
 						default:
@@ -564,7 +564,7 @@ func startWritePods(config *restclient.Config, wg *sync.WaitGroup, duration time
 	}()
 
 	select {
-	case <- time.After(duration):
+	case <-time.After(duration):
 		fmt.Println(fmt.Sprintf("exit after timeout %v", duration))
 		donecCloseOnce.Do(func() {
 			close(stopc)
@@ -578,7 +578,7 @@ func startWritePods(config *restclient.Config, wg *sync.WaitGroup, duration time
 		}
 		return
 
-	case <- terminateC:
+	case <-terminateC:
 		fmt.Println("startWritePods received signal from terminateC, stopping")
 		donecCloseOnce.Do(func() {
 			close(stopc)
