@@ -445,11 +445,17 @@ func (ts *tester) createCronJob() (err error) {
 	return nil
 }
 func (ts *tester) createObject() (batch_v1beta1.CronJob, string, error) {
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create stresser2 --number=%s --duration=%s --object-size=%s --secret-num=%s",
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create stresser2 --number=%d --duration=%s --object-size=%d --secret-num=%d --busybox-image=%s",
 		ts.cfg.EKSConfig.AddOnStresserRemoteV2.Coroutine,
 		ts.cfg.EKSConfig.AddOnStresserRemoteV2.Duration,
 		ts.cfg.EKSConfig.AddOnStresserRemoteV2.ObjectSize,
-		ts.cfg.EKSConfig.AddOnStresserRemoteV2.SecretNum)
+		ts.cfg.EKSConfig.AddOnStresserRemoteV2.SecretNum,
+		fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s:%s",
+			ts.cfg.EKSConfig.AddOnStresserRemoteV2.RepositoryAccountID,
+			ts.cfg.EKSConfig.AddOnStresserRemoteV2.RepositoryRegion,
+			ts.cfg.EKSConfig.AddOnStresserRemoteV2.RepositoryBusyBoxName,
+			ts.cfg.EKSConfig.AddOnStresserRemoteV2.RepositoryBusyBoxImageTag),
+	)
 
 	dirOrCreate := v1.HostPathDirectoryOrCreate
 	podSpec := v1.PodTemplateSpec{

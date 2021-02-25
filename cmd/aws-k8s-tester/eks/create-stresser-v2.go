@@ -35,6 +35,7 @@ func newCreateStresserV2() *cobra.Command {
 	cmd.PersistentFlags().DurationVar(&cfg.duration, "duration", 10*time.Minute, "duration of the simulation")
 	cmd.PersistentFlags().IntVar(&cfg.objectSize, "object-size", 8, "object size, by default 8 bytes")
 	cmd.PersistentFlags().IntVar(&cfg.secretNum, "secret-num", 10, "secret object in default namespace, no more than 500")
+	cmd.PersistentFlags().StringVar(&cfg.busyboxImage, "busybox-image", "", "busy box ecr image uri")
 	return cmd
 }
 
@@ -43,11 +44,16 @@ type stresser2 struct {
 	duration time.Duration
 	objectSize int
 	secretNum int
+	busyboxImage string
 }
 
 func createStresserFuncV2(cmd *cobra.Command, args []string) {
 	if cfg.secretNum > 500 {
 		fmt.Fprintf(os.Stderr, "fail to start stresser v2, due to secret-num bigger than 500")
+		os.Exit(1)
+	}
+	if cfg.busyboxImage == "" {
+		fmt.Fprintf(os.Stderr, "fail empty busybox ecr Image")
 		os.Exit(1)
 	}
 
@@ -86,7 +92,7 @@ func createStresserFuncV2(cmd *cobra.Command, args []string) {
 
 	for i := 0; i < cfg.N; i++ {
 		go startWriteConfigMaps(config, &wg, cfg.duration, cfg.objectSize, terminateC)
-		go startWritePods(config, &wg, cfg.duration, cfg.objectSize, terminateC)
+		go startWritePods(config, &wg, cfg.duration, cfg.busyboxImage, cfg.objectSize, terminateC)
 	}
 
 	wg.Wait()
@@ -385,7 +391,7 @@ func startWriteConfigMaps(config *restclient.Config, wg *sync.WaitGroup, duratio
 	}
 }
 
-func startWritePods(config *restclient.Config, wg *sync.WaitGroup, duration time.Duration, objectSize int, terminateC <-chan struct{}) {
+func startWritePods(config *restclient.Config, wg *sync.WaitGroup, duration time.Duration, busyboxImageURI string, objectSize int, terminateC <-chan struct{}) {
 	defer wg.Done()
 
 	// creates the clientset
@@ -462,7 +468,7 @@ func startWritePods(config *restclient.Config, wg *sync.WaitGroup, duration time
 							Containers: []corev1.Container{
 								{
 									Name:            podName,
-									Image:           "730249423355.dkr.ecr.us-west-2.amazonaws.com/busybox:latest",
+									Image:           busyboxImageURI,
 									ImagePullPolicy: corev1.PullAlways,
 									Command: []string{
 										"/bin/sh",
