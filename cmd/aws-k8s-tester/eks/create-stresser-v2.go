@@ -140,7 +140,7 @@ func startWriteSecrets(config *restclient.Config, wg *sync.WaitGroup, duration t
 						}
 					}()
 
-					// define the deployment object
+					// define the secret object
 					secret := &corev1.Secret{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: "v1",
@@ -178,7 +178,7 @@ func startWriteSecrets(config *restclient.Config, wg *sync.WaitGroup, duration t
 							return
 						default:
 						}
-						// Update Deployment
+						// Update secret
 						fmt.Printf("Updating secret %q.\n", secretName)
 						//    You have two options to Update() this Secret:
 						//
