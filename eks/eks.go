@@ -65,6 +65,7 @@ import (
 	secrets_remote "github.com/aws/aws-k8s-tester/eks/secrets/remote"
 	stresser_local "github.com/aws/aws-k8s-tester/eks/stresser/local"
 	stresser_remote "github.com/aws/aws-k8s-tester/eks/stresser/remote"
+	stresser_remote_v2 "github.com/aws/aws-k8s-tester/eks/stresser2"
 	"github.com/aws/aws-k8s-tester/eks/tester"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
 	"github.com/aws/aws-k8s-tester/eks/wordpress"
@@ -922,6 +923,13 @@ func (ts *Tester) createTesters() (err error) {
 			CWAPI:     ts.cwAPI,
 			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnStresserRemoteRepositoryRegion())),
 		}),
+		stresser_remote_v2.New(stresser_remote_v2.Config{
+			Logger:    ts.lg,
+			Stopc:     ts.stopCreationCh,
+			EKSConfig: ts.cfg,
+			K8SClient: ts.k8sClient,
+			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnStresserRemoteV2RepositoryRegion())),
+		}),
 		cluster_version_upgrade.New(cluster_version_upgrade.Config{
 			Logger:    ts.lg,
 			LogWriter: ts.logWriter,
@@ -1121,12 +1129,17 @@ func (ts *Tester) Up() (err error) {
 		ts.cfg.Parameters.KubeControllerManagerBurst != "" &&
 		ts.cfg.Parameters.KubeSchedulerQPS != "" &&
 		ts.cfg.Parameters.KubeSchedulerBurst != "" &&
+		ts.cfg.Parameters.KubeAPIServerMaxRequestsInflight != "" &&
 		ts.cfg.Parameters.FEUpdateMasterFlagsURL != "" {
+
+		time.Sleep(5 * time.Minute)
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]waiting 5 minutes for another control plane instance in service\n"))
 
 		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Fprintf(ts.logWriter, ts.color("[light_green]run awscurl Command.CommandAfterCreateCluster\n"))
 		curl := awscurl.New(awscurl.Config{
 			ClusterArn:                 ts.cfg.Status.ClusterARN,
+			MaxRequestsInflight:        ts.cfg.Parameters.KubeAPIServerMaxRequestsInflight,
 			KubeControllerManagerQPS:   ts.cfg.Parameters.KubeControllerManagerQPS,
 			KubeControllerManagerBurst: ts.cfg.Parameters.KubeControllerManagerBurst,
 			KubeSchedulerQPS:           ts.cfg.Parameters.KubeSchedulerQPS,

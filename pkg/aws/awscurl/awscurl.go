@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/config"
 )
 
@@ -73,7 +73,7 @@ func (c *client) signRequest() (*http.Request, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to load SDK config, %v", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5 *time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	creds, err := cfg.Credentials.Retrieve(ctx)
 	if err != nil {
 		return nil, err
@@ -105,12 +105,15 @@ func (c *client) makeRequest(method string) (req *http.Request, err error) {
 
 func (c *client) preparePayload() (payloadData []byte, err error) {
 	customFlagsConfig := customFlagsConfig{
+		Apiserver: apiserverCustomFlag{
+			MaxRequestsInflight: c.cfg.MaxRequestsInflight,
+		},
 		ControllerManager: qpsBurst{
-			KubeApiQps: c.cfg.KubeControllerManagerQPS,
+			KubeApiQps:   c.cfg.KubeControllerManagerQPS,
 			KubeApiBurst: c.cfg.KubeControllerManagerBurst,
 		},
-		Scheduler:         qpsBurst{
-			KubeApiQps: c.cfg.KubeSchedulerQPS,
+		Scheduler: qpsBurst{
+			KubeApiQps:   c.cfg.KubeSchedulerQPS,
 			KubeApiBurst: c.cfg.KubeSchedulerBurst,
 		},
 	}
@@ -121,7 +124,7 @@ func (c *client) preparePayload() (payloadData []byte, err error) {
 	}
 
 	payload := payload{
-		ClusterArn: c.cfg.ClusterArn,
+		ClusterArn:        c.cfg.ClusterArn,
 		CustomFlagsConfig: string(customFlagsConfigData),
 	}
 	payloadData, err = json.Marshal(payload)

@@ -338,6 +338,11 @@ type Config struct {
 	// It generates loads from the remote workers (Pod) in the cluster.
 	// ref. https://github.com/kubernetes/perf-tests
 	AddOnStresserRemote *AddOnStresserRemote `json:"add-on-stresser-remote,omitempty"`
+	// AddOnStresserRemoteV2 defines parameters for EKS cluster
+	// add-on cluster loader remote v2.
+	// It generates loads from the remote workers (Pod) in the cluster.
+	// ref. https://github.com/kubernetes/perf-tests
+	AddOnStresserRemoteV2 *AddOnStresserRemoteV2 `json:"add-on-stresser-remote-v2,omitempty"`
 
 	// AddOnClusterVersionUpgrade defines parameters
 	// for EKS cluster version upgrade add-on.
@@ -463,20 +468,24 @@ type Parameters struct {
 	// ref. https://kubernetes.io/docs/reference/command-line-tools-reference/kube-controller-manager/
 	// ref. https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/
 
+	// KubeAPIServerMaxRequestsInflight is the EKS kube-apiserver max-requests-inflight
+	// The maximum number of non-mutating requests in flight at a given time. When the server exceeds this, it rejects requests. Zero for no limit.
+	// --max-requests-inflight int     Default: 400
+	KubeAPIServerMaxRequestsInflight string `json:"kube-apiserver-max-requests-inflight"`
 	// KubeControllerManagerQPS is the EKS kube-controller-manager qps
 	// --kube-api-qps float32     Default: 20
-	KubeControllerManagerQPS   string `json:"kube-controller-manager-qps,omitempty"`
+	KubeControllerManagerQPS string `json:"kube-controller-manager-qps,omitempty"`
 	// KubeControllerManagerBurst is the EKS kube-controller-manager burst
 	// --kube-api-burst int32     Default: 30
 	KubeControllerManagerBurst string `json:"kube-controller-manager-burst,omitempty"`
 	// KubeSchedulerQPS is the internal EKS kube-scheduler qps
 	// --kube-api-qps float32     Default: 50
-	KubeSchedulerQPS           string `json:"kube-scheduler-qps,omitempty"`
+	KubeSchedulerQPS string `json:"kube-scheduler-qps,omitempty"`
 	// KubeSchedulerBurst is the internal EKS kube-scheduler burst
 	// --kube-api-burst int32     Default: 100
-	KubeSchedulerBurst         string `json:"kube-scheduler-burst,omitempty"`
+	KubeSchedulerBurst string `json:"kube-scheduler-burst,omitempty"`
 	// FEUpdateMasterFlagsURL is the internal EKS update master flags endpoint
-	FEUpdateMasterFlagsURL     string `json:"fe-update-master-flags-url,omitempty"`
+	FEUpdateMasterFlagsURL string `json:"fe-update-master-flags-url,omitempty"`
 }
 
 func getDefaultParameters() *Parameters {
@@ -890,6 +899,7 @@ func NewDefault() *Config {
 		AddOnHollowNodesRemote:     getDefaultAddOnHollowNodesRemote(),
 		AddOnStresserLocal:         getDefaultAddOnStresserLocal(),
 		AddOnStresserRemote:        getDefaultAddOnStresserRemote(),
+		AddOnStresserRemoteV2:      getDefaultAddOnStresserRemoteV2(),
 		AddOnClusterVersionUpgrade: getDefaultAddOnClusterVersionUpgrade(),
 		AddOnAmiSoftLockupIssue454: getDefaultAddOnAmiSoftLockupIssue454(),
 
@@ -1093,6 +1103,9 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if err := cfg.validateAddOnStresserRemote(); err != nil {
 		return fmt.Errorf("validateAddOnStresserRemote failed [%v]", err)
+	}
+	if err := cfg.validateAddOnStresserRemoteV2(); err != nil {
+		return fmt.Errorf("validateAddOnStresserRemoteV2 failed [%v]", err)
 	}
 
 	if err := cfg.validateAddOnClusterVersionUpgrade(); err != nil {

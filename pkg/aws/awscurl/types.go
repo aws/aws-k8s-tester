@@ -1,16 +1,17 @@
 package awscurl
 
 type Config struct {
-	ClusterArn string
-	KubeControllerManagerQPS string
+	ClusterArn                 string
+	MaxRequestsInflight        string
+	KubeControllerManagerQPS   string
 	KubeControllerManagerBurst string
-	KubeSchedulerQPS string
-	KubeSchedulerBurst string
-	URI string
+	KubeSchedulerQPS           string
+	KubeSchedulerBurst         string
+	URI                        string
 
 	Service string
-	Region string
-	Method string
+	Region  string
+	Method  string
 }
 
 // awscurl -X POST \
@@ -20,6 +21,10 @@ type Config struct {
 //       "clusterArn": "GetRef.ClusterARN",
 //       "customFlagsConfig":
 //          "{
+//             \"apiServer\":
+//               {
+//                 \"maxRequestsInflight\":\"3000\"
+//               }
 //             \"controllerManager\":
 //               {
 //                 \"kubeApiQps\":\"500\",
@@ -27,7 +32,7 @@ type Config struct {
 //               },
 //             \"scheduler\":
 //               { \"kubeApiQps\":\"500\",
-//                 \"kubeApiBurst\":\"501\"
+//                 \"kubeApiBurst\":\"500\"
 //               }
 //            }"
 //     }' \
@@ -38,8 +43,13 @@ type payload struct {
 }
 
 type customFlagsConfig struct {
-	ControllerManager qpsBurst `json:"controllerManager"`
-	Scheduler         qpsBurst `json:"scheduler"`
+	Apiserver         apiserverCustomFlag `json:"apiServer"`
+	ControllerManager qpsBurst            `json:"controllerManager"`
+	Scheduler         qpsBurst            `json:"scheduler"`
+}
+
+type apiserverCustomFlag struct {
+	MaxRequestsInflight string `json:"maxRequestsInflight"`
 }
 
 type qpsBurst struct {

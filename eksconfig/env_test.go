@@ -125,6 +125,8 @@ spec:
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN", "key-arn")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_APISERVER_MAX_REQUESTS_INFLIGHT", "3000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_APISERVER_MAX_REQUESTS_INFLIGHT")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_QPS", "500")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_QPS")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_BURST", "500")
@@ -584,6 +586,38 @@ spec:
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX", "stresser-out-pfx")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_REQUESTS_SUMMARY_READS_OUTPUT_NAME_PREFIX")
 
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_ENABLE", "true")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_ENABLE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_NAMESPACE", "hello")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_REPOSITORY_ACCOUNT_ID", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_REPOSITORY_ACCOUNT_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_REPOSITORY_NAME", "stresser-repo-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_REPOSITORY_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_REPOSITORY_IMAGE_TAG", "stresser-repo-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_REPOSITORY_IMAGE_TAG")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_REPOSITORY_BUSYBOX_NAME", "stresser-busybox-name")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_REPOSITORY_BUSYBOX_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_REPOSITORY_BUSYBOX_IMAGE_TAG", "stresser-busybox-image-tag")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_REPOSITORY_BUSYBOX_IMAGE_TAG")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_SCHEDULE", "*/1 * * * *")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_SCHEDULE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_COMPLETES", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_COMPLETES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_PARALLELS", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_PARALLELS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_SUCCESSFUL_JOBS_HISTORY_LIMIT", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_SUCCESSFUL_JOBS_HISTORY_LIMIT")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_FAILED_JOBS_HISTORY_LIMIT", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_FAILED_JOBS_HISTORY_LIMIT")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_OBJECT_SIZE", "512")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_OBJECT_SIZE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_DURATION", "7m30s")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_DURATION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_COROUTINES", "10")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_COROUTINES")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_SECRETS", "10")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_REMOTE_V2_SECRETS")
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
 	}
@@ -748,6 +782,9 @@ spec:
 	}
 	if cfg.Parameters.EncryptionCMKARN != "key-arn" {
 		t.Fatalf("unexpected Parameters.EncryptionCMKARN %q", cfg.Parameters.EncryptionCMKARN)
+	}
+	if cfg.Parameters.KubeAPIServerMaxRequestsInflight != "3000" {
+		t.Fatalf("unexpected Parameters.KubeAPIServerMaxRequestsInflight %s", cfg.Parameters.KubeAPIServerMaxRequestsInflight)
 	}
 	if cfg.Parameters.KubeControllerManagerQPS != "500" {
 		t.Fatalf("unexpected Parameters.KubeControllerManagerQPS %s", cfg.Parameters.KubeControllerManagerQPS)
@@ -1544,6 +1581,55 @@ spec:
 	}
 	if cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix != "stresser-out-pfx" {
 		t.Fatalf("unexpected cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix %v", cfg.AddOnStresserRemote.RequestsSummaryReadsOutputNamePrefix)
+	}
+
+	if !cfg.AddOnStresserRemoteV2.Enable {
+		t.Fatalf("unexpected AddOnStresserRemoteV2.Enable %v", cfg.AddOnStresserRemoteV2.Enable)
+	}
+	if cfg.AddOnStresserRemoteV2.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.Namespace %q", cfg.AddOnStresserRemoteV2.Namespace)
+	}
+	if cfg.AddOnStresserRemoteV2.RepositoryAccountID != "uri" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.RepositoryAccountID %s", cfg.AddOnStresserRemoteV2.RepositoryAccountID)
+	}
+	if cfg.AddOnStresserRemoteV2.RepositoryName != "stresser-repo-name" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.RepositoryName %s", cfg.AddOnStresserRemoteV2.RepositoryName)
+	}
+	if cfg.AddOnStresserRemoteV2.RepositoryImageTag != "stresser-repo-image-tag" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.RepositoryImageTag %s", cfg.AddOnStresserRemoteV2.RepositoryImageTag)
+	}
+	if cfg.AddOnStresserRemoteV2.RepositoryBusyBoxName != "stresser-busybox-name" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.RepositoryBusyBoxName %s", cfg.AddOnStresserRemoteV2.RepositoryBusyBoxName)
+	}
+	if cfg.AddOnStresserRemoteV2.RepositoryBusyBoxImageTag != "stresser-busybox-image-tag" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.RepositoryBusyBoxImageTag %s", cfg.AddOnStresserRemoteV2.RepositoryBusyBoxImageTag)
+	}
+	if cfg.AddOnStresserRemoteV2.Schedule != "*/1 * * * *" {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.Schedule %s", cfg.AddOnStresserRemoteV2.Schedule)
+	}
+	if cfg.AddOnStresserRemoteV2.Completes != 500 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.Completes %d", cfg.AddOnStresserRemoteV2.Completes)
+	}
+	if cfg.AddOnStresserRemoteV2.Parallels != 500 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.Parallels %d", cfg.AddOnStresserRemoteV2.Parallels)
+	}
+	if cfg.AddOnStresserRemoteV2.SuccessfulJobsHistoryLimit != 500 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.SuccessfulJobsHistoryLimit %d", cfg.AddOnStresserRemoteV2.SuccessfulJobsHistoryLimit)
+	}
+	if cfg.AddOnStresserRemoteV2.FailedJobsHistoryLimit != 500 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.FailedJobsHistoryLimit %d", cfg.AddOnStresserRemoteV2.FailedJobsHistoryLimit)
+	}
+	if cfg.AddOnStresserRemoteV2.ObjectSize != 512 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.ObjectSize %d", cfg.AddOnStresserRemoteV2.ObjectSize)
+	}
+	if cfg.AddOnStresserRemoteV2.Duration != 7*time.Minute+30*time.Second {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.Duration %v", cfg.AddOnStresserRemoteV2.Duration)
+	}
+	if cfg.AddOnStresserRemoteV2.Coroutines != 10 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.Coroutines %d", cfg.AddOnStresserRemoteV2.Coroutines)
+	}
+	if cfg.AddOnStresserRemoteV2.Secrets != 10 {
+		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.Secrets %d", cfg.AddOnStresserRemoteV2.Secrets)
 	}
 
 	cfg.Parameters.RoleManagedPolicyARNs = nil
