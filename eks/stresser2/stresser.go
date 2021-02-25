@@ -210,7 +210,7 @@ func (ts *tester) createServiceAccount() (err error) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      stresserV2ServiceAccountName,
-					Namespace: ts.cfg.EKSConfig.AddOnStresserRemote.Namespace,
+					Namespace: ts.cfg.EKSConfig.AddOnStresserRemoteV2.Namespace,
 					Labels: map[string]string{
 						"app.kubernetes.io/name": stresserV2AppName,
 					},
@@ -373,7 +373,7 @@ func (ts *tester) createRBACClusterRoleBinding() (err error) {
 						APIGroup:  "",
 						Kind:      "ServiceAccount",
 						Name:      stresserV2ServiceAccountName,
-						Namespace: ts.cfg.EKSConfig.AddOnStresserRemote.Namespace,
+						Namespace: ts.cfg.EKSConfig.AddOnStresserRemoteV2.Namespace,
 					},
 					{
 						APIGroup: "rbac.authorization.k8s.io",
