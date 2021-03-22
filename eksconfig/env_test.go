@@ -522,6 +522,8 @@ spec:
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_SMALL_STATEFUL_SETS_PER_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_MEDIUM_STATEFUL_SETS_PER_NAMESPACE", "1")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_MEDIUM_STATEFUL_SETS_PER_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CL2_SCHEDULER_THROUGHPUT_THRESHOLD", "20")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CL2_SCHEDULER_THROUGHPUT_THRESHOLD")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE")
@@ -555,6 +557,8 @@ spec:
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_SMALL_STATEFUL_SETS_PER_NAMESPACE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_MEDIUM_STATEFUL_SETS_PER_NAMESPACE", "1")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_MEDIUM_STATEFUL_SETS_PER_NAMESPACE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CL2_SCHEDULER_THROUGHPUT_THRESHOLD", "30")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CL2_SCHEDULER_THROUGHPUT_THRESHOLD")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_STRESSER_LOCAL_ENABLE")
@@ -1498,6 +1502,9 @@ spec:
 	if cfg.AddOnClusterLoaderLocal.MediumStatefulSetsPerNamespace != 1 {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.MediumStatefulSetsPerNamespace %v", cfg.AddOnClusterLoaderLocal.MediumStatefulSetsPerNamespace)
 	}
+	if cfg.AddOnClusterLoaderLocal.CL2SchedulerThroughputThreshold != 20 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderLocal.CL2SchedulerThroughputThreshold %v", cfg.AddOnClusterLoaderLocal.CL2SchedulerThroughputThreshold)
+	}
 
 	if !cfg.AddOnClusterLoaderRemote.Enable {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.Enable %v", cfg.AddOnClusterLoaderRemote.Enable)
@@ -1537,6 +1544,9 @@ spec:
 	}
 	if cfg.AddOnClusterLoaderRemote.MediumStatefulSetsPerNamespace != 1 {
 		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.MediumStatefulSetsPerNamespace %v", cfg.AddOnClusterLoaderRemote.MediumStatefulSetsPerNamespace)
+	}
+	if cfg.AddOnClusterLoaderRemote.CL2SchedulerThroughputThreshold != 30 {
+		t.Fatalf("unexpected cfg.AddOnClusterLoaderRemote.CL2SchedulerThroughputThreshold %v", cfg.AddOnClusterLoaderRemote.CL2SchedulerThroughputThreshold)
 	}
 
 	if !cfg.AddOnStresserLocal.Enable {

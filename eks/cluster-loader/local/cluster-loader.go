@@ -97,9 +97,11 @@ func (ts *tester) Create() (err error) {
 		SmallStatefulSetsPerNamespace:  ts.cfg.EKSConfig.AddOnClusterLoaderLocal.SmallStatefulSetsPerNamespace,
 		MediumStatefulSetsPerNamespace: ts.cfg.EKSConfig.AddOnClusterLoaderLocal.MediumStatefulSetsPerNamespace,
 
-		CL2UseHostNetworkPods:     ts.cfg.EKSConfig.AddOnClusterLoaderLocal.CL2UseHostNetworkPods,
-		CL2LoadTestThroughput:     ts.cfg.EKSConfig.AddOnClusterLoaderLocal.CL2LoadTestThroughput,
-		CL2EnablePVS:              ts.cfg.EKSConfig.AddOnClusterLoaderLocal.CL2EnablePVS,
+		CL2UseHostNetworkPods:           ts.cfg.EKSConfig.AddOnClusterLoaderLocal.CL2UseHostNetworkPods,
+		CL2LoadTestThroughput:           ts.cfg.EKSConfig.AddOnClusterLoaderLocal.CL2LoadTestThroughput,
+		CL2EnablePVS:                    ts.cfg.EKSConfig.AddOnClusterLoaderLocal.CL2EnablePVS,
+		CL2SchedulerThroughputThreshold: ts.cfg.EKSConfig.AddOnClusterLoaderLocal.CL2SchedulerThroughputThreshold,
+
 		PrometheusScrapeKubeProxy: ts.cfg.EKSConfig.AddOnClusterLoaderLocal.PrometheusScrapeKubeProxy,
 		EnableSystemPodMetrics:    ts.cfg.EKSConfig.AddOnClusterLoaderLocal.EnableSystemPodMetrics,
 	})
