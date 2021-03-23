@@ -848,81 +848,83 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *-------------------------------------------------------------*-------------------*-----------------------------------------------*--------------------*
 
 
-*-----------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------------*--------------------*
-|                              ENVIRONMENTAL VARIABLE                               |     READ ONLY     |                               TYPE                                |      GO TYPE       |
-*-----------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------------*--------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE                             | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.Enable                         | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CREATED                            | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.Created                        | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_TIME_FRAME_CREATE                  | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.TimeFrameCreate                | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_TIME_FRAME_DELETE                  | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.TimeFrameDelete                | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_S3_DIR                             | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.S3Dir                          | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CLUSTER_LOADER_PATH                | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.ClusterLoaderPath              | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CLUSTER_LOADER_DOWNLOAD_URL        | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.ClusterLoaderDownloadURL       | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_TEST_CONFIG_PATH                   | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.TestConfigPath                 | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_REPORT_DIR                         | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.ReportDir                      | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_REPORT_TAR_GZ_PATH                 | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.ReportTarGzPath                | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_REPORT_TAR_GZ_S3_KEY               | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.ReportTarGzS3Key               | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_LOG_PATH                           | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.LogPath                        | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_LOG_S3_KEY                         | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.LogS3Key                       | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_POD_STARTUP_LATENCY_PATH           | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.PodStartupLatencyPath          | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_POD_STARTUP_LATENCY_S3_KEY         | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.PodStartupLatencyS3Key         | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_RUNS                               | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.Runs                           | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_TIMEOUT                            | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.Timeout                        | time.Duration      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_NODES                              | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.Nodes                          | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_NODES_PER_NAMESPACE                | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.NodesPerNamespace              | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_PODS_PER_NODE                      | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.PodsPerNode                    | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_BIG_GROUP_SIZE                     | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.BigGroupSize                   | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_MEDIUM_GROUP_SIZE                  | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.MediumGroupSize                | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_SMALL_GROUP_SIZE                   | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.SmallGroupSize                 | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_SMALL_STATEFUL_SETS_PER_NAMESPACE  | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.SmallStatefulSetsPerNamespace  | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_MEDIUM_STATEFUL_SETS_PER_NAMESPACE | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.MediumStatefulSetsPerNamespace | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CL2_USE_HOST_NETWORK_PODS          | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.CL2UseHostNetworkPods          | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CL2_LOAD_TEST_THROUGHPUT           | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.CL2LoadTestThroughput          | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CL2_ENABLE_PVS                     | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.CL2EnablePVS                   | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_PROMETHEUS_SCRAPE_KUBE_PROXY       | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.PrometheusScrapeKubeProxy      | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE_SYSTEM_POD_METRICS          | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.EnableSystemPodMetrics         | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_POD_STARTUP_LATENCY                | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.PodStartupLatency              | util.PerfData      |
-*-----------------------------------------------------------------------------------*-------------------*-------------------------------------------------------------------*--------------------*
+*-----------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------------*--------------------*
+|                              ENVIRONMENTAL VARIABLE                               |     READ ONLY     |                               TYPE                                 |      GO TYPE       |
+*-----------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE                             | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.Enable                          | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CREATED                            | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.Created                         | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_TIME_FRAME_CREATE                  | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.TimeFrameCreate                 | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_TIME_FRAME_DELETE                  | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.TimeFrameDelete                 | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_S3_DIR                             | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.S3Dir                           | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CLUSTER_LOADER_PATH                | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.ClusterLoaderPath               | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CLUSTER_LOADER_DOWNLOAD_URL        | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.ClusterLoaderDownloadURL        | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_TEST_CONFIG_PATH                   | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.TestConfigPath                  | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_REPORT_DIR                         | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.ReportDir                       | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_REPORT_TAR_GZ_PATH                 | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.ReportTarGzPath                 | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_REPORT_TAR_GZ_S3_KEY               | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.ReportTarGzS3Key                | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_LOG_PATH                           | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.LogPath                         | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_LOG_S3_KEY                         | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.LogS3Key                        | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_POD_STARTUP_LATENCY_PATH           | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.PodStartupLatencyPath           | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_POD_STARTUP_LATENCY_S3_KEY         | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.PodStartupLatencyS3Key          | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_RUNS                               | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.Runs                            | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_TIMEOUT                            | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.Timeout                         | time.Duration      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_NODES                              | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.Nodes                           | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_NODES_PER_NAMESPACE                | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.NodesPerNamespace               | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_PODS_PER_NODE                      | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.PodsPerNode                     | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_BIG_GROUP_SIZE                     | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.BigGroupSize                    | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_MEDIUM_GROUP_SIZE                  | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.MediumGroupSize                 | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_SMALL_GROUP_SIZE                   | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.SmallGroupSize                  | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_SMALL_STATEFUL_SETS_PER_NAMESPACE  | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.SmallStatefulSetsPerNamespace   | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_MEDIUM_STATEFUL_SETS_PER_NAMESPACE | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.MediumStatefulSetsPerNamespace  | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CL2_USE_HOST_NETWORK_PODS          | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.CL2UseHostNetworkPods           | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CL2_LOAD_TEST_THROUGHPUT           | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.CL2LoadTestThroughput           | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CL2_ENABLE_PVS                     | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.CL2EnablePVS                    | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CL2_SCHEDULER_THROUGHPUT_THRESHOLD | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.CL2SchedulerThroughputThreshold | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_PROMETHEUS_SCRAPE_KUBE_PROXY       | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.PrometheusScrapeKubeProxy       | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE_SYSTEM_POD_METRICS          | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.EnableSystemPodMetrics          | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_POD_STARTUP_LATENCY                | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.PodStartupLatency               | util.PerfData      |
+*-----------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------------*--------------------*
 
 
-*------------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------------*--------------------*
-|                               ENVIRONMENTAL VARIABLE                               |     READ ONLY     |                                TYPE                                |      GO TYPE       |
-*------------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------------*--------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE                             | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Enable                         | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CREATED                            | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.Created                        | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_TIME_FRAME_CREATE                  | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.TimeFrameCreate                | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_TIME_FRAME_DELETE                  | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.TimeFrameDelete                | timeutil.TimeFrame |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_S3_DIR                             | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.S3Dir                          | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NAMESPACE                          | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Namespace                      | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_ACCOUNT_ID              | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryAccountID            | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_REGION                  | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryRegion               | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME                    | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryName                 | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_IMAGE_TAG               | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryImageTag             | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CLUSTER_LOADER_PATH                | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.ClusterLoaderPath              | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CLUSTER_LOADER_DOWNLOAD_URL        | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.ClusterLoaderDownloadURL       | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPORT_TAR_GZ_PATH                 | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.ReportTarGzPath                | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPORT_TAR_GZ_S3_KEY               | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.ReportTarGzS3Key               | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_LOG_PATH                           | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.LogPath                        | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_LOG_S3_KEY                         | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.LogS3Key                       | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_POD_STARTUP_LATENCY_PATH           | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.PodStartupLatencyPath          | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_POD_STARTUP_LATENCY_S3_KEY         | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.PodStartupLatencyS3Key         | string             |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_RUNS                               | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Runs                           | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NODES                              | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Nodes                          | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_TIMEOUT                            | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Timeout                        | time.Duration      |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NODES_PER_NAMESPACE                | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.NodesPerNamespace              | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_PODS_PER_NODE                      | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.PodsPerNode                    | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_BIG_GROUP_SIZE                     | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.BigGroupSize                   | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_MEDIUM_GROUP_SIZE                  | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.MediumGroupSize                | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_SMALL_GROUP_SIZE                   | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.SmallGroupSize                 | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_SMALL_STATEFUL_SETS_PER_NAMESPACE  | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.SmallStatefulSetsPerNamespace  | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_MEDIUM_STATEFUL_SETS_PER_NAMESPACE | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.MediumStatefulSetsPerNamespace | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CL2_USE_HOST_NETWORK_PODS          | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.CL2UseHostNetworkPods          | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CL2_LOAD_TEST_THROUGHPUT           | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.CL2LoadTestThroughput          | int                |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CL2_ENABLE_PVS                     | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.CL2EnablePVS                   | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_PROMETHEUS_SCRAPE_KUBE_PROXY       | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.PrometheusScrapeKubeProxy      | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE_SYSTEM_POD_METRICS          | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.EnableSystemPodMetrics         | bool               |
-| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_POD_STARTUP_LATENCY                | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.PodStartupLatency              | util.PerfData      |
-*------------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------------*--------------------*
+*------------------------------------------------------------------------------------*-------------------*---------------------------------------------------------------------*--------------------*
+|                               ENVIRONMENTAL VARIABLE                               |     READ ONLY     |                                TYPE                                 |      GO TYPE       |
+*------------------------------------------------------------------------------------*-------------------*---------------------------------------------------------------------*--------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE                             | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Enable                          | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CREATED                            | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.Created                         | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_TIME_FRAME_CREATE                  | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.TimeFrameCreate                 | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_TIME_FRAME_DELETE                  | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.TimeFrameDelete                 | timeutil.TimeFrame |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_S3_DIR                             | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.S3Dir                           | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NAMESPACE                          | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Namespace                       | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_ACCOUNT_ID              | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryAccountID             | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_REGION                  | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryRegion                | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_NAME                    | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryName                  | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPOSITORY_IMAGE_TAG               | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.RepositoryImageTag              | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CLUSTER_LOADER_PATH                | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.ClusterLoaderPath               | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CLUSTER_LOADER_DOWNLOAD_URL        | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.ClusterLoaderDownloadURL        | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPORT_TAR_GZ_PATH                 | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.ReportTarGzPath                 | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_REPORT_TAR_GZ_S3_KEY               | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.ReportTarGzS3Key                | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_LOG_PATH                           | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.LogPath                         | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_LOG_S3_KEY                         | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.LogS3Key                        | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_POD_STARTUP_LATENCY_PATH           | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.PodStartupLatencyPath           | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_POD_STARTUP_LATENCY_S3_KEY         | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.PodStartupLatencyS3Key          | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_RUNS                               | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Runs                            | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NODES                              | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Nodes                           | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_TIMEOUT                            | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.Timeout                         | time.Duration      |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_NODES_PER_NAMESPACE                | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.NodesPerNamespace               | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_PODS_PER_NODE                      | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.PodsPerNode                     | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_BIG_GROUP_SIZE                     | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.BigGroupSize                    | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_MEDIUM_GROUP_SIZE                  | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.MediumGroupSize                 | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_SMALL_GROUP_SIZE                   | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.SmallGroupSize                  | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_SMALL_STATEFUL_SETS_PER_NAMESPACE  | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.SmallStatefulSetsPerNamespace   | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_MEDIUM_STATEFUL_SETS_PER_NAMESPACE | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.MediumStatefulSetsPerNamespace  | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CL2_USE_HOST_NETWORK_PODS          | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.CL2UseHostNetworkPods           | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CL2_LOAD_TEST_THROUGHPUT           | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.CL2LoadTestThroughput           | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CL2_ENABLE_PVS                     | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.CL2EnablePVS                    | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CL2_SCHEDULER_THROUGHPUT_THRESHOLD | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.CL2SchedulerThroughputThreshold | int                |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_PROMETHEUS_SCRAPE_KUBE_PROXY       | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.PrometheusScrapeKubeProxy       | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_ENABLE_SYSTEM_POD_METRICS          | read-only "false" | *eksconfig.AddOnClusterLoaderRemote.EnableSystemPodMetrics          | bool               |
+| AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_POD_STARTUP_LATENCY                | read-only "true"  | *eksconfig.AddOnClusterLoaderRemote.PodStartupLatency               | util.PerfData      |
+*------------------------------------------------------------------------------------*-------------------*---------------------------------------------------------------------*--------------------*
 
 
 *-----------------------------------------------------------------*-------------------*---------------------------------------------------*--------------------*

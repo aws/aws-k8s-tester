@@ -104,11 +104,12 @@ type AddOnClusterLoaderRemote struct {
 	MediumStatefulSetsPerNamespace int `json:"medium-stateful-sets-per-namespace"`
 
 	// ref. https://github.com/kubernetes/perf-tests/pull/1345
-	CL2UseHostNetworkPods     bool `json:"cl2-use-host-network-pods"`
-	CL2LoadTestThroughput     int  `json:"cl2-load-test-throughput"`
-	CL2EnablePVS              bool `json:"cl2-enable-pvs"`
-	PrometheusScrapeKubeProxy bool `json:"prometheus-scrape-kube-proxy"`
-	EnableSystemPodMetrics    bool `json:"enable-system-pod-metrics"`
+	CL2UseHostNetworkPods           bool `json:"cl2-use-host-network-pods"`
+	CL2LoadTestThroughput           int  `json:"cl2-load-test-throughput"`
+	CL2EnablePVS                    bool `json:"cl2-enable-pvs"`
+	CL2SchedulerThroughputThreshold int  `json:"cl2-scheduler-throughput-threshold"`
+	PrometheusScrapeKubeProxy       bool `json:"prometheus-scrape-kube-proxy"`
+	EnableSystemPodMetrics          bool `json:"enable-system-pod-metrics"`
 
 	PodStartupLatency measurement_util.PerfData `json:"pod-startup-latency" read-only:"true"`
 }
@@ -154,10 +155,11 @@ func getDefaultAddOnClusterLoaderRemote() *AddOnClusterLoaderRemote {
 		CL2UseHostNetworkPods: false,
 
 		// ref. https://github.com/kubernetes/perf-tests/blob/master/clusterloader2/testing/load/kubemark/throughput_override.yaml
-		CL2LoadTestThroughput:     20,
-		CL2EnablePVS:              false,
-		PrometheusScrapeKubeProxy: false,
-		EnableSystemPodMetrics:    false,
+		CL2LoadTestThroughput:           20,
+		CL2EnablePVS:                    false,
+		CL2SchedulerThroughputThreshold: 100,
+		PrometheusScrapeKubeProxy:       false,
+		EnableSystemPodMetrics:          false,
 	}
 	if runtime.GOOS == "darwin" {
 		cfg.ClusterLoaderDownloadURL = strings.Replace(cfg.ClusterLoaderDownloadURL, "linux", "darwin", -1)
@@ -254,6 +256,9 @@ func (cfg *Config) validateAddOnClusterLoaderRemote() error {
 	}
 	if cfg.AddOnClusterLoaderRemote.EnableSystemPodMetrics {
 		return fmt.Errorf("unexpected AddOnClusterLoaderRemote.EnableSystemPodMetrics %v; not supported yet", cfg.AddOnClusterLoaderRemote.EnableSystemPodMetrics)
+	}
+	if cfg.AddOnClusterLoaderRemote.CL2SchedulerThroughputThreshold <= 0 {
+		cfg.AddOnClusterLoaderRemote.CL2SchedulerThroughputThreshold = 100
 	}
 
 	return nil

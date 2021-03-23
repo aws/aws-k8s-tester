@@ -84,11 +84,12 @@ type Config struct {
 	SmallStatefulSetsPerNamespace  int
 	MediumStatefulSetsPerNamespace int
 
-	CL2UseHostNetworkPods     bool
-	CL2LoadTestThroughput     int
-	CL2EnablePVS              bool
-	PrometheusScrapeKubeProxy bool
-	EnableSystemPodMetrics    bool
+	CL2UseHostNetworkPods           bool
+	CL2LoadTestThroughput           int
+	CL2EnablePVS                    bool
+	CL2SchedulerThroughputThreshold int
+	PrometheusScrapeKubeProxy       bool
+	EnableSystemPodMetrics          bool
 }
 
 // Loader defines cluster loader operations.
@@ -530,6 +531,7 @@ MEDIUM_STATEFUL_SETS_PER_NAMESPACE: {{ .MediumStatefulSetsPerNamespace }}
 CL2_USE_HOST_NETWORK_PODS: {{ .CL2UseHostNetworkPods }}
 CL2_LOAD_TEST_THROUGHPUT: {{ .CL2LoadTestThroughput }}
 CL2_ENABLE_PVS: {{ .CL2EnablePVS }}
+CL2_SCHEDULER_THROUGHPUT_THRESHOLD: {{ .CL2SchedulerThroughputThreshold }}
 PROMETHEUS_SCRAPE_KUBE_PROXY: {{ .PrometheusScrapeKubeProxy }}
 ENABLE_SYSTEM_POD_METRICS: {{ .EnableSystemPodMetrics }}
 `

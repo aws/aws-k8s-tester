@@ -540,7 +540,7 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 	// ref. https://github.com/kubernetes/client-go/blob/master/examples/in-cluster-client-configuration/main.go
 
 	// ref. https://github.com/kubernetes/perf-tests/pull/1295
-	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create cluster-loader --partition=%s --region=%s --s3-bucket-name=%s --cluster-loader-path=/clusterloader2 --test-config-path=/clusterloader2-test-config.yaml --report-dir=/var/log/cluster-loader-remote --report-tar-gz-path=/var/log/cluster-loader-remote.tar.gz --report-tar-gz-s3-path=%s --log-path=/var/log/cluster-loader-remote.log --log-s3-path=%s --pod-startup-latency-path=/var/log/cluster-loader-remote.pod-startup-latency-output.json --pod-startup-latency-s3-path=%s --runs=%d --timeout=%v --nodes=%d --nodes-per-namespace=%d --pods-per-node=%d --big-group-size=%d --medium-group-size=%d --small-group-size=%d --small-stateful-sets-per-namespace=%d --medium-stateful-sets-per-namespace=%d --cl2-use-host-network-pods=%v --cl2-load-test-throughput=%d --cl2-enable-pvs=%v --prometheus-scrape-kube-proxy=%v --enable-system-pod-metrics=%v",
+	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create cluster-loader --partition=%s --region=%s --s3-bucket-name=%s --cluster-loader-path=/clusterloader2 --test-config-path=/clusterloader2-test-config.yaml --report-dir=/var/log/cluster-loader-remote --report-tar-gz-path=/var/log/cluster-loader-remote.tar.gz --report-tar-gz-s3-path=%s --log-path=/var/log/cluster-loader-remote.log --log-s3-path=%s --pod-startup-latency-path=/var/log/cluster-loader-remote.pod-startup-latency-output.json --pod-startup-latency-s3-path=%s --runs=%d --timeout=%v --nodes=%d --nodes-per-namespace=%d --pods-per-node=%d --big-group-size=%d --medium-group-size=%d --small-group-size=%d --small-stateful-sets-per-namespace=%d --medium-stateful-sets-per-namespace=%d --cl2-use-host-network-pods=%v --cl2-load-test-throughput=%d --cl2-enable-pvs=%v --prometheus-scrape-kube-proxy=%v --enable-system-pod-metrics=%v --cl2-scheduler-throughput-threshold=%d",
 		ts.cfg.EKSConfig.Partition,
 		ts.cfg.EKSConfig.Region,
 		ts.cfg.EKSConfig.S3BucketName,
@@ -562,6 +562,7 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.CL2EnablePVS,
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.PrometheusScrapeKubeProxy,
 		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.EnableSystemPodMetrics,
+		ts.cfg.EKSConfig.AddOnClusterLoaderRemote.CL2SchedulerThroughputThreshold,
 	)
 
 	dirOrCreate := v1.HostPathDirectoryOrCreate
