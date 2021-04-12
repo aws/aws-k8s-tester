@@ -20,6 +20,9 @@ import (
 const AWS_K8S_TESTER_EC2_PREFIX = "AWS_K8S_TESTER_EC2_"
 
 const (
+	// AMITypeAL2ARM64 is the AMI type for Amazon Linux 2 AMI.
+	// https://aws.amazon.com/ec2/graviton/
+	AMITypeAL2ARM64 = "AL2_arm_64"
 	// AMITypeBottleRocketCPU is the AMI type for Bottlerocket OS.
 	// https://github.com/bottlerocket-os/bottlerocket
 	AMITypeBottleRocketCPU = "BOTTLEROCKET_x86_64"
@@ -28,6 +31,9 @@ const (
 	// AMITypeAL2X8664GPU is the AMI type for Amazon Linux 2 AMI with GPU.
 	AMITypeAL2X8664GPU = "AL2_x86_64_GPU"
 
+	// DefaultNodeInstanceTypeCPUARM is the default EC2 instance type for CPU worker node.
+	// https://aws.amazon.com/ec2/instance-types/m6/
+	DefaultNodeInstanceTypeCPUARM = "m6g.xlarge"
 	// DefaultNodeInstanceTypeCPU is the default EC2 instance type for CPU worker node.
 	DefaultNodeInstanceTypeCPU = "c5.xlarge"
 	// DefaultNodeInstanceTypeGPU is the default EC2 instance type for GPU worker node.

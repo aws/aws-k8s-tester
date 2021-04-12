@@ -385,6 +385,10 @@ func (cfg *Config) validateASGs() error {
 		}
 
 		switch cur.AMIType {
+		case AMITypeAL2ARM64:
+			if cur.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
+			}
 		case AMITypeBottleRocketCPU:
 			if cur.RemoteAccessUserName != "ec2-user" {
 				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
@@ -402,6 +406,10 @@ func (cfg *Config) validateASGs() error {
 		}
 
 		switch cur.AMIType {
+		case AMITypeAL2ARM64:
+			if len(cur.InstanceTypes) == 0 {
+				cur.InstanceTypes = []string{DefaultNodeInstanceTypeCPUARM}
+			}
 		case AMITypeBottleRocketCPU:
 			if len(cur.InstanceTypes) == 0 {
 				cur.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}

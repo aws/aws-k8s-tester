@@ -59,5 +59,6 @@
 | AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS                     | read-only "false" | *ec2config.Config.ASGsFetchLogs                   | bool                     |
 | AWS_K8S_TESTER_EC2_ASGS_LOGS_DIR                       | read-only "false" | *ec2config.Config.ASGsLogsDir                     | string                   |
 | AWS_K8S_TESTER_EC2_ASGS                                | read-only "false" | *ec2config.Config.ASGs                            | map[string]ec2config.ASG |
+| AWS_K8S_TESTER_EC2_TOTAL_NODES                         | read-only "true"  | *ec2config.Config.TotalNodes                      | int64                    |
 *--------------------------------------------------------*-------------------*---------------------------------------------------*--------------------------*
 ```
