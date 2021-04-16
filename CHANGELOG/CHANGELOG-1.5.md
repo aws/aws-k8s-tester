@@ -2,16 +2,35 @@
 
 <hr>
 
-## [v1.5.9](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.9) (TODO)
-- Add [`stresser V2`](https://github.com/aws/aws-k8s-tester/pull/206).
+## [v1.5.9](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.9) (2021-04)
+
+### `eks`
+
+- Add [`eks/stresser2`](https://github.com/aws/aws-k8s-tester/pull/206).
+
+### `eksconfig`
+
+- Add [`AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CL2_SCHEDULER_THROUGHPUT_THRESHOLD`](https://github.com/aws/aws-k8s-tester/pull/208).
+- Add [`AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CL2_SCHEDULER_THROUGHPUT_THRESHOLD`](https://github.com/aws/aws-k8s-tester/pull/208).
+- Ignore error [for an unknown region](https://github.com/aws/aws-k8s-tester/pull/204).
+
+### Go
+
+- Compile with [*Go 1.16.3*](https://golang.org/doc/devel/release.html#go1.16).
+
+
+<hr>
+
 
 ## [v1.5.8](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.8) (2021-02-02)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.7...v1.5.8).
+
 ### `eks`
 
 - Fix [`eks/ng` CFN template](https://github.com/aws/aws-k8s-tester/pull/200).
 - Test [`aws-sdk-go-v2`](https://github.com/aws/aws-k8s-tester/pull/201).
+
 ### Dependency
 
 - Add [`github.com/aws/aws-sdk-go-v2`](https://github.com/aws/aws-sdk-go-v2/releases) [`v1.0.0`](https://github.com/aws/aws-sdk-go/releases/tag/v1.0.0).
@@ -33,7 +52,6 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.6...v1.5.7
 ### Go
 
 - Compile with [*Go 1.16beta1*](https://golang.org/doc/devel/release.html#go1.16).
-
 
 
 <hr>

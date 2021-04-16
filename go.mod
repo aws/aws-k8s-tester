@@ -1,6 +1,6 @@
 module github.com/aws/aws-k8s-tester
 
-go 1.15
+go 1.16
 
 // https://github.com/kubernetes/kubernetes/releases
 // https://github.com/kubernetes/client-go/releases
@@ -67,6 +67,7 @@ require (
 	github.com/go-ini/ini v1.55.0
 	github.com/gofrs/flock v0.7.1
 	github.com/google/go-cmp v0.5.4
+	github.com/google/uuid v1.1.1
 	github.com/manifoldco/promptui v0.7.0
 	github.com/mattn/go-runewidth v0.0.8 // indirect
 	github.com/mholt/archiver/v3 v3.3.0
