@@ -4,6 +4,10 @@
 
 ## [v1.5.9](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.9) (2021-04)
 
+### `client`
+
+- Initial commit for [`"github.com/aws/aws-k8s-tester/client"`](https://github.com/aws/aws-k8s-tester/commit/de76767f6e0972d35370457dc67dd4959b9e638f).
+
 ### `eks`
 
 - Add [`eks/stresser2`](https://github.com/aws/aws-k8s-tester/pull/206).
