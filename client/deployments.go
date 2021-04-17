@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 	apps_v1 "k8s.io/api/apps/v1"
 	core_v1 "k8s.io/api/core/v1"
+	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	k8s_client "k8s.io/client-go/kubernetes"
@@ -110,4 +111,34 @@ func WaitForDeploymentCompletes(
 	}
 	err = wait.PollImmediate(pollInterval, durationTillDeadline(ctx), retryWaitFunc)
 	return dp, err
+}
+
+// DeleteDeployment deletes namespace with given name.
+func DeleteDeployment(lg *zap.Logger, c k8s_client.Interface, namespace string, deploymentName string) error {
+	deleteFunc := func() error {
+		lg.Info("deleting Deployment", zap.String("namespace", namespace), zap.String("name", deploymentName))
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		err := c.
+			AppsV1().
+			Deployments(namespace).
+			Delete(
+				ctx,
+				deploymentName,
+				deleteOption,
+			)
+		cancel()
+		if err == nil {
+			lg.Info("deleted Deployment", zap.String("namespace", namespace), zap.String("name", deploymentName))
+			return nil
+		}
+		if k8s_errors.IsNotFound(err) || k8s_errors.IsGone(err) {
+			lg.Info("Deployment already deleted", zap.String("namespace", namespace), zap.String("name", deploymentName), zap.Error(err))
+			return nil
+		}
+		lg.Warn("failed to delete Deployment", zap.String("namespace", namespace), zap.String("name", deploymentName), zap.Error(err))
+		return err
+	}
+	// requires "k8s_errors.IsNotFound"
+	// ref. https://github.com/aws/aws-k8s-tester/issues/79
+	return RetryWithExponentialBackOff(RetryFunction(deleteFunc, Allow(k8s_errors.IsNotFound)))
 }

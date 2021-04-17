@@ -14,6 +14,15 @@ import (
 // Reference
 // https://pkg.go.dev/k8s.io/apimachinery/pkg/api/errors#pkg-overview
 
+var (
+	deleteGracePeriod = int64(0)
+	deleteForeground  = meta_v1.DeletePropagationForeground
+	deleteOption      = meta_v1.DeleteOptions{
+		GracePeriodSeconds: &deleteGracePeriod,
+		PropagationPolicy:  &deleteForeground,
+	}
+)
+
 const (
 	// Parameters for retrying with exponential backoff.
 	retryBackoffInitialDuration = 100 * time.Millisecond

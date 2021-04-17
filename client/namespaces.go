@@ -70,17 +70,13 @@ func DeleteNamespaceAndWait(
 
 // deleteNamespace deletes namespace with given name.
 func deleteNamespace(lg *zap.Logger, c k8s_client.Interface, namespace string) error {
-	foreground, zero := meta_v1.DeletePropagationForeground, int64(0)
 	deleteFunc := func() error {
 		lg.Info("deleting namespace", zap.String("namespace", namespace))
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		err := c.CoreV1().Namespaces().Delete(
 			ctx,
 			namespace,
-			meta_v1.DeleteOptions{
-				GracePeriodSeconds: &zero,
-				PropagationPolicy:  &foreground,
-			},
+			deleteOption,
 		)
 		cancel()
 		if err == nil {
