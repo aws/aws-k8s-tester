@@ -27,6 +27,8 @@ import (
 type Config struct {
 	Logger *zap.Logger
 
+	// KubectlPath is the kubectl path.
+	KubectlPath string
 	// KubeConfigPath is the kubeconfig path to load.
 	KubeConfigPath string
 	// KubeConfigContext is the kubeconfig context.
