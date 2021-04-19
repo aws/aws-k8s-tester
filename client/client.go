@@ -118,57 +118,59 @@ func CreateConfig(cfg *Config) (kcfg *k8s_client_rest.Config, err error) {
 		return nil, errors.New("failed to create config")
 	}
 
-	if cfg.EKS.ClusterAPIServerEndpoint == "" {
-		cfg.EKS.ClusterAPIServerEndpoint = kcfg.Host
-		cfg.Logger.Info("updated apiserver endpoint from KUBECONFIG", zap.String("apiserver-endpoint", kcfg.Host))
-	} else if cfg.EKS.ClusterAPIServerEndpoint != kcfg.Host {
-		cfg.Logger.Warn("unexpected apiserver endpoint",
-			zap.String("apiserver-endpoint", cfg.EKS.ClusterAPIServerEndpoint),
-			zap.String("kubeconfig-host", kcfg.Host),
-		)
-	}
-	if cfg.EKS.ClusterAPIServerEndpoint == "" {
-		return nil, errors.New("empty ClusterAPIServerEndpoint")
-	}
-
-	if cfg.EKS.ClusterCADecoded == "" {
-		cfg.EKS.ClusterCADecoded = string(kcfg.TLSClientConfig.CAData)
-		cfg.Logger.Info("updated cluster CA from KUBECONFIG", zap.String("cluster-ca", cfg.EKS.ClusterCADecoded))
-	} else if cfg.EKS.ClusterCADecoded != string(kcfg.TLSClientConfig.CAData) {
-		cfg.Logger.Warn("unexpected cluster CA",
-			zap.String("cluster-ca", cfg.EKS.ClusterCADecoded),
-			zap.String("kubeconfig-cluster-ca", string(kcfg.TLSClientConfig.CAData)),
-		)
-	}
-	if cfg.EKS.ClusterCADecoded == "" {
-		cfg.Logger.Warn("no cluster CA found in restclient.Config")
-	}
-
-	if kcfg.AuthProvider != nil {
-		if cfg.EKS.Region == "" {
-			cfg.EKS.Region = kcfg.AuthProvider.Config["region"]
-			cfg.Logger.Info("updated region from kubeconfig", zap.String("apiserver-endpoint", kcfg.AuthProvider.Config["region"]))
-		} else if cfg.EKS.Region != kcfg.AuthProvider.Config["region"] {
-			cfg.Logger.Warn("unexpected region",
-				zap.String("apiserver-endpoint", cfg.EKS.Region),
-				zap.String("kubeconfig-host", kcfg.AuthProvider.Config["region"]),
+	if cfg.EKS != nil {
+		if cfg.EKS.ClusterAPIServerEndpoint == "" {
+			cfg.EKS.ClusterAPIServerEndpoint = kcfg.Host
+			cfg.Logger.Info("updated apiserver endpoint from KUBECONFIG", zap.String("apiserver-endpoint", kcfg.Host))
+		} else if cfg.EKS.ClusterAPIServerEndpoint != kcfg.Host {
+			cfg.Logger.Warn("unexpected apiserver endpoint",
+				zap.String("apiserver-endpoint", cfg.EKS.ClusterAPIServerEndpoint),
+				zap.String("kubeconfig-host", kcfg.Host),
 			)
+		}
+		if cfg.EKS.ClusterAPIServerEndpoint == "" {
+			return nil, errors.New("empty ClusterAPIServerEndpoint")
+		}
+
+		if cfg.EKS.ClusterCADecoded == "" {
+			cfg.EKS.ClusterCADecoded = string(kcfg.TLSClientConfig.CAData)
+			cfg.Logger.Info("updated cluster CA from KUBECONFIG", zap.String("cluster-ca", cfg.EKS.ClusterCADecoded))
+		} else if cfg.EKS.ClusterCADecoded != string(kcfg.TLSClientConfig.CAData) {
+			cfg.Logger.Warn("unexpected cluster CA",
+				zap.String("cluster-ca", cfg.EKS.ClusterCADecoded),
+				zap.String("kubeconfig-cluster-ca", string(kcfg.TLSClientConfig.CAData)),
+			)
+		}
+		if cfg.EKS.ClusterCADecoded == "" {
+			cfg.Logger.Warn("no cluster CA found in restclient.Config")
+		}
+
+		if kcfg.AuthProvider != nil {
+			if cfg.EKS.Region == "" {
+				cfg.EKS.Region = kcfg.AuthProvider.Config["region"]
+				cfg.Logger.Info("updated region from kubeconfig", zap.String("apiserver-endpoint", kcfg.AuthProvider.Config["region"]))
+			} else if cfg.EKS.Region != kcfg.AuthProvider.Config["region"] {
+				cfg.Logger.Warn("unexpected region",
+					zap.String("apiserver-endpoint", cfg.EKS.Region),
+					zap.String("kubeconfig-host", kcfg.AuthProvider.Config["region"]),
+				)
+			}
+			if cfg.EKS.ClusterName == "" {
+				cfg.EKS.ClusterName = kcfg.AuthProvider.Config["cluster-name"]
+				cfg.Logger.Info("updated cluster-name from kubeconfig", zap.String("apiserver-endpoint", kcfg.AuthProvider.Config["cluster-name"]))
+			} else if cfg.EKS.ClusterName != kcfg.AuthProvider.Config["cluster-name"] {
+				cfg.Logger.Warn("unexpected cluster-name",
+					zap.String("apiserver-endpoint", cfg.EKS.ClusterName),
+					zap.String("kubeconfig-host", kcfg.AuthProvider.Config["cluster-name"]),
+				)
+			}
+		}
+		if cfg.EKS.Region == "" {
+			cfg.Logger.Warn("no region found in restclient.Config")
 		}
 		if cfg.EKS.ClusterName == "" {
-			cfg.EKS.ClusterName = kcfg.AuthProvider.Config["cluster-name"]
-			cfg.Logger.Info("updated cluster-name from kubeconfig", zap.String("apiserver-endpoint", kcfg.AuthProvider.Config["cluster-name"]))
-		} else if cfg.EKS.ClusterName != kcfg.AuthProvider.Config["cluster-name"] {
-			cfg.Logger.Warn("unexpected cluster-name",
-				zap.String("apiserver-endpoint", cfg.EKS.ClusterName),
-				zap.String("kubeconfig-host", kcfg.AuthProvider.Config["cluster-name"]),
-			)
+			cfg.Logger.Warn("no cluster name found in restclient.Config")
 		}
-	}
-	if cfg.EKS.Region == "" {
-		cfg.Logger.Warn("no region found in restclient.Config")
-	}
-	if cfg.EKS.ClusterName == "" {
-		cfg.Logger.Warn("no cluster name found in restclient.Config")
 	}
 
 	if cfg.ClientQPS > 0 {
