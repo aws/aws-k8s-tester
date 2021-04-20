@@ -18,6 +18,11 @@
 - Add [`AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CL2_SCHEDULER_THROUGHPUT_THRESHOLD`](https://github.com/aws/aws-k8s-tester/pull/208).
 - Ignore error [for an unknown region](https://github.com/aws/aws-k8s-tester/pull/204).
 
+### `k8s-tester`
+
+- [Initial commit](https://github.com/aws/aws-k8s-tester/pull/210).
+  - To run [tests against existing clusters](https://github.com/aws/aws-k8s-tester/issues/123).
+
 ### Go
 
 - Compile with [*Go 1.16.3*](https://golang.org/doc/devel/release.html#go1.16).
