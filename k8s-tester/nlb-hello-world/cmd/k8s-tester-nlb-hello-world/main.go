@@ -32,8 +32,6 @@ var (
 	kubeConfigPath string
 )
 
-// TODO: make deployment replicas, node selector configurable
-
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&enablePrompt, "enable-prompt", true, "'true' to enable prompt mode")
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", log.DefaultLogLevel, "Logging level")
