@@ -23,6 +23,11 @@
 - [Initial commit](https://github.com/aws/aws-k8s-tester/pull/210).
   - To run [tests against existing clusters](https://github.com/aws/aws-k8s-tester/issues/123).
 
+### `utils`
+
+- [Initial commit](https://github.com/aws/aws-k8s-tester/commit/4bee86f539bc692c3f9cd2d303e4c6e20f575c0c).
+  - Copied from `pkg/*` but with its own `go.mod` file.
+
 ### Go
 
 - Compile with [*Go 1.16.3*](https://golang.org/doc/devel/release.html#go1.16).
