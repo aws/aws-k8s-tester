@@ -3,22 +3,19 @@ package nlb_hello_world
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"path"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/client"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
-	"github.com/dustin/go-humanize"
-	"github.com/mitchellh/ioprogress"
+	"github.com/aws/aws-k8s-tester/utils/http"
+	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
 	apps_v1 "k8s.io/api/apps/v1"
 	core_v1 "k8s.io/api/core/v1"
@@ -30,6 +27,8 @@ import (
 )
 
 type Config struct {
+	EnablePrompt bool
+
 	Logger    *zap.Logger
 	LogWriter io.Writer
 	Stopc     chan struct{}
@@ -76,6 +75,10 @@ const (
 )
 
 func (ts *tester) Apply() error {
+	if ok := ts.runPrompt("apply"); !ok {
+		return errors.New("cancelled")
+	}
+
 	if err := client.CreateNamespace(ts.cfg.Logger, ts.cli, ts.cfg.Namespace); err != nil {
 		return err
 	}
@@ -105,6 +108,10 @@ func (ts *tester) Apply() error {
 }
 
 func (ts *tester) Delete() error {
+	if ok := ts.runPrompt("delete"); !ok {
+		return errors.New("cancelled")
+	}
+
 	var errs []string
 
 	if err := client.DeleteService(
@@ -145,6 +152,28 @@ func (ts *tester) Delete() error {
 	}
 
 	return nil
+}
+
+func (ts *tester) runPrompt(action string) (ok bool) {
+	if ts.cfg.EnablePrompt {
+		msg := fmt.Sprintf("Ready to %q resources for the namespace %q, should we continue?", action, ts.cfg.Namespace)
+		prompt := promptui.Select{
+			Label: msg,
+			Items: []string{
+				"No, cancel it!",
+				fmt.Sprintf("Yes, let's %q!", action),
+			},
+		}
+		idx, answer, err := prompt.Run()
+		if err != nil {
+			panic(err)
+		}
+		if idx != 1 {
+			fmt.Printf("cancelled %q [index %d, answer %q]\n", action, idx, answer)
+			return false
+		}
+	}
+	return true
 }
 
 func (ts *tester) createDeployment() error {
@@ -371,7 +400,7 @@ func (ts *tester) checkService() error {
 		case <-time.After(5 * time.Second):
 		}
 
-		out, err := readInsecure(ts.cfg.Logger, ioutil.Discard, appURL)
+		out, err := http.ReadInsecure(ts.cfg.Logger, ioutil.Discard, appURL)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to read NLB hello-world Service; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)
@@ -398,85 +427,4 @@ func (ts *tester) checkService() error {
 	}
 
 	return nil
-}
-
-var httpFileTransport *http.Transport
-
-func init() {
-	httpFileTransport = new(http.Transport)
-	httpFileTransport.RegisterProtocol("file", http.NewFileTransport(http.Dir("/")))
-}
-
-func createReader(lg *zap.Logger, cli *http.Client, progressWriter io.Writer, downloadURL string) (rd io.Reader, closeFunc func(), err error) {
-	var size int64
-	size, err = getSize(lg, cli, downloadURL)
-	if err != nil {
-		lg.Info("downloading (unknown size)", zap.String("download-url", downloadURL), zap.Error(err))
-	} else {
-		lg.Info("downloading", zap.String("download-url", downloadURL), zap.String("content-length", humanize.Bytes(uint64(size))))
-	}
-
-	resp, err := cli.Get(downloadURL)
-	if err != nil {
-		return nil, func() {}, err
-	}
-	if resp.StatusCode >= 400 {
-		resp.Body.Close()
-		return nil, func() {}, fmt.Errorf("%q returned %d", downloadURL, resp.StatusCode)
-	}
-	closeFunc = func() {
-		resp.Body.Close()
-	}
-	if size != 0 && progressWriter != nil {
-		rd = &ioprogress.Reader{
-			Reader:       resp.Body,
-			Size:         size,
-			DrawFunc:     ioprogress.DrawTerminalf(progressWriter, drawTextFormatBytes),
-			DrawInterval: time.Second,
-		}
-	} else {
-		rd = resp.Body
-	}
-	return rd, closeFunc, nil
-}
-
-func drawTextFormatBytes(progress, total int64) string {
-	return fmt.Sprintf("\t%s / %s", humanize.Bytes(uint64(progress)), humanize.Bytes(uint64(total)))
-}
-
-func getSize(lg *zap.Logger, cli *http.Client, downloadURL string) (size int64, err error) {
-	resp, err := cli.Head(downloadURL)
-	if err != nil {
-		lg.Warn("failed to get header", zap.Error(err))
-		return 0, err
-	}
-	defer resp.Body.Close()
-
-	length := resp.Header.Get("Content-Length")
-	return strconv.ParseInt(length, 10, 64)
-}
-
-// readInsecure downloads the file with progress bar.
-// The progress is written to the writer.
-func readInsecure(lg *zap.Logger, progressWriter io.Writer, downloadURL string) (data []byte, err error) {
-	cli := &http.Client{
-		Timeout: 5 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		}}
-	rd, closeFunc, err := createReader(lg, cli, progressWriter, downloadURL)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		closeFunc()
-	}()
-	data, err = ioutil.ReadAll(rd)
-	if err != nil {
-		return nil, err
-	}
-	lg.Info("downloaded", zap.String("download-url", downloadURL), zap.String("size", humanize.Bytes(uint64(len(data)))))
-	return data, nil
 }
