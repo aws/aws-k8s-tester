@@ -2,7 +2,7 @@
 
 <hr>
 
-## [v1.5.9](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.9) (2021-04)
+## [v1.5.9](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.9) (2021-04-26)
 
 ### `client`
 
