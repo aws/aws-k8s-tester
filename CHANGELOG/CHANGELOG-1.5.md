@@ -8,6 +8,12 @@
 
 - Initial commit for [`"github.com/aws/aws-k8s-tester/client"`](https://github.com/aws/aws-k8s-tester/commit/de76767f6e0972d35370457dc67dd4959b9e638f).
 
+### `ec2config`
+
+- Change [`LogColorOverride` field from `bool` to `string`](https://github.com/aws/aws-k8s-tester/pull/212).
+  - Fix https://github.com/aws/aws-k8s-tester/issues/211.
+  - If not empty, now `terminal.IsColor` is not run.
+
 ### `eks`
 
 - Add [`eks/stresser2`](https://github.com/aws/aws-k8s-tester/pull/206).
@@ -17,6 +23,9 @@
 - Add [`AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CL2_SCHEDULER_THROUGHPUT_THRESHOLD`](https://github.com/aws/aws-k8s-tester/pull/208).
 - Add [`AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_REMOTE_CL2_SCHEDULER_THROUGHPUT_THRESHOLD`](https://github.com/aws/aws-k8s-tester/pull/208).
 - Ignore error [for an unknown region](https://github.com/aws/aws-k8s-tester/pull/204).
+- Change [`LogColorOverride` field from `bool` to `string`](https://github.com/aws/aws-k8s-tester/pull/212).
+  - Fix https://github.com/aws/aws-k8s-tester/issues/211.
+  - If not empty, now `terminal.IsColor` is not run.
 
 ### `k8s-tester`
 
