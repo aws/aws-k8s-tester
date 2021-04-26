@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -38,7 +39,9 @@ func NewDefault() *Config {
 		ConfigPath:                     "",
 		RemoteAccessCommandsOutputPath: "",
 
-		LogColor: true,
+		LogColor:         true,
+		LogColorOverride: "",
+
 		LogLevel: logutil.DefaultLogLevel,
 		// default, stderr, stdout, or file name
 		// log file named with cluster name will be added automatically
@@ -130,10 +133,22 @@ func (cfg *Config) validateConfig() error {
 		return fmt.Errorf("region %q for partition %q not found in %+v", cfg.Region, cfg.Partition, regions)
 	}
 
-	_, cerr := terminal.IsColor()
-	if cfg.LogColor && !cfg.LogColorOverride && cerr != nil {
-		cfg.LogColor = false
+	if cfg.LogColorOverride == "" {
+		_, cerr := terminal.IsColor()
+		if cfg.LogColor && cerr != nil {
+			cfg.LogColor = false
+			fmt.Fprintf(os.Stderr, "[WARN] LogColor is set to 'false' due to error %+v", cerr)
+		}
+	} else {
+		// non-empty override, don't even run "terminal.IsColor"
+		ov, perr := strconv.ParseBool(cfg.LogColorOverride)
+		if perr != nil {
+			return fmt.Errorf("failed to parse LogColorOverride %q (%v)", cfg.LogColorOverride, perr)
+		}
+		cfg.LogColor = ov
+		fmt.Fprintf(os.Stderr, "[WARN] LogColor is overwritten with %q", cfg.LogColorOverride)
 	}
+
 	if len(cfg.LogOutputs) == 0 {
 		return errors.New("LogOutputs is not empty")
 	}

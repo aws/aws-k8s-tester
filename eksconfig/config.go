@@ -64,10 +64,14 @@ type Config struct {
 
 	// LogColor is true to output logs in color.
 	LogColor bool `json:"log-color"`
-	// LogColorOverride is true to use "LogColor" setting
-	// even if the current terminal does not support color outputs.
-	// Useful to output in color in HTML based log outputs (e.g. Prow).
-	LogColorOverride bool `json:"log-color-override"`
+	// LogColorOverride is not empty to override "LogColor" setting.
+	// If not empty, the automatic color check is not even run and use this value instead.
+	// For instance, github action worker might not support color device,
+	// thus exiting color check with the exit code 1.
+	// Useful to output in color in HTML based log outputs (e.g., Prow).
+	// Useful to skip terminal color check when there is no color device (e.g., Github action worker).
+	LogColorOverride string `json:"log-color-override"`
+
 	// LogLevel configures log level. Only supports debug, info, warn, error, panic, or fatal. Default 'info'.
 	LogLevel string `json:"log-level"`
 	// LogOutputs is a list of log outputs. Valid values are 'default', 'stderr', 'stdout', or file names.
@@ -816,8 +820,9 @@ func NewDefault() *Config {
 		AWSCLIPath:                "",
 
 		LogColor:         true,
-		LogColorOverride: false,
-		LogLevel:         logutil.DefaultLogLevel,
+		LogColorOverride: "",
+
+		LogLevel: logutil.DefaultLogLevel,
 		// default, stderr, stdout, or file name
 		// log file named with cluster name will be added automatically
 		LogOutputs: []string{"stderr"},
@@ -915,9 +920,10 @@ func NewDefault() *Config {
 	var err error
 	cfg.AWSCLIPath, err = exec.LookPath("aws")
 	if err != nil {
-		panic(fmt.Errorf("aws CLI is not installed (%v); required for 'aws eks update-kubeconfig'", err))
+		fmt.Fprintf(os.Stderr, "[WARN] aws CLI is not installed (%v); required for 'aws eks update-kubeconfig'\n", err)
 	}
 
+	// TODO: check for ARM/x86
 	if runtime.GOOS == "darwin" {
 		cfg.KubectlDownloadURL = strings.Replace(cfg.KubectlDownloadURL, "linux", "darwin", -1)
 	}
@@ -941,14 +947,14 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		cfg.mu.Unlock()
 	}()
 
-	// Generically defaults and validates addons that are members of cfg.Spec
+	// generically defaults and validates addons that are members of cfg.Spec
 	spec := reflect.ValueOf(cfg.Spec)
 	for i := 0; i < spec.NumField(); i++ {
-		// Skip if the field does not implement Addon or is Nil
+		// skip if the field does not implement Addon or is Nil
 		if addon, ok := spec.Field(i).Interface().(Addon); ok && !reflect.ValueOf(addon).IsNil() {
 			addon.Default(cfg)
 			if err := addon.Validate(cfg); err != nil {
-				return fmt.Errorf("Failed to validate %s, %v", reflect.ValueOf(addon).Type(), err)
+				return fmt.Errorf("failed to validate %s, %v", reflect.ValueOf(addon).Type(), err)
 			}
 		}
 	}
@@ -1148,10 +1154,22 @@ func (cfg *Config) validateConfig() error {
 		fmt.Fprintf(os.Stderr, "[WARN] region %q for partition %q not found in %+v", cfg.Region, cfg.Partition, regions)
 	}
 
-	_, cerr := terminal.IsColor()
-	if cfg.LogColor && !cfg.LogColorOverride && cerr != nil {
-		cfg.LogColor = false
+	if cfg.LogColorOverride == "" {
+		_, cerr := terminal.IsColor()
+		if cfg.LogColor && cerr != nil {
+			cfg.LogColor = false
+			fmt.Fprintf(os.Stderr, "[WARN] LogColor is set to 'false' due to error %+v", cerr)
+		}
+	} else {
+		// non-empty override, don't even run "terminal.IsColor"
+		ov, perr := strconv.ParseBool(cfg.LogColorOverride)
+		if perr != nil {
+			return fmt.Errorf("failed to parse LogColorOverride %q (%v)", cfg.LogColorOverride, perr)
+		}
+		cfg.LogColor = ov
+		fmt.Fprintf(os.Stderr, "[WARN] LogColor is overwritten with %q", cfg.LogColorOverride)
 	}
+
 	if len(cfg.LogOutputs) == 0 {
 		return errors.New("LogOutputs is not empty")
 	}

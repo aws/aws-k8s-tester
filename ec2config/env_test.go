@@ -58,8 +58,8 @@ func TestEnv(t *testing.T) {
 	if cfg.LogColor {
 		t.Fatalf("unexpected cfg.LogColor %v", cfg.LogColor)
 	}
-	if !cfg.LogColorOverride {
-		t.Fatalf("unexpected cfg.LogColorOverride %v", cfg.LogColorOverride)
+	if cfg.LogColorOverride != "true" {
+		t.Fatalf("unexpected LogColorOverride %q", cfg.LogColorOverride)
 	}
 	if !cfg.S3BucketCreate {
 		t.Fatalf("unexpected cfg.S3BucketCreate %v", cfg.S3BucketCreate)

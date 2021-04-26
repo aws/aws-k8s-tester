@@ -55,7 +55,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_KUBECTL_COMMANDS_OUTPUT_PATH                | read-only "false" | *eksconfig.Config.KubectlCommandsOutputPath              | string         |
 | AWS_K8S_TESTER_EKS_REMOTE_ACCESS_COMMANDS_OUTPUT_PATH          | read-only "false" | *eksconfig.Config.RemoteAccessCommandsOutputPath         | string         |
 | AWS_K8S_TESTER_EKS_LOG_COLOR                                   | read-only "false" | *eksconfig.Config.LogColor                               | bool           |
-| AWS_K8S_TESTER_EKS_LOG_COLOR_OVERRIDE                          | read-only "false" | *eksconfig.Config.LogColorOverride                       | bool           |
+| AWS_K8S_TESTER_EKS_LOG_COLOR_OVERRIDE                          | read-only "false" | *eksconfig.Config.LogColorOverride                       | string         |
 | AWS_K8S_TESTER_EKS_LOG_LEVEL                                   | read-only "false" | *eksconfig.Config.LogLevel                               | string         |
 | AWS_K8S_TESTER_EKS_LOG_OUTPUTS                                 | read-only "false" | *eksconfig.Config.LogOutputs                             | []string       |
 | AWS_K8S_TESTER_EKS_AWS_CLI_PATH                                | read-only "false" | *eksconfig.Config.AWSCLIPath                             | string         |
@@ -94,45 +94,51 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *----------------------------------------------------------------*-------------------*----------------------------------------------------------*----------------*
 
 
-*----------------------------------------------------------------*-------------------*----------------------------------------------------*-------------------*
-|                     ENVIRONMENTAL VARIABLE                     |     READ ONLY     |                        TYPE                        |      GO TYPE      |
-*----------------------------------------------------------------*-------------------*----------------------------------------------------*-------------------*
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_NAME                        | read-only "false" | *eksconfig.Parameters.RoleName                     | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CREATE                      | read-only "false" | *eksconfig.Parameters.RoleCreate                   | bool              |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_ARN                         | read-only "false" | *eksconfig.Parameters.RoleARN                      | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_SERVICE_PRINCIPALS          | read-only "false" | *eksconfig.Parameters.RoleServicePrincipals        | []string          |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS         | read-only "false" | *eksconfig.Parameters.RoleManagedPolicyARNs        | []string          |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_ID                | read-only "true"  | *eksconfig.Parameters.RoleCFNStackID               | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_YAML_PATH         | read-only "true"  | *eksconfig.Parameters.RoleCFNStackYAMLPath         | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_YAML_S3_KEY       | read-only "true"  | *eksconfig.Parameters.RoleCFNStackYAMLS3Key        | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_TAGS                             | read-only "false" | *eksconfig.Parameters.Tags                         | map[string]string |
-| AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_KEY               | read-only "false" | *eksconfig.Parameters.RequestHeaderKey             | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_VALUE             | read-only "false" | *eksconfig.Parameters.RequestHeaderValue           | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_RESOLVER_URL                     | read-only "false" | *eksconfig.Parameters.ResolverURL                  | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_SIGNING_NAME                     | read-only "false" | *eksconfig.Parameters.SigningName                  | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE                       | read-only "false" | *eksconfig.Parameters.VPCCreate                    | bool              |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID                           | read-only "false" | *eksconfig.Parameters.VPCID                        | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_ID                 | read-only "true"  | *eksconfig.Parameters.VPCCFNStackID                | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_YAML_PATH          | read-only "true"  | *eksconfig.Parameters.VPCCFNStackYAMLPath          | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_YAML_S3_KEY        | read-only "true"  | *eksconfig.Parameters.VPCCFNStackYAMLS3Key         | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR_BLOCK1                  | read-only "false" | *eksconfig.Parameters.VPCBlock1                    | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR_BLOCK2                  | read-only "false" | *eksconfig.Parameters.VPCBlock2                    | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR_BLOCK3                  | read-only "false" | *eksconfig.Parameters.VPCBlock3                    | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR_BLOCK4                  | read-only "false" | *eksconfig.Parameters.VPCBlock4                    | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_1             | read-only "false" | *eksconfig.Parameters.PublicSubnetCIDR1            | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_2             | read-only "false" | *eksconfig.Parameters.PublicSubnetCIDR2            | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_3             | read-only "false" | *eksconfig.Parameters.PublicSubnetCIDR3            | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_1            | read-only "false" | *eksconfig.Parameters.PrivateSubnetCIDR1           | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_2            | read-only "false" | *eksconfig.Parameters.PrivateSubnetCIDR2           | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_IDS                | read-only "true"  | *eksconfig.Parameters.PublicSubnetIDs              | []string          |
-| AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_IDS               | read-only "true"  | *eksconfig.Parameters.PrivateSubnetIDs             | []string          |
-| AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME         | read-only "false" | *eksconfig.Parameters.DHCPOptionsDomainName        | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME_SERVERS | read-only "false" | *eksconfig.Parameters.DHCPOptionsDomainNameServers | []string          |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VERSION                          | read-only "false" | *eksconfig.Parameters.Version                      | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VERSION_VALUE                    | read-only "true"  | *eksconfig.Parameters.VersionValue                 | float64           |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE            | read-only "false" | *eksconfig.Parameters.EncryptionCMKCreate          | bool              |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN               | read-only "false" | *eksconfig.Parameters.EncryptionCMKARN             | string            |
-*----------------------------------------------------------------*-------------------*----------------------------------------------------*-------------------*
+*--------------------------------------------------------------------*-------------------*--------------------------------------------------------*-------------------*
+|                       ENVIRONMENTAL VARIABLE                       |     READ ONLY     |                          TYPE                          |      GO TYPE      |
+*--------------------------------------------------------------------*-------------------*--------------------------------------------------------*-------------------*
+| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_NAME                            | read-only "false" | *eksconfig.Parameters.RoleName                         | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CREATE                          | read-only "false" | *eksconfig.Parameters.RoleCreate                       | bool              |
+| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_ARN                             | read-only "false" | *eksconfig.Parameters.RoleARN                          | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_SERVICE_PRINCIPALS              | read-only "false" | *eksconfig.Parameters.RoleServicePrincipals            | []string          |
+| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS             | read-only "false" | *eksconfig.Parameters.RoleManagedPolicyARNs            | []string          |
+| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_ID                    | read-only "true"  | *eksconfig.Parameters.RoleCFNStackID                   | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_YAML_PATH             | read-only "true"  | *eksconfig.Parameters.RoleCFNStackYAMLPath             | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_YAML_S3_KEY           | read-only "true"  | *eksconfig.Parameters.RoleCFNStackYAMLS3Key            | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_TAGS                                 | read-only "false" | *eksconfig.Parameters.Tags                             | map[string]string |
+| AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_KEY                   | read-only "false" | *eksconfig.Parameters.RequestHeaderKey                 | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_VALUE                 | read-only "false" | *eksconfig.Parameters.RequestHeaderValue               | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_RESOLVER_URL                         | read-only "false" | *eksconfig.Parameters.ResolverURL                      | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_SIGNING_NAME                         | read-only "false" | *eksconfig.Parameters.SigningName                      | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE                           | read-only "false" | *eksconfig.Parameters.VPCCreate                        | bool              |
+| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID                               | read-only "false" | *eksconfig.Parameters.VPCID                            | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_ID                     | read-only "true"  | *eksconfig.Parameters.VPCCFNStackID                    | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_YAML_PATH              | read-only "true"  | *eksconfig.Parameters.VPCCFNStackYAMLPath              | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_YAML_S3_KEY            | read-only "true"  | *eksconfig.Parameters.VPCCFNStackYAMLS3Key             | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR_BLOCK1                      | read-only "false" | *eksconfig.Parameters.VPCBlock1                        | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR_BLOCK2                      | read-only "false" | *eksconfig.Parameters.VPCBlock2                        | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR_BLOCK3                      | read-only "false" | *eksconfig.Parameters.VPCBlock3                        | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR_BLOCK4                      | read-only "false" | *eksconfig.Parameters.VPCBlock4                        | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_1                 | read-only "false" | *eksconfig.Parameters.PublicSubnetCIDR1                | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_2                 | read-only "false" | *eksconfig.Parameters.PublicSubnetCIDR2                | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_3                 | read-only "false" | *eksconfig.Parameters.PublicSubnetCIDR3                | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_1                | read-only "false" | *eksconfig.Parameters.PrivateSubnetCIDR1               | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_2                | read-only "false" | *eksconfig.Parameters.PrivateSubnetCIDR2               | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_IDS                    | read-only "true"  | *eksconfig.Parameters.PublicSubnetIDs                  | []string          |
+| AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_IDS                   | read-only "true"  | *eksconfig.Parameters.PrivateSubnetIDs                 | []string          |
+| AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME             | read-only "false" | *eksconfig.Parameters.DHCPOptionsDomainName            | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME_SERVERS     | read-only "false" | *eksconfig.Parameters.DHCPOptionsDomainNameServers     | []string          |
+| AWS_K8S_TESTER_EKS_PARAMETERS_VERSION                              | read-only "false" | *eksconfig.Parameters.Version                          | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_VERSION_VALUE                        | read-only "true"  | *eksconfig.Parameters.VersionValue                     | float64           |
+| AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE                | read-only "false" | *eksconfig.Parameters.EncryptionCMKCreate              | bool              |
+| AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN                   | read-only "false" | *eksconfig.Parameters.EncryptionCMKARN                 | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_APISERVER_MAX_REQUESTS_INFLIGHT | read-only "false" | *eksconfig.Parameters.KubeAPIServerMaxRequestsInflight | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_QPS          | read-only "false" | *eksconfig.Parameters.KubeControllerManagerQPS         | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_BURST        | read-only "false" | *eksconfig.Parameters.KubeControllerManagerBurst       | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_SCHEDULER_QPS                   | read-only "false" | *eksconfig.Parameters.KubeSchedulerQPS                 | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_SCHEDULER_BURST                 | read-only "false" | *eksconfig.Parameters.KubeSchedulerBurst               | string            |
+| AWS_K8S_TESTER_EKS_PARAMETERS_FE_UPDATE_MASTER_FLAGS_URL           | read-only "false" | *eksconfig.Parameters.FEUpdateMasterFlagsURL           | string            |
+*--------------------------------------------------------------------*-------------------*--------------------------------------------------------*-------------------*
 
 
 *--------------------------------------------------------------*-------------------*------------------------------------------------*--------------------*
@@ -849,7 +855,7 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 
 
 *-----------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------------*--------------------*
-|                              ENVIRONMENTAL VARIABLE                               |     READ ONLY     |                               TYPE                                 |      GO TYPE       |
+|                              ENVIRONMENTAL VARIABLE                               |     READ ONLY     |                                TYPE                                |      GO TYPE       |
 *-----------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------------*--------------------*
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE                             | read-only "false" | *eksconfig.AddOnClusterLoaderLocal.Enable                          | bool               |
 | AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_CREATED                            | read-only "true"  | *eksconfig.AddOnClusterLoaderLocal.Created                         | bool               |
