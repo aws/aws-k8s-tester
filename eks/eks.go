@@ -76,7 +76,6 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/httputil"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
-	"github.com/aws/aws-k8s-tester/pkg/terminal"
 	"github.com/aws/aws-k8s-tester/pkg/user"
 	"github.com/aws/aws-k8s-tester/version"
 	aws_v2 "github.com/aws/aws-sdk-go-v2/aws"
@@ -117,7 +116,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/dustin/go-humanize"
-	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
@@ -211,21 +209,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		return nil, err
 	}
 	_ = zap.ReplaceGlobals(lg)
-	lg.Info("set up log writer and file", zap.Strings("outputs", cfg.LogOutputs))
-
-	isColor := cfg.LogColor
-	co, cerr := terminal.IsColor()
-	if cerr == nil {
-		lg.Info("requested output in color", zap.String("output", co), zap.Error(cerr))
-		colorstring.Printf("\n\n[light_green]HELLO COLOR\n\n")
-		isColor = true
-	} else if !cfg.LogColorOverride {
-		lg.Warn("requested output in color but not supported; overriding", zap.String("output", co), zap.Error(cerr))
-		isColor = false
-	} else {
-		lg.Info("requested output color", zap.Bool("is-color", isColor), zap.String("output", co), zap.Error(cerr))
-	}
-	cfg.LogColor = isColor
+	lg.Info("set up log writer and file", zap.Strings("outputs", cfg.LogOutputs), zap.Bool("is-color", cfg.LogColor))
 	cfg.Sync()
 
 	colorize := cfg.Colorize

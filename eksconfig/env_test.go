@@ -642,8 +642,8 @@ spec:
 	if cfg.LogColor {
 		t.Fatalf("unexpected LogColor %v", cfg.LogColor)
 	}
-	if !cfg.LogColorOverride {
-		t.Fatalf("unexpected LogColorOverride %v", cfg.LogColorOverride)
+	if cfg.LogColorOverride != "true" {
+		t.Fatalf("unexpected LogColorOverride %q", cfg.LogColorOverride)
 	}
 	if cfg.KubectlCommandsOutputPath != "hello-kubectl" {
 		t.Fatalf("unexpected %q", cfg.KubectlCommandsOutputPath)

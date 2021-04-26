@@ -87,10 +87,14 @@ type Config struct {
 
 	// LogColor is true to output logs in color.
 	LogColor bool `json:"log-color"`
-	// LogColorOverride is true to use "LogColor" setting
-	// even if the current terminal does not support color outputs.
-	// Useful to output in color in HTML based log outputs (e.g. Prow).
-	LogColorOverride bool `json:"log-color-override"`
+	// LogColorOverride is not empty to override "LogColor" setting.
+	// If not empty, the automatic color check is not even run and use this value instead.
+	// For instance, github action worker might not support color device,
+	// thus exiting color check with the exit code 1.
+	// Useful to output in color in HTML based log outputs (e.g., Prow).
+	// Useful to skip terminal color check when there is no color device (e.g., Github action worker).
+	LogColorOverride string `json:"log-color-override"`
+
 	// LogLevel configures log level. Only supports debug, info, warn, error, panic, or fatal. Default 'info'.
 	LogLevel string `json:"log-level"`
 	// LogOutputs is a list of log outputs. Valid values are 'default', 'stderr', 'stdout', or file names.

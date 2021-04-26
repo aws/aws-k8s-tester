@@ -15,7 +15,6 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
-	"github.com/aws/aws-k8s-tester/pkg/terminal"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -37,7 +36,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/dustin/go-humanize"
-	"github.com/mitchellh/colorstring"
 	"go.uber.org/zap"
 )
 
@@ -81,21 +79,7 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 	if err != nil {
 		return nil, err
 	}
-	lg.Info("set up log writer and file", zap.Strings("outputs", cfg.LogOutputs))
-
-	isColor := cfg.LogColor
-	co, cerr := terminal.IsColor()
-	if cerr == nil {
-		lg.Info("requested output in color", zap.String("output", co), zap.Error(cerr))
-		colorstring.Printf("\n\n[light_green]HELLO COLOR\n\n")
-		isColor = true
-	} else if !cfg.LogColorOverride {
-		lg.Warn("requested output in color but not supported; overriding", zap.String("output", co), zap.Error(cerr))
-		isColor = false
-	} else {
-		lg.Info("requested output color", zap.Bool("is-color", isColor), zap.String("output", co), zap.Error(cerr))
-	}
-	cfg.LogColor = isColor
+	lg.Info("set up log writer and file", zap.Strings("outputs", cfg.LogOutputs), zap.Bool("is-color", cfg.LogColor))
 	cfg.Sync()
 
 	fmt.Fprintf(logWriter, cfg.Colorize("\n\n[yellow]*********************************\n"))
