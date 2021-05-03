@@ -1,11 +1,13 @@
 package cluster
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
@@ -443,9 +445,10 @@ Resources:
     - VPCGatewayAttachment
     Properties:
       Domain: vpc
-      Tags:
+{{ if not .IsIsolated }}      Tags:
       - Key: Name
         Value: !Sub '${AWS::StackName}-EIP1'
+{{ end }}
 
   NATGatewayEIP2:
     Type: AWS::EC2::EIP
@@ -454,9 +457,10 @@ Resources:
     - VPCGatewayAttachment
     Properties:
       Domain: vpc
-      Tags:
+{{ if not .IsIsolated }}      Tags:
       - Key: Name
         Value: !Sub '${AWS::StackName}-EIP2'
+{{ end }}
 
   NATGatewayEIP3:
     Type: AWS::EC2::EIP
@@ -465,9 +469,10 @@ Resources:
     - VPCGatewayAttachment
     Properties:
       Domain: vpc
-      Tags:
+{{ if not .IsIsolated }}      Tags:
       - Key: Name
         Value: !Sub '${AWS::StackName}-EIP3'
+{{ end }}
 
   NATGateway1:
     Type: AWS::EC2::NatGateway
@@ -638,6 +643,10 @@ Outputs:
 
 `
 
+type templateVPCPublicPrivate struct {
+	IsIsolated bool
+}
+
 func (ts *tester) createVPC() error {
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createVPC [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
@@ -762,6 +771,21 @@ func (ts *tester) createVPC() error {
 	if err := ioutil.WriteFile(ts.cfg.EKSConfig.Parameters.VPCCFNStackYAMLPath, []byte(TemplateVPCPublicPrivate), 0600); err != nil {
 		return err
 	}
+
+	// Tags are not support for resource AWS::EC2::EIP in isolated regions
+	isIsolated := false
+	if strings.Contains(ts.cfg.EKSConfig.Partition, "-iso") {
+		isIsolated = true
+	}
+
+	tpl := template.Must(template.New("TemplateVPCPublicPrivate").Parse(TemplateVPCPublicPrivate))
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, templateVPCPublicPrivate{
+		IsIsolated: isIsolated,
+	}); err != nil {
+		return err
+	}
+
 	if err := aws_s3.Upload(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
@@ -782,7 +806,7 @@ func (ts *tester) createVPC() error {
 		StackName:    aws.String(vpcName),
 		Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
 		OnFailure:    aws.String(cloudformation.OnFailureDelete),
-		TemplateBody: aws.String(TemplateVPCPublicPrivate),
+		TemplateBody: aws.String(buf.String()),
 		Tags: cfn.NewTags(map[string]string{
 			"Kind":                   "aws-k8s-tester",
 			"Name":                   ts.cfg.EKSConfig.Name,
