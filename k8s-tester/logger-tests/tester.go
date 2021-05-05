@@ -1,0 +1,207 @@
+// Package logger_tests installs a simple "Hello World" application with a logger and tests the logger function.
+package logger_tests
+
+import (
+	"errors"
+	"fmt"
+	"io"
+	"path"
+	"reflect"
+	"strings"
+	"time"
+
+	"github.com/aws/aws-k8s-tester/client"
+	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
+	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
+	"github.com/manifoldco/promptui"
+	"go.uber.org/zap"
+	k8s_client "k8s.io/client-go/kubernetes"
+)
+
+type Config struct {
+	EnablePrompt bool
+
+	Logger    *zap.Logger
+	LogWriter io.Writer
+	Stopc     chan struct{}
+
+	ClientConfig *client.Config
+
+	// Namespace to create test resources.
+	Namespace string
+	ECRAPI    ecriface.ECRAPI
+}
+
+func New(cfg Config) k8s_tester.Tester {
+	ccfg, err := client.CreateConfig(cfg.ClientConfig)
+	if err != nil {
+		cfg.Logger.Panic("failed to create client config", zap.Error(err))
+	}
+	cli, err := k8s_client.NewForConfig(ccfg)
+	if err != nil {
+		cfg.Logger.Panic("failed to create client", zap.Error(err))
+	}
+
+	return &tester{
+		cfg: cfg,
+		cli: cli,
+	}
+}
+
+type tester struct {
+	cfg Config
+	cli k8s_client.Interface
+}
+
+var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
+
+func (ts *tester) Name() string { return pkgName }
+
+func (ts *tester) Apply() error {
+	if ok := ts.runPrompt("apply"); !ok {
+		return errors.New("cancelled")
+	}
+	if err := client.CreateNamespace(ts.cfg.Logger, ts.cli, ts.cfg.Namespace); err != nil {
+		return err
+	}
+	if err := ts.createServiceAccount(); err != nil {
+		return err
+	}
+	if err := ts.createRBACClusterRole(); err != nil {
+		return err
+	}
+	if err := ts.createRBACClusterRoleBinding(); err != nil {
+		return err
+	}
+	if err := ts.createAppConfigMap(); err != nil {
+		return err
+	}
+	if err := ts.createDaemonSet(); err != nil {
+		return err
+	}
+	if err := ts.checkDaemonSet(); err != nil {
+		return err
+	}
+	if err := ts.createService(); err != nil {
+		return err
+	}
+	if err := ts.testHTTPClient(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ts *tester) Delete() error {
+	if ok := ts.runPrompt("delete"); !ok {
+		return errors.New("cancelled")
+	}
+
+	var errs []string
+
+	if err := client.DeleteServiceAccount(
+		ts.cfg.Logger,
+		ts.cli,
+		ts.cfg.Namespace,
+		appServiceAccountName,
+	); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete ServiceAccount (%v)", err))
+	}
+	ts.cfg.Logger.Info("wait for a minute after deleting ServiceAccount")
+
+	if err := client.DeleteRBACClusterRole(
+		ts.cfg.Logger,
+		ts.cli,
+		appRBACRoleName,
+	); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete ClusterRole (%v)", err))
+	}
+	ts.cfg.Logger.Info("Deleting %s: %s", zap.String("ClusterRole", appName))
+
+	if err := client.DeleteRBACClusterRoleBinding(
+		ts.cfg.Logger,
+		ts.cli,
+		appRBACClusterRoleBindingName,
+	); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete ClusterRoleBinding (%v)", err))
+	}
+	ts.cfg.Logger.Info("Deleting %s: %s", zap.String("ClusterRoleBinding", appName))
+
+	if err := client.DeleteConfigmap(
+		ts.cfg.Logger,
+		ts.cli,
+		ts.cfg.Namespace,
+		appConfigMapNameConfig,
+	); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete Configmap (%v)", err))
+	}
+	ts.cfg.Logger.Info("Deleting %s: %s", zap.String("Configmap", appName))
+
+	if err := client.DeleteDaemonSet(
+		ts.cfg.Logger,
+		ts.cli,
+		ts.cfg.Namespace,
+		appName,
+	); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete DaemonSet (%v)", err))
+	}
+	ts.cfg.Logger.Info("Deleting %s: %s", zap.String("DaemonSet", appName))
+	ts.cfg.Logger.Info("wait for a minute after deleting DaemonSet")
+	time.Sleep(time.Minute)
+
+	if err := client.DeleteService(
+		ts.cfg.Logger,
+		ts.cli,
+		ts.cfg.Namespace,
+		appName,
+	); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete Service (%v)", err))
+	}
+	ts.cfg.Logger.Info("Deleting %s: %s", zap.String("Service", appName))
+
+	if err := client.DeletePod(
+		ts.cfg.Logger,
+		ts.cli,
+		ts.cfg.Namespace,
+		"alpine",
+	); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete Pod (%v)", err))
+	}
+	ts.cfg.Logger.Info("Deleting %s: %s", zap.String("Pod", "alpine"))
+
+	if err := client.DeleteNamespaceAndWait(
+		ts.cfg.Logger,
+		ts.cli,
+		ts.cfg.Namespace,
+		client.DefaultNamespaceDeletionInterval,
+		client.DefaultNamespaceDeletionTimeout,
+		client.WithForceDelete(true),
+	); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete namespace (%v)", err))
+	}
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, ", "))
+	}
+	return nil
+}
+
+func (ts *tester) runPrompt(action string) (ok bool) {
+	if ts.cfg.EnablePrompt {
+		msg := fmt.Sprintf("Ready to %q resources for the namespace %q, should we continue?", action, ts.cfg.Namespace)
+		prompt := promptui.Select{
+			Label: msg,
+			Items: []string{
+				"No, cancel it!",
+				fmt.Sprintf("Yes, let's %q!", action),
+			},
+		}
+		idx, answer, err := prompt.Run()
+		if err != nil {
+			panic(err)
+		}
+		if idx != 1 {
+			fmt.Printf("cancelled %q [index %d, answer %q]\n", action, idx, answer)
+			return false
+		}
+	}
+	return true
+}
