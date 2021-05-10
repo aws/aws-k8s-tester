@@ -1,4 +1,4 @@
-package logger_tests
+package fluent_bit
 
 import (
 	"context"
@@ -25,14 +25,18 @@ const (
 	appName                        = "fluent-bit"
 	appServiceAccountName          = "fluentbit-service-account"
 	appRBACRoleName                = "fluentbit-rbac-role"
-	appRBACClusterRoleBindingName  = "fluentbit-rbac-role-binding"
+	appRBACRoleBindingName         = "fluentbit-rbac-role-binding"
 	appConfigMapNameClusterInfo    = "fluentbit-configmap-cluster-info"
 	appConfigMapNameConfig         = "fluentbit-configmap-config"
 	appConfigMapFileNameFluentConf = "fluent-bit.conf"
 	appDaemonSetName               = "fluentbit-cloudwatch"
 	appContainerImage              = "fluent/fluent-bit:1.5"
 	appHTTPClient                  = "127.0.0.1"
+	containerHTTPClient            = "http-client"
+	loggingPod                     = "fake-logger-pod"
 )
+
+var dirOrCreate = v1.HostPathDirectoryOrCreate
 
 func (ts *tester) createServiceAccount() error {
 	ts.cfg.Logger.Info("creating %s: %s", zap.String("ServiceAccount", appName))
@@ -64,6 +68,109 @@ func (ts *tester) createServiceAccount() error {
 		return fmt.Errorf("failed to create %s: %s (%v)", "ServiceAccount", appName, err)
 	}
 	ts.cfg.Logger.Info("Create resource", zap.String("ServiceAccount", appName))
+	return nil
+}
+
+func (ts *tester) createRBACRole() error {
+	ts.cfg.Logger.Info("creating %s: %s", zap.String("Role", appName))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	_, err := ts.cli.
+		RbacV1().
+		Roles(ts.cfg.Namespace).
+		Create(
+			ctx,
+			&rbac_v1.Role{
+				TypeMeta: meta_v1.TypeMeta{
+					APIVersion: "rbac.authorization.k8s.io/v1",
+					Kind:       "Role",
+				},
+				// "Role" is a non-namespaced resource.
+				// ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-and-clusterrole
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name:      appRBACRoleName,
+					Namespace: ts.cfg.Namespace,
+					Labels: map[string]string{
+						"app.kubernetes.io/name": appName,
+					},
+				},
+				Rules: []rbac_v1.PolicyRule{
+					{
+						// "" indicates the core API group
+						// ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-and-clusterrole
+						APIGroups: []string{
+							"",
+						},
+						Resources: []string{
+							"pods",
+							"pods/logs",
+						},
+						Verbs: []string{
+							"get",
+							"list",
+							"watch",
+						},
+					},
+				},
+			},
+			meta_v1.CreateOptions{},
+		)
+	cancel()
+	if err != nil {
+		if k8s_errors.IsAlreadyExists(err) {
+			ts.cfg.Logger.Info("resource already exists", zap.String("Role", appName))
+			return nil
+		}
+		return fmt.Errorf("failed to create %s: %s (%v)", "Role", appName, err)
+	}
+	ts.cfg.Logger.Info("Create resource", zap.String("Role", appName))
+	return nil
+}
+
+func (ts *tester) createRBACRoleBinding() error {
+	ts.cfg.Logger.Info("creating %s: %s", zap.String("RoleBinding", appName))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	_, err := ts.cli.
+		RbacV1().
+		RoleBindings(ts.cfg.Namespace).
+		Create(
+			ctx,
+			&rbac_v1.RoleBinding{
+				TypeMeta: meta_v1.TypeMeta{
+					APIVersion: "rbac.authorization.k8s.io/v1",
+					Kind:       "RoleBindings",
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name:      appRBACRoleBindingName,
+					Namespace: ts.cfg.Namespace,
+					Labels: map[string]string{
+						"app.kubernetes.io/name": appName,
+					},
+				},
+				RoleRef: rbac_v1.RoleRef{
+					APIGroup: "rbac.authorization.k8s.io",
+					Kind:     "Role",
+					Name:     appRBACRoleName,
+				},
+				Subjects: []rbac_v1.Subject{
+					{
+						APIGroup:  "",
+						Kind:      "ServiceAccount",
+						Name:      appServiceAccountName,
+						Namespace: ts.cfg.Namespace,
+					},
+				},
+			},
+			meta_v1.CreateOptions{},
+		)
+	cancel()
+	if err != nil {
+		if k8s_errors.IsAlreadyExists(err) {
+			ts.cfg.Logger.Info("resource already exists", zap.String("RoleBinding", appName))
+			return nil
+		}
+		return fmt.Errorf("failed to create %s: %s (%v)", "RoleBinding", appName, err)
+	}
+	ts.cfg.Logger.Info("Create resource", zap.String("RoleBinding", appName))
 	return nil
 }
 
@@ -137,7 +244,7 @@ func (ts *tester) createRBACClusterRoleBinding() error {
 					Kind:       "ClusterRoleBinding",
 				},
 				ObjectMeta: meta_v1.ObjectMeta{
-					Name:      appRBACClusterRoleBindingName,
+					Name:      appRBACRoleBindingName,
 					Namespace: "default",
 					Labels: map[string]string{
 						"app.kubernetes.io/name": appName,
@@ -181,39 +288,19 @@ const FluentBitConf = `
 	HTTP_Listen   0.0.0.0
 	HTTP_Port     2020
 @INCLUDE input-kubernetes.conf
-@INCLUDE filter-kubernetes.conf
 @INCLUDE output.conf
-`
-
-const FiltersConf = `
-[FILTER]
-	Name                kubernetes
-	Match               kube.*
-	Kube_URL            https://kubernetes.default.svc:443
-	Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-	Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
-	Kube_Tag_Prefix     kube.var.log.containers.
-	Merge_Log           On
-	Merge_Log_Key       log_processed
-	K8S-Logging.Parser  On
-	K8S-Logging.Exclude Off
 `
 
 const InputConf = `
 [INPUT]
 	Name              tail
-	Tag               kube.*
-	Path              /var/log/containers/*.log
-	Parser            docker
-	DB                /var/log/flb_kube.db
-	Mem_Buf_Limit     5MB
-	Skip_Long_Lines   On
-	Refresh_Interval  10
-`
+	Path              /var/log/suite/*
+	Refresh_Interval  5
 
+`
 const OutputConf = `
 [OUTPUT]
-    Name  counter
+    Name stdout
     Match *
 `
 
@@ -260,11 +347,10 @@ func (ts *tester) createAppConfigMap() error {
 					},
 				},
 				Data: map[string]string{
-					"fluent-bit.conf":        FluentBitConf,
-					"filter-kubernetes.conf": FiltersConf,
-					"input-kubernetes.conf":  InputConf,
-					"parsers.conf":           ParsersConf,
-					"output.conf":            OutputConf,
+					"fluent-bit.conf":       FluentBitConf,
+					"input-kubernetes.conf": InputConf,
+					"parsers.conf":          ParsersConf,
+					"output.conf":           OutputConf,
 				},
 			},
 			meta_v1.CreateOptions{},
@@ -283,7 +369,6 @@ func (ts *tester) createAppConfigMap() error {
 
 func (ts *tester) createDaemonSet() error {
 	ts.cfg.Logger.Info("creating %s: %s", zap.String("Daemonset", appName))
-	dirOrCreate := v1.HostPathDirectoryOrCreate
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cli.
 		AppsV1().
@@ -337,7 +422,7 @@ func (ts *tester) createDaemonSet() error {
 										},
 										{
 											Name:      "varlog",
-											MountPath: "/var/log",
+											MountPath: "/var/log/suite",
 										},
 										{
 											Name:      "varlibdockercontainers",
@@ -364,7 +449,7 @@ func (ts *tester) createDaemonSet() error {
 									Name: "varlog",
 									VolumeSource: v1.VolumeSource{
 										HostPath: &v1.HostPathVolumeSource{
-											Path: "/var/log",
+											Path: "/var/log/suite",
 											Type: &dirOrCreate,
 										},
 									},
@@ -480,14 +565,11 @@ func (ts *tester) createService() error {
 
 func (ts *tester) testHTTPClient() error {
 	ts.cfg.Logger.Info("Testing HTTP Client for %s: %s", zap.String("Daemonset", appName))
-	// var t *testing.T
-	// g := gomega.NewGomegaWithT(t)
-	// ginkgo.It("iT Should allow  pass logging tests", func() {
-	podName := "alpine"
-	action := fmt.Sprintf("Creating Pod %v to test HTTP Client", podName)
+	action := fmt.Sprintf("Creating Pod %v to test HTTP Client", containerHTTPClient)
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	ginkgo.By(action)
-	clientPod := newAlpinePod(podName, "curl "+appName)
+	// Create an alpine to curl the HTTP client endpoint of fluent-bit
+	clientPod := newAlpinePod(containerHTTPClient, "curl "+appName)
 	_, err := ts.cli.
 		CoreV1().
 		Pods(ts.cfg.Namespace).
@@ -495,23 +577,25 @@ func (ts *tester) testHTTPClient() error {
 	cancel()
 	if err != nil {
 		if k8s_errors.IsAlreadyExists(err) {
-			ts.cfg.Logger.Info("resource already exists", zap.String("Pod", podName))
+			ts.cfg.Logger.Info("resource already exists", zap.String("Pod", containerHTTPClient))
 		}
-		ts.cfg.Logger.Info("failed to create %s: %s (%v)", zap.String("Pod", podName))
+		ts.cfg.Logger.Info("failed to create %s: %s (%v)", zap.String("Pod", containerHTTPClient))
 	}
 	// Wait 15 seconds for the pod to be spawned
 	time.Sleep(10 * time.Second)
+	// Check the return response from curl and check for version output from the client response
 	logs, err := client.CheckPodLogs(
 		ts.cfg.Logger,
 		ts.cfg.LogWriter,
 		ts.cfg.Stopc,
 		ts.cli,
 		ts.cfg.Namespace,
-		podName,
+		containerHTTPClient,
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("'kubectl get pod logs' failed", zap.Error(err))
 	}
+	// "{"fluent-bit":{"version":"1.5.7","edition":"Community","flags":["FLB_HAVE_PARSER","FLB_HAVE_RECORD_ACCESSOR","FLB_HAVE_STREAM_PROCESSOR","FLB_HAVE_TLS","FLB_HAVE_AWS","FLB_HAVE_SIGNV4","FLB_HAVE_SQLDB","FLB_HAVE_METRICS","FLB_HAVE_HTTP_SERVER","FLB_HAVE_SYSTEMD","FLB_HAVE_FORK","FLB_HAVE_TIMESPEC_GET","FLB_HAVE_GMTOFF","FLB_HAVE_UNIX_SOCKET","FLB_H/"
 	if strings.Contains(logs, `1.5.7`) {
 		ts.cfg.Logger.Info(
 			"HTTP CLIENT:",
@@ -519,9 +603,89 @@ func (ts *tester) testHTTPClient() error {
 		)
 		return nil
 	}
-	// g.Expect(strings.Contains(logs, "fluent-bit")).To(gomega.BeTrue(), "HTTP Client must respond to curl at `http://$HOST/`")
-	// })
 	return nil
+}
+
+//testLogsWithinNamespace Tests the ability of the logging container to gather applciation logs from a pod within the same namespace.
+func (ts *tester) testLogsWithinNamespace() error {
+	ts.cfg.Logger.Info("Testing ability to display container logs from another container in the same namespace for %s: %s", zap.String("Daemonset", appName))
+	action := fmt.Sprintf("Creating Pod %v to test logging within namespace", loggingPod)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	ginkgo.By(action)
+
+	// Create an alpine to curl the HTTP client endpoint of fluent-bit, api/v1/metrics
+	LogWriterPod := newAlpineLoggingPod(loggingPod)
+	_, err := ts.cli.
+		CoreV1().
+		Pods(ts.cfg.Namespace).
+		Create(ctx, LogWriterPod, meta_v1.CreateOptions{})
+	cancel()
+	if err != nil {
+		if k8s_errors.IsAlreadyExists(err) {
+			ts.cfg.Logger.Info("resource already exists", zap.String("Pod", loggingPod))
+		}
+		ts.cfg.Logger.Info("failed to create %s: %s (%v)", zap.String("Pod", loggingPod))
+		ts.cfg.Logger.Warn("'failure: ", zap.Error(err))
+	}
+	time.Sleep(10 * time.Second)
+
+	// List the pods in the namespace
+	podlist, err := client.ListPods(
+		ts.cfg.Logger,
+		ts.cli,
+		ts.cfg.Namespace,
+		5,
+		5*time.Second,
+	)
+	// Check for the pod name of the daemonset pod that was created
+	var fluentpod string
+	var nodeIP string
+	for _, pod := range podlist {
+		if strings.Contains(pod.ObjectMeta.Name, loggingPod) {
+			nodeIP = pod.Status.HostIP
+			ts.cfg.Logger.Info("Found logging-pod Node IP Info:", zap.String("NodeIP", nodeIP))
+			break
+		} else {
+			continue
+		}
+	}
+	// Run recursion twice for edge case where logging-pod is last element,
+	// convert to hashmap later for speed improvements
+	if nodeIP != "" {
+		for _, pod := range podlist {
+			if strings.Contains(pod.ObjectMeta.Name, `fluent-bit`) {
+				if pod.Status.HostIP == nodeIP {
+					fluentpod = pod.ObjectMeta.Name
+					ts.cfg.Logger.Info("found daemonset pod on same node as logging pod", zap.String(nodeIP, fluentpod))
+					break
+				} else {
+					continue
+				}
+			}
+		}
+	} else {
+		ts.cfg.Logger.Info("Did not find logging pod on node", zap.String("Pod", loggingPod))
+	}
+	//Get the logs of the fluent-bit pod which should be displaying the created date log now
+	logs, err := client.CheckPodLogs(
+		ts.cfg.Logger,
+		ts.cfg.LogWriter,
+		ts.cfg.Stopc,
+		ts.cli,
+		ts.cfg.Namespace,
+		fluentpod,
+	)
+	if err != nil {
+		ts.cfg.Logger.Warn("'kubectl get pod logs' failed", zap.Error(err))
+	}
+	// Check the fluent-bit STDOUT logs for one of the pre-determined messages from the fake pod
+	if strings.Contains(logs, `name=/var/log/suite/date.log`) {
+		ts.cfg.Logger.Info("Logs Same Namespace:", zap.String("TEST", "PASSED"))
+		return nil
+	} else {
+		ts.cfg.Logger.Info("Logs Same Namespace::", zap.String("TEST", "FAILED"))
+		return nil
+	}
 }
 
 func newAlpinePod(name, command string) *v1.Pod {
@@ -543,7 +707,38 @@ func newAlpinePod(name, command string) *v1.Pod {
 	}
 }
 
-// curl fluent-bit/ "{"fluent-bit":{"version":"1.5.7","edition":"Community","flags":["FLB_HAVE_PARSER","FLB_HAVE_RECORD_ACCESSOR","FLB_HAVE_STREAM_PROCESSOR","FLB_HAVE_TLS","FLB_HAVE_AWS","FLB_HAVE_SIGNV4","FLB_HAVE_SQLDB","FLB_HAVE_METRICS","FLB_HAVE_HTTP_SERVER","FLB_HAVE_SYSTEMD","FLB_HAVE_FORK","FLB_HAVE_TIMESPEC_GET","FLB_HAVE_GMTOFF","FLB_HAVE_UNIX_SOCKET","FLB_H/"
-// curl fluent-bit/api/v1/uptime "{"uptime_sec":1203,"uptime_hr":"Fluent Bit has been running:  0 day, 0 hour, 20 minutes and 3 seconds"}/"
-// curl fluent-bit/api/v1/metrics "{"input":{"tail.0":{"records":581981,"bytes":112790650,"files_opened":50,"files_closed":0,"files_rotated":0}},"filter":{"kubernetes.0":{"drop_records":0,"add_records":0}},"output":{"counter.0":{"proc_records":581981,"proc_bytes":481692918,"errors":0,"retries":0,"retries_failed":0}}}/"
-// curl fluent-bit/api/v1/storage "{"fluent-bit":{"version":"1.5.7","edition":"Community","flags":["FLB_HAVE_PARSER","FLB_HAVE_RECORD_ACCESSOR","FLB_HAVE_STREAM_PROCESSOR","FLB_HAVE_TLS","FLB_HAVE_AWS","FLB_HAVE_SIGNV4","FLB_HAVE_SQLDB","FLB_HAVE_METRICS","FLB_HAVE_HTTP_SERVER","FLB_HAVE_SYSTEMD","FLB_HAVE_FORK","FLB_HAVE_TIMESPEC_GET","FLB_HAVE_GMTOFF","FLB_HAVE_UNIX_SOCKET","FLB_HAVE_PROXY_GO","FLB_HAVE_SYSTEM_STRPTIME","FLB_HAVE_JEMALLOC","FLB_HAVE_LIBBACKTRACE","FLB_HAVE_REGEX","FLB_HAVE_UTF8_ENCODER","FLB_HAVE_LUAJIT","FLB_HAVE_C_TLS","FLB_HAVE_ACCEPT4","FLB_HAVE_INOTIFY"]}}/"
+func newAlpineLoggingPod(name string) *v1.Pod {
+	return &v1.Pod{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name: name,
+		},
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{
+					Name:    name,
+					Image:   "byrnedo/alpine-curl",
+					Command: []string{"/bin/sh"},
+					Args:    []string{"-c", "echo 'fluent-bit-test' >> /var/log/suite/date.log"},
+					VolumeMounts: []v1.VolumeMount{
+						{
+							Name:      "varlog",
+							MountPath: "/var/log/suite",
+						},
+					},
+				},
+			},
+			RestartPolicy: v1.RestartPolicyNever,
+			Volumes: []v1.Volume{
+				{
+					Name: "varlog",
+					VolumeSource: v1.VolumeSource{
+						HostPath: &v1.HostPathVolumeSource{
+							Path: "/var/log/suite",
+							Type: &dirOrCreate,
+						},
+					},
+				},
+			},
+		},
+	}
+}

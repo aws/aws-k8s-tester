@@ -1,4 +1,4 @@
-// k8s-tester-logger-tests installs Kubernetes logger, and tests logger can read logs, and output in the correct order.
+// k8s-tester-fluent-bit installs Kubernetes logger, and tests logger can read logs, and output in the correct order.
 package main
 
 import (
@@ -6,16 +6,16 @@ import (
 	"os"
 
 	"github.com/aws/aws-k8s-tester/client"
-	logger_tests "github.com/aws/aws-k8s-tester/k8s-tester/logger-tests"
+	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	"github.com/aws/aws-k8s-tester/utils/log"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
 var rootCmd = &cobra.Command{
-	Use:        "k8s-tester-logger-tests",
-	Short:      "Kubernetes Logger testing",
-	SuggestFor: []string{"logger-tests"},
+	Use:        "k8s-tester-fluent-bit",
+	Short:      "Kubernetes fluent bit",
+	SuggestFor: []string{"fluent-bit"},
 }
 
 func init() {
@@ -47,7 +47,7 @@ func init() {
 
 func main() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "k8s-tester-logger-tests failed %v\n", err)
+		fmt.Fprintf(os.Stderr, "k8s-tester-fluent-bit failed %v\n", err)
 		os.Exit(1)
 	}
 	os.Exit(0)
@@ -70,7 +70,7 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 	}
 	_ = zap.ReplaceGlobals(lg)
 
-	cfg := logger_tests.Config{
+	cfg := fluent_bit.Config{
 		EnablePrompt: enablePrompt,
 		Logger:       lg,
 		LogWriter:    logWriter,
@@ -82,14 +82,14 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 		},
 	}
 
-	ts := logger_tests.New(cfg)
+	ts := fluent_bit.New(cfg)
 	if err := ts.Apply(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to apply (%v)\n", err)
 		os.Exit(1)
 	}
 
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("'k8s-tester-logger-tests apply' success\n")
+	fmt.Printf("'k8s-tester-fluent-bit apply' success\n")
 }
 
 func newDelete() *cobra.Command {
@@ -108,7 +108,7 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 	}
 	_ = zap.ReplaceGlobals(lg)
 
-	cfg := logger_tests.Config{
+	cfg := fluent_bit.Config{
 		EnablePrompt: enablePrompt,
 		Logger:       lg,
 		LogWriter:    logWriter,
@@ -120,12 +120,12 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 		},
 	}
 
-	ts := logger_tests.New(cfg)
+	ts := fluent_bit.New(cfg)
 	if err := ts.Delete(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to delete (%v)\n", err)
 		os.Exit(1)
 	}
 
 	fmt.Printf("\n*********************************\n")
-	fmt.Printf("'k8s-tester-logger-tests delete' success\n")
+	fmt.Printf("'k8s-tester-fluent-bit delete' success\n")
 }

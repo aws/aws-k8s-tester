@@ -1,5 +1,5 @@
 // Package logger_tests installs a simple "Hello World" application with a logger and tests the logger function.
-package logger_tests
+package fluent_bit
 
 import (
 	"errors"
@@ -12,7 +12,6 @@ import (
 
 	"github.com/aws/aws-k8s-tester/client"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
-	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
 	k8s_client "k8s.io/client-go/kubernetes"
@@ -29,7 +28,6 @@ type Config struct {
 
 	// Namespace to create test resources.
 	Namespace string
-	ECRAPI    ecriface.ECRAPI
 }
 
 func New(cfg Config) k8s_tester.Tester {
@@ -88,6 +86,9 @@ func (ts *tester) Apply() error {
 	if err := ts.testHTTPClient(); err != nil {
 		return err
 	}
+	if err := ts.testLogsWithinNamespace(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -108,23 +109,25 @@ func (ts *tester) Delete() error {
 	}
 	ts.cfg.Logger.Info("wait for a minute after deleting ServiceAccount")
 
-	if err := client.DeleteRBACClusterRole(
+	if err := client.DeleteRBACRole(
 		ts.cfg.Logger,
 		ts.cli,
+		ts.cfg.Namespace,
 		appRBACRoleName,
 	); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete ClusterRole (%v)", err))
+		errs = append(errs, fmt.Sprintf("failed to delete Role (%v)", err))
 	}
-	ts.cfg.Logger.Info("Deleting %s: %s", zap.String("ClusterRole", appName))
+	ts.cfg.Logger.Info("Deleting %s: %s", zap.String("Role", appName))
 
-	if err := client.DeleteRBACClusterRoleBinding(
+	if err := client.DeleteRBACRoleBinding(
 		ts.cfg.Logger,
 		ts.cli,
-		appRBACClusterRoleBindingName,
+		ts.cfg.Namespace,
+		appRBACRoleBindingName,
 	); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete ClusterRoleBinding (%v)", err))
+		errs = append(errs, fmt.Sprintf("failed to delete RoleBinding (%v)", err))
 	}
-	ts.cfg.Logger.Info("Deleting %s: %s", zap.String("ClusterRoleBinding", appName))
+	ts.cfg.Logger.Info("Deleting %s: %s", zap.String("RoleBinding", appName))
 
 	if err := client.DeleteConfigmap(
 		ts.cfg.Logger,
@@ -162,11 +165,21 @@ func (ts *tester) Delete() error {
 		ts.cfg.Logger,
 		ts.cli,
 		ts.cfg.Namespace,
-		"alpine",
+		containerHTTPClient,
 	); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete Pod (%v)", err))
 	}
-	ts.cfg.Logger.Info("Deleting %s: %s", zap.String("Pod", "alpine"))
+	ts.cfg.Logger.Info("Deleting %s: %s", zap.String("Pod", containerHTTPClient))
+
+	if err := client.DeletePod(
+		ts.cfg.Logger,
+		ts.cli,
+		ts.cfg.Namespace,
+		loggingPod,
+	); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete Pod (%v)", err))
+	}
+	ts.cfg.Logger.Info("Deleting %s: %s", zap.String("Pod", loggingPod))
 
 	if err := client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,

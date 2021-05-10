@@ -1,4 +1,4 @@
-module github.com/aws/aws-k8s-tester/k8s-tester/logger-tests
+module github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit
 
 go 1.16
 
