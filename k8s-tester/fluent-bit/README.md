@@ -28,7 +28,7 @@ go run cmd/k8s-tester-fluent-bit/main.go apply \
     --namespace loggingsuite \
     --kubectl-path="/usr/local/bin/kubectl" \
     --kubeconfig-path="/Users/jonahjo/.kube/config" \
-    --log-outputs="/Users/jonahjo/go/src/code.amazon.com/aws-k8s-tester/k8s-tester/fluent-bit/log.log"
+    --log-outputs="/Users/jonahjo/go/src/code.amazon.com/aws-k8s-tester/k8s-tester/fluent-bit/fluent-bit.log"
 ```
 
 ### Delete
@@ -37,6 +37,6 @@ go run cmd/k8s-tester-fluent-bit/main.go delete \
     --namespace loggingsuite \
     --kubectl-path="/usr/local/bin/kubectl" \
     --kubeconfig-path="/Users/jonahjo/.kube/config" \
-    --log-outputs="/Users/jonahjo/go/src/code.amazon.com/aws-k8s-tester/k8s-tester/fluent-bit/log.log"
+    --log-outputs="/Users/jonahjo/go/src/code.amazon.com/aws-k8s-tester/k8s-tester/fluent-bit/fluent-bit.log"
 ```
 
