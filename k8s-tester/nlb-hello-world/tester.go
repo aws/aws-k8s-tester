@@ -38,8 +38,8 @@ type Config struct {
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
 
-	DeploymentNodeSelector map[string]string
-	DeploymentReplicas     int32
+	DeploymentNodeSelector map[string]string `json:"deployment-node-selector"`
+	DeploymentReplicas     int32             `json:"deployment-replicas"`
 }
 
 func New(cfg Config) k8s_tester.Tester {

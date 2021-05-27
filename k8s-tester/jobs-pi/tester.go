@@ -1,4 +1,4 @@
-// Package jobs_pi installs a simple "Hello World" application with NLB.
+// Package jobs_pi a simple pi Pod with Job.
 package jobs_pi
 
 import (

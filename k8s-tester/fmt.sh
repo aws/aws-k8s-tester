@@ -4,6 +4,9 @@ set -e
 goimports -w ./fluent-bit
 gofmt -s -w ./fluent-bit
 
+goimports -w ./jobs-echo
+gofmt -s -w ./jobs-echo
+
 goimports -w ./jobs-pi
 gofmt -s -w ./jobs-pi
 
