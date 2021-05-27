@@ -11,7 +11,7 @@ require (
 	github.com/onsi/ginkgo v1.12.1
 	github.com/onsi/gomega v1.11.0 // indirect
 	github.com/spf13/cobra v1.1.3
-	go.uber.org/zap v1.16.0
+	go.uber.org/zap v1.17.0
 	k8s.io/api v0.21.0
 	k8s.io/apimachinery v0.21.0
 	k8s.io/client-go v0.21.0
