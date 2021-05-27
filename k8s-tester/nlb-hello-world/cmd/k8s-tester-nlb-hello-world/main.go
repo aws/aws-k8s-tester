@@ -8,7 +8,10 @@ import (
 
 	"github.com/aws/aws-k8s-tester/client"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
+	aws_v1 "github.com/aws/aws-k8s-tester/utils/aws/v1"
 	"github.com/aws/aws-k8s-tester/utils/log"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -55,6 +58,8 @@ func main() {
 }
 
 var (
+	partition              string
+	region                 string
 	deploymentNodeSelector string
 	deploymentReplicas     int32
 )
@@ -65,8 +70,12 @@ func newApply() *cobra.Command {
 		Short: "Apply tests",
 		Run:   createApplyFunc,
 	}
+
+	cmd.PersistentFlags().StringVar(&partition, "partition", "aws", "partition for AWS region")
+	cmd.PersistentFlags().StringVar(&region, "region", "", "region for ELB resource")
 	cmd.PersistentFlags().StringVar(&deploymentNodeSelector, "deployment-node-selector", "", "map of deployment node selector, must be valid JSON format")
 	cmd.PersistentFlags().Int32Var(&deploymentReplicas, "deployment-replicas", nlb_hello_world.DefaultDeploymentReplicas, "number of deployment replicas")
+
 	return cmd
 }
 
@@ -82,6 +91,17 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 		panic(fmt.Errorf("failed to parse %q (%v)", deploymentNodeSelector, err))
 	}
 
+	awsCfg := aws_v1.Config{
+		Logger:        lg,
+		DebugAPICalls: logLevel == "debug",
+		Partition:     partition,
+		Region:        region,
+	}
+	awsSession, stsOutput, _, err := aws_v1.New(&awsCfg)
+	if err != nil {
+		panic(err)
+	}
+
 	cfg := nlb_hello_world.Config{
 		EnablePrompt: enablePrompt,
 		Logger:       lg,
@@ -92,6 +112,11 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 			KubectlPath:    kubectlPath,
 			KubeConfigPath: kubeConfigPath,
 		},
+		ELB2API: elbv2.New(awsSession),
+
+		AccountID: aws.StringValue(stsOutput.Account),
+		Region:    region,
+
 		DeploymentNodeSelector: nodeSelector,
 		DeploymentReplicas:     deploymentReplicas,
 	}

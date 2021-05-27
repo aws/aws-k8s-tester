@@ -14,7 +14,9 @@ import (
 
 	"github.com/aws/aws-k8s-tester/client"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
+	aws_v1_elb "github.com/aws/aws-k8s-tester/utils/aws/v1/elb"
 	"github.com/aws/aws-k8s-tester/utils/http"
+	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
 	apps_v1 "k8s.io/api/apps/v1"
@@ -34,6 +36,10 @@ type Config struct {
 	Stopc     chan struct{}
 
 	ClientConfig *client.Config
+
+	ELB2API   elbv2iface.ELBV2API
+	AccountID string
+	Region    string
 
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
@@ -121,6 +127,23 @@ func (ts *tester) Delete() error {
 
 	var errs []string
 
+	// get ELB ARN before deleting the service
+	_, elbARN, exists, err := client.FindServiceIngressHostname(
+		ts.cfg.Logger,
+		ts.cli,
+		ts.cfg.Namespace,
+		serviceName,
+		ts.cfg.Stopc,
+		3*time.Minute,
+		ts.cfg.AccountID,
+		ts.cfg.Region,
+	)
+	if err != nil {
+		if exists { // maybe already deleted from previous run
+			errs = append(errs, fmt.Sprintf("ELB exists but failed to find ingress ELB ARN (%v)", err))
+		}
+	}
+
 	if err := client.DeleteService(
 		ts.cfg.Logger,
 		ts.cli,
@@ -142,6 +165,24 @@ func (ts *tester) Delete() error {
 	}
 	ts.cfg.Logger.Info("wait for a minute after deleting Deployment")
 	time.Sleep(time.Minute)
+
+	/*
+	  proactively delete ELB resource
+	  ref. https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/nlb-hello-world/nlb-hello-world.go#L135-L154
+
+	  # NLB tags
+	  kubernetes.io/service-name
+	  leegyuho-test-prod-nlb-hello-world/hello-world-service
+	  kubernetes.io/cluster/leegyuho-test-prod
+	  owned
+	*/
+	if err := aws_v1_elb.DeleteELBv2(
+		ts.cfg.Logger,
+		ts.cfg.ELB2API,
+		elbARN,
+	); err != nil {
+		errs = append(errs, fmt.Sprintf("failed to delete ELB (%v)", err))
+	}
 
 	if err := client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
@@ -344,7 +385,7 @@ func (ts *tester) createService() error {
 	return nil
 }
 
-func (ts *tester) checkService() error {
+func (ts *tester) checkService() (err error) {
 	queryFunc := func() {
 		args := []string{
 			ts.cfg.ClientConfig.KubectlPath,
@@ -366,33 +407,23 @@ func (ts *tester) checkService() error {
 		}
 	}
 
-	hostName, err := client.WaitForServiceIngressHostname(
+	hostName, elbARN, err := client.WaitForServiceIngressHostname(
 		ts.cfg.Logger,
 		ts.cli,
 		ts.cfg.Namespace,
 		serviceName,
 		ts.cfg.Stopc,
 		3*time.Minute,
+		ts.cfg.AccountID,
+		ts.cfg.Region,
 		client.WithQueryFunc(queryFunc),
 	)
 	if err != nil {
 		return err
 	}
-
-	// TODO: is there any better way to find out the NLB name?
-	nlbName := strings.Split(hostName, "-")[0]
-	ss := strings.Split(hostName, ".")[0]
-	ss = strings.Replace(ss, "-", "/", -1)
-	nlbARN := fmt.Sprintf(
-		"arn:aws:elasticloadbalancing:%s:%s:loadbalancer/net/%s",
-		"region",
-		"account-id",
-		ss,
-	)
 	appURL := "http://" + hostName
 
-	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB hello-world ARN: %s\n", nlbARN)
-	fmt.Fprintf(ts.cfg.LogWriter, "NLB hello-world Name: %s\n", nlbName)
+	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB hello-world ARN: %s\n", elbARN)
 	fmt.Fprintf(ts.cfg.LogWriter, "NLB hello-world URL: %s\n\n", appURL)
 
 	ts.cfg.Logger.Info("waiting before testing hello-world Service")
@@ -425,8 +456,7 @@ func (ts *tester) checkService() error {
 		ts.cfg.Logger.Warn("unexpected hello-world Service output; retrying")
 	}
 
-	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB hello-world ARN: %s\n", nlbARN)
-	fmt.Fprintf(ts.cfg.LogWriter, "NLB hello-world Name: %s\n", nlbName)
+	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB hello-world ARN: %s\n", elbARN)
 	fmt.Fprintf(ts.cfg.LogWriter, "NLB hello-world URL: %s\n\n", appURL)
 
 	if !htmlChecked {
