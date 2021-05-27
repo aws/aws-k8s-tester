@@ -90,6 +90,7 @@ func (ts *tester) Apply() error {
 	if err := ts.createDeployment(); err != nil {
 		return err
 	}
+
 	if err := ts.checkDeployment(); err != nil {
 		return err
 	}
@@ -97,6 +98,7 @@ func (ts *tester) Apply() error {
 	if err := ts.createService(); err != nil {
 		return err
 	}
+
 	waitDur := 3 * time.Minute
 	ts.cfg.Logger.Info("waiting for NLB hello-world Service", zap.Duration("wait", waitDur))
 	select {
@@ -104,6 +106,7 @@ func (ts *tester) Apply() error {
 		return errors.New("NLB hello-world Service apply aborted")
 	case <-time.After(waitDur):
 	}
+
 	if err := ts.checkService(); err != nil {
 		return err
 	}

@@ -59,6 +59,7 @@ func (ts *tester) Apply() error {
 	if ok := ts.runPrompt("apply"); !ok {
 		return errors.New("cancelled")
 	}
+
 	if err := client.CreateNamespace(ts.cfg.Logger, ts.cli, ts.cfg.Namespace); err != nil {
 		return err
 	}
@@ -89,6 +90,7 @@ func (ts *tester) Apply() error {
 	if err := ts.testLogsWithinNamespace(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -194,6 +196,7 @@ func (ts *tester) Delete() error {
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))
 	}
+
 	return nil
 }
 

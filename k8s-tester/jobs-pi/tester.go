@@ -86,33 +86,9 @@ func (ts *tester) Apply() error {
 		return err
 	}
 
-	timeout := 5*time.Minute + 5*time.Minute*time.Duration(ts.cfg.Completes)
-	if timeout > 3*time.Hour {
-		timeout = 3 * time.Hour
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	var pods []core_v1.Pod
-	_, pods, err := client.WaitForJobCompletes(
-		ctx,
-		ts.cfg.Logger,
-		ts.cfg.LogWriter,
-		ts.cfg.Stopc,
-		ts.cli,
-		time.Minute,
-		5*time.Second,
-		ts.cfg.Namespace,
-		jobName,
-		int(ts.cfg.Completes),
-	)
-	cancel()
-	if err != nil {
+	if err := ts.checkJob(); err != nil {
 		return err
 	}
-	fmt.Fprintf(ts.cfg.LogWriter, "\n")
-	for _, item := range pods {
-		fmt.Fprintf(ts.cfg.LogWriter, "Job Pod %q: %q\n", item.Name, item.Status.Phase)
-	}
-	fmt.Fprintf(ts.cfg.LogWriter, "\n")
 
 	return nil
 }
@@ -255,5 +231,37 @@ func (ts *tester) createJob() (err error) {
 	}
 
 	ts.cfg.Logger.Info("created a Job object")
+	return nil
+}
+
+func (ts *tester) checkJob() error {
+	timeout := 5*time.Minute + 5*time.Minute*time.Duration(ts.cfg.Completes)
+	if timeout > 3*time.Hour {
+		timeout = 3 * time.Hour
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	var pods []core_v1.Pod
+	_, pods, err := client.WaitForJobCompletes(
+		ctx,
+		ts.cfg.Logger,
+		ts.cfg.LogWriter,
+		ts.cfg.Stopc,
+		ts.cli,
+		time.Minute,
+		5*time.Second,
+		ts.cfg.Namespace,
+		jobName,
+		int(ts.cfg.Completes),
+	)
+	cancel()
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintf(ts.cfg.LogWriter, "\n")
+	for _, item := range pods {
+		fmt.Fprintf(ts.cfg.LogWriter, "Job Pod %q: %q\n", item.Name, item.Status.Phase)
+	}
+	fmt.Fprintf(ts.cfg.LogWriter, "\n")
 	return nil
 }

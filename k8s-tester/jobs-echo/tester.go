@@ -106,26 +106,9 @@ func (ts *tester) Apply() (err error) {
 		return errors.New("cancelled")
 	}
 
-	// check ECR permission
-	// ref. https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/jobs-echo/jobs-echo.go#L75-L90
-	bsyImg := jobBusyboxImageName
-	if ts.cfg.RepositoryBusyboxAccountID != "" &&
-		ts.cfg.RepositoryBusyboxRegion != "" &&
-		ts.cfg.RepositoryBusyboxName != "" &&
-		ts.cfg.RepositoryBusyboxImageTag != "" &&
-		ts.cfg.ECRAPI != nil {
-		bsyImg, _, err = aws_v1_ecr.Check(
-			ts.cfg.Logger,
-			ts.cfg.ECRAPI,
-			ts.cfg.RepositoryBusyboxPartition,
-			ts.cfg.RepositoryBusyboxAccountID,
-			ts.cfg.RepositoryBusyboxRegion,
-			ts.cfg.RepositoryBusyboxName,
-			ts.cfg.RepositoryBusyboxImageTag,
-		)
-		if err != nil {
-			return err
-		}
+	bsyImg, err := ts.checkECRImage()
+	if err != nil {
+		return err
 	}
 
 	if err := client.CreateNamespace(ts.cfg.Logger, ts.cli, ts.cfg.Namespace); err != nil {
@@ -136,33 +119,9 @@ func (ts *tester) Apply() (err error) {
 		return err
 	}
 
-	timeout := 5*time.Minute + 5*time.Minute*time.Duration(ts.cfg.Completes)
-	if timeout > 3*time.Hour {
-		timeout = 3 * time.Hour
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	var pods []core_v1.Pod
-	_, pods, err = client.WaitForJobCompletes(
-		ctx,
-		ts.cfg.Logger,
-		ts.cfg.LogWriter,
-		ts.cfg.Stopc,
-		ts.cli,
-		time.Minute,
-		5*time.Second,
-		ts.cfg.Namespace,
-		jobName,
-		int(ts.cfg.Completes),
-	)
-	cancel()
-	if err != nil {
+	if err := ts.checkJob(); err != nil {
 		return err
 	}
-	fmt.Fprintf(ts.cfg.LogWriter, "\n")
-	for _, item := range pods {
-		fmt.Fprintf(ts.cfg.LogWriter, "Job Pod %q: %q\n", item.Name, item.Status.Phase)
-	}
-	fmt.Fprintf(ts.cfg.LogWriter, "\n")
 
 	return nil
 }
@@ -241,6 +200,31 @@ const (
 	jobBusyboxImageName = "busybox"
 )
 
+func (ts *tester) checkECRImage() (busyboxImg string, err error) {
+	// check ECR permission
+	// ref. https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/jobs-echo/jobs-echo.go#L75-L90
+	busyboxImg = jobBusyboxImageName
+	if ts.cfg.RepositoryBusyboxAccountID != "" &&
+		ts.cfg.RepositoryBusyboxRegion != "" &&
+		ts.cfg.RepositoryBusyboxName != "" &&
+		ts.cfg.RepositoryBusyboxImageTag != "" &&
+		ts.cfg.ECRAPI != nil {
+		busyboxImg, _, err = aws_v1_ecr.Check(
+			ts.cfg.Logger,
+			ts.cfg.ECRAPI,
+			ts.cfg.RepositoryBusyboxPartition,
+			ts.cfg.RepositoryBusyboxAccountID,
+			ts.cfg.RepositoryBusyboxRegion,
+			ts.cfg.RepositoryBusyboxName,
+			ts.cfg.RepositoryBusyboxImageTag,
+		)
+		if err != nil {
+			return "", err
+		}
+	}
+	return busyboxImg, nil
+}
+
 func (ts *tester) createObject(busyboxImg string) (batch_v1.Job, string, error) {
 	podSpec := core_v1.PodTemplateSpec{
 		Spec: core_v1.PodSpec{
@@ -311,5 +295,37 @@ func (ts *tester) createJob(busyboxImg string) (err error) {
 	}
 
 	ts.cfg.Logger.Info("created a Job object")
+	return nil
+}
+
+func (ts *tester) checkJob() error {
+	timeout := 5*time.Minute + 5*time.Minute*time.Duration(ts.cfg.Completes)
+	if timeout > 3*time.Hour {
+		timeout = 3 * time.Hour
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	var pods []core_v1.Pod
+	_, pods, err := client.WaitForJobCompletes(
+		ctx,
+		ts.cfg.Logger,
+		ts.cfg.LogWriter,
+		ts.cfg.Stopc,
+		ts.cli,
+		time.Minute,
+		5*time.Second,
+		ts.cfg.Namespace,
+		jobName,
+		int(ts.cfg.Completes),
+	)
+	cancel()
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintf(ts.cfg.LogWriter, "\n")
+	for _, item := range pods {
+		fmt.Fprintf(ts.cfg.LogWriter, "Job Pod %q: %q\n", item.Name, item.Status.Phase)
+	}
+	fmt.Fprintf(ts.cfg.LogWriter, "\n")
 	return nil
 }
