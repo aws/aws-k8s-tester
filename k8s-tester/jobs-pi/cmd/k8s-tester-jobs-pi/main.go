@@ -64,8 +64,8 @@ func newApply() *cobra.Command {
 		Short: "Apply tests",
 		Run:   createApplyFunc,
 	}
-	cmd.PersistentFlags().Int32Var(&completes, "completes", 10, "desired number of successfully finished pods")
-	cmd.PersistentFlags().Int32Var(&parallels, "parallels", 10, "maximum desired number of pods the job should run at any given time")
+	cmd.PersistentFlags().Int32Var(&completes, "completes", jobs_pi.DefaultCompletes, "desired number of successfully finished pods")
+	cmd.PersistentFlags().Int32Var(&parallels, "parallels", jobs_pi.DefaultParallels, "maximum desired number of pods the job should run at any given time")
 	return cmd
 }
 

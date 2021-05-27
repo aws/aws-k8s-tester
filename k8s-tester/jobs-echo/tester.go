@@ -70,6 +70,11 @@ type Config struct {
 // Completes: 1000,
 // Parallels: 100,
 // EchoSize: 100 * 1024, // 100 KB
+const (
+	DefaultCompletes int32 = 10
+	DefaultParallels int32 = 10
+	DefaultEchoSize  int32 = 100 * 1024
+)
 
 func New(cfg Config) k8s_tester.Tester {
 	ccfg, err := client.CreateConfig(cfg.ClientConfig)

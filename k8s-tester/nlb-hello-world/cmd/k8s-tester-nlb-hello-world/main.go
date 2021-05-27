@@ -66,7 +66,7 @@ func newApply() *cobra.Command {
 		Run:   createApplyFunc,
 	}
 	cmd.PersistentFlags().StringVar(&deploymentNodeSelector, "deployment-node-selector", "", "map of deployment node selector, must be valid JSON format")
-	cmd.PersistentFlags().Int32Var(&deploymentReplicas, "deployment-replicas", 2, "number of deployment replicas")
+	cmd.PersistentFlags().Int32Var(&deploymentReplicas, "deployment-replicas", nlb_hello_world.DefaultDeploymentReplicas, "number of deployment replicas")
 	return cmd
 }
 

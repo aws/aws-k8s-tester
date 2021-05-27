@@ -43,6 +43,11 @@ type Config struct {
 	Parallels int32 `json:"parallels"`
 }
 
+const (
+	DefaultCompletes int32 = 10
+	DefaultParallels int32 = 10
+)
+
 func New(cfg Config) k8s_tester.Tester {
 	ccfg, err := client.CreateConfig(cfg.ClientConfig)
 	if err != nil {

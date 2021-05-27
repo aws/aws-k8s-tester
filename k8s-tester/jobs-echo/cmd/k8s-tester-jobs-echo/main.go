@@ -74,15 +74,16 @@ func newApply() *cobra.Command {
 		Short: "Apply tests",
 		Run:   createApplyFunc,
 	}
-	cmd.PersistentFlags().StringVar(&repositoryBusyboxPartition, "repository-busybox-partition", "aws", `used for deciding between "amazonaws.com" and "amazonaws.com.cn"`)
+
+	cmd.PersistentFlags().StringVar(&repositoryBusyboxPartition, "repository-busybox-partition", "", `used for deciding between "amazonaws.com" and "amazonaws.com.cn"`)
 	cmd.PersistentFlags().StringVar(&repositoryBusyboxAccountID, "repository-busybox-account-id", "", "account ID for tester ECR image")
 	cmd.PersistentFlags().StringVar(&repositoryBusyboxRegion, "repository-busybox-region", "", "ECR repository region to pull from")
 	cmd.PersistentFlags().StringVar(&repositoryBusyboxName, "repository-busybox-name", "", "repository name for tester ECR image")
 	cmd.PersistentFlags().StringVar(&repositoryBusyboxImageTag, "repository-busybox-image-tag", "", "image tag for tester ECR image")
 
-	cmd.PersistentFlags().Int32Var(&completes, "completes", 10, "desired number of successfully finished pods")
-	cmd.PersistentFlags().Int32Var(&parallels, "parallels", 10, "maximum desired number of pods the job should run at any given time")
-	cmd.PersistentFlags().Int32Var(&echoSize, "echo-size", 100*1024, "maximum desired number of pods the job should run at any given time")
+	cmd.PersistentFlags().Int32Var(&completes, "completes", jobs_echo.DefaultCompletes, "desired number of successfully finished pods")
+	cmd.PersistentFlags().Int32Var(&parallels, "parallels", jobs_echo.DefaultParallels, "maximum desired number of pods the job should run at any given time")
+	cmd.PersistentFlags().Int32Var(&echoSize, "echo-size", jobs_echo.DefaultEchoSize, "maximum desired number of pods the job should run at any given time")
 
 	return cmd
 }

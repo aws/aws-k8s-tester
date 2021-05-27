@@ -42,6 +42,10 @@ type Config struct {
 	DeploymentReplicas     int32             `json:"deployment-replicas"`
 }
 
+const (
+	DefaultDeploymentReplicas int32 = 2
+)
+
 func New(cfg Config) k8s_tester.Tester {
 	ccfg, err := client.CreateConfig(cfg.ClientConfig)
 	if err != nil {
