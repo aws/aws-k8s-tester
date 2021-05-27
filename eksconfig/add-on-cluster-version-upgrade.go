@@ -48,7 +48,7 @@ func (cfg *Config) IsEnabledAddOnClusterVersionUpgrade() bool {
 func getDefaultAddOnClusterVersionUpgrade() *AddOnClusterVersionUpgrade {
 	return &AddOnClusterVersionUpgrade{
 		Enable:            false,
-		Version:           "1.18",
+		Version:           "1.20",
 		WaitBeforeUpgrade: 3 * time.Minute,
 	}
 }

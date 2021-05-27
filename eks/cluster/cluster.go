@@ -235,7 +235,7 @@ Parameters:
 
   Version:
     Type: String
-    Default: 1.18
+    Default: 1.20
     Description: Specify the EKS version
 
   RoleARN:
