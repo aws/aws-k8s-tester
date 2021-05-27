@@ -36,7 +36,7 @@ type Config struct {
 	ClientConfig *client.Config
 
 	// Namespace to create test resources.
-	Namespace string
+	Namespace string `json:"namespace"`
 
 	DeploymentNodeSelector map[string]string
 	DeploymentReplicas     int32

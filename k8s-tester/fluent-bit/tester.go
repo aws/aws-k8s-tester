@@ -27,7 +27,7 @@ type Config struct {
 	ClientConfig *client.Config
 
 	// Namespace to create test resources.
-	Namespace string
+	Namespace string `json:"namespace"`
 }
 
 func New(cfg Config) k8s_tester.Tester {
