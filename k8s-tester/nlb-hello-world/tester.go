@@ -33,15 +33,15 @@ import (
 )
 
 type Config struct {
-	EnablePrompt bool
+	EnablePrompt bool `json:"-"`
 
-	Logger    *zap.Logger
-	LogWriter io.Writer
-	Stopc     chan struct{}
+	Logger    *zap.Logger   `json:"-"`
+	LogWriter io.Writer     `json:"-"`
+	Stopc     chan struct{} `json:"-"`
 
-	ClientConfig *client.Config
+	ClientConfig *client.Config `json:"-"`
 
-	ELB2API elbv2iface.ELBV2API
+	ELB2API elbv2iface.ELBV2API `json:"-"`
 
 	AccountID string `json:"account-id"`
 	Partition string `json:"partition"`

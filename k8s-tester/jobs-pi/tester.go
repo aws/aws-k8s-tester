@@ -25,13 +25,13 @@ import (
 )
 
 type Config struct {
-	EnablePrompt bool
+	EnablePrompt bool `json:"-"`
 
-	Logger    *zap.Logger
-	LogWriter io.Writer
-	Stopc     chan struct{}
+	Logger    *zap.Logger   `json:"-"`
+	LogWriter io.Writer     `json:"-"`
+	Stopc     chan struct{} `json:"-"`
 
-	ClientConfig *client.Config
+	ClientConfig *client.Config `json:"-"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum-nodes"`

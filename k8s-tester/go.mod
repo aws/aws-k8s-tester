@@ -2,6 +2,21 @@ module github.com/aws/aws-k8s-tester/k8s-tester
 
 go 1.16
 
+require (
+	github.com/aws/aws-k8s-tester/client v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/metrics-server v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/tester v0.0.0-00010101000000-000000000000
+	github.com/manifoldco/promptui v0.8.0
+	go.uber.org/zap v1.17.0
+	k8s.io/client-go v0.21.1
+)
+
 replace (
 	github.com/aws/aws-k8s-tester/client => ../client
 
