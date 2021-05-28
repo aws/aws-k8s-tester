@@ -99,6 +99,10 @@ type tester struct {
 
 var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
 
+func Env() string {
+	return "ADD_ON_" + strings.ToUpper(strings.Replace(pkgName, "-", "_", -1))
+}
+
 func (ts *tester) Name() string { return pkgName }
 
 const (

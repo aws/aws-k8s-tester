@@ -15,6 +15,7 @@ require (
 	github.com/manifoldco/promptui v0.8.0
 	go.uber.org/zap v1.17.0
 	k8s.io/client-go v0.21.1
+	sigs.k8s.io/yaml v1.2.0
 )
 
 replace (

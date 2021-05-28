@@ -109,7 +109,7 @@ func (ts *tester) Delete() error {
 
 func (ts *tester) runPrompt(action string) (ok bool) {
 	if ts.cfg.EnablePrompt {
-		msg := fmt.Sprintf("Ready to %q resources for the namespace %q, should we continue?", action, ts.cfg.Namespace)
+		msg := fmt.Sprintf("Ready to %q resources, should we continue?", action)
 		prompt := promptui.Select{
 			Label: msg,
 			Items: []string{

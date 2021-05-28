@@ -73,6 +73,10 @@ type tester struct {
 
 var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
 
+func Env() string {
+	return "ADD_ON_" + strings.ToUpper(strings.Replace(pkgName, "-", "_", -1))
+}
+
 func (ts *tester) Name() string { return pkgName }
 
 func (ts *tester) Apply() error {
@@ -946,7 +950,7 @@ func (ts *tester) _checkPods() error {
 	return nil
 }
 
-func int32Ref(v int64) *int32 {
+func int32Ref(v int32) *int32 {
 	return &v
 }
 
