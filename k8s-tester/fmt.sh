@@ -9,6 +9,9 @@ gofmt -s -w .
 goimports -w ./cmd/k8s-tester
 gofmt -s -w ./cmd/k8s-tester
 
+goimports -w ./cmd/readme-gen
+gofmt -s -w ./cmd/readme-gen
+
 goimports -w ./cloudwatch-agent
 gofmt -s -w ./cloudwatch-agent
 
