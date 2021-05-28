@@ -8,10 +8,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/client"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
-	aws_v1 "github.com/aws/aws-k8s-tester/utils/aws/v1"
 	"github.com/aws/aws-k8s-tester/utils/log"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -93,17 +90,6 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 		panic(fmt.Errorf("failed to parse %q (%v)", deploymentNodeSelector, err))
 	}
 
-	awsCfg := aws_v1.Config{
-		Logger:        lg,
-		DebugAPICalls: logLevel == "debug",
-		Partition:     partition,
-		Region:        region,
-	}
-	awsSession, stsOutput, _, err := aws_v1.New(&awsCfg)
-	if err != nil {
-		panic(err)
-	}
-
 	cfg := nlb_hello_world.Config{
 		EnablePrompt: enablePrompt,
 		Logger:       lg,
@@ -115,9 +101,8 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 			KubectlPath:    kubectlPath,
 			KubeConfigPath: kubeConfigPath,
 		},
-		ELB2API: elbv2.New(awsSession),
 
-		AccountID: aws.StringValue(stsOutput.Account),
+		Partition: partition,
 		Region:    region,
 
 		DeploymentNodeSelector: nodeSelector,

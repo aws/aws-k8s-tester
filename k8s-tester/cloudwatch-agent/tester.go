@@ -39,8 +39,8 @@ type Config struct {
 
 	ClientConfig *client.Config
 
-	Region      string
-	ClusterName string
+	Region      string `json:"region"`
+	ClusterName string `json:"cluster-name"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum-nodes"`

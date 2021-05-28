@@ -15,13 +15,16 @@ import (
 
 	"github.com/aws/aws-k8s-tester/client"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
+	aws_v1 "github.com/aws/aws-k8s-tester/utils/aws/v1"
 	aws_v1_ecr "github.com/aws/aws-k8s-tester/utils/aws/v1/ecr"
 	"github.com/aws/aws-k8s-tester/utils/rand"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/dustin/go-humanize"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	batch_v1 "k8s.io/api/batch/v1"
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
 	core_v1 "k8s.io/api/core/v1"
@@ -107,6 +110,24 @@ func New(cfg Config) k8s_tester.Tester {
 	cli, err := k8s_client.NewForConfig(ccfg)
 	if err != nil {
 		cfg.Logger.Panic("failed to create client", zap.Error(err))
+	}
+
+	if cfg.RepositoryBusyboxPartition != "" &&
+		cfg.RepositoryBusyboxAccountID != "" &&
+		cfg.RepositoryBusyboxRegion != "" &&
+		cfg.RepositoryBusyboxName != "" &&
+		cfg.RepositoryBusyboxImageTag != "" {
+		awsCfg := aws_v1.Config{
+			Logger:        cfg.Logger,
+			DebugAPICalls: cfg.Logger.Core().Enabled(zapcore.DebugLevel),
+			Partition:     cfg.RepositoryBusyboxPartition,
+			Region:        cfg.RepositoryBusyboxRegion,
+		}
+		awsSession, _, _, err := aws_v1.New(&awsCfg)
+		if err != nil {
+			cfg.Logger.Panic("failed to create aws session", zap.Error(err))
+		}
+		cfg.ECRAPI = ecr.New(awsSession, aws.NewConfig().WithRegion(cfg.RepositoryBusyboxRegion))
 	}
 
 	return &tester{

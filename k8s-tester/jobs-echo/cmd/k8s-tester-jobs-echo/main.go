@@ -7,10 +7,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/client"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
-	aws_v1 "github.com/aws/aws-k8s-tester/utils/aws/v1"
 	"github.com/aws/aws-k8s-tester/utils/log"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -131,24 +128,6 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 		Schedule:                   schedule,
 		SuccessfulJobsHistoryLimit: successfulJobsHistoryLimit,
 		FailedJobsHistoryLimit:     failedJobsHistoryLimit,
-	}
-
-	if repositoryBusyboxPartition != "" &&
-		repositoryBusyboxAccountID != "" &&
-		repositoryBusyboxRegion != "" &&
-		repositoryBusyboxName != "" &&
-		repositoryBusyboxImageTag != "" {
-		awsCfg := aws_v1.Config{
-			Logger:        lg,
-			DebugAPICalls: logLevel == "debug",
-			Partition:     repositoryBusyboxPartition,
-			Region:        repositoryBusyboxRegion,
-		}
-		awsSession, _, _, err := aws_v1.New(&awsCfg)
-		if err != nil {
-			panic(err)
-		}
-		cfg.ECRAPI = ecr.New(awsSession, aws.NewConfig().WithRegion(repositoryBusyboxRegion))
 	}
 
 	ts := jobs_echo.New(cfg)

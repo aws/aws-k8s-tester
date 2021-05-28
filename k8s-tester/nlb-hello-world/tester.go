@@ -15,11 +15,14 @@ import (
 
 	"github.com/aws/aws-k8s-tester/client"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
+	aws_v1 "github.com/aws/aws-k8s-tester/utils/aws/v1"
 	aws_v1_elb "github.com/aws/aws-k8s-tester/utils/aws/v1/elb"
 	"github.com/aws/aws-k8s-tester/utils/http"
+	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	apps_v1 "k8s.io/api/apps/v1"
 	core_v1 "k8s.io/api/core/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
@@ -38,9 +41,11 @@ type Config struct {
 
 	ClientConfig *client.Config
 
-	ELB2API   elbv2iface.ELBV2API
-	AccountID string
-	Region    string
+	ELB2API elbv2iface.ELBV2API
+
+	AccountID string `json:"account-id"`
+	Partition string `json:"partition"`
+	Region    string `json:"region"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum-nodes"`
@@ -64,6 +69,21 @@ func New(cfg Config) k8s_tester.Tester {
 	cli, err := k8s_client.NewForConfig(ccfg)
 	if err != nil {
 		cfg.Logger.Panic("failed to create client", zap.Error(err))
+	}
+
+	awsCfg := aws_v1.Config{
+		Logger:        cfg.Logger,
+		DebugAPICalls: cfg.Logger.Core().Enabled(zapcore.DebugLevel),
+		Partition:     cfg.Partition,
+		Region:        cfg.Region,
+	}
+	awsSession, stsOutput, _, err := aws_v1.New(&awsCfg)
+	if err != nil {
+		panic(err)
+	}
+	cfg.ELB2API = elbv2.New(awsSession)
+	if cfg.AccountID == "" && stsOutput.Account != nil {
+		cfg.AccountID = *stsOutput.Account
 	}
 
 	return &tester{

@@ -15,7 +15,6 @@ import (
 	"github.com/aws/aws-k8s-tester/client"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
 	"github.com/aws/aws-k8s-tester/utils/file"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
@@ -460,7 +459,7 @@ func (ts *tester) deleteDeployment() error {
 			ctx,
 			deploymentName,
 			meta_v1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
+				GracePeriodSeconds: int64Ref(0),
 				PropagationPolicy:  &foreground,
 			},
 		)
@@ -471,4 +470,8 @@ func (ts *tester) deleteDeployment() error {
 	}
 	ts.cfg.Logger.Info("deleted deployment")
 	return nil
+}
+
+func int64Ref(v int64) *int64 {
+	return &v
 }

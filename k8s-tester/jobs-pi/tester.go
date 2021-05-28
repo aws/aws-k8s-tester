@@ -14,7 +14,6 @@ import (
 
 	"github.com/aws/aws-k8s-tester/client"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/dustin/go-humanize"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
@@ -118,7 +117,7 @@ func (ts *tester) Delete() error {
 			ctx,
 			jobName,
 			meta_v1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
+				GracePeriodSeconds: int64Ref(0),
 				PropagationPolicy:  &foreground,
 			},
 		)
@@ -272,4 +271,8 @@ func (ts *tester) checkJob() error {
 	}
 	fmt.Fprintf(ts.cfg.LogWriter, "\n")
 	return nil
+}
+
+func int64Ref(v int64) *int64 {
+	return &v
 }
