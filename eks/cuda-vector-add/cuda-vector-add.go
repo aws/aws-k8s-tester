@@ -160,7 +160,7 @@ func (ts *tester) checkPod() error {
 
 	succeeded := false
 	retryStart, waitDur := time.Now(), 5*time.Minute
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("cuda-vector-add pod check aborted")

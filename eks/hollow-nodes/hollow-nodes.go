@@ -187,7 +187,7 @@ func (ng *nodeGroup) checkNodes() (readyNodes []string, createdNodes []string, e
 	waitDur := 5 * time.Minute
 	ng.cfg.Logger.Info("checking nodes readiness", zap.Duration("wait", waitDur))
 	retryStart, ready := time.Now(), false
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ng.cfg.Stopc:
 			ng.cfg.Logger.Info("checking nodes aborted")

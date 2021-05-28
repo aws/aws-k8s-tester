@@ -175,7 +175,7 @@ func Install(cfg InstallConfig) (err error) {
 		// https://github.com/kubernetes-sigs/aws-ebs-csi-driver#deploy-driver
 		var rd io.ReadCloser
 		retryStart, waitDur := time.Now(), 3*time.Minute
-		for time.Now().Sub(retryStart) < waitDur {
+		for time.Since(retryStart) < waitDur {
 			var resp *http.Response
 			resp, err = http.Get(cfg.ChartRepoURL)
 			if err != nil {

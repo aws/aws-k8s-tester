@@ -319,7 +319,7 @@ func Delete(
 	// confirm ECR deletion
 	deleted := false
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < 15*time.Minute {
+	for time.Since(retryStart) < 15*time.Minute {
 		time.Sleep(5 * time.Second)
 
 		_, derr := svc.DescribeRepositories(&ecr.DescribeRepositoriesInput{

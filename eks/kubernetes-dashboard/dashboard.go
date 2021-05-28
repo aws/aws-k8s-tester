@@ -319,7 +319,7 @@ func (ts *tester) installDashboard() error {
 	var output []byte
 	waitDur := 5 * time.Minute
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("create dashboard aborted")

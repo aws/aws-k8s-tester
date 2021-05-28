@@ -1030,7 +1030,7 @@ func (ts *tester) deleteVPC() error {
 			ts.cfg.Logger.Warn("polling errror", zap.Error(st.Error))
 		}
 
-		if time.Now().Sub(now) <= 3*time.Minute {
+		if time.Since(now) <= 3*time.Minute {
 			continue
 		}
 
@@ -1256,7 +1256,7 @@ func (ts *tester) deleteENIs(deletedResources map[string]struct{}) bool {
 
 		// confirm ENI deletion
 		retryStart := time.Now()
-		for time.Now().Sub(retryStart) < 5*time.Minute {
+		for time.Since(retryStart) < 5*time.Minute {
 			time.Sleep(5 * time.Second)
 			_, err = ts.cfg.EC2API.DescribeNetworkInterfaces(&ec2.DescribeNetworkInterfacesInput{
 				NetworkInterfaceIds: aws.StringSlice([]string{eniID}),
@@ -1443,7 +1443,7 @@ func (ts *tester) deleteSGs(deletedResources map[string]struct{}) bool {
 		}
 
 		retryStart := time.Now()
-		for time.Now().Sub(retryStart) < 5*time.Minute {
+		for time.Since(retryStart) < 5*time.Minute {
 			_, err = ts.cfg.EC2API.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{
 				GroupIds: aws.StringSlice([]string{sgID}),
 			})

@@ -158,7 +158,7 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 
 	applied := false
 	retryStart, waitDur := time.Now(), 3*time.Minute
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			ts.cfg.Logger.Warn("install nvidia GPU driver stopped")
@@ -198,7 +198,7 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 		retryStart := time.Now()
 
 		readyNGs := make(map[string]struct{})
-		for time.Now().Sub(retryStart) < waitDur {
+		for time.Since(retryStart) < waitDur {
 			if len(readyNGs) == cnt {
 				break
 			}
@@ -284,7 +284,7 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 		retryStart := time.Now()
 
 		readyMNGs := make(map[string]struct{})
-		for time.Now().Sub(retryStart) < waitDur {
+		for time.Since(retryStart) < waitDur {
 			if len(readyMNGs) == cnt {
 				break
 			}
@@ -463,7 +463,7 @@ func (ts *tester) CreateNvidiaSMI() error {
 
 	installed := false
 	retryStart, waitDur := time.Now(), 3*time.Minute
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("nvidia-smi check aborted")

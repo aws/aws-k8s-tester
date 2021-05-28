@@ -995,7 +995,7 @@ func (ts *tester) deleteFluentdDaemonSet() (err error) {
 func (ts *tester) checkFluentdPods() (err error) {
 	waitDur := 10 * time.Minute
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("check aborted")

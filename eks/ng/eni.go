@@ -92,7 +92,7 @@ func (ts *tester) deleteENIs() bool {
 
 		// confirm ENI deletion
 		retryStart := time.Now()
-		for time.Now().Sub(retryStart) < 5*time.Minute {
+		for time.Since(retryStart) < 5*time.Minute {
 			time.Sleep(5 * time.Second)
 			_, err = ts.cfg.EC2API.DescribeNetworkInterfaces(&ec2.DescribeNetworkInterfacesInput{
 				NetworkInterfaceIds: aws.StringSlice([]string{eniID}),

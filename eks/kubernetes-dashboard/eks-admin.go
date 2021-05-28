@@ -48,7 +48,7 @@ func (ts *tester) installEKSAdmin() error {
 	var output []byte
 	waitDur := 5 * time.Minute
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("create eks-admin aborted")
@@ -90,7 +90,7 @@ func (ts *tester) fetchAuthenticationToken() error {
 	var token []byte
 	waitDur := time.Minute
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("check aborted")

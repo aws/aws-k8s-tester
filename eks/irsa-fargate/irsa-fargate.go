@@ -842,7 +842,7 @@ func (ts *tester) deleteProfile() error {
 
 	var err error
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < time.Minute {
+	for time.Since(retryStart) < time.Minute {
 		_, err = ts.cfg.EKSAPI.DeleteFargateProfile(&eks.DeleteFargateProfileInput{
 			ClusterName:        aws.String(ts.cfg.EKSConfig.Name),
 			FargateProfileName: aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.ProfileName),
@@ -1004,7 +1004,7 @@ func (ts *tester) checkPodWebhook() error {
 	retryStart := time.Now()
 	found := false
 foundBreak:
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("check aborted")
@@ -1063,7 +1063,7 @@ func (ts *tester) checkResults() (err error) {
 	ready := false
 	waitDur := 10 * time.Minute
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("check aborted")

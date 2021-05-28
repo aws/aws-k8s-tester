@@ -369,7 +369,7 @@ func (ts *tester) createService() error {
 	argsCmd := strings.Join(args, " ")
 	hostName := ""
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("NLB hello-world Service creation aborted")
@@ -444,7 +444,7 @@ func (ts *tester) createService() error {
 
 	htmlChecked := false
 	retryStart = time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("hello-world Service creation aborted")

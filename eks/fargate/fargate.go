@@ -521,7 +521,7 @@ func (ts *tester) deleteProfile() error {
 
 	var err error
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < time.Minute {
+	for time.Since(retryStart) < time.Minute {
 		_, err = ts.cfg.EKSAPI.DeleteFargateProfile(&eks.DeleteFargateProfileInput{
 			ClusterName:        aws.String(ts.cfg.EKSConfig.Name),
 			FargateProfileName: aws.String(ts.cfg.EKSConfig.AddOnFargate.ProfileName),
@@ -711,7 +711,7 @@ func (ts *tester) checkPod() error {
 
 	succeeded := false
 	retryStart, waitDur := time.Now(), 10*time.Minute
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			ts.cfg.Logger.Warn("aborted")
@@ -775,7 +775,7 @@ func (ts *tester) checkPod() error {
 
 	succeeded = false
 	retryStart, waitDur = time.Now(), 2*time.Minute
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			ts.cfg.Logger.Warn("aborted")
@@ -828,7 +828,7 @@ func (ts *tester) checkNodeReadiness() error {
 
 	desired := 1
 	retryStart, waitDur := time.Now(), 3*time.Minute
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			ts.cfg.Logger.Warn("aborted")

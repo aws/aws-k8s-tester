@@ -289,7 +289,7 @@ func (ts *tester) installCA() error {
 		fpath,
 	}
 	applyCmd := strings.Join(applyArgs, " ")
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("create CA aborted")

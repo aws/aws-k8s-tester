@@ -936,7 +936,7 @@ func (ts *tester) create2048Ingress() error {
 	hostName := ""
 	waitDur = 4 * time.Minute
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("ALB 2048 Ingress creation aborted")
@@ -1038,7 +1038,7 @@ func (ts *tester) create2048Ingress() error {
 
 	htmlChecked := false
 	retryStart = time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("ALB 2048 Ingress creation aborted")

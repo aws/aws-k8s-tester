@@ -83,7 +83,7 @@ func (ts *tester) Apply() error {
 		return err
 	}
 
-	if err := ts.checkMetrics(); err != nil {
+	if err := ts.checkMetricsServer(); err != nil {
 		return err
 	}
 
@@ -320,7 +320,7 @@ func (ts *tester) applyMetricsServerYAML() error {
 	var output []byte
 	waitDur := 5 * time.Minute
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("create metrics-server aborted")
@@ -390,7 +390,7 @@ func (ts *tester) checkDeployment() (err error) {
 	return err
 }
 
-func (ts *tester) checkMetrics() error {
+func (ts *tester) checkMetricsServer() error {
 	logArgs := []string{
 		ts.cfg.ClientConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.ClientConfig.KubeConfigPath,
@@ -412,7 +412,7 @@ func (ts *tester) checkMetrics() error {
 
 	topNodeReady := false
 	waitDur, retryStart := 30*time.Minute, time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("check aborted")

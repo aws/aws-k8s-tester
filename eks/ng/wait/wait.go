@@ -141,7 +141,7 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 	ts.cfg.Logger.Info("checking nodes readiness", zap.Duration("wait", waitDur))
 	retryStart := time.Now()
 	ready := false
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("checking node aborted")

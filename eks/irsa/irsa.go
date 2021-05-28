@@ -1001,7 +1001,7 @@ func (ts *tester) checkPodWebhook() error {
 	retryStart := time.Now()
 	found := false
 foundBreak:
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("check aborted")
@@ -1056,7 +1056,7 @@ func (ts *tester) checkResults() (err error) {
 	ready := false
 	waitDur := 7*time.Minute + time.Duration(ts.cfg.EKSConfig.AddOnIRSA.DeploymentReplicas)*3*time.Second
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("check aborted")

@@ -142,7 +142,7 @@ func (ts *tester) startProxy(enable bool) error {
 
 		waitDur := time.Minute
 		retryStart := time.Now()
-		for time.Now().Sub(retryStart) < waitDur {
+		for time.Since(retryStart) < waitDur {
 			select {
 			case <-ts.cfg.Stopc:
 				return errors.New("Kubernetes Dashboard proxy creation aborted")

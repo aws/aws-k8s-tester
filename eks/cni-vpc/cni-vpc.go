@@ -897,7 +897,7 @@ func (ts *tester) deleteCNIDaemonSet() (err error) {
 func (ts *tester) checkCNIPods() (err error) {
 	waitDur := 10*time.Minute + 3*time.Minute*time.Duration(ts.cfg.EKSConfig.TotalNodes)
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("check aborted")

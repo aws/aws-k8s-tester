@@ -275,7 +275,7 @@ func (ts *tester) waitService() error {
 	argsCmd := strings.Join(args, " ")
 	hostName := ""
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("WordPress service creation aborted")
@@ -351,7 +351,7 @@ func (ts *tester) waitService() error {
 	time.Sleep(20 * time.Second)
 
 	retryStart = time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("WordPress Service creation aborted")

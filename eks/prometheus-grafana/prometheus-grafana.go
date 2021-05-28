@@ -430,7 +430,7 @@ func (ts *tester) waitServiceGrafana() error {
 	argsCmd := strings.Join(args, " ")
 	hostName := ""
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("Grafana service creation aborted")
@@ -506,7 +506,7 @@ func (ts *tester) waitServiceGrafana() error {
 	time.Sleep(20 * time.Second)
 
 	retryStart = time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("Grafana Service creation aborted")

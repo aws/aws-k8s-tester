@@ -445,7 +445,7 @@ func (ts *tester) createServiceRedisLeader() error {
 
 	waitDur := 3 * time.Minute
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("redis leader Service creation aborted")
@@ -722,7 +722,7 @@ func (ts *tester) createServiceRedisFollower() error {
 
 	waitDur := 3 * time.Minute
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("redis follower Service creation aborted")
@@ -1002,7 +1002,7 @@ func (ts *tester) createServiceGuestbook() error {
 
 	hostName := ""
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("NLB guestbook Service creation aborted")
@@ -1077,7 +1077,7 @@ func (ts *tester) createServiceGuestbook() error {
 
 	htmlChecked := false
 	retryStart = time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("guestbook Service creation aborted")

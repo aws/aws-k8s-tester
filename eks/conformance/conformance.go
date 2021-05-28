@@ -280,7 +280,7 @@ func (ts *tester) checkSonobuoy() (err error) {
 	ts.cfg.Logger.Info("checking pod/sonobuoy-e2e-job")
 	sonobuoyE2EJobPod := ""
 	retryStart := time.Now()
-	for time.Now().Sub(retryStart) < 10*time.Minute {
+	for time.Since(retryStart) < 10*time.Minute {
 		select {
 		case <-ts.cfg.Stopc:
 			ts.cfg.Logger.Warn("sonobuoy check stopped")
@@ -366,7 +366,7 @@ func (ts *tester) checkSonobuoy() (err error) {
 
 	interval := 15 * time.Minute
 	cnt := 0
-	for time.Now().Sub(start) < waitDur {
+	for time.Since(start) < waitDur {
 		cnt++
 		ts.cfg.Logger.Info(
 			"waiting for sonobuoy run",
@@ -445,7 +445,7 @@ func (ts *tester) checkResults() (err error) {
 
 	os.RemoveAll(ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultTarGzPath)
 	start, waitDur := time.Now(), 3*time.Minute
-	for time.Now().Sub(start) < waitDur {
+	for time.Since(start) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			ts.cfg.Logger.Warn("sonobuoy retrieve stopped")

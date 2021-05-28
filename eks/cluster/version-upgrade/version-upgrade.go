@@ -129,7 +129,7 @@ func (ts *tester) Create() (err error) {
 	// may take a while to shut down the last master instance with old cluster version
 	ts.cfg.Logger.Info("checking EKS server version after cluster version upgrade", zap.String("target-version", ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.Version))
 	waitDur, retryStart := 5*time.Minute, time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			ts.cfg.Logger.Warn("version check aborted")
@@ -164,7 +164,7 @@ func (ts *tester) Create() (err error) {
 
 	ts.cfg.Logger.Info("checking EKS server health after cluster version upgrade")
 	waitDur, retryStart = 5*time.Minute, time.Now()
-	for time.Now().Sub(retryStart) < waitDur {
+	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
 			ts.cfg.Logger.Warn("health check aborted")
