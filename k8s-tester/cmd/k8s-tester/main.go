@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester"
 	"github.com/aws/aws-k8s-tester/utils/log"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -24,6 +25,7 @@ var (
 	enablePrompt   bool
 	logLevel       string
 	logOutputs     []string
+	minimumNodes   int
 	kubectlPath    string
 	kubeConfigPath string
 )
@@ -32,6 +34,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&enablePrompt, "enable-prompt", true, "'true' to enable prompt mode")
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", log.DefaultLogLevel, "Logging level")
 	rootCmd.PersistentFlags().StringSliceVar(&logOutputs, "log-outputs", []string{"stderr"}, "Additional logger outputs")
+	rootCmd.PersistentFlags().IntVar(&minimumNodes, "minimum-nodes", k8s_tester.DefaultMinimumNodes, "minimum number of Kubernetes nodes required")
 	rootCmd.PersistentFlags().StringVar(&kubectlPath, "kubectl-path", "", "kubectl path")
 	rootCmd.PersistentFlags().StringVar(&kubeConfigPath, "kubeconfig-path", "", "KUBECONFIG path")
 
@@ -51,7 +54,6 @@ func main() {
 
 var (
 	clusterName string
-	region      string
 )
 
 func newApply() *cobra.Command {
@@ -62,13 +64,12 @@ func newApply() *cobra.Command {
 	}
 
 	cmd.PersistentFlags().StringVar(&clusterName, "cluster-name", "", "cluster name")
-	cmd.PersistentFlags().StringVar(&region, "region", "", "region")
 
 	return cmd
 }
 
 func createApplyFunc(cmd *cobra.Command, args []string) {
-	lg, logWriter, _, err := log.NewWithStderrWriter(logLevel, logOutputs)
+	lg, _, _, err := log.NewWithStderrWriter(logLevel, logOutputs)
 	if err != nil {
 		panic(err)
 	}
@@ -88,7 +89,7 @@ func newDelete() *cobra.Command {
 }
 
 func createDeleteFunc(cmd *cobra.Command, args []string) {
-	lg, logWriter, _, err := log.NewWithStderrWriter(logLevel, logOutputs)
+	lg, _, _, err := log.NewWithStderrWriter(logLevel, logOutputs)
 	if err != nil {
 		panic(err)
 	}
