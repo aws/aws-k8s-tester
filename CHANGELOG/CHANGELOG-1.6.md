@@ -10,9 +10,10 @@
 
 ### `k8s-tester`
 
-- Improve [ELB deletion in `k8s-tester/nlb-hello-world`](https://github.com/aws/aws-k8s-tester/commit/d97321cc58c58c731e1034cdef97aca49bfb3031).
+- Improve [ELB deletion in `k8s-tester/nlb-hello-world`](https://github.com/aws/aws-k8s-tester/commit/288c27cb9922164743cc9e7af5c2443e238147d5).
 - Add [`k8s-tester/jobs-echo`](https://github.com/aws/aws-k8s-tester/commit/7d05190c873f3166fcf55f75832b40cc74826944).
 - Add [`k8s-tester/jobs-pi`](https://github.com/aws/aws-k8s-tester/commit/5a188f1874876ad4228c02afdb99da730418763a).
+- Add [`k8s-tester/metrics-server`](https://github.com/aws/aws-k8s-tester/commit/b95ed4f88e8143c5b94a5e66448718bf513abf9b).
 
 ### Dependency
 

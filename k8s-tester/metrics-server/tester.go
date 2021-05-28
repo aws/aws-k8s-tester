@@ -1,4 +1,5 @@
 // Package metrics_server a simple metrics server.
+// Replace https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/metrics-server/metrics-server.go.
 package metrics_server
 
 import (
@@ -32,9 +33,13 @@ type Config struct {
 
 	ClientConfig *client.Config
 
+	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
+	MinimumNodes int `json:"minimum-nodes"`
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
 }
+
+const DefaultMinimumNodes int = 1
 
 func New(cfg Config) k8s_tester.Tester {
 	ccfg, err := client.CreateConfig(cfg.ClientConfig)
@@ -64,6 +69,10 @@ func (ts *tester) Name() string { return pkgName }
 func (ts *tester) Apply() error {
 	if ok := ts.runPrompt("apply"); !ok {
 		return errors.New("cancelled")
+	}
+
+	if nodes, err := client.ListNodes(ts.cli); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
 	}
 
 	if err := ts.applyMetricsServerYAML(); err != nil {

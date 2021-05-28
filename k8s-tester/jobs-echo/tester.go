@@ -1,4 +1,6 @@
-// Package jobs_echo installs a simple echo Pod with Job.
+// Package jobs_echo installs a simple echo Pod with Job or CronJob.
+// Replace https://github.com/aws/aws-k8s-tester/tree/v1.5.9/eks/jobs-echo.
+// Replace https://github.com/aws/aws-k8s-tester/tree/v1.5.9/eks/cron-jobs.
 package jobs_echo
 
 import (
@@ -37,6 +39,8 @@ type Config struct {
 	ClientConfig *client.Config
 	ECRAPI       ecriface.ECRAPI
 
+	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
+	MinimumNodes int `json:"minimum-nodes"`
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
 
@@ -71,9 +75,10 @@ type Config struct {
 // Parallels: 100,
 // EchoSize: 100 * 1024, // 100 KB
 const (
-	DefaultCompletes int32 = 10
-	DefaultParallels int32 = 10
-	DefaultEchoSize  int32 = 100 * 1024
+	DefaultMinimumNodes int   = 1
+	DefaultCompletes    int32 = 10
+	DefaultParallels    int32 = 10
+	DefaultEchoSize     int32 = 100 * 1024
 )
 
 func New(cfg Config) k8s_tester.Tester {
@@ -109,6 +114,10 @@ func (ts *tester) Apply() (err error) {
 	bsyImg, err := ts.checkECRImage()
 	if err != nil {
 		return err
+	}
+
+	if nodes, err := client.ListNodes(ts.cli); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
 	}
 
 	if err := client.CreateNamespace(ts.cfg.Logger, ts.cli, ts.cfg.Namespace); err != nil {

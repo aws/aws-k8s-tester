@@ -1,4 +1,5 @@
 // Package jobs_pi a simple pi Pod with Job.
+// Replace https://github.com/aws/aws-k8s-tester/tree/v1.5.9/eks/jobs-pi.
 package jobs_pi
 
 import (
@@ -33,6 +34,8 @@ type Config struct {
 
 	ClientConfig *client.Config
 
+	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
+	MinimumNodes int `json:"minimum-nodes"`
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
 
@@ -44,8 +47,9 @@ type Config struct {
 }
 
 const (
-	DefaultCompletes int32 = 10
-	DefaultParallels int32 = 10
+	DefaultMinimumNodes int   = 1
+	DefaultCompletes    int32 = 10
+	DefaultParallels    int32 = 10
 )
 
 func New(cfg Config) k8s_tester.Tester {
@@ -76,6 +80,10 @@ func (ts *tester) Name() string { return pkgName }
 func (ts *tester) Apply() error {
 	if ok := ts.runPrompt("apply"); !ok {
 		return errors.New("cancelled")
+	}
+
+	if nodes, err := client.ListNodes(ts.cli); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
 	}
 
 	if err := client.CreateNamespace(ts.cfg.Logger, ts.cli, ts.cfg.Namespace); err != nil {
