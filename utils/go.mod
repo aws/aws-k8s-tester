@@ -7,7 +7,7 @@ require (
 	github.com/briandowns/spinner v1.12.0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e
-	go.uber.org/zap v1.16.0
+	go.uber.org/zap v1.17.0
 	k8s.io/client-go v0.21.1
 	k8s.io/utils v0.0.0-20210305010621-2afb4311ab10
 )
