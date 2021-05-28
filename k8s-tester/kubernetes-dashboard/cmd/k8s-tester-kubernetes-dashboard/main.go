@@ -27,7 +27,6 @@ var (
 	logLevel       string
 	logOutputs     []string
 	minimumNodes   int
-	namespace      string
 	kubectlPath    string
 	kubeConfigPath string
 )
@@ -37,7 +36,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", log.DefaultLogLevel, "Logging level")
 	rootCmd.PersistentFlags().StringSliceVar(&logOutputs, "log-outputs", []string{"stderr"}, "Additional logger outputs")
 	rootCmd.PersistentFlags().IntVar(&minimumNodes, "minimum-nodes", kubernetes_dashboard.DefaultMinimumNodes, "minimum number of Kubernetes nodes required for installing this addon")
-	rootCmd.PersistentFlags().StringVar(&namespace, "namespace", "test-namespace", "'true' to auto-generate path for create config/cluster, overwrites existing --path value")
 	rootCmd.PersistentFlags().StringVar(&kubectlPath, "kubectl-path", "", "kubectl path")
 	rootCmd.PersistentFlags().StringVar(&kubeConfigPath, "kubeconfig-path", "", "KUBECONFIG path")
 
@@ -76,7 +74,6 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 		Logger:       lg,
 		LogWriter:    logWriter,
 		MinimumNodes: minimumNodes,
-		Namespace:    namespace,
 		ClientConfig: &client.Config{
 			Logger:         lg,
 			KubectlPath:    kubectlPath,
@@ -114,7 +111,6 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 		EnablePrompt: enablePrompt,
 		Logger:       lg,
 		LogWriter:    logWriter,
-		Namespace:    namespace,
 		ClientConfig: &client.Config{
 			Logger:         lg,
 			KubectlPath:    kubectlPath,

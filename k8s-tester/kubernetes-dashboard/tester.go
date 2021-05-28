@@ -37,8 +37,6 @@ type Config struct {
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum-nodes"`
-	// Namespace to create test resources.
-	Namespace string `json:"namespace"`
 }
 
 const DefaultMinimumNodes int = 1
@@ -124,7 +122,7 @@ func (ts *tester) Delete() error {
 
 func (ts *tester) runPrompt(action string) (ok bool) {
 	if ts.cfg.EnablePrompt {
-		msg := fmt.Sprintf("Ready to %q resources for the namespace %q, should we continue?", action, ts.cfg.Namespace)
+		msg := fmt.Sprintf("Ready to %q resources, should we continue?", action)
 		prompt := promptui.Select{
 			Label: msg,
 			Items: []string{

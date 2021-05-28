@@ -143,8 +143,11 @@ type tester struct {
 
 var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
 
-func Env() string {
-	return "ADD_ON_" + strings.ToUpper(strings.Replace(pkgName, "-", "_", -1))
+func Env(jobType string) string {
+	if jobType == "Job" {
+		return "ADD_ON_" + strings.ToUpper(strings.Replace(pkgName, "-", "_", -1))
+	}
+	return "ADD_ON_CRON_" + strings.ToUpper(strings.Replace(pkgName, "-", "_", -1))
 }
 
 func (ts *tester) Name() string { return pkgName }
