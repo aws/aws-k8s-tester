@@ -23,12 +23,14 @@ import (
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
 	batch_v1 "k8s.io/api/batch/v1"
+	batch_v1beta1 "k8s.io/api/batch/v1beta1"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8s_client "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
 )
 
+// Config defines Job/CronJob spec.
 type Config struct {
 	EnablePrompt bool
 
@@ -58,6 +60,9 @@ type Config struct {
 	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/busybox:latest"
 	RepositoryBusyboxImageTag string `json:"repository-busybox-image-tag,omitempty"`
 
+	// JobType is either "Job" or "CronJob".
+	JobType string `json:"job-type"`
+
 	// Completes is the desired number of successfully finished pods.
 	Completes int32 `json:"completes"`
 	// Parallels is the the maximum desired number of pods the
@@ -68,6 +73,15 @@ type Config struct {
 	// "The Job "echo" is invalid: metadata.annotations:
 	// Too long: must have at most 262144 characters". (0.26 MB)
 	EchoSize int32 `json:"echo-size"`
+
+	// Schedule is the CronJob schedule.
+	Schedule string `json:"schedule"`
+	// SuccessfulJobsHistoryLimit is the number of successful finished CronJobs to retain.
+	// Defaults to 3.
+	SuccessfulJobsHistoryLimit int32 `json:"successful-jobs-history-limit"`
+	// FailedJobsHistoryLimit is the number of failed finished CronJobs to retain.
+	// Defaults to 1.
+	FailedJobsHistoryLimit int32 `json:"failed-jobs-history-limit"`
 }
 
 // writes total 100 MB data to etcd
@@ -75,10 +89,14 @@ type Config struct {
 // Parallels: 100,
 // EchoSize: 100 * 1024, // 100 KB
 const (
-	DefaultMinimumNodes int   = 1
-	DefaultCompletes    int32 = 10
-	DefaultParallels    int32 = 10
-	DefaultEchoSize     int32 = 100 * 1024
+	DefaultMinimumNodes               int    = 1
+	DefaultJobType                    string = "Job"
+	DefaultCompletes                  int32  = 10
+	DefaultParallels                  int32  = 10
+	DefaultEchoSize                   int32  = 100 * 1024
+	DefaultSchedule                   string = "*/10 * * * *" // every 10-min
+	DefaultSuccessfulJobsHistoryLimit int32  = 3
+	DefaultFailedJobsHistoryLimit     int32  = 1
 )
 
 func New(cfg Config) k8s_tester.Tester {
@@ -135,32 +153,49 @@ func (ts *tester) Apply() (err error) {
 	return nil
 }
 
-func (ts *tester) Delete() error {
+func (ts *tester) Delete() (err error) {
 	if ok := ts.runPrompt("delete"); !ok {
 		return errors.New("cancelled")
 	}
 
+	foreground := meta_v1.DeletePropagationForeground
+
 	var errs []string
 
-	foreground := meta_v1.DeletePropagationForeground
-	ts.cfg.Logger.Info("deleting Job", zap.String("name", jobName))
+	ts.cfg.Logger.Info("deleting Job", zap.String("job-type", ts.cfg.JobType), zap.String("name", jobName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	err := ts.cli.
-		BatchV1().
-		Jobs(ts.cfg.Namespace).
-		Delete(
-			ctx,
-			jobName,
-			meta_v1.DeleteOptions{
-				GracePeriodSeconds: aws.Int64(0),
-				PropagationPolicy:  &foreground,
-			},
-		)
+
+	if ts.cfg.JobType == "Job" {
+		err = ts.cli.
+			BatchV1().
+			Jobs(ts.cfg.Namespace).
+			Delete(
+				ctx,
+				jobName,
+				meta_v1.DeleteOptions{
+					GracePeriodSeconds: aws.Int64(0),
+					PropagationPolicy:  &foreground,
+				},
+			)
+	} else {
+		err = ts.cli.
+			BatchV1beta1().
+			CronJobs(ts.cfg.Namespace).
+			Delete(
+				ctx,
+				jobName,
+				meta_v1.DeleteOptions{
+					GracePeriodSeconds: aws.Int64(0),
+					PropagationPolicy:  &foreground,
+				},
+			)
+	}
+
 	cancel()
 	if err == nil {
-		ts.cfg.Logger.Info("deleted a Job", zap.String("name", jobName))
+		ts.cfg.Logger.Info("deleted a Job", zap.String("job-type", ts.cfg.JobType), zap.String("name", jobName))
 	} else {
-		ts.cfg.Logger.Warn("failed to delete a Job", zap.Error(err))
+		ts.cfg.Logger.Warn("failed to delete a Job", zap.String("job-type", ts.cfg.JobType), zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
@@ -234,7 +269,7 @@ func (ts *tester) checkECRImage() (busyboxImg string, err error) {
 	return busyboxImg, nil
 }
 
-func (ts *tester) createObject(busyboxImg string) (batch_v1.Job, string, error) {
+func (ts *tester) createJobObject(busyboxImg string) (batch_v1.Job, batch_v1beta1.CronJob, string, error) {
 	podSpec := core_v1.PodTemplateSpec{
 		Spec: core_v1.PodSpec{
 			// spec.template.spec.restartPolicy: Unsupported value: "Always": supported values: "OnFailure", "Never"
@@ -257,13 +292,41 @@ func (ts *tester) createObject(busyboxImg string) (batch_v1.Job, string, error) 
 					},
 				},
 			},
+
+			Volumes: []core_v1.Volume{
+				{
+					Name: "config",
+					VolumeSource: core_v1.VolumeSource{
+						EmptyDir: &core_v1.EmptyDirVolumeSource{},
+					},
+				},
+			},
 		},
 	}
-	jobObj := batch_v1.Job{
-		TypeMeta: meta_v1.TypeMeta{
-			APIVersion: "batch/v1",
-			Kind:       "Job",
-		},
+
+	if ts.cfg.JobType == "Job" {
+		jobObj := batch_v1.Job{
+			TypeMeta: meta_v1.TypeMeta{
+				APIVersion: "batch/v1",
+				Kind:       "Job",
+			},
+			ObjectMeta: meta_v1.ObjectMeta{
+				Name:      jobName,
+				Namespace: ts.cfg.Namespace,
+			},
+			Spec: batch_v1.JobSpec{
+				Completions: &ts.cfg.Completes,
+				Parallelism: &ts.cfg.Parallels,
+				Template:    podSpec,
+				// TODO: 'TTLSecondsAfterFinished' is still alpha
+				// https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/
+			},
+		}
+		b, err := yaml.Marshal(jobObj)
+		return jobObj, batch_v1beta1.CronJob{}, string(b), err
+	}
+
+	jobSpec := batch_v1beta1.JobTemplateSpec{
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      jobName,
 			Namespace: ts.cfg.Namespace,
@@ -276,56 +339,115 @@ func (ts *tester) createObject(busyboxImg string) (batch_v1.Job, string, error) 
 			// https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/
 		},
 	}
+	jobObj := batch_v1beta1.CronJob{
+		TypeMeta: meta_v1.TypeMeta{
+			APIVersion: "batch/v1beta1",
+			Kind:       "CronJob",
+		},
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name:      jobName,
+			Namespace: ts.cfg.Namespace,
+		},
+		Spec: batch_v1beta1.CronJobSpec{
+			Schedule:                   ts.cfg.Schedule,
+			SuccessfulJobsHistoryLimit: &ts.cfg.SuccessfulJobsHistoryLimit,
+			FailedJobsHistoryLimit:     &ts.cfg.FailedJobsHistoryLimit,
+			JobTemplate:                jobSpec,
+			ConcurrencyPolicy:          batch_v1beta1.ReplaceConcurrent,
+		},
+	}
 	b, err := yaml.Marshal(jobObj)
-	return jobObj, string(b), err
+	return batch_v1.Job{}, jobObj, string(b), err
 }
 
 func (ts *tester) createJob(busyboxImg string) (err error) {
-	obj, b, err := ts.createObject(busyboxImg)
+	jobObj, cronObj, b, err := ts.createJobObject(busyboxImg)
 	if err != nil {
 		return err
 	}
 
-	ts.cfg.Logger.Info("creating a Job object",
+	if ts.cfg.JobType == "Job" {
+		ts.cfg.Logger.Info("creating a Job object",
+			zap.String("image-name", busyboxImg),
+			zap.String("job-name", jobName),
+			zap.Int32("completes", ts.cfg.Completes),
+			zap.Int32("parallels", ts.cfg.Parallels),
+			zap.String("object-size", humanize.Bytes(uint64(len(b)))),
+		)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		_, err = ts.cli.
+			BatchV1().
+			Jobs(ts.cfg.Namespace).
+			Create(ctx, &jobObj, meta_v1.CreateOptions{})
+		cancel()
+		if err != nil {
+			return fmt.Errorf("failed to create Job (%v)", err)
+		}
+		ts.cfg.Logger.Info("created a Job object")
+		return nil
+	}
+
+	ts.cfg.Logger.Info("creating a CronJob object",
 		zap.String("image-name", busyboxImg),
 		zap.String("job-name", jobName),
 		zap.Int32("completes", ts.cfg.Completes),
 		zap.Int32("parallels", ts.cfg.Parallels),
+		zap.String("schedule", ts.cfg.Schedule),
+		zap.Int32("successful-job-history-limit", ts.cfg.SuccessfulJobsHistoryLimit),
+		zap.Int32("failed-job-history-limit", ts.cfg.FailedJobsHistoryLimit),
 		zap.String("object-size", humanize.Bytes(uint64(len(b)))),
 	)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err = ts.cli.
-		BatchV1().
-		Jobs(ts.cfg.Namespace).
-		Create(ctx, &obj, meta_v1.CreateOptions{})
+		BatchV1beta1().
+		CronJobs(ts.cfg.Namespace).
+		Create(ctx, &cronObj, meta_v1.CreateOptions{})
 	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create Job (%v)", err)
+		return fmt.Errorf("failed to create CronJob (%v)", err)
 	}
-
-	ts.cfg.Logger.Info("created a Job object")
+	ts.cfg.Logger.Info("created a CronJob object")
 	return nil
 }
 
-func (ts *tester) checkJob() error {
+func (ts *tester) checkJob() (err error) {
 	timeout := 5*time.Minute + 5*time.Minute*time.Duration(ts.cfg.Completes)
+	if ts.cfg.JobType == "CronJob" {
+		timeout += 10 * time.Minute
+	}
 	if timeout > 3*time.Hour {
 		timeout = 3 * time.Hour
 	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	var pods []core_v1.Pod
-	_, pods, err := client.WaitForJobCompletes(
-		ctx,
-		ts.cfg.Logger,
-		ts.cfg.LogWriter,
-		ts.cfg.Stopc,
-		ts.cli,
-		time.Minute,
-		5*time.Second,
-		ts.cfg.Namespace,
-		jobName,
-		int(ts.cfg.Completes),
-	)
+	if ts.cfg.JobType == "Job" {
+		_, pods, err = client.WaitForJobCompletes(
+			ctx,
+			ts.cfg.Logger,
+			ts.cfg.LogWriter,
+			ts.cfg.Stopc,
+			ts.cli,
+			time.Minute,
+			5*time.Second,
+			ts.cfg.Namespace,
+			jobName,
+			int(ts.cfg.Completes),
+		)
+	} else {
+		_, pods, err = client.WaitForCronJobCompletes(
+			ctx,
+			ts.cfg.Logger,
+			ts.cfg.LogWriter,
+			ts.cfg.Stopc,
+			ts.cli,
+			3*time.Minute,
+			5*time.Second,
+			ts.cfg.Namespace,
+			jobName,
+			int(ts.cfg.Completes),
+		)
+	}
 	cancel()
 	if err != nil {
 		return err
@@ -333,8 +455,9 @@ func (ts *tester) checkJob() error {
 
 	fmt.Fprintf(ts.cfg.LogWriter, "\n")
 	for _, item := range pods {
-		fmt.Fprintf(ts.cfg.LogWriter, "Job Pod %q: %q\n", item.Name, item.Status.Phase)
+		fmt.Fprintf(ts.cfg.LogWriter, "%s Pod %q: %q\n", ts.cfg.JobType, item.Name, item.Status.Phase)
 	}
 	fmt.Fprintf(ts.cfg.LogWriter, "\n")
+
 	return nil
 }

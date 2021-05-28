@@ -65,9 +65,13 @@ var (
 	repositoryBusyboxName      string
 	repositoryBusyboxImageTag  string
 
-	completes int32
-	parallels int32
-	echoSize  int32
+	jobType                    string
+	completes                  int32
+	parallels                  int32
+	echoSize                   int32
+	schedule                   string
+	successfulJobsHistoryLimit int32
+	failedJobsHistoryLimit     int32
 )
 
 func newApply() *cobra.Command {
@@ -83,9 +87,12 @@ func newApply() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&repositoryBusyboxName, "repository-busybox-name", "", "repository name for tester ECR image")
 	cmd.PersistentFlags().StringVar(&repositoryBusyboxImageTag, "repository-busybox-image-tag", "", "image tag for tester ECR image")
 
+	cmd.PersistentFlags().StringVar(&jobType, "job-type", jobs_echo.DefaultJobType, "job type, Job or CronJob")
 	cmd.PersistentFlags().Int32Var(&completes, "completes", jobs_echo.DefaultCompletes, "desired number of successfully finished pods")
 	cmd.PersistentFlags().Int32Var(&parallels, "parallels", jobs_echo.DefaultParallels, "maximum desired number of pods the job should run at any given time")
-	cmd.PersistentFlags().Int32Var(&echoSize, "echo-size", jobs_echo.DefaultEchoSize, "maximum desired number of pods the job should run at any given time")
+	cmd.PersistentFlags().StringVar(&schedule, "schedule", jobs_echo.DefaultSchedule, "maximum desired number of pods the job should run at any given time")
+	cmd.PersistentFlags().Int32Var(&successfulJobsHistoryLimit, "successful-jobs-history-limit", jobs_echo.DefaultSuccessfulJobsHistoryLimit, "number of successful finished CronJobs to retain")
+	cmd.PersistentFlags().Int32Var(&failedJobsHistoryLimit, "failed-jobs-history-limit", jobs_echo.DefaultFailedJobsHistoryLimit, "number of failed finished CronJobs to retain")
 
 	return cmd
 }
@@ -115,9 +122,15 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 		RepositoryBusyboxName:      repositoryBusyboxName,
 		RepositoryBusyboxImageTag:  repositoryBusyboxImageTag,
 
+		JobType: jobType,
+
 		Completes: completes,
 		Parallels: parallels,
 		EchoSize:  echoSize,
+
+		Schedule:                   schedule,
+		SuccessfulJobsHistoryLimit: successfulJobsHistoryLimit,
+		FailedJobsHistoryLimit:     failedJobsHistoryLimit,
 	}
 
 	if repositoryBusyboxPartition != "" &&
@@ -174,6 +187,7 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 			KubectlPath:    kubectlPath,
 			KubeConfigPath: kubeConfigPath,
 		},
+		JobType: jobType,
 	}
 
 	ts := jobs_echo.New(cfg)
