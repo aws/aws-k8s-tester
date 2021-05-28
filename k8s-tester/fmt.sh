@@ -3,6 +3,12 @@ set -e
 
 # in case IDE/gopls doesn't work
 
+goimports -w .
+gofmt -s -w .
+
+goimports -w ./cmd/k8s-tester
+gofmt -s -w ./cmd/k8s-tester
+
 goimports -w ./cloudwatch-agent
 gofmt -s -w ./cloudwatch-agent
 

@@ -15,6 +15,7 @@
 - Add [`k8s-tester/jobs-pi`](https://github.com/aws/aws-k8s-tester/commit/5a188f1874876ad4228c02afdb99da730418763a).
 - Add [`k8s-tester/metrics-server`](https://github.com/aws/aws-k8s-tester/commit/b95ed4f88e8143c5b94a5e66448718bf513abf9b).
 - Add [`k8s-tester/kubernetes-dashboard`](https://github.com/aws/aws-k8s-tester/commit/ebe96e838950abc14f1016532e715112d5624f01).
+- Add [`k8s-tester/cloudwatch-agent`](https://github.com/aws/aws-k8s-tester/commit/e46ea545846a662e0e950ee70facfec6e060b5de).
 
 ### Dependency
 
