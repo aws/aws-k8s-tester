@@ -41,6 +41,8 @@ var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
 
 func (ts *tester) Name() string { return pkgName }
 
+func (ts *tester) Enabled() bool { return true }
+
 func (ts *tester) Apply() error {
 	if ok := ts.runPrompt("apply"); !ok {
 		return errors.New("cancelled")

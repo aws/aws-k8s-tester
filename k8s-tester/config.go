@@ -169,100 +169,84 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *Config, got %T", vv)
 	}
 
-	if v := os.Getenv(ENV_PREFIX + cloudwatch_agent.Env()); v != "" {
-		vv, err = parseEnvs(ENV_PREFIX+cloudwatch_agent.Env()+"_", cfg.CloudwatchAgent)
-		if err != nil {
-			return err
-		}
-		if av, ok := vv.(*cloudwatch_agent.Config); ok {
-			cfg.CloudwatchAgent = av
-		} else {
-			return fmt.Errorf("expected *cloudwatch_agent.Config, got %T", vv)
-		}
+	vv, err = parseEnvs(ENV_PREFIX+cloudwatch_agent.Env()+"_", cfg.CloudwatchAgent)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*cloudwatch_agent.Config); ok {
+		cfg.CloudwatchAgent = av
+	} else {
+		return fmt.Errorf("expected *cloudwatch_agent.Config, got %T", vv)
 	}
 
-	if v := os.Getenv(ENV_PREFIX + metrics_server.Env()); v != "" {
-		vv, err = parseEnvs(ENV_PREFIX+metrics_server.Env()+"_", cfg.MetricsServer)
-		if err != nil {
-			return err
-		}
-		if av, ok := vv.(*metrics_server.Config); ok {
-			cfg.MetricsServer = av
-		} else {
-			return fmt.Errorf("expected *metrics_server.Config, got %T", vv)
-		}
+	vv, err = parseEnvs(ENV_PREFIX+metrics_server.Env()+"_", cfg.MetricsServer)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*metrics_server.Config); ok {
+		cfg.MetricsServer = av
+	} else {
+		return fmt.Errorf("expected *metrics_server.Config, got %T", vv)
 	}
 
-	if v := os.Getenv(ENV_PREFIX + fluent_bit.Env()); v != "" {
-		vv, err = parseEnvs(ENV_PREFIX+fluent_bit.Env()+"_", cfg.FluentBit)
-		if err != nil {
-			return err
-		}
-		if av, ok := vv.(*fluent_bit.Config); ok {
-			cfg.FluentBit = av
-		} else {
-			return fmt.Errorf("expected *fluent_bit.Config, got %T", vv)
-		}
+	vv, err = parseEnvs(ENV_PREFIX+fluent_bit.Env()+"_", cfg.FluentBit)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*fluent_bit.Config); ok {
+		cfg.FluentBit = av
+	} else {
+		return fmt.Errorf("expected *fluent_bit.Config, got %T", vv)
 	}
 
-	if v := os.Getenv(ENV_PREFIX + kubernetes_dashboard.Env()); v != "" {
-		vv, err = parseEnvs(ENV_PREFIX+kubernetes_dashboard.Env()+"_", cfg.KubernetesDashboard)
-		if err != nil {
-			return err
-		}
-		if av, ok := vv.(*kubernetes_dashboard.Config); ok {
-			cfg.KubernetesDashboard = av
-		} else {
-			return fmt.Errorf("expected *kubernetes_dashboard.Config, got %T", vv)
-		}
+	vv, err = parseEnvs(ENV_PREFIX+kubernetes_dashboard.Env()+"_", cfg.KubernetesDashboard)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*kubernetes_dashboard.Config); ok {
+		cfg.KubernetesDashboard = av
+	} else {
+		return fmt.Errorf("expected *kubernetes_dashboard.Config, got %T", vv)
 	}
 
-	if v := os.Getenv(ENV_PREFIX + nlb_hello_world.Env()); v != "" {
-		vv, err = parseEnvs(ENV_PREFIX+nlb_hello_world.Env()+"_", cfg.NLBHelloWorld)
-		if err != nil {
-			return err
-		}
-		if av, ok := vv.(*nlb_hello_world.Config); ok {
-			cfg.NLBHelloWorld = av
-		} else {
-			return fmt.Errorf("expected *nlb_hello_world.Config, got %T", vv)
-		}
+	vv, err = parseEnvs(ENV_PREFIX+nlb_hello_world.Env()+"_", cfg.NLBHelloWorld)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*nlb_hello_world.Config); ok {
+		cfg.NLBHelloWorld = av
+	} else {
+		return fmt.Errorf("expected *nlb_hello_world.Config, got %T", vv)
 	}
 
-	if v := os.Getenv(ENV_PREFIX + jobs_pi.Env()); v != "" {
-		vv, err = parseEnvs(ENV_PREFIX+jobs_pi.Env()+"_", cfg.JobsPi)
-		if err != nil {
-			return err
-		}
-		if av, ok := vv.(*jobs_pi.Config); ok {
-			cfg.JobsPi = av
-		} else {
-			return fmt.Errorf("expected *jobs_pi.Config, got %T", vv)
-		}
+	vv, err = parseEnvs(ENV_PREFIX+jobs_pi.Env()+"_", cfg.JobsPi)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*jobs_pi.Config); ok {
+		cfg.JobsPi = av
+	} else {
+		return fmt.Errorf("expected *jobs_pi.Config, got %T", vv)
 	}
 
-	if v := os.Getenv(ENV_PREFIX + jobs_echo.Env("Job")); v != "" {
-		vv, err = parseEnvs(ENV_PREFIX+jobs_echo.Env("Job")+"_", cfg.JobsEcho)
-		if err != nil {
-			return err
-		}
-		if av, ok := vv.(*jobs_echo.Config); ok {
-			cfg.JobsEcho = av
-		} else {
-			return fmt.Errorf("expected *jobs_echo.Config, got %T", vv)
-		}
+	vv, err = parseEnvs(ENV_PREFIX+jobs_echo.Env("Job")+"_", cfg.JobsEcho)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*jobs_echo.Config); ok {
+		cfg.JobsEcho = av
+	} else {
+		return fmt.Errorf("expected *jobs_echo.Config, got %T", vv)
 	}
 
-	if v := os.Getenv(ENV_PREFIX + jobs_echo.Env("CronJob")); v != "" {
-		vv, err = parseEnvs(ENV_PREFIX+jobs_echo.Env("CronJob")+"_", cfg.CronJobsEcho)
-		if err != nil {
-			return err
-		}
-		if av, ok := vv.(*jobs_echo.Config); ok {
-			cfg.CronJobsEcho = av
-		} else {
-			return fmt.Errorf("expected *jobs_echo.Config, got %T", vv)
-		}
+	vv, err = parseEnvs(ENV_PREFIX+jobs_echo.Env("CronJob")+"_", cfg.CronJobsEcho)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*jobs_echo.Config); ok {
+		cfg.CronJobsEcho = av
+	} else {
+		return fmt.Errorf("expected *jobs_echo.Config, got %T", vv)
 	}
 
 	return err

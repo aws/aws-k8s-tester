@@ -26,6 +26,7 @@ import (
 )
 
 type Config struct {
+	Enable bool `json:"enable"`
 	Prompt bool `json:"-"`
 
 	Logger    *zap.Logger   `json:"-"`
@@ -44,6 +45,7 @@ const DefaultMinimumNodes int = 1
 
 func NewDefault() *Config {
 	return &Config{
+		Enable:       false,
 		Namespace:    pkgName + "-" + rand.String(10) + "-" + utils_time.GetTS(10),
 		MinimumNodes: DefaultMinimumNodes,
 	}
@@ -77,6 +79,8 @@ func Env() string {
 }
 
 func (ts *tester) Name() string { return pkgName }
+
+func (ts *tester) Enabled() bool { return ts.cfg.Enable }
 
 func (ts *tester) Apply() error {
 	if ok := ts.runPrompt("apply"); !ok {

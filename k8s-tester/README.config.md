@@ -2,30 +2,23 @@
 ```
 
 
-*----------------------------------------*----------------------------*----------------------------------------*------------------------------*
-|         ENVIRONMENTAL VARIABLE         |         FIELD TYPE         |                  TYPE                  |           GO TYPE            |
-*----------------------------------------*----------------------------*----------------------------------------*------------------------------*
-| K8S_TESTER_CONFIG_PATH                 | SETTABLE VIA ENV VAR       | *k8s_tester.Config.ConfigPath          | string                       |
-| K8S_TESTER_PROMPT                      | SETTABLE VIA ENV VAR       | *k8s_tester.Config.Prompt              | bool                         |
-| K8S_TESTER_KUBECTL_PATH                | SETTABLE VIA ENV VAR       | *k8s_tester.Config.KubectlPath         | string                       |
-| K8S_TESTER_KUBECONFIG_PATH             | SETTABLE VIA ENV VAR       | *k8s_tester.Config.KubeconfigPath      | string                       |
-| K8S_TESTER_KUBECONFIG_CONTEXT          | SETTABLE VIA ENV VAR       | *k8s_tester.Config.KubeconfigContext   | string                       |
-| K8S_TESTER_CLUSTER_NAME                | SETTABLE VIA ENV VAR       | *k8s_tester.Config.ClusterName         | string                       |
-| K8S_TESTER_MINIMUM_NODES               | SETTABLE VIA ENV VAR       | *k8s_tester.Config.MinimumNodes        | int                          |
-| K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT     | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.CloudwatchAgent     | *cloudwatch_agent.Config     |
-| K8S_TESTER_ADD_ON_METRICS_SERVER       | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.MetricsServer       | *metrics_server.Config       |
-| K8S_TESTER_ADD_ON_FLUENT_BIT           | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.FluentBit           | *fluent_bit.Config           |
-| K8S_TESTER_ADD_ON_KUBERNETES_DASHBOARD | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.KubernetesDashboard | *kubernetes_dashboard.Config |
-| K8S_TESTER_ADD_ON_NLB_HELLO_WORLD      | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.NLBHelloWorld       | *nlb_hello_world.Config      |
-| K8S_TESTER_ADD_ON_JOBS_PI              | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.JobsPi              | *jobs_pi.Config              |
-| K8S_TESTER_ADD_ON_JOBS_ECHO            | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.JobsEcho            | *jobs_echo.Config            |
-| K8S_TESTER_ADD_ON_CRON_JOBS_ECHO       | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.CronJobsEcho        | *jobs_echo.Config            |
-*----------------------------------------*----------------------------*----------------------------------------*------------------------------*
+*-------------------------------*----------------------*--------------------------------------*---------*
+|    ENVIRONMENTAL VARIABLE     |      FIELD TYPE      |                 TYPE                 | GO TYPE |
+*-------------------------------*----------------------*--------------------------------------*---------*
+| K8S_TESTER_CONFIG_PATH        | SETTABLE VIA ENV VAR | *k8s_tester.Config.ConfigPath        | string  |
+| K8S_TESTER_PROMPT             | SETTABLE VIA ENV VAR | *k8s_tester.Config.Prompt            | bool    |
+| K8S_TESTER_KUBECTL_PATH       | SETTABLE VIA ENV VAR | *k8s_tester.Config.KubectlPath       | string  |
+| K8S_TESTER_KUBECONFIG_PATH    | SETTABLE VIA ENV VAR | *k8s_tester.Config.KubeconfigPath    | string  |
+| K8S_TESTER_KUBECONFIG_CONTEXT | SETTABLE VIA ENV VAR | *k8s_tester.Config.KubeconfigContext | string  |
+| K8S_TESTER_CLUSTER_NAME       | SETTABLE VIA ENV VAR | *k8s_tester.Config.ClusterName       | string  |
+| K8S_TESTER_MINIMUM_NODES      | SETTABLE VIA ENV VAR | *k8s_tester.Config.MinimumNodes      | int     |
+*-------------------------------*----------------------*--------------------------------------*---------*
 
 
 *--------------------------------------------------*----------------------*---------------------------------------*---------*
 |              ENVIRONMENTAL VARIABLE              |      FIELD TYPE      |                 TYPE                  | GO TYPE |
 *--------------------------------------------------*----------------------*---------------------------------------*---------*
+| K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_ENABLE        | SETTABLE VIA ENV VAR | *cloudwatch_agent.Config.Enable       | bool    |
 | K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_REGION        | SETTABLE VIA ENV VAR | *cloudwatch_agent.Config.Region       | string  |
 | K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_CLUSTER_NAME  | SETTABLE VIA ENV VAR | *cloudwatch_agent.Config.ClusterName  | string  |
 | K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_MINIMUM_NODES | SETTABLE VIA ENV VAR | *cloudwatch_agent.Config.MinimumNodes | int     |
@@ -36,6 +29,7 @@
 *------------------------------------------------*----------------------*-------------------------------------*---------*
 |             ENVIRONMENTAL VARIABLE             |      FIELD TYPE      |                TYPE                 | GO TYPE |
 *------------------------------------------------*----------------------*-------------------------------------*---------*
+| K8S_TESTER_ADD_ON_METRICS_SERVER_ENABLE        | SETTABLE VIA ENV VAR | *metrics_server.Config.Enable       | bool    |
 | K8S_TESTER_ADD_ON_METRICS_SERVER_MINIMUM_NODES | SETTABLE VIA ENV VAR | *metrics_server.Config.MinimumNodes | int     |
 | K8S_TESTER_ADD_ON_METRICS_SERVER_NAMESPACE     | SETTABLE VIA ENV VAR | *metrics_server.Config.Namespace    | string  |
 *------------------------------------------------*----------------------*-------------------------------------*---------*
@@ -44,6 +38,7 @@
 *--------------------------------------------*----------------------*---------------------------------*---------*
 |           ENVIRONMENTAL VARIABLE           |      FIELD TYPE      |              TYPE               | GO TYPE |
 *--------------------------------------------*----------------------*---------------------------------*---------*
+| K8S_TESTER_ADD_ON_FLUENT_BIT_ENABLE        | SETTABLE VIA ENV VAR | *fluent_bit.Config.Enable       | bool    |
 | K8S_TESTER_ADD_ON_FLUENT_BIT_MINIMUM_NODES | SETTABLE VIA ENV VAR | *fluent_bit.Config.MinimumNodes | int     |
 | K8S_TESTER_ADD_ON_FLUENT_BIT_NAMESPACE     | SETTABLE VIA ENV VAR | *fluent_bit.Config.Namespace    | string  |
 *--------------------------------------------*----------------------*---------------------------------*---------*
@@ -52,6 +47,7 @@
 *------------------------------------------------------*----------------------*-------------------------------------------*---------*
 |                ENVIRONMENTAL VARIABLE                |      FIELD TYPE      |                   TYPE                    | GO TYPE |
 *------------------------------------------------------*----------------------*-------------------------------------------*---------*
+| K8S_TESTER_ADD_ON_KUBERNETES_DASHBOARD_ENABLE        | SETTABLE VIA ENV VAR | *kubernetes_dashboard.Config.Enable       | bool    |
 | K8S_TESTER_ADD_ON_KUBERNETES_DASHBOARD_MINIMUM_NODES | SETTABLE VIA ENV VAR | *kubernetes_dashboard.Config.MinimumNodes | int     |
 *------------------------------------------------------*----------------------*-------------------------------------------*---------*
 
@@ -59,6 +55,7 @@
 *------------------------------------------------------------*----------------------*------------------------------------------------*-------------------*
 |                   ENVIRONMENTAL VARIABLE                   |      FIELD TYPE      |                      TYPE                      |      GO TYPE      |
 *------------------------------------------------------------*----------------------*------------------------------------------------*-------------------*
+| K8S_TESTER_ADD_ON_NLB_HELLO_WORLD_ENABLE                   | SETTABLE VIA ENV VAR | *nlb_hello_world.Config.Enable                 | bool              |
 | K8S_TESTER_ADD_ON_NLB_HELLO_WORLD_ACCOUNT_ID               | READ-ONLY            | *nlb_hello_world.Config.AccountID              | string            |
 | K8S_TESTER_ADD_ON_NLB_HELLO_WORLD_PARTITION                | SETTABLE VIA ENV VAR | *nlb_hello_world.Config.Partition              | string            |
 | K8S_TESTER_ADD_ON_NLB_HELLO_WORLD_REGION                   | SETTABLE VIA ENV VAR | *nlb_hello_world.Config.Region                 | string            |
@@ -72,6 +69,7 @@
 *-----------------------------------------*----------------------*------------------------------*---------*
 |         ENVIRONMENTAL VARIABLE          |      FIELD TYPE      |             TYPE             | GO TYPE |
 *-----------------------------------------*----------------------*------------------------------*---------*
+| K8S_TESTER_ADD_ON_JOBS_PI_ENABLE        | SETTABLE VIA ENV VAR | *jobs_pi.Config.Enable       | bool    |
 | K8S_TESTER_ADD_ON_JOBS_PI_MINIMUM_NODES | SETTABLE VIA ENV VAR | *jobs_pi.Config.MinimumNodes | int     |
 | K8S_TESTER_ADD_ON_JOBS_PI_NAMESPACE     | SETTABLE VIA ENV VAR | *jobs_pi.Config.Namespace    | string  |
 | K8S_TESTER_ADD_ON_JOBS_PI_COMPLETES     | SETTABLE VIA ENV VAR | *jobs_pi.Config.Completes    | int32   |
@@ -82,6 +80,7 @@
 *-----------------------------------------------------------*----------------------*----------------------------------------------*---------*
 |                  ENVIRONMENTAL VARIABLE                   |      FIELD TYPE      |                     TYPE                     | GO TYPE |
 *-----------------------------------------------------------*----------------------*----------------------------------------------*---------*
+| K8S_TESTER_ADD_ON_JOBS_ECHO_ENABLE                        | SETTABLE VIA ENV VAR | *jobs_echo.Config.Enable                     | bool    |
 | K8S_TESTER_ADD_ON_JOBS_ECHO_MINIMUM_NODES                 | SETTABLE VIA ENV VAR | *jobs_echo.Config.MinimumNodes               | int     |
 | K8S_TESTER_ADD_ON_JOBS_ECHO_NAMESPACE                     | SETTABLE VIA ENV VAR | *jobs_echo.Config.Namespace                  | string  |
 | K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_PARTITION  | SETTABLE VIA ENV VAR | *jobs_echo.Config.RepositoryBusyboxPartition | string  |
@@ -102,6 +101,7 @@
 *----------------------------------------------------------------*----------------------*----------------------------------------------*---------*
 |                     ENVIRONMENTAL VARIABLE                     |      FIELD TYPE      |                     TYPE                     | GO TYPE |
 *----------------------------------------------------------------*----------------------*----------------------------------------------*---------*
+| K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_ENABLE                        | SETTABLE VIA ENV VAR | *jobs_echo.Config.Enable                     | bool    |
 | K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_MINIMUM_NODES                 | SETTABLE VIA ENV VAR | *jobs_echo.Config.MinimumNodes               | int     |
 | K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_NAMESPACE                     | SETTABLE VIA ENV VAR | *jobs_echo.Config.Namespace                  | string  |
 | K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_PARTITION  | SETTABLE VIA ENV VAR | *jobs_echo.Config.RepositoryBusyboxPartition | string  |

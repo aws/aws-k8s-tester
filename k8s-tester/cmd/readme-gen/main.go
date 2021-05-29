@@ -101,13 +101,13 @@ func (es *enableEnvVars) writeDoc(pfx string, st interface{}) string {
 		if jv == "" || jv == "-" {
 			continue
 		}
+		if vv.Field(i).Type().Kind() == reflect.Ptr {
+			continue
+		}
 
 		ft := "settable via env var"
 		if tp.Field(i).Tag.Get("read-only") == "true" {
 			ft = "read-only"
-		}
-		if vv.Field(i).Type().Kind() == reflect.Ptr {
-			ft = "non-empty to enable add-on"
 		}
 
 		jv = strings.Replace(jv, ",omitempty", "", -1)

@@ -36,6 +36,7 @@ import (
 
 // Config defines Job/CronJob spec.
 type Config struct {
+	Enable bool `json:"enable"`
 	Prompt bool `json:"-"`
 
 	Logger    *zap.Logger   `json:"-"`
@@ -105,6 +106,7 @@ const (
 
 func NewDefault(jobType string) *Config {
 	return &Config{
+		Enable:                     false,
 		MinimumNodes:               DefaultMinimumNodes,
 		Namespace:                  pkgName + "-" + rand.String(10) + "-" + utils_time.GetTS(10),
 		JobType:                    jobType,
@@ -166,6 +168,8 @@ func Env(jobType string) string {
 }
 
 func (ts *tester) Name() string { return pkgName }
+
+func (ts *tester) Enabled() bool { return ts.cfg.Enable }
 
 func (ts *tester) Apply() (err error) {
 	if ok := ts.runPrompt("apply"); !ok {

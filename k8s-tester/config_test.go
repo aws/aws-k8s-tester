@@ -41,27 +41,11 @@ func TestEnv(t *testing.T) {
 	}
 }
 
-func TestEnvEmpty(t *testing.T) {
-	cfg := NewDefault()
-
-	os.Setenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_NAMESPACE", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_NAMESPACE")
-
-	if err := cfg.UpdateFromEnvs(); err != nil {
-		t.Fatal(err)
-	}
-
-	// should be empty
-	if cfg.CloudwatchAgent.Namespace == "hello" {
-		t.Fatalf("unexpected cfg.CloudwatchAgent.Namespace %v", cfg.CloudwatchAgent.Namespace)
-	}
-}
-
 func TestEnvCloudwatchAgent(t *testing.T) {
 	cfg := NewDefault()
 
-	os.Setenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT")
+	os.Setenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_ENABLE")
 	os.Setenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_NAMESPACE", "hello")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_NAMESPACE")
 
@@ -69,6 +53,9 @@ func TestEnvCloudwatchAgent(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if !cfg.CloudwatchAgent.Enable {
+		t.Fatalf("unexpected cfg.CloudwatchAgent.Enable %v", cfg.CloudwatchAgent.Enable)
+	}
 	if cfg.CloudwatchAgent.Namespace != "hello" {
 		t.Fatalf("unexpected cfg.CloudwatchAgent.Namespace %v", cfg.CloudwatchAgent.Namespace)
 	}
@@ -77,8 +64,8 @@ func TestEnvCloudwatchAgent(t *testing.T) {
 func TestEnvMetricsServer(t *testing.T) {
 	cfg := NewDefault()
 
-	os.Setenv("K8S_TESTER_ADD_ON_METRICS_SERVER", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_METRICS_SERVER")
+	os.Setenv("K8S_TESTER_ADD_ON_METRICS_SERVER_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_METRICS_SERVER_ENABLE")
 	os.Setenv("K8S_TESTER_ADD_ON_METRICS_SERVER_NAMESPACE", "hello")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_METRICS_SERVER_NAMESPACE")
 
@@ -86,6 +73,9 @@ func TestEnvMetricsServer(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if !cfg.MetricsServer.Enable {
+		t.Fatalf("unexpected cfg.MetricsServer.Enable %v", cfg.MetricsServer.Enable)
+	}
 	if cfg.MetricsServer.Namespace != "hello" {
 		t.Fatalf("unexpected cfg.MetricsServer.Namespace %v", cfg.MetricsServer.Namespace)
 	}
@@ -94,8 +84,8 @@ func TestEnvMetricsServer(t *testing.T) {
 func TestEnvFluentBit(t *testing.T) {
 	cfg := NewDefault()
 
-	os.Setenv("K8S_TESTER_ADD_ON_FLUENT_BIT", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_FLUENT_BIT")
+	os.Setenv("K8S_TESTER_ADD_ON_FLUENT_BIT_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_FLUENT_BIT_ENABLE")
 	os.Setenv("K8S_TESTER_ADD_ON_FLUENT_BIT_NAMESPACE", "hello")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_FLUENT_BIT_NAMESPACE")
 
@@ -103,6 +93,9 @@ func TestEnvFluentBit(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if !cfg.FluentBit.Enable {
+		t.Fatalf("unexpected cfg.FluentBit.Enable %v", cfg.FluentBit.Enable)
+	}
 	if cfg.FluentBit.Namespace != "hello" {
 		t.Fatalf("unexpected cfg.FluentBit.Namespace %v", cfg.FluentBit.Namespace)
 	}
@@ -111,8 +104,8 @@ func TestEnvFluentBit(t *testing.T) {
 func TestEnvKubernetesDashboard(t *testing.T) {
 	cfg := NewDefault()
 
-	os.Setenv("K8S_TESTER_ADD_ON_KUBERNETES_DASHBOARD", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_KUBERNETES_DASHBOARD")
+	os.Setenv("K8S_TESTER_ADD_ON_KUBERNETES_DASHBOARD_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_KUBERNETES_DASHBOARD_ENABLE")
 	os.Setenv("K8S_TESTER_ADD_ON_KUBERNETES_DASHBOARD_MINIMUM_NODES", "10")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_KUBERNETES_DASHBOARD_MINIMUM_NODES")
 
@@ -120,6 +113,9 @@ func TestEnvKubernetesDashboard(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if !cfg.KubernetesDashboard.Enable {
+		t.Fatalf("unexpected cfg.KubernetesDashboard.Enable %v", cfg.KubernetesDashboard.Enable)
+	}
 	if cfg.KubernetesDashboard.MinimumNodes != 10 {
 		t.Fatalf("unexpected cfg.KubernetesDashboard.MinimumNodes %v", cfg.KubernetesDashboard.MinimumNodes)
 	}
@@ -130,8 +126,8 @@ func TestEnvNLBHelloWorld(t *testing.T) {
 
 	os.Setenv("K8S_TESTER_CONFIG_PATH", "test.yaml")
 	defer os.Unsetenv("K8S_TESTER_CONFIG_PATH")
-	os.Setenv("K8S_TESTER_ADD_ON_NLB_HELLO_WORLD", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_NLB_HELLO_WORLD")
+	os.Setenv("K8S_TESTER_ADD_ON_NLB_HELLO_WORLD_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_NLB_HELLO_WORLD_ENABLE")
 	os.Setenv("K8S_TESTER_ADD_ON_NLB_HELLO_WORLD_NAMESPACE", "hello")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_NLB_HELLO_WORLD_NAMESPACE")
 	os.Setenv("K8S_TESTER_ADD_ON_NLB_HELLO_WORLD_MINIMUM_NODES", "100")
@@ -145,6 +141,9 @@ func TestEnvNLBHelloWorld(t *testing.T) {
 
 	if cfg.ConfigPath != "test.yaml" {
 		t.Fatalf("unexpected cfg.ConfigPath %v", cfg.ConfigPath)
+	}
+	if !cfg.NLBHelloWorld.Enable {
+		t.Fatalf("unexpected cfg.NLBHelloWorld.Enable %v", cfg.NLBHelloWorld.Enable)
 	}
 	if cfg.NLBHelloWorld.MinimumNodes != 100 {
 		t.Fatalf("unexpected cfg.NLBHelloWorld.MinimumNodes %v", cfg.NLBHelloWorld.MinimumNodes)
@@ -160,8 +159,8 @@ func TestEnvNLBHelloWorld(t *testing.T) {
 func TestEnvJobsPi(t *testing.T) {
 	cfg := NewDefault()
 
-	os.Setenv("K8S_TESTER_ADD_ON_JOBS_PI", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_PI")
+	os.Setenv("K8S_TESTER_ADD_ON_JOBS_PI_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_PI_ENABLE")
 	os.Setenv("K8S_TESTER_ADD_ON_JOBS_PI_NAMESPACE", "hello")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_PI_NAMESPACE")
 	os.Setenv("K8S_TESTER_ADD_ON_JOBS_PI_MINIMUM_NODES", "100")
@@ -178,6 +177,9 @@ func TestEnvJobsPi(t *testing.T) {
 	if cfg.JobsPi.MinimumNodes != 100 {
 		t.Fatalf("unexpected cfg.JobsPi.MinimumNodes %v", cfg.JobsPi.MinimumNodes)
 	}
+	if !cfg.JobsPi.Enable {
+		t.Fatalf("unexpected cfg.JobsPi.Enable %v", cfg.JobsPi.Enable)
+	}
 	if cfg.JobsPi.Namespace != "hello" {
 		t.Fatalf("unexpected cfg.JobsPi.Namespace %v", cfg.JobsPi.Namespace)
 	}
@@ -192,8 +194,8 @@ func TestEnvJobsPi(t *testing.T) {
 func TestEnvJobsEcho(t *testing.T) {
 	cfg := NewDefault()
 
-	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO")
+	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO_ENABLE")
 	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_NAMESPACE", "hello")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO_NAMESPACE")
 	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_MINIMUM_NODES", "100")
@@ -209,6 +211,9 @@ func TestEnvJobsEcho(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if !cfg.JobsEcho.Enable {
+		t.Fatalf("unexpected cfg.JobsEcho.Enable %v", cfg.JobsEcho.Enable)
+	}
 	if cfg.JobsEcho.MinimumNodes != 100 {
 		t.Fatalf("unexpected cfg.JobsEcho.MinimumNodes %v", cfg.JobsEcho.MinimumNodes)
 	}
@@ -229,8 +234,8 @@ func TestEnvJobsEcho(t *testing.T) {
 func TestEnvCronJobsEcho(t *testing.T) {
 	cfg := NewDefault()
 
-	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO")
+	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_ENABLE")
 	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_NAMESPACE", "hello")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_NAMESPACE")
 	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_MINIMUM_NODES", "100")
@@ -252,6 +257,9 @@ func TestEnvCronJobsEcho(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if !cfg.CronJobsEcho.Enable {
+		t.Fatalf("unexpected cfg.CronJobsEcho.Enable %v", cfg.CronJobsEcho.Enable)
+	}
 	if cfg.CronJobsEcho.MinimumNodes != 100 {
 		t.Fatalf("unexpected cfg.CronJobsEcho.MinimumNodes %v", cfg.CronJobsEcho.MinimumNodes)
 	}
