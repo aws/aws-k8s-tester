@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -19,6 +21,9 @@ import (
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
+	"github.com/aws/aws-k8s-tester/k8s-tester/version"
+	"github.com/aws/aws-k8s-tester/utils/file"
+	"github.com/aws/aws-k8s-tester/utils/http"
 	"github.com/aws/aws-k8s-tester/utils/log"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
@@ -31,6 +36,33 @@ func New(cfg *Config) k8s_tester.Tester {
 		panic(err)
 	}
 	_ = zap.ReplaceGlobals(lg)
+
+	fmt.Fprintf(logWriter, cfg.Colorize("\n\n\n[yellow]*********************************\n"))
+	fmt.Fprintln(logWriter, "😎 🙏 🚶 ✔️ 👍")
+	fmt.Fprintf(logWriter, cfg.Colorize("[light_green]New k8s-tester %q [default](%q)\n\n"), cfg.ConfigPath, version.Version())
+
+	lg.Info("mkdir", zap.String("kubectl-path-dir", filepath.Dir(cfg.KubectlPath)))
+	if err = os.MkdirAll(filepath.Dir(cfg.KubectlPath), 0700); err != nil {
+		lg.Panic("could not create", zap.String("dir", filepath.Dir(cfg.KubectlPath)), zap.Error(err))
+	}
+	if !file.Exist(cfg.KubectlPath) {
+		if cfg.KubectlDownloadURL == "" {
+			lg.Panic("kubectl does not exist, kubectl download URL empty", zap.String("kubectl-path", cfg.KubectlPath))
+		}
+		cfg.KubectlPath, _ = filepath.Abs(cfg.KubectlPath)
+		lg.Info("downloading kubectl", zap.String("kubectl-path", cfg.KubectlPath))
+		if err = http.Download(lg, os.Stderr, cfg.KubectlDownloadURL, cfg.KubectlPath); err != nil {
+			lg.Panic("failed to download kubectl", zap.Error(err))
+		}
+	} else {
+		lg.Info("skipping kubectl download; already exist", zap.String("kubectl-path", cfg.KubectlPath))
+	}
+	if err = file.EnsureExecutable(cfg.KubectlPath); err != nil {
+		// file may be already executable while the process does not own the file/directory
+		// ref. https://github.com/aws/aws-k8s-tester/issues/66
+		lg.Warn("failed to ensure executable", zap.Error(err))
+		err = nil
+	}
 
 	ts := &tester{
 		cfg:       cfg,

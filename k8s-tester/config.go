@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -52,11 +53,13 @@ type Config struct {
 	// See https://pkg.go.dev/go.uber.org/zap#Open and https://pkg.go.dev/go.uber.org/zap#Config for more details.
 	LogOutputs []string `json:"log-outputs"`
 
-	Prompt            bool   `json:"prompt"`
-	KubectlPath       string `json:"kubectl_path"`
-	KubeconfigPath    string `json:"kubeconfig_path"`
-	KubeconfigContext string `json:"kubeconfig_context"`
-	ClusterName       string `json:"cluster_name"`
+	Prompt bool `json:"prompt"`
+
+	KubectlDownloadURL string `json:"kubectl-download-url"`
+	KubectlPath        string `json:"kubectl_path"`
+	KubeconfigPath     string `json:"kubeconfig_path"`
+	KubeconfigContext  string `json:"kubeconfig_context"`
+	ClusterName        string `json:"cluster_name"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum_nodes"`
@@ -90,6 +93,12 @@ func NewDefault() *Config {
 		LogOutputs: []string{"stderr"},
 
 		Prompt: true,
+
+		// https://github.com/kubernetes/kubernetes/tags
+		// https://kubernetes.io/docs/tasks/tools/install-kubectl/
+		// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
+		KubectlPath:        "/tmp/kubectl-test-v1.21.0",
+		KubectlDownloadURL: fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/%s/%s/kubectl", runtime.GOOS, runtime.GOARCH),
 
 		MinimumNodes: DefaultMinimumNodes,
 

@@ -31,5 +31,6 @@ replace (
 	github.com/aws/aws-k8s-tester/k8s-tester/metrics-server => ./metrics-server
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world => ./nlb-hello-world
 	github.com/aws/aws-k8s-tester/k8s-tester/tester => ./tester
+	github.com/aws/aws-k8s-tester/k8s-tester/version => ./tester
 	github.com/aws/aws-k8s-tester/utils => ../utils
 )

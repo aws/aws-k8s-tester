@@ -15,6 +15,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("K8S_TESTER_PROMPT")
 	os.Setenv("K8S_TESTER_CLUSTER_NAME", "hello")
 	defer os.Unsetenv("K8S_TESTER_CLUSTER_NAME")
+	os.Setenv("K8S_TESTER_KUBECTL_DOWNLOAD_URL", "hello.url")
+	defer os.Unsetenv("K8S_TESTER_KUBECTL_DOWNLOAD_URL")
 	os.Setenv("K8S_TESTER_KUBECONFIG_PATH", "hello.config")
 	defer os.Unsetenv("K8S_TESTER_KUBECONFIG_PATH")
 	os.Setenv("K8S_TESTER_KUBECONFIG_CONTEXT", "hello.ctx")
@@ -32,6 +34,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.ClusterName != "hello" {
 		t.Fatalf("unexpected cfg.ClusterName %v", cfg.ClusterName)
+	}
+	if cfg.KubectlDownloadURL != "hello.url" {
+		t.Fatalf("unexpected cfg.KubectlDownloadURL %v", cfg.KubectlDownloadURL)
 	}
 	if cfg.KubeconfigPath != "hello.config" {
 		t.Fatalf("unexpected cfg.KubeconfigPath %v", cfg.KubeconfigPath)
