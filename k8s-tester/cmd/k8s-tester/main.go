@@ -3,12 +3,14 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester"
-	"github.com/aws/aws-k8s-tester/utils/log"
+	"github.com/aws/aws-k8s-tester/k8s-tester/version"
+	"github.com/aws/aws-k8s-tester/utils/file"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 )
 
 var rootCmd = &cobra.Command{
@@ -21,23 +23,7 @@ func init() {
 	cobra.EnablePrefixMatching = true
 }
 
-var (
-	prompt         bool
-	logLevel       string
-	logOutputs     []string
-	minimumNodes   int
-	kubectlPath    string
-	kubeconfigPath string
-)
-
 func init() {
-	rootCmd.PersistentFlags().BoolVar(&prompt, "prompt", true, "'true' to enable prompt mode")
-	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", log.DefaultLogLevel, "Logging level")
-	rootCmd.PersistentFlags().StringSliceVar(&logOutputs, "log-outputs", []string{"stderr"}, "Additional logger outputs")
-	rootCmd.PersistentFlags().IntVar(&minimumNodes, "minimum-nodes", k8s_tester.DefaultMinimumNodes, "minimum number of Kubernetes nodes required")
-	rootCmd.PersistentFlags().StringVar(&kubectlPath, "kubectl-path", "", "kubectl path")
-	rootCmd.PersistentFlags().StringVar(&kubeconfigPath, "kubeconfig-path", "", "KUBECONFIG path")
-
 	rootCmd.AddCommand(
 		newApply(),
 		newDelete(),
@@ -53,7 +39,8 @@ func main() {
 }
 
 var (
-	clusterName string
+	path     string
+	autoPath bool
 )
 
 func newApply() *cobra.Command {
@@ -62,18 +49,54 @@ func newApply() *cobra.Command {
 		Short: "Apply tests",
 		Run:   createApplyFunc,
 	}
-
-	cmd.PersistentFlags().StringVar(&clusterName, "cluster-name", "", "cluster name")
-
+	cmd.PersistentFlags().StringVarP(&path, "path", "p", "", "k8s-tester EKS configuration file path")
+	cmd.PersistentFlags().BoolVarP(&autoPath, "auto-path", "a", false, "'true' to auto-generate path for create config/cluster, overwrites existing --path value")
 	return cmd
 }
 
 func createApplyFunc(cmd *cobra.Command, args []string) {
-	lg, _, _, err := log.NewWithStderrWriter(logLevel, logOutputs)
-	if err != nil {
-		panic(err)
+	if !autoPath && path == "" {
+		fmt.Fprintln(os.Stderr, "'--path' flag is not specified")
+		os.Exit(1)
 	}
-	_ = zap.ReplaceGlobals(lg)
+
+	var cfg *k8s_tester.Config
+	var err error
+	if !autoPath && file.Exist(path) {
+		cfg, err = k8s_tester.Load(path)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
+			os.Exit(1)
+		}
+	} else {
+		cfg = k8s_tester.NewDefault()
+		if autoPath {
+			path = filepath.Join(os.TempDir(), cfg.Name+".yaml")
+		}
+		cfg.ConfigPath = path
+		fmt.Fprintf(os.Stderr, "cannot find configuration; wrote a new one %q\n", path)
+	}
+
+	fmt.Printf("\n*********************************\n")
+	fmt.Printf("overwriting config file from environment variables with %s\n", version.Version())
+	err = cfg.UpdateFromEnvs()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load configuration from environment variables: %v\n", err)
+		os.Exit(1)
+	}
+
+	txt, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to read configuration %q (%v)\n", path, err)
+		os.Exit(1)
+	}
+	fmt.Printf("\n\n%q:\n\n%s\n\n\n", path, string(txt))
+
+	ts := k8s_tester.New(cfg)
+	if err := ts.Apply(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to apply (%v)\n", err)
+		os.Exit(1)
+	}
 
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("'k8s-tester apply' success\n")
@@ -85,15 +108,11 @@ func newDelete() *cobra.Command {
 		Short: "Delete resources",
 		Run:   createDeleteFunc,
 	}
+	cmd.PersistentFlags().StringVarP(&path, "path", "p", "", "k8s-tester EKS configuration file path")
 	return cmd
 }
 
 func createDeleteFunc(cmd *cobra.Command, args []string) {
-	lg, _, _, err := log.NewWithStderrWriter(logLevel, logOutputs)
-	if err != nil {
-		panic(err)
-	}
-	_ = zap.ReplaceGlobals(lg)
 
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("'k8s-tester delete' success\n")
