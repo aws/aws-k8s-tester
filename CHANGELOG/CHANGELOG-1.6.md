@@ -4,12 +4,17 @@
 
 ## [v1.5.9](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.9) (2021)
 
+### `client`
+
+- Rename [`KubeConfig*` to `Kubeconfig*`](https://github.com/aws/aws-k8s-tester/commit/e7e10253a44a33ff9c16955a39df43d9e412c944).
+
 ### `eksconfig`
 
 - Set [default EKS version to 1.20](https://github.com/aws/aws-k8s-tester/commit/8f6b05193721b19378cdd1c69f6f2d787341d1f2).
 
 ### `k8s-tester`
 
+- Rename [`EnablePrompt` to `Prompt`](https://github.com/aws/aws-k8s-tester/commit/e7e10253a44a33ff9c16955a39df43d9e412c944).
 - Improve [ELB deletion in `k8s-tester/nlb-hello-world`](https://github.com/aws/aws-k8s-tester/commit/288c27cb9922164743cc9e7af5c2443e238147d5).
 - Add [`k8s-tester/jobs-echo`](https://github.com/aws/aws-k8s-tester/commit/7d05190c873f3166fcf55f75832b40cc74826944).
 - Add [`k8s-tester/jobs-pi`](https://github.com/aws/aws-k8s-tester/commit/5a188f1874876ad4228c02afdb99da730418763a).
