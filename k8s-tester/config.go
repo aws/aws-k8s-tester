@@ -1,9 +1,11 @@
 package k8s_tester
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -22,6 +24,8 @@ import (
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	"github.com/aws/aws-k8s-tester/utils/log"
+	"github.com/aws/aws-k8s-tester/utils/rand"
+	utils_time "github.com/aws/aws-k8s-tester/utils/time"
 	"github.com/mitchellh/colorstring"
 	"sigs.k8s.io/yaml"
 )
@@ -33,6 +37,12 @@ import (
 type Config struct {
 	mu    *sync.RWMutex `json:"-"`
 	Stopc chan struct{} `json:"-"`
+
+	// Prompt is true to enable prompt mode.
+	Prompt bool `json:"prompt"`
+
+	// ClusterName is the Kubernetes cluster name.
+	ClusterName string `json:"cluster_name"`
 
 	// ConfigPath is the configuration file path.
 	ConfigPath string `json:"config_path"`
@@ -53,13 +63,10 @@ type Config struct {
 	// See https://pkg.go.dev/go.uber.org/zap#Open and https://pkg.go.dev/go.uber.org/zap#Config for more details.
 	LogOutputs []string `json:"log-outputs"`
 
-	Prompt bool `json:"prompt"`
-
 	KubectlDownloadURL string `json:"kubectl-download-url"`
 	KubectlPath        string `json:"kubectl_path"`
 	KubeconfigPath     string `json:"kubeconfig_path"`
 	KubeconfigContext  string `json:"kubeconfig_context"`
-	ClusterName        string `json:"cluster_name"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum_nodes"`
@@ -82,8 +89,16 @@ type Config struct {
 const DefaultMinimumNodes = 1
 
 func NewDefault() *Config {
+	name := fmt.Sprintf("k8s-%s-%s", utils_time.GetTS(10), rand.String(12))
+	if v := os.Getenv(ENV_PREFIX + "CLUSTER_NAME"); v != "" {
+		name = v
+	}
+
 	return &Config{
 		mu: new(sync.RWMutex),
+
+		Prompt:      true,
+		ClusterName: name,
 
 		LogColor:         true,
 		LogColorOverride: "",
@@ -91,8 +106,6 @@ func NewDefault() *Config {
 		// default, stderr, stdout, or file name
 		// log file named with cluster name will be added automatically
 		LogOutputs: []string{"stderr"},
-
-		Prompt: true,
 
 		// https://github.com/kubernetes/kubernetes/tags
 		// https://kubernetes.io/docs/tasks/tools/install-kubectl/
@@ -386,3 +399,46 @@ func (cfg *Config) Colorize(input string) string {
 	}
 	return colorize.Color(input)
 }
+
+// KubectlCommand returns the kubectl command.
+func (cfg *Config) KubectlCommand() string {
+	return fmt.Sprintf("%s --kubeconfig=%s", cfg.KubectlPath, cfg.KubeconfigPath)
+}
+
+// KubectlCommands returns the various kubectl commands.
+func (cfg *Config) KubectlCommands() (s string) {
+	if cfg.KubeconfigPath == "" {
+		return ""
+	}
+	tpl := template.Must(template.New("kubectlTmpl").Parse(kubectlTmpl))
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, struct {
+		KubeconfigPath string
+		KubectlCommand string
+	}{
+		cfg.KubeconfigPath,
+		cfg.KubectlCommand(),
+	}); err != nil {
+		return ""
+	}
+	return buf.String()
+}
+
+const kubectlTmpl = `
+###########################
+# kubectl commands
+export KUBEcONFIG={{ .KubeconfigPath }}
+export KUBECTL="{{ .KubectlCommand }}"
+
+{{ .KubectlCommand }} version
+{{ .KubectlCommand }} cluster-info
+{{ .KubectlCommand }} get cs
+{{ .KubectlCommand }} --namespace=kube-system get pods
+{{ .KubectlCommand }} --namespace=kube-system get ds
+{{ .KubectlCommand }} get pods
+{{ .KubectlCommand }} get csr -o=yaml
+{{ .KubectlCommand }} get nodes --show-labels -o=wide
+{{ .KubectlCommand }} get nodes -o=wide
+###########################
+{{ end }}
+`

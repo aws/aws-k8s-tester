@@ -13,6 +13,7 @@ require (
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/tester v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/utils v0.0.0-00010101000000-000000000000
+	github.com/dustin/go-humanize v1.0.0
 	github.com/manifoldco/promptui v0.8.0
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
 	go.uber.org/zap v1.17.0

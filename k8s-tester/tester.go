@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/client"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
@@ -25,6 +26,7 @@ import (
 	"github.com/aws/aws-k8s-tester/utils/file"
 	"github.com/aws/aws-k8s-tester/utils/http"
 	"github.com/aws/aws-k8s-tester/utils/log"
+	"github.com/dustin/go-humanize"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
 	k8s_client "k8s.io/client-go/kubernetes"
@@ -86,47 +88,7 @@ func New(cfg *Config) k8s_tester.Tester {
 		lg.Panic("failed to create client", zap.Error(err))
 	}
 
-	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
-	if cfg.AddOnCloudwatchAgent != nil && cfg.AddOnCloudwatchAgent.Enable {
-		cfg.AddOnCloudwatchAgent.ClientConfig = ts.clientConfig
-		cfg.AddOnCloudwatchAgent.Client = ts.cli
-		ts.testers = append(ts.testers, cloudwatch_agent.New(cfg.AddOnCloudwatchAgent))
-	}
-	if cfg.AddOnMetricsServer != nil && cfg.AddOnMetricsServer.Enable {
-		cfg.AddOnMetricsServer.ClientConfig = ts.clientConfig
-		cfg.AddOnMetricsServer.Client = ts.cli
-		ts.testers = append(ts.testers, metrics_server.New(cfg.AddOnMetricsServer))
-	}
-	if cfg.AddOnFluentBit != nil && cfg.AddOnFluentBit.Enable {
-		cfg.AddOnFluentBit.ClientConfig = ts.clientConfig
-		cfg.AddOnFluentBit.Client = ts.cli
-		ts.testers = append(ts.testers, fluent_bit.New(cfg.AddOnFluentBit))
-	}
-	if cfg.AddOnKubernetesDashboard != nil && cfg.AddOnKubernetesDashboard.Enable {
-		cfg.AddOnKubernetesDashboard.ClientConfig = ts.clientConfig
-		cfg.AddOnKubernetesDashboard.Client = ts.cli
-		ts.testers = append(ts.testers, kubernetes_dashboard.New(cfg.AddOnKubernetesDashboard))
-	}
-	if cfg.AddOnNLBHelloWorld != nil && cfg.AddOnNLBHelloWorld.Enable {
-		cfg.AddOnNLBHelloWorld.ClientConfig = ts.clientConfig
-		cfg.AddOnNLBHelloWorld.Client = ts.cli
-		ts.testers = append(ts.testers, nlb_hello_world.New(cfg.AddOnNLBHelloWorld))
-	}
-	if cfg.AddOnJobsPi != nil && cfg.AddOnJobsPi.Enable {
-		cfg.AddOnJobsPi.ClientConfig = ts.clientConfig
-		cfg.AddOnJobsPi.Client = ts.cli
-		ts.testers = append(ts.testers, jobs_pi.New(cfg.AddOnJobsPi))
-	}
-	if cfg.AddOnJobsEcho != nil && cfg.AddOnJobsEcho.Enable {
-		cfg.AddOnJobsEcho.ClientConfig = ts.clientConfig
-		cfg.AddOnJobsEcho.Client = ts.cli
-		ts.testers = append(ts.testers, jobs_echo.New(cfg.AddOnJobsEcho))
-	}
-	if cfg.AddOnCronJobsEcho != nil && cfg.AddOnCronJobsEcho.Enable {
-		cfg.AddOnCronJobsEcho.ClientConfig = ts.clientConfig
-		cfg.AddOnCronJobsEcho.Client = ts.cli
-		ts.testers = append(ts.testers, jobs_echo.New(cfg.AddOnCronJobsEcho))
-	}
+	ts.createTesters()
 
 	return ts
 }
@@ -141,6 +103,53 @@ type tester struct {
 
 	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
 	testers []k8s_tester.Tester
+}
+
+func (ts *tester) createTesters() {
+	fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("[light_green]createTesters [default](%q)\n"), ts.cfg.ConfigPath)
+
+	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
+	if ts.cfg.AddOnCloudwatchAgent != nil && ts.cfg.AddOnCloudwatchAgent.Enable {
+		ts.cfg.AddOnCloudwatchAgent.ClientConfig = ts.clientConfig
+		ts.cfg.AddOnCloudwatchAgent.Client = ts.cli
+		ts.testers = append(ts.testers, cloudwatch_agent.New(ts.cfg.AddOnCloudwatchAgent))
+	}
+	if ts.cfg.AddOnMetricsServer != nil && ts.cfg.AddOnMetricsServer.Enable {
+		ts.cfg.AddOnMetricsServer.ClientConfig = ts.clientConfig
+		ts.cfg.AddOnMetricsServer.Client = ts.cli
+		ts.testers = append(ts.testers, metrics_server.New(ts.cfg.AddOnMetricsServer))
+	}
+	if ts.cfg.AddOnFluentBit != nil && ts.cfg.AddOnFluentBit.Enable {
+		ts.cfg.AddOnFluentBit.ClientConfig = ts.clientConfig
+		ts.cfg.AddOnFluentBit.Client = ts.cli
+		ts.testers = append(ts.testers, fluent_bit.New(ts.cfg.AddOnFluentBit))
+	}
+	if ts.cfg.AddOnKubernetesDashboard != nil && ts.cfg.AddOnKubernetesDashboard.Enable {
+		ts.cfg.AddOnKubernetesDashboard.ClientConfig = ts.clientConfig
+		ts.cfg.AddOnKubernetesDashboard.Client = ts.cli
+		ts.testers = append(ts.testers, kubernetes_dashboard.New(ts.cfg.AddOnKubernetesDashboard))
+	}
+	if ts.cfg.AddOnNLBHelloWorld != nil && ts.cfg.AddOnNLBHelloWorld.Enable {
+		ts.cfg.AddOnNLBHelloWorld.ClientConfig = ts.clientConfig
+		ts.cfg.AddOnNLBHelloWorld.Client = ts.cli
+		ts.testers = append(ts.testers, nlb_hello_world.New(ts.cfg.AddOnNLBHelloWorld))
+	}
+	if ts.cfg.AddOnJobsPi != nil && ts.cfg.AddOnJobsPi.Enable {
+		ts.cfg.AddOnJobsPi.ClientConfig = ts.clientConfig
+		ts.cfg.AddOnJobsPi.Client = ts.cli
+		ts.testers = append(ts.testers, jobs_pi.New(ts.cfg.AddOnJobsPi))
+	}
+	if ts.cfg.AddOnJobsEcho != nil && ts.cfg.AddOnJobsEcho.Enable {
+		ts.cfg.AddOnJobsEcho.ClientConfig = ts.clientConfig
+		ts.cfg.AddOnJobsEcho.Client = ts.cli
+		ts.testers = append(ts.testers, jobs_echo.New(ts.cfg.AddOnJobsEcho))
+	}
+	if ts.cfg.AddOnCronJobsEcho != nil && ts.cfg.AddOnCronJobsEcho.Enable {
+		ts.cfg.AddOnCronJobsEcho.ClientConfig = ts.clientConfig
+		ts.cfg.AddOnCronJobsEcho.Client = ts.cli
+		ts.testers = append(ts.testers, jobs_echo.New(ts.cfg.AddOnCronJobsEcho))
+	}
 }
 
 var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
@@ -167,16 +176,19 @@ func (ts *tester) Apply() error {
 		if !tt.Enabled() {
 			continue
 		}
+		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("[light_green]testers[%02d].Apply [cyan]%q [default](%q, %q)\n"), idx, tt.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := tt.Apply(); err != nil {
+			fmt.Fprintf(ts.logWriter, cfg.Colorize("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, cfg.Colorize(fmt.Sprintf("[light_magenta]✗ [default]k8s-tester[%02d].Apply [light_magenta]FAIL [default](%v)\n", idx, err)))
 			return err
 		}
 	}
 
+	fmt.Fprintf(ts.logWriter, cfg.Colorize("\n\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, cfg.Colorize("🎉 [default]k8s-tester eks create cluster [light_green]SUCCESS\n"))
 	return nil
 }
-
-// 🎉
-// ✗
 
 func (ts *tester) Delete() error {
 	if ok := ts.runPrompt("delete"); !ok {
@@ -185,14 +197,40 @@ func (ts *tester) Delete() error {
 
 	var errs []string
 
+	now := time.Now()
+
 	for idx := len(ts.testers) - 1; idx >= 0; idx-- {
 		tt := ts.testers[idx]
 		if !tt.Enabled() {
 			continue
 		}
+		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("[light_blue]testers[%02d].Delete [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := tt.Delete(); err != nil {
+			fmt.Fprintf(ts.logWriter, cfg.Colorize("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, cfg.Colorize(fmt.Sprintf("[light_magenta]✗ [default]k8s-tester[%02d].Delete [light_magenta]FAIL [default](%v)\n", idx, err)))
 			errs = append(errs, err.Error())
 		}
+	}
+
+	if len(errs) == 0 {
+		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("[light_blue]Delete [default](%q)\n"), ts.cfg.ConfigPath)
+		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("\n\n💯 😁 👍 :) [light_blue]Delete SUCCESS\n\n\n"))
+
+		ts.lg.Info("successfully finished Delete",
+			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+		)
+
+	} else {
+		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("[light_blue]Delete [default](%q)\n"), ts.cfg.ConfigPath)
+		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("🔥 💀 👽 😱 😡 ⛈   (-_-) [light_magenta]Delete FAIL\n"))
+
+		ts.lg.Info("failed Delete",
+			zap.Error(err),
+			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
+		)
 	}
 
 	if len(errs) > 0 {
