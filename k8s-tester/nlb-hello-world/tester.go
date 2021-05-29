@@ -18,6 +18,8 @@ import (
 	aws_v1 "github.com/aws/aws-k8s-tester/utils/aws/v1"
 	aws_v1_elb "github.com/aws/aws-k8s-tester/utils/aws/v1/elb"
 	"github.com/aws/aws-k8s-tester/utils/http"
+	"github.com/aws/aws-k8s-tester/utils/rand"
+	utils_time "github.com/aws/aws-k8s-tester/utils/time"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
 	"github.com/manifoldco/promptui"
@@ -43,7 +45,7 @@ type Config struct {
 
 	ELB2API elbv2iface.ELBV2API `json:"-"`
 
-	AccountID string `json:"account-id"`
+	AccountID string `json:"account-id" read-only:"true"`
 	Partition string `json:"partition"`
 	Region    string `json:"region"`
 
@@ -61,7 +63,15 @@ const (
 	DefaultDeploymentReplicas int32 = 2
 )
 
-func New(cfg Config) k8s_tester.Tester {
+func NewDefault() *Config {
+	return &Config{
+		MinimumNodes:       DefaultMinimumNodes,
+		Namespace:          pkgName + "-" + rand.String(10) + "-" + utils_time.GetTS(10),
+		DeploymentReplicas: DefaultDeploymentReplicas,
+	}
+}
+
+func New(cfg *Config) k8s_tester.Tester {
 	ccfg, err := client.CreateConfig(cfg.ClientConfig)
 	if err != nil {
 		cfg.Logger.Panic("failed to create client config", zap.Error(err))
@@ -93,7 +103,7 @@ func New(cfg Config) k8s_tester.Tester {
 }
 
 type tester struct {
-	cfg Config
+	cfg *Config
 	cli k8s_client.Interface
 }
 

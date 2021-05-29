@@ -78,7 +78,7 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 	}
 	_ = zap.ReplaceGlobals(lg)
 
-	cfg := jobs_pi.Config{
+	cfg := &jobs_pi.Config{
 		EnablePrompt: enablePrompt,
 		Logger:       lg,
 		LogWriter:    logWriter,
@@ -119,7 +119,7 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 	}
 	_ = zap.ReplaceGlobals(lg)
 
-	cfg := jobs_pi.Config{
+	cfg := &jobs_pi.Config{
 		EnablePrompt: enablePrompt,
 		Logger:       lg,
 		LogWriter:    logWriter,

@@ -10,6 +10,12 @@ import (
 
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
+	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
+	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
+	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
+	kubernetes_dashboard "github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard"
+	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
+	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -35,6 +41,34 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+metrics_server.Env()+"_", &metrics_server.Config{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+fluent_bit.Env()+"_", &fluent_bit.Config{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+kubernetes_dashboard.Env()+"_", &kubernetes_dashboard.Config{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+nlb_hello_world.Env()+"_", &nlb_hello_world.Config{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+jobs_pi.Env()+"_", &jobs_pi.Config{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+jobs_echo.Env("Job")+"_", &jobs_echo.Config{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+jobs_echo.Env("CronJob")+"_", &jobs_echo.Config{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 
 	txt := b.String()
 
@@ -46,7 +80,7 @@ type enableEnvVars struct {
 
 var columns = []string{
 	"environmental variable",
-	"read only",
+	"field type",
 	"type",
 	"go type",
 }
@@ -64,30 +98,25 @@ func (es *enableEnvVars) writeDoc(pfx string, st interface{}) string {
 	tp, vv := reflect.TypeOf(st).Elem(), reflect.ValueOf(st).Elem()
 	for i := 0; i < tp.NumField(); i++ {
 		jv := tp.Field(i).Tag.Get("json")
-		if jv == "" {
+		if jv == "" || jv == "-" {
 			continue
 		}
 
-		if jv == "-" {
-			continue
-		}
-
-		pointer := "false"
-		if vv.Field(i).Type().Kind() == reflect.Ptr {
-			pointer = "true"
-		}
-
-		readOnly := "false"
+		ft := "settable via env var"
 		if tp.Field(i).Tag.Get("read-only") == "true" {
-			readOnly = "true"
+			ft = "read-only"
 		}
+		if vv.Field(i).Type().Kind() == reflect.Ptr {
+			ft = "non-empty to enable add-on"
+		}
+
 		jv = strings.Replace(jv, ",omitempty", "", -1)
 		jv = strings.ToUpper(strings.Replace(jv, "-", "_", -1))
 		env := pfx + jv
 
 		tb.Append([]string{
 			env,
-			fmt.Sprintf("read-only %q, add-on %q", readOnly, pointer),
+			strings.ToUpper(ft),
 			fmt.Sprintf("%s.%s", ts, tp.Field(i).Name),
 			fmt.Sprintf("%s", vv.Field(i).Type()),
 		})

@@ -72,30 +72,14 @@ func NewDefault() *Config {
 	return &Config{
 		MinimumNodes: DefaultMinimumNodes,
 
-		CloudwatchAgent: &cloudwatch_agent.Config{
-			MinimumNodes: DefaultMinimumNodes,
-		},
-		MetricsServer: &metrics_server.Config{
-			MinimumNodes: DefaultMinimumNodes,
-		},
-		FluentBit: &fluent_bit.Config{
-			MinimumNodes: DefaultMinimumNodes,
-		},
-		KubernetesDashboard: &kubernetes_dashboard.Config{
-			MinimumNodes: DefaultMinimumNodes,
-		},
-		NLBHelloWorld: &nlb_hello_world.Config{
-			MinimumNodes: DefaultMinimumNodes,
-		},
-		JobsPi: &jobs_pi.Config{
-			MinimumNodes: DefaultMinimumNodes,
-		},
-		JobsEcho: &jobs_echo.Config{
-			MinimumNodes: DefaultMinimumNodes,
-		},
-		CronJobsEcho: &jobs_echo.Config{
-			MinimumNodes: DefaultMinimumNodes,
-		},
+		CloudwatchAgent:     cloudwatch_agent.NewDefault(),
+		MetricsServer:       metrics_server.NewDefault(),
+		FluentBit:           fluent_bit.NewDefault(),
+		KubernetesDashboard: kubernetes_dashboard.NewDefault(),
+		NLBHelloWorld:       nlb_hello_world.NewDefault(),
+		JobsPi:              jobs_pi.NewDefault(),
+		JobsEcho:            jobs_echo.NewDefault("Job"),
+		CronJobsEcho:        jobs_echo.NewDefault("CronJob"),
 	}
 }
 

@@ -26,3 +26,7 @@ go mod tidy -v
 # don't run
 # go mod vendor -v
 ```
+
+### Examples
+
+See [`README.config.md`](./README.config.md) for all settings.

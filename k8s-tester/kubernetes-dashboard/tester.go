@@ -41,7 +41,13 @@ type Config struct {
 
 const DefaultMinimumNodes int = 1
 
-func New(cfg Config) k8s_tester.Tester {
+func NewDefault() *Config {
+	return &Config{
+		MinimumNodes: DefaultMinimumNodes,
+	}
+}
+
+func New(cfg *Config) k8s_tester.Tester {
 	ccfg, err := client.CreateConfig(cfg.ClientConfig)
 	if err != nil {
 		cfg.Logger.Panic("failed to create client config", zap.Error(err))
@@ -58,7 +64,7 @@ func New(cfg Config) k8s_tester.Tester {
 }
 
 type tester struct {
-	cfg Config
+	cfg *Config
 	cli k8s_client.Interface
 }
 

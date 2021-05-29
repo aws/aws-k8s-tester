@@ -15,6 +15,8 @@ import (
 	"github.com/aws/aws-k8s-tester/client"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
 	"github.com/aws/aws-k8s-tester/utils/file"
+	"github.com/aws/aws-k8s-tester/utils/rand"
+	utils_time "github.com/aws/aws-k8s-tester/utils/time"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
@@ -40,7 +42,14 @@ type Config struct {
 
 const DefaultMinimumNodes int = 1
 
-func New(cfg Config) k8s_tester.Tester {
+func NewDefault() *Config {
+	return &Config{
+		Namespace:    pkgName + "-" + rand.String(10) + "-" + utils_time.GetTS(10),
+		MinimumNodes: DefaultMinimumNodes,
+	}
+}
+
+func New(cfg *Config) k8s_tester.Tester {
 	ccfg, err := client.CreateConfig(cfg.ClientConfig)
 	if err != nil {
 		cfg.Logger.Panic("failed to create client config", zap.Error(err))
@@ -57,7 +66,7 @@ func New(cfg Config) k8s_tester.Tester {
 }
 
 type tester struct {
-	cfg Config
+	cfg *Config
 	cli k8s_client.Interface
 }
 

@@ -80,7 +80,7 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 	}
 	_ = zap.ReplaceGlobals(lg)
 
-	cfg := cloudwatch_agent.Config{
+	cfg := &cloudwatch_agent.Config{
 		EnablePrompt: enablePrompt,
 		Logger:       lg,
 		LogWriter:    logWriter,
@@ -121,7 +121,7 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 	}
 	_ = zap.ReplaceGlobals(lg)
 
-	cfg := cloudwatch_agent.Config{
+	cfg := &cloudwatch_agent.Config{
 		EnablePrompt: enablePrompt,
 		Logger:       lg,
 		LogWriter:    logWriter,

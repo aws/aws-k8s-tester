@@ -135,7 +135,7 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 	}
 	_ = zap.ReplaceGlobals(lg)
 
-	cfg := nlb_hello_world.Config{
+	cfg := &nlb_hello_world.Config{
 		EnablePrompt: enablePrompt,
 		Logger:       lg,
 		LogWriter:    logWriter,
