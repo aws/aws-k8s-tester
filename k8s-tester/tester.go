@@ -68,7 +68,7 @@ func (ts *tester) Delete() error {
 }
 
 func (ts *tester) runPrompt(action string) (ok bool) {
-	if ts.cfg.EnablePrompt {
+	if ts.cfg.Prompt {
 		msg := fmt.Sprintf("Ready to %q resources, should we continue?", action)
 		prompt := promptui.Select{
 			Label: msg,

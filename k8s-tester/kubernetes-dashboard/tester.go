@@ -27,7 +27,7 @@ import (
 )
 
 type Config struct {
-	EnablePrompt bool `json:"-"`
+	Prompt bool `json:"-"`
 
 	Logger    *zap.Logger   `json:"-"`
 	LogWriter io.Writer     `json:"-"`
@@ -127,7 +127,7 @@ func (ts *tester) Delete() error {
 }
 
 func (ts *tester) runPrompt(action string) (ok bool) {
-	if ts.cfg.EnablePrompt {
+	if ts.cfg.Prompt {
 		msg := fmt.Sprintf("Ready to %q resources, should we continue?", action)
 		prompt := promptui.Select{
 			Label: msg,
@@ -480,7 +480,7 @@ func (ts *tester) applyDashboardYAML() error {
 		output, err = exec.New().CommandContext(
 			ctx,
 			ts.cfg.ClientConfig.KubectlPath,
-			"--kubeconfig="+ts.cfg.ClientConfig.KubeConfigPath,
+			"--kubeconfig="+ts.cfg.ClientConfig.KubeconfigPath,
 			"apply", "--filename="+fpath,
 		).CombinedOutput()
 		cancel()
@@ -521,7 +521,7 @@ func (ts *tester) checkDeploymentDashboard() (err error) {
 		client.WithQueryFunc(func() {
 			descArgs := []string{
 				ts.cfg.ClientConfig.KubectlPath,
-				"--kubeconfig=" + ts.cfg.ClientConfig.KubeConfigPath,
+				"--kubeconfig=" + ts.cfg.ClientConfig.KubeconfigPath,
 				"--namespace=kubernetes-dashboard",
 				"describe",
 				"deployment",
@@ -589,7 +589,7 @@ func (ts *tester) applyEKSAdminYAML() error {
 		output, err = exec.New().CommandContext(
 			ctx,
 			ts.cfg.ClientConfig.KubectlPath,
-			"--kubeconfig="+ts.cfg.ClientConfig.KubeConfigPath,
+			"--kubeconfig="+ts.cfg.ClientConfig.KubeconfigPath,
 			"apply", "--filename="+fpath,
 		).CombinedOutput()
 		cancel()
@@ -656,7 +656,7 @@ const defaultKubernetesDashboardURL = "http://localhost:8001/api/v1/namespaces/k
 func (ts *tester) checkKubeProxy() error {
 	proxyArgs := []string{
 		ts.cfg.ClientConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.ClientConfig.KubeConfigPath,
+		"--kubeconfig=" + ts.cfg.ClientConfig.KubeconfigPath,
 		"proxy",
 	}
 	proxyCmd := strings.Join(proxyArgs, " ")

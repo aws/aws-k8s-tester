@@ -20,7 +20,7 @@ import (
 )
 
 type Config struct {
-	EnablePrompt bool `json:"-"`
+	Prompt bool `json:"-"`
 
 	Logger    *zap.Logger   `json:"-"`
 	LogWriter io.Writer     `json:"-"`
@@ -231,7 +231,7 @@ func (ts *tester) Delete() error {
 }
 
 func (ts *tester) runPrompt(action string) (ok bool) {
-	if ts.cfg.EnablePrompt {
+	if ts.cfg.Prompt {
 		msg := fmt.Sprintf("Ready to %q resources for the namespace %q, should we continue?", action, ts.cfg.Namespace)
 		prompt := promptui.Select{
 			Label: msg,

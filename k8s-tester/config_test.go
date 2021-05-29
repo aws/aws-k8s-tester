@@ -6,6 +6,23 @@ import (
 	"testing"
 )
 
+func TestEnv(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("K8S_TESTER_PROMPT", "false")
+	defer os.Unsetenv("K8S_TESTER_PROMPT")
+	os.Setenv("K8S_TESTER_CLUSTER_NAME", "hello")
+	defer os.Unsetenv("K8S_TESTER_CLUSTER_NAME")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if cfg.ClusterName != "hello" {
+		t.Fatalf("unexpected cfg.ClusterName %v", cfg.ClusterName)
+	}
+}
+
 func TestEnvEmpty(t *testing.T) {
 	cfg := NewDefault()
 

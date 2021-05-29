@@ -24,23 +24,23 @@ func init() {
 }
 
 var (
-	enablePrompt   bool
+	prompt         bool
 	logLevel       string
 	logOutputs     []string
 	minimumNodes   int
 	namespace      string
 	kubectlPath    string
-	kubeConfigPath string
+	kubeconfigPath string
 )
 
 func init() {
-	rootCmd.PersistentFlags().BoolVar(&enablePrompt, "enable-prompt", true, "'true' to enable prompt mode")
+	rootCmd.PersistentFlags().BoolVar(&prompt, "prompt", true, "'true' to enable prompt mode")
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", log.DefaultLogLevel, "Logging level")
 	rootCmd.PersistentFlags().StringSliceVar(&logOutputs, "log-outputs", []string{"stderr"}, "Additional logger outputs")
 	rootCmd.PersistentFlags().IntVar(&minimumNodes, "minimum-nodes", nlb_hello_world.DefaultMinimumNodes, "minimum number of Kubernetes nodes required for installing this addon")
 	rootCmd.PersistentFlags().StringVar(&namespace, "namespace", "test-namespace", "'true' to auto-generate path for create config/cluster, overwrites existing --path value")
 	rootCmd.PersistentFlags().StringVar(&kubectlPath, "kubectl-path", "", "kubectl path")
-	rootCmd.PersistentFlags().StringVar(&kubeConfigPath, "kubeconfig-path", "", "KUBECONFIG path")
+	rootCmd.PersistentFlags().StringVar(&kubeconfigPath, "kubeconfig-path", "", "KUBECONFIG path")
 
 	rootCmd.AddCommand(
 		newApply(),
@@ -91,7 +91,7 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 	}
 
 	cfg := nlb_hello_world.Config{
-		EnablePrompt: enablePrompt,
+		Prompt:       prompt,
 		Logger:       lg,
 		LogWriter:    logWriter,
 		MinimumNodes: minimumNodes,
@@ -99,7 +99,7 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 		ClientConfig: &client.Config{
 			Logger:         lg,
 			KubectlPath:    kubectlPath,
-			KubeConfigPath: kubeConfigPath,
+			KubeconfigPath: kubeconfigPath,
 		},
 
 		Partition: partition,
@@ -136,14 +136,14 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 	_ = zap.ReplaceGlobals(lg)
 
 	cfg := &nlb_hello_world.Config{
-		EnablePrompt: enablePrompt,
-		Logger:       lg,
-		LogWriter:    logWriter,
-		Namespace:    namespace,
+		Prompt:    prompt,
+		Logger:    lg,
+		LogWriter: logWriter,
+		Namespace: namespace,
 		ClientConfig: &client.Config{
 			Logger:         lg,
 			KubectlPath:    kubectlPath,
-			KubeConfigPath: kubeConfigPath,
+			KubeconfigPath: kubeconfigPath,
 		},
 	}
 

@@ -28,15 +28,16 @@ import (
 // By default, it uses the environmental variables as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
 // TODO: support https://github.com/onsi/ginkgo.
 type Config struct {
-	EnablePrompt bool `json:"-"`
-
-	Logger    *zap.Logger   `json:"-"`
-	LogWriter io.Writer     `json:"-"`
-	Stopc     chan struct{} `json:"-"`
-
+	Logger       *zap.Logger    `json:"-"`
+	LogWriter    io.Writer      `json:"-"`
+	Stopc        chan struct{}  `json:"-"`
 	ClientConfig *client.Config `json:"-"`
 
-	ClusterName string `json:"cluster-name"`
+	Prompt            bool   `json:"prompt"`
+	KubectlPath       string `json:"kubectl-path"`
+	KubeconfigPath    string `json:"kubeconfig-path"`
+	KubeconfigContext string `json:"kubeconfig-context"`
+	ClusterName       string `json:"cluster-name"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum-nodes"`
@@ -55,21 +56,10 @@ type Config struct {
 
 const DefaultMinimumNodes = 1
 
-func Load(p string) (cfg *Config, err error) {
-	var d []byte
-	d, err = ioutil.ReadFile(p)
-	if err != nil {
-		return nil, err
-	}
-	cfg = new(Config)
-	if err = yaml.Unmarshal(d, cfg, yaml.DisallowUnknownFields); err != nil {
-		return nil, err
-	}
-	return cfg, nil
-}
-
 func NewDefault() *Config {
 	return &Config{
+		Prompt: true,
+
 		MinimumNodes: DefaultMinimumNodes,
 
 		CloudwatchAgent:     cloudwatch_agent.NewDefault(),
@@ -85,6 +75,19 @@ func NewDefault() *Config {
 
 // ENV_PREFIX is the environment variable prefix.
 const ENV_PREFIX = "K8S_TESTER_"
+
+func Load(p string) (cfg *Config, err error) {
+	var d []byte
+	d, err = ioutil.ReadFile(p)
+	if err != nil {
+		return nil, err
+	}
+	cfg = new(Config)
+	if err = yaml.Unmarshal(d, cfg, yaml.DisallowUnknownFields); err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
 
 // UpdateFromEnvs updates fields from environmental variables.
 // Empty values are ignored and do not overwrite fields with empty values.

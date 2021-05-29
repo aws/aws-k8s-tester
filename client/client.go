@@ -29,10 +29,10 @@ type Config struct {
 
 	// KubectlPath is the kubectl path.
 	KubectlPath string
-	// KubeConfigPath is the kubeconfig path to load.
-	KubeConfigPath string
-	// KubeConfigContext is the kubeconfig context.
-	KubeConfigContext string
+	// KubeconfigPath is the kubeconfig path to load.
+	KubeconfigPath string
+	// KubeconfigContext is the kubeconfig context.
+	KubeconfigContext string
 
 	// EKS defines EKS-specific configuration.
 	EKS *EKS
@@ -84,7 +84,7 @@ type EKS struct {
 
 // CreateConfig creates the Kubernetes client configuration.
 func CreateConfig(cfg *Config) (kcfg *k8s_client_rest.Config, err error) {
-	if kcfg, err = createConfigFromKubeConfig(cfg); err != nil {
+	if kcfg, err = createConfigFromKubeconfig(cfg); err != nil {
 		cfg.Logger.Error("failed to create config using KUBECONFIG", zap.Error(err))
 	}
 
@@ -192,23 +192,23 @@ func CreateConfig(cfg *Config) (kcfg *k8s_client_rest.Config, err error) {
 	return kcfg, nil
 }
 
-func createConfigFromKubeConfig(cfg *Config) (kcfg *k8s_client_rest.Config, err error) {
-	if cfg.KubeConfigPath == "" {
+func createConfigFromKubeconfig(cfg *Config) (kcfg *k8s_client_rest.Config, err error) {
+	if cfg.KubeconfigPath == "" {
 		return nil, errors.New("empty KUBECONFIG")
 	}
 
 	switch {
-	case cfg.KubeConfigContext != "":
+	case cfg.KubeconfigContext != "":
 		cfg.Logger.Info("creating config from KUBECONFIG and context",
-			zap.String("kubeconfig", cfg.KubeConfigPath),
-			zap.String("context", cfg.KubeConfigContext),
+			zap.String("kubeconfig", cfg.KubeconfigPath),
+			zap.String("context", cfg.KubeconfigContext),
 		)
 		kcfg, err = clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 			&clientcmd.ClientConfigLoadingRules{
-				ExplicitPath: cfg.KubeConfigPath,
+				ExplicitPath: cfg.KubeconfigPath,
 			},
 			&clientcmd.ConfigOverrides{
-				CurrentContext: cfg.KubeConfigContext,
+				CurrentContext: cfg.KubeconfigContext,
 				ClusterInfo:    clientcmd_api.Cluster{Server: ""},
 			},
 		).ClientConfig()
@@ -217,9 +217,9 @@ func createConfigFromKubeConfig(cfg *Config) (kcfg *k8s_client_rest.Config, err 
 			kcfg = nil
 		}
 
-	case cfg.KubeConfigContext == "":
-		cfg.Logger.Info("creating config from KUBECONFIG", zap.String("kubeconfig", cfg.KubeConfigPath))
-		kcfg, err = clientcmd.BuildConfigFromFlags("", cfg.KubeConfigPath)
+	case cfg.KubeconfigContext == "":
+		cfg.Logger.Info("creating config from KUBECONFIG", zap.String("kubeconfig", cfg.KubeconfigPath))
+		kcfg, err = clientcmd.BuildConfigFromFlags("", cfg.KubeconfigPath)
 		if kcfg == nil || err != nil {
 			cfg.Logger.Warn("failed to create config from KUBECONFIG", zap.Error(err))
 			kcfg = nil

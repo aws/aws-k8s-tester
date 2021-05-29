@@ -35,7 +35,7 @@ import (
 )
 
 type Config struct {
-	EnablePrompt bool `json:"-"`
+	Prompt bool `json:"-"`
 
 	Logger    *zap.Logger   `json:"-"`
 	LogWriter io.Writer     `json:"-"`
@@ -245,7 +245,7 @@ func (ts *tester) Delete() error {
 }
 
 func (ts *tester) runPrompt(action string) (ok bool) {
-	if ts.cfg.EnablePrompt {
+	if ts.cfg.Prompt {
 		msg := fmt.Sprintf("Ready to %q resources for the namespace %q, should we continue?", action, ts.cfg.Namespace)
 		prompt := promptui.Select{
 			Label: msg,
@@ -357,7 +357,7 @@ func (ts *tester) checkDeployment() error {
 		client.WithQueryFunc(func() {
 			descArgs := []string{
 				ts.cfg.ClientConfig.KubectlPath,
-				"--kubeconfig=" + ts.cfg.ClientConfig.KubeConfigPath,
+				"--kubeconfig=" + ts.cfg.ClientConfig.KubeconfigPath,
 				"--namespace=" + ts.cfg.Namespace,
 				"describe",
 				"deployment",
@@ -431,7 +431,7 @@ func (ts *tester) checkService() (err error) {
 	queryFunc := func() {
 		args := []string{
 			ts.cfg.ClientConfig.KubectlPath,
-			"--kubeconfig=" + ts.cfg.ClientConfig.KubeConfigPath,
+			"--kubeconfig=" + ts.cfg.ClientConfig.KubeconfigPath,
 			"--namespace=" + ts.cfg.Namespace,
 			"describe",
 			"svc",
