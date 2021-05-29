@@ -46,26 +46,26 @@ type Config struct {
 	ECRAPI       ecriface.ECRAPI `json:"-"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
-	MinimumNodes int `json:"minimum-nodes"`
+	MinimumNodes int `json:"minimum_nodes"`
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
 
 	// RepositoryBusyboxPartition is used for deciding between "amazonaws.com" and "amazonaws.com.cn".
-	RepositoryBusyboxPartition string `json:"repository-busybox-partition,omitempty"`
+	RepositoryBusyboxPartition string `json:"repository_busybox_partition,omitempty"`
 	// RepositoryBusyboxAccountID is the account ID for tester ECR image.
 	// e.g. "busybox" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/busybox"
-	RepositoryBusyboxAccountID string `json:"repository-busybox-account-id,omitempty"`
+	RepositoryBusyboxAccountID string `json:"repository_busybox_account_id,omitempty"`
 	// RepositoryBusyboxRegion is the ECR repository region to pull from.
-	RepositoryBusyboxRegion string `json:"repository-busybox-region,omitempty"`
+	RepositoryBusyboxRegion string `json:"repository_busybox_region,omitempty"`
 	// RepositoryBusyboxName is the repositoryName for tester ECR image.
 	// e.g. "busybox" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/busybox"
-	RepositoryBusyboxName string `json:"repository-busybox-name,omitempty"`
+	RepositoryBusyboxName string `json:"repository_busybox_name,omitempty"`
 	// RepositoryBusyboxImageTag is the image tag for tester ECR image.
 	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/busybox:latest"
-	RepositoryBusyboxImageTag string `json:"repository-busybox-image-tag,omitempty"`
+	RepositoryBusyboxImageTag string `json:"repository_busybox_image_tag,omitempty"`
 
 	// JobType is either "Job" or "CronJob".
-	JobType string `json:"job-type"`
+	JobType string `json:"job_type"`
 
 	// Completes is the desired number of successfully finished pods.
 	Completes int32 `json:"completes"`
@@ -76,16 +76,16 @@ type Config struct {
 	// "Request entity too large: limit is 3145728" (3.1 MB).
 	// "The Job "echo" is invalid: metadata.annotations:
 	// Too long: must have at most 262144 characters". (0.26 MB)
-	EchoSize int32 `json:"echo-size"`
+	EchoSize int32 `json:"echo_size"`
 
 	// Schedule is the CronJob schedule.
 	Schedule string `json:"schedule"`
 	// SuccessfulJobsHistoryLimit is the number of successful finished CronJobs to retain.
 	// Defaults to 3.
-	SuccessfulJobsHistoryLimit int32 `json:"successful-jobs-history-limit"`
+	SuccessfulJobsHistoryLimit int32 `json:"successful_jobs_history_limit"`
 	// FailedJobsHistoryLimit is the number of failed finished CronJobs to retain.
 	// Defaults to 1.
-	FailedJobsHistoryLimit int32 `json:"failed-jobs-history-limit"`
+	FailedJobsHistoryLimit int32 `json:"failed_jobs_history_limit"`
 }
 
 // writes total 100 MB data to etcd

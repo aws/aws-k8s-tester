@@ -9,17 +9,35 @@ import (
 func TestEnv(t *testing.T) {
 	cfg := NewDefault()
 
+	os.Setenv("K8S_TESTER_CONFIG_PATH", "test.yaml")
+	defer os.Unsetenv("K8S_TESTER_CONFIG_PATH")
 	os.Setenv("K8S_TESTER_PROMPT", "false")
 	defer os.Unsetenv("K8S_TESTER_PROMPT")
 	os.Setenv("K8S_TESTER_CLUSTER_NAME", "hello")
 	defer os.Unsetenv("K8S_TESTER_CLUSTER_NAME")
+	os.Setenv("K8S_TESTER_KUBECONFIG_PATH", "hello.config")
+	defer os.Unsetenv("K8S_TESTER_KUBECONFIG_PATH")
+	os.Setenv("K8S_TESTER_KUBECONFIG_CONTEXT", "hello.ctx")
+	defer os.Unsetenv("K8S_TESTER_KUBECONFIG_CONTEXT")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
 	}
 
+	if cfg.ConfigPath != "test.yaml" {
+		t.Fatalf("unexpected cfg.ConfigPath %v", cfg.ConfigPath)
+	}
+	if cfg.Prompt {
+		t.Fatalf("unexpected cfg.Prompt %v", cfg.Prompt)
+	}
 	if cfg.ClusterName != "hello" {
 		t.Fatalf("unexpected cfg.ClusterName %v", cfg.ClusterName)
+	}
+	if cfg.KubeconfigPath != "hello.config" {
+		t.Fatalf("unexpected cfg.KubeconfigPath %v", cfg.KubeconfigPath)
+	}
+	if cfg.KubeconfigContext != "hello.ctx" {
+		t.Fatalf("unexpected cfg.KubeconfigContext %v", cfg.KubeconfigContext)
 	}
 }
 
@@ -110,6 +128,8 @@ func TestEnvKubernetesDashboard(t *testing.T) {
 func TestEnvNLBHelloWorld(t *testing.T) {
 	cfg := NewDefault()
 
+	os.Setenv("K8S_TESTER_CONFIG_PATH", "test.yaml")
+	defer os.Unsetenv("K8S_TESTER_CONFIG_PATH")
 	os.Setenv("K8S_TESTER_ADD_ON_NLB_HELLO_WORLD", "hello")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_NLB_HELLO_WORLD")
 	os.Setenv("K8S_TESTER_ADD_ON_NLB_HELLO_WORLD_NAMESPACE", "hello")
@@ -123,6 +143,9 @@ func TestEnvNLBHelloWorld(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if cfg.ConfigPath != "test.yaml" {
+		t.Fatalf("unexpected cfg.ConfigPath %v", cfg.ConfigPath)
+	}
 	if cfg.NLBHelloWorld.MinimumNodes != 100 {
 		t.Fatalf("unexpected cfg.NLBHelloWorld.MinimumNodes %v", cfg.NLBHelloWorld.MinimumNodes)
 	}

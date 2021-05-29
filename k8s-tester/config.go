@@ -2,13 +2,16 @@ package k8s_tester
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/client"
@@ -28,36 +31,41 @@ import (
 // By default, it uses the environmental variables as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
 // TODO: support https://github.com/onsi/ginkgo.
 type Config struct {
+	mu           *sync.RWMutex  `json:"-"`
 	Logger       *zap.Logger    `json:"-"`
 	LogWriter    io.Writer      `json:"-"`
 	Stopc        chan struct{}  `json:"-"`
 	ClientConfig *client.Config `json:"-"`
 
+	// ConfigPath is the configuration file path.
+	ConfigPath string `json:"config_path"`
+
 	Prompt            bool   `json:"prompt"`
-	KubectlPath       string `json:"kubectl-path"`
-	KubeconfigPath    string `json:"kubeconfig-path"`
-	KubeconfigContext string `json:"kubeconfig-context"`
-	ClusterName       string `json:"cluster-name"`
+	KubectlPath       string `json:"kubectl_path"`
+	KubeconfigPath    string `json:"kubeconfig_path"`
+	KubeconfigContext string `json:"kubeconfig_context"`
+	ClusterName       string `json:"cluster_name"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
-	MinimumNodes int `json:"minimum-nodes"`
+	MinimumNodes int `json:"minimum_nodes"`
 
-	CloudwatchAgent     *cloudwatch_agent.Config     `json:"add-on-cloudwatch-agent"`
-	MetricsServer       *metrics_server.Config       `json:"add-on-metrics-server"`
-	FluentBit           *fluent_bit.Config           `json:"add-on-fluent-bit"`
-	KubernetesDashboard *kubernetes_dashboard.Config `json:"add-on-kubernetes-dashboard"`
+	CloudwatchAgent     *cloudwatch_agent.Config     `json:"add_on_cloudwatch_agent"`
+	MetricsServer       *metrics_server.Config       `json:"add_on_metrics_server"`
+	FluentBit           *fluent_bit.Config           `json:"add_on_fluent_bit"`
+	KubernetesDashboard *kubernetes_dashboard.Config `json:"add_on_kubernetes_dashboard"`
 
-	NLBHelloWorld *nlb_hello_world.Config `json:"add-on-nlb-hellow-world"`
+	NLBHelloWorld *nlb_hello_world.Config `json:"add_on_nlb_hello_world"`
 
-	JobsPi       *jobs_pi.Config   `json:"add-on-jobs-pi"`
-	JobsEcho     *jobs_echo.Config `json:"add-on-jobs-echo"`
-	CronJobsEcho *jobs_echo.Config `json:"add-on-cron-jobs-echo"`
+	JobsPi       *jobs_pi.Config   `json:"add_on_jobs_pi"`
+	JobsEcho     *jobs_echo.Config `json:"add_on_jobs_echo"`
+	CronJobsEcho *jobs_echo.Config `json:"add_on_cron_jobs_echo"`
 }
 
 const DefaultMinimumNodes = 1
 
 func NewDefault() *Config {
 	return &Config{
+		mu:     new(sync.RWMutex),
 		Prompt: true,
 
 		MinimumNodes: DefaultMinimumNodes,
@@ -86,7 +94,63 @@ func Load(p string) (cfg *Config, err error) {
 	if err = yaml.Unmarshal(d, cfg, yaml.DisallowUnknownFields); err != nil {
 		return nil, err
 	}
+
+	cfg.mu = new(sync.RWMutex)
+	if cfg.ConfigPath != p {
+		cfg.ConfigPath = p
+	}
+
+	var ap string
+	ap, err = filepath.Abs(p)
+	if err != nil {
+		return nil, err
+	}
+	cfg.ConfigPath = ap
+
+	if serr := cfg.unsafeSync(); serr != nil {
+		fmt.Fprintf(os.Stderr, "[WARN] failed to sync config files %v\n", serr)
+	}
+
 	return cfg, nil
+}
+
+// Sync writes the configuration file to disk.
+func (cfg *Config) Sync() error {
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
+	return cfg.unsafeSync()
+}
+
+func (cfg *Config) unsafeSync() error {
+	if cfg.ConfigPath == "" {
+		return errors.New("empty config path")
+	}
+
+	if cfg.ConfigPath != "" && !filepath.IsAbs(cfg.ConfigPath) {
+		p, err := filepath.Abs(cfg.ConfigPath)
+		if err != nil {
+			return fmt.Errorf("failed to 'filepath.Abs(%s)' %v", cfg.ConfigPath, err)
+		}
+		cfg.ConfigPath = p
+	}
+	if cfg.KubeconfigPath != "" && !filepath.IsAbs(cfg.KubeconfigPath) {
+		p, err := filepath.Abs(cfg.KubeconfigPath)
+		if err != nil {
+			return fmt.Errorf("failed to 'filepath.Abs(%s)' %v", cfg.KubeconfigPath, err)
+		}
+		cfg.KubeconfigPath = p
+	}
+
+	d, err := yaml.Marshal(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to 'yaml.Marshal' %v", err)
+	}
+	err = ioutil.WriteFile(cfg.ConfigPath, d, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to write file %q (%v)", cfg.ConfigPath, err)
+	}
+
+	return nil
 }
 
 // UpdateFromEnvs updates fields from environmental variables.
@@ -98,6 +162,11 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 	vv, err = parseEnvs(ENV_PREFIX, cfg)
 	if err != nil {
 		return err
+	}
+	if av, ok := vv.(*Config); ok {
+		cfg = av
+	} else {
+		return fmt.Errorf("expected *Config, got %T", vv)
 	}
 
 	if v := os.Getenv(ENV_PREFIX + cloudwatch_agent.Env()); v != "" {

@@ -45,17 +45,17 @@ type Config struct {
 
 	ELB2API elbv2iface.ELBV2API `json:"-"`
 
-	AccountID string `json:"account-id" read-only:"true"`
+	AccountID string `json:"account_id" read-only:"true"`
 	Partition string `json:"partition"`
 	Region    string `json:"region"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
-	MinimumNodes int `json:"minimum-nodes"`
+	MinimumNodes int `json:"minimum_nodes"`
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
 
-	DeploymentNodeSelector map[string]string `json:"deployment-node-selector"`
-	DeploymentReplicas     int32             `json:"deployment-replicas"`
+	DeploymentNodeSelector map[string]string `json:"deployment_node_selector"`
+	DeploymentReplicas     int32             `json:"deployment_replicas"`
 }
 
 const (

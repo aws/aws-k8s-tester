@@ -35,7 +35,7 @@ type Config struct {
 	ClientConfig *client.Config `json:"-"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
-	MinimumNodes int `json:"minimum-nodes"`
+	MinimumNodes int `json:"minimum_nodes"`
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
 }

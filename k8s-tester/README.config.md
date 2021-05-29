@@ -5,13 +5,18 @@
 *----------------------------------------*----------------------------*----------------------------------------*------------------------------*
 |         ENVIRONMENTAL VARIABLE         |         FIELD TYPE         |                  TYPE                  |           GO TYPE            |
 *----------------------------------------*----------------------------*----------------------------------------*------------------------------*
+| K8S_TESTER_CONFIG_PATH                 | SETTABLE VIA ENV VAR       | *k8s_tester.Config.ConfigPath          | string                       |
+| K8S_TESTER_PROMPT                      | SETTABLE VIA ENV VAR       | *k8s_tester.Config.Prompt              | bool                         |
+| K8S_TESTER_KUBECTL_PATH                | SETTABLE VIA ENV VAR       | *k8s_tester.Config.KubectlPath         | string                       |
+| K8S_TESTER_KUBECONFIG_PATH             | SETTABLE VIA ENV VAR       | *k8s_tester.Config.KubeconfigPath      | string                       |
+| K8S_TESTER_KUBECONFIG_CONTEXT          | SETTABLE VIA ENV VAR       | *k8s_tester.Config.KubeconfigContext   | string                       |
 | K8S_TESTER_CLUSTER_NAME                | SETTABLE VIA ENV VAR       | *k8s_tester.Config.ClusterName         | string                       |
 | K8S_TESTER_MINIMUM_NODES               | SETTABLE VIA ENV VAR       | *k8s_tester.Config.MinimumNodes        | int                          |
 | K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT     | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.CloudwatchAgent     | *cloudwatch_agent.Config     |
 | K8S_TESTER_ADD_ON_METRICS_SERVER       | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.MetricsServer       | *metrics_server.Config       |
 | K8S_TESTER_ADD_ON_FLUENT_BIT           | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.FluentBit           | *fluent_bit.Config           |
 | K8S_TESTER_ADD_ON_KUBERNETES_DASHBOARD | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.KubernetesDashboard | *kubernetes_dashboard.Config |
-| K8S_TESTER_ADD_ON_NLB_HELLOW_WORLD     | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.NLBHelloWorld       | *nlb_hello_world.Config      |
+| K8S_TESTER_ADD_ON_NLB_HELLO_WORLD      | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.NLBHelloWorld       | *nlb_hello_world.Config      |
 | K8S_TESTER_ADD_ON_JOBS_PI              | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.JobsPi              | *jobs_pi.Config              |
 | K8S_TESTER_ADD_ON_JOBS_ECHO            | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.JobsEcho            | *jobs_echo.Config            |
 | K8S_TESTER_ADD_ON_CRON_JOBS_ECHO       | NON-EMPTY TO ENABLE ADD-ON | *k8s_tester.Config.CronJobsEcho        | *jobs_echo.Config            |
