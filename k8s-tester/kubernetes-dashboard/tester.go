@@ -45,6 +45,7 @@ const DefaultMinimumNodes int = 1
 func NewDefault() *Config {
 	return &Config{
 		Enable:       false,
+		Prompt:       false,
 		MinimumNodes: DefaultMinimumNodes,
 	}
 }

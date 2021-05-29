@@ -46,6 +46,7 @@ const DefaultMinimumNodes int = 1
 func NewDefault() *Config {
 	return &Config{
 		Enable:       false,
+		Prompt:       false,
 		Namespace:    pkgName + "-" + rand.String(10) + "-" + utils_time.GetTS(10),
 		MinimumNodes: DefaultMinimumNodes,
 	}
