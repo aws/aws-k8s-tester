@@ -38,11 +38,11 @@ type Config struct {
 	Enable bool `json:"enable"`
 	Prompt bool `json:"-"`
 
-	Logger    *zap.Logger   `json:"-"`
-	LogWriter io.Writer     `json:"-"`
-	Stopc     chan struct{} `json:"-"`
-
-	ClientConfig *client.Config `json:"-"`
+	Stopc        chan struct{}        `json:"-"`
+	Logger       *zap.Logger          `json:"-"`
+	LogWriter    io.Writer            `json:"-"`
+	ClientConfig *client.Config       `json:"-"`
+	Client       k8s_client.Interface `json:"-"`
 
 	ELB2API elbv2iface.ELBV2API `json:"-"`
 
@@ -75,15 +75,6 @@ func NewDefault() *Config {
 }
 
 func New(cfg *Config) k8s_tester.Tester {
-	ccfg, err := client.CreateConfig(cfg.ClientConfig)
-	if err != nil {
-		cfg.Logger.Panic("failed to create client config", zap.Error(err))
-	}
-	cli, err := k8s_client.NewForConfig(ccfg)
-	if err != nil {
-		cfg.Logger.Panic("failed to create client", zap.Error(err))
-	}
-
 	awsCfg := aws_v1.Config{
 		Logger:        cfg.Logger,
 		DebugAPICalls: cfg.Logger.Core().Enabled(zapcore.DebugLevel),
@@ -101,13 +92,11 @@ func New(cfg *Config) k8s_tester.Tester {
 
 	return &tester{
 		cfg: cfg,
-		cli: cli,
 	}
 }
 
 type tester struct {
 	cfg *Config
-	cli k8s_client.Interface
 }
 
 var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
@@ -132,11 +121,11 @@ func (ts *tester) Apply() error {
 		return errors.New("cancelled")
 	}
 
-	if nodes, err := client.ListNodes(ts.cli); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+	if nodes, err := client.ListNodes(ts.cfg.Client); len(nodes) < ts.cfg.MinimumNodes || err != nil {
 		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
 	}
 
-	if err := client.CreateNamespace(ts.cfg.Logger, ts.cli, ts.cfg.Namespace); err != nil {
+	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client, ts.cfg.Namespace); err != nil {
 		return err
 	}
 
@@ -177,7 +166,7 @@ func (ts *tester) Delete() error {
 	// get ELB ARN before deleting the service
 	_, elbARN, exists, err := client.FindServiceIngressHostname(
 		ts.cfg.Logger,
-		ts.cli,
+		ts.cfg.Client,
 		ts.cfg.Namespace,
 		serviceName,
 		ts.cfg.Stopc,
@@ -193,7 +182,7 @@ func (ts *tester) Delete() error {
 
 	if err := client.DeleteService(
 		ts.cfg.Logger,
-		ts.cli,
+		ts.cfg.Client,
 		ts.cfg.Namespace,
 		serviceName,
 	); err != nil {
@@ -204,7 +193,7 @@ func (ts *tester) Delete() error {
 
 	if err := client.DeleteDeployment(
 		ts.cfg.Logger,
-		ts.cli,
+		ts.cfg.Client,
 		ts.cfg.Namespace,
 		deploymentName,
 	); err != nil {
@@ -233,7 +222,7 @@ func (ts *tester) Delete() error {
 
 	if err := client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
-		ts.cli,
+		ts.cfg.Client,
 		ts.cfg.Namespace,
 		client.DefaultNamespaceDeletionInterval,
 		client.DefaultNamespaceDeletionTimeout,
@@ -280,7 +269,7 @@ func (ts *tester) createDeployment() error {
 	}
 	ts.cfg.Logger.Info("creating NLB hello-world Deployment", zap.Any("node-selector", nodeSelector))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cli.
+	_, err := ts.cfg.Client.
 		AppsV1().
 		Deployments(ts.cfg.Namespace).
 		Create(
@@ -353,7 +342,7 @@ func (ts *tester) checkDeployment() error {
 		ts.cfg.Logger,
 		ts.cfg.LogWriter,
 		ts.cfg.Stopc,
-		ts.cli,
+		ts.cfg.Client,
 		time.Minute,
 		20*time.Second,
 		ts.cfg.Namespace,
@@ -386,7 +375,7 @@ func (ts *tester) checkDeployment() error {
 func (ts *tester) createService() error {
 	ts.cfg.Logger.Info("creating NLB hello-world Service")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cli.
+	_, err := ts.cfg.Client.
 		CoreV1().
 		Services(ts.cfg.Namespace).
 		Create(
@@ -456,7 +445,7 @@ func (ts *tester) checkService() (err error) {
 
 	hostName, elbARN, err := client.WaitForServiceIngressHostname(
 		ts.cfg.Logger,
-		ts.cli,
+		ts.cfg.Client,
 		ts.cfg.Namespace,
 		serviceName,
 		ts.cfg.Stopc,

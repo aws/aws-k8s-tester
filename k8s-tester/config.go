@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -14,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/client"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
@@ -22,7 +20,8 @@ import (
 	kubernetes_dashboard "github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard"
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
-	"go.uber.org/zap"
+	"github.com/aws/aws-k8s-tester/utils/log"
+	"github.com/mitchellh/colorstring"
 	"sigs.k8s.io/yaml"
 )
 
@@ -31,14 +30,27 @@ import (
 // By default, it uses the environmental variables as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
 // TODO: support https://github.com/onsi/ginkgo.
 type Config struct {
-	mu           *sync.RWMutex  `json:"-"`
-	Logger       *zap.Logger    `json:"-"`
-	LogWriter    io.Writer      `json:"-"`
-	Stopc        chan struct{}  `json:"-"`
-	ClientConfig *client.Config `json:"-"`
+	mu    *sync.RWMutex `json:"-"`
+	Stopc chan struct{} `json:"-"`
 
 	// ConfigPath is the configuration file path.
 	ConfigPath string `json:"config_path"`
+	// LogColor is true to output logs in color.
+	LogColor bool `json:"log_color"`
+	// LogColorOverride is not empty to override "LogColor" setting.
+	// If not empty, the automatic color check is not even run and use this value instead.
+	// For instance, github action worker might not support color device,
+	// thus exiting color check with the exit code 1.
+	// Useful to output in color in HTML based log outputs (e.g., Prow).
+	// Useful to skip terminal color check when there is no color device (e.g., Github action worker).
+	LogColorOverride string `json:"log_color_override"`
+	// LogLevel configures log level. Only supports debug, info, warn, error, panic, or fatal. Default 'info'.
+	LogLevel string `json:"log-level"`
+	// LogOutputs is a list of log outputs. Valid values are 'default', 'stderr', 'stdout', or file names.
+	// Logs are appended to the existing file, if any.
+	// Multiple values are accepted. If empty, it sets to 'default', which outputs to stderr.
+	// See https://pkg.go.dev/go.uber.org/zap#Open and https://pkg.go.dev/go.uber.org/zap#Config for more details.
+	LogOutputs []string `json:"log-outputs"`
 
 	Prompt            bool   `json:"prompt"`
 	KubectlPath       string `json:"kubectl_path"`
@@ -48,36 +60,48 @@ type Config struct {
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum_nodes"`
+	// TotalNodes is the total number of nodes from all node groups.
+	TotalNodes int `json:"total_nodes" read-only:"true"`
 
-	CloudwatchAgent     *cloudwatch_agent.Config     `json:"add_on_cloudwatch_agent"`
-	MetricsServer       *metrics_server.Config       `json:"add_on_metrics_server"`
-	FluentBit           *fluent_bit.Config           `json:"add_on_fluent_bit"`
-	KubernetesDashboard *kubernetes_dashboard.Config `json:"add_on_kubernetes_dashboard"`
+	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
+	AddOnCloudwatchAgent     *cloudwatch_agent.Config     `json:"add_on_cloudwatch_agent"`
+	AddOnMetricsServer       *metrics_server.Config       `json:"add_on_metrics_server"`
+	AddOnFluentBit           *fluent_bit.Config           `json:"add_on_fluent_bit"`
+	AddOnKubernetesDashboard *kubernetes_dashboard.Config `json:"add_on_kubernetes_dashboard"`
 
-	NLBHelloWorld *nlb_hello_world.Config `json:"add_on_nlb_hello_world"`
+	AddOnNLBHelloWorld *nlb_hello_world.Config `json:"add_on_nlb_hello_world"`
 
-	JobsPi       *jobs_pi.Config   `json:"add_on_jobs_pi"`
-	JobsEcho     *jobs_echo.Config `json:"add_on_jobs_echo"`
-	CronJobsEcho *jobs_echo.Config `json:"add_on_cron_jobs_echo"`
+	AddOnJobsPi       *jobs_pi.Config   `json:"add_on_jobs_pi"`
+	AddOnJobsEcho     *jobs_echo.Config `json:"add_on_jobs_echo"`
+	AddOnCronJobsEcho *jobs_echo.Config `json:"add_on_cron_jobs_echo"`
 }
 
 const DefaultMinimumNodes = 1
 
 func NewDefault() *Config {
 	return &Config{
-		mu:     new(sync.RWMutex),
+		mu: new(sync.RWMutex),
+
+		LogColor:         true,
+		LogColorOverride: "",
+		LogLevel:         log.DefaultLogLevel,
+		// default, stderr, stdout, or file name
+		// log file named with cluster name will be added automatically
+		LogOutputs: []string{"stderr"},
+
 		Prompt: true,
 
 		MinimumNodes: DefaultMinimumNodes,
 
-		CloudwatchAgent:     cloudwatch_agent.NewDefault(),
-		MetricsServer:       metrics_server.NewDefault(),
-		FluentBit:           fluent_bit.NewDefault(),
-		KubernetesDashboard: kubernetes_dashboard.NewDefault(),
-		NLBHelloWorld:       nlb_hello_world.NewDefault(),
-		JobsPi:              jobs_pi.NewDefault(),
-		JobsEcho:            jobs_echo.NewDefault("Job"),
-		CronJobsEcho:        jobs_echo.NewDefault("CronJob"),
+		// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
+		AddOnCloudwatchAgent:     cloudwatch_agent.NewDefault(),
+		AddOnMetricsServer:       metrics_server.NewDefault(),
+		AddOnFluentBit:           fluent_bit.NewDefault(),
+		AddOnKubernetesDashboard: kubernetes_dashboard.NewDefault(),
+		AddOnNLBHelloWorld:       nlb_hello_world.NewDefault(),
+		AddOnJobsPi:              jobs_pi.NewDefault(),
+		AddOnJobsEcho:            jobs_echo.NewDefault("Job"),
+		AddOnCronJobsEcho:        jobs_echo.NewDefault("CronJob"),
 	}
 }
 
@@ -169,82 +193,83 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *Config, got %T", vv)
 	}
 
-	vv, err = parseEnvs(ENV_PREFIX+cloudwatch_agent.Env()+"_", cfg.CloudwatchAgent)
+	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
+	vv, err = parseEnvs(ENV_PREFIX+cloudwatch_agent.Env()+"_", cfg.AddOnCloudwatchAgent)
 	if err != nil {
 		return err
 	}
 	if av, ok := vv.(*cloudwatch_agent.Config); ok {
-		cfg.CloudwatchAgent = av
+		cfg.AddOnCloudwatchAgent = av
 	} else {
 		return fmt.Errorf("expected *cloudwatch_agent.Config, got %T", vv)
 	}
 
-	vv, err = parseEnvs(ENV_PREFIX+metrics_server.Env()+"_", cfg.MetricsServer)
+	vv, err = parseEnvs(ENV_PREFIX+metrics_server.Env()+"_", cfg.AddOnMetricsServer)
 	if err != nil {
 		return err
 	}
 	if av, ok := vv.(*metrics_server.Config); ok {
-		cfg.MetricsServer = av
+		cfg.AddOnMetricsServer = av
 	} else {
 		return fmt.Errorf("expected *metrics_server.Config, got %T", vv)
 	}
 
-	vv, err = parseEnvs(ENV_PREFIX+fluent_bit.Env()+"_", cfg.FluentBit)
+	vv, err = parseEnvs(ENV_PREFIX+fluent_bit.Env()+"_", cfg.AddOnFluentBit)
 	if err != nil {
 		return err
 	}
 	if av, ok := vv.(*fluent_bit.Config); ok {
-		cfg.FluentBit = av
+		cfg.AddOnFluentBit = av
 	} else {
 		return fmt.Errorf("expected *fluent_bit.Config, got %T", vv)
 	}
 
-	vv, err = parseEnvs(ENV_PREFIX+kubernetes_dashboard.Env()+"_", cfg.KubernetesDashboard)
+	vv, err = parseEnvs(ENV_PREFIX+kubernetes_dashboard.Env()+"_", cfg.AddOnKubernetesDashboard)
 	if err != nil {
 		return err
 	}
 	if av, ok := vv.(*kubernetes_dashboard.Config); ok {
-		cfg.KubernetesDashboard = av
+		cfg.AddOnKubernetesDashboard = av
 	} else {
 		return fmt.Errorf("expected *kubernetes_dashboard.Config, got %T", vv)
 	}
 
-	vv, err = parseEnvs(ENV_PREFIX+nlb_hello_world.Env()+"_", cfg.NLBHelloWorld)
+	vv, err = parseEnvs(ENV_PREFIX+nlb_hello_world.Env()+"_", cfg.AddOnNLBHelloWorld)
 	if err != nil {
 		return err
 	}
 	if av, ok := vv.(*nlb_hello_world.Config); ok {
-		cfg.NLBHelloWorld = av
+		cfg.AddOnNLBHelloWorld = av
 	} else {
 		return fmt.Errorf("expected *nlb_hello_world.Config, got %T", vv)
 	}
 
-	vv, err = parseEnvs(ENV_PREFIX+jobs_pi.Env()+"_", cfg.JobsPi)
+	vv, err = parseEnvs(ENV_PREFIX+jobs_pi.Env()+"_", cfg.AddOnJobsPi)
 	if err != nil {
 		return err
 	}
 	if av, ok := vv.(*jobs_pi.Config); ok {
-		cfg.JobsPi = av
+		cfg.AddOnJobsPi = av
 	} else {
 		return fmt.Errorf("expected *jobs_pi.Config, got %T", vv)
 	}
 
-	vv, err = parseEnvs(ENV_PREFIX+jobs_echo.Env("Job")+"_", cfg.JobsEcho)
+	vv, err = parseEnvs(ENV_PREFIX+jobs_echo.Env("Job")+"_", cfg.AddOnJobsEcho)
 	if err != nil {
 		return err
 	}
 	if av, ok := vv.(*jobs_echo.Config); ok {
-		cfg.JobsEcho = av
+		cfg.AddOnJobsEcho = av
 	} else {
 		return fmt.Errorf("expected *jobs_echo.Config, got %T", vv)
 	}
 
-	vv, err = parseEnvs(ENV_PREFIX+jobs_echo.Env("CronJob")+"_", cfg.CronJobsEcho)
+	vv, err = parseEnvs(ENV_PREFIX+jobs_echo.Env("CronJob")+"_", cfg.AddOnCronJobsEcho)
 	if err != nil {
 		return err
 	}
 	if av, ok := vv.(*jobs_echo.Config); ok {
-		cfg.CronJobsEcho = av
+		cfg.AddOnCronJobsEcho = av
 	} else {
 		return fmt.Errorf("expected *jobs_echo.Config, got %T", vv)
 	}
@@ -341,4 +366,14 @@ func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
 		}
 	}
 	return addOn, nil
+}
+
+// Colorize prints colorized input, if color output is supported.
+func (cfg *Config) Colorize(input string) string {
+	colorize := colorstring.Colorize{
+		Colors:  colorstring.DefaultColors,
+		Disable: !cfg.LogColor,
+		Reset:   true,
+	}
+	return colorize.Color(input)
 }

@@ -72,17 +72,28 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 	}
 	_ = zap.ReplaceGlobals(lg)
 
+	clientConfig := &client.Config{
+		Logger:         lg,
+		KubectlPath:    kubectlPath,
+		KubeconfigPath: kubeconfigPath,
+	}
+	ccfg, err := client.CreateConfig(clientConfig)
+	if err != nil {
+		lg.Panic("failed to create client config", zap.Error(err))
+	}
+	cli, err := k8s_client.NewForConfig(ccfg)
+	if err != nil {
+		lg.Panic("failed to create client", zap.Error(err))
+	}
+
 	cfg := &fluent_bit.Config{
 		Prompt:       prompt,
 		Logger:       lg,
 		LogWriter:    logWriter,
 		MinimumNodes: minimumNodes,
 		Namespace:    namespace,
-		ClientConfig: &client.Config{
-			Logger:         lg,
-			KubectlPath:    kubectlPath,
-			KubeconfigPath: kubeconfigPath,
-		},
+		ClientConfig: clientConfig,
+		Client:       cli,
 	}
 
 	ts := fluent_bit.New(cfg)
@@ -111,16 +122,27 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 	}
 	_ = zap.ReplaceGlobals(lg)
 
+	clientConfig := &client.Config{
+		Logger:         lg,
+		KubectlPath:    kubectlPath,
+		KubeconfigPath: kubeconfigPath,
+	}
+	ccfg, err := client.CreateConfig(clientConfig)
+	if err != nil {
+		lg.Panic("failed to create client config", zap.Error(err))
+	}
+	cli, err := k8s_client.NewForConfig(ccfg)
+	if err != nil {
+		lg.Panic("failed to create client", zap.Error(err))
+	}
+
 	cfg := &fluent_bit.Config{
-		Prompt:    prompt,
-		Logger:    lg,
-		LogWriter: logWriter,
-		Namespace: namespace,
-		ClientConfig: &client.Config{
-			Logger:         lg,
-			KubectlPath:    kubectlPath,
-			KubeconfigPath: kubeconfigPath,
-		},
+		Prompt:       prompt,
+		Logger:       lg,
+		LogWriter:    logWriter,
+		Namespace:    namespace,
+		ClientConfig: clientConfig,
+		Client:       cli,
 	}
 
 	ts := fluent_bit.New(cfg)

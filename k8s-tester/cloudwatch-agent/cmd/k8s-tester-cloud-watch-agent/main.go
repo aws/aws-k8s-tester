@@ -80,19 +80,32 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 	}
 	_ = zap.ReplaceGlobals(lg)
 
+	clientConfig := &client.Config{
+		Logger:         lg,
+		KubectlPath:    kubectlPath,
+		KubeconfigPath: kubeconfigPath,
+	}
+	ccfg, err := client.CreateConfig(clientConfig)
+	if err != nil {
+		lg.Panic("failed to create client config", zap.Error(err))
+	}
+	cli, err := k8s_client.NewForConfig(ccfg)
+	if err != nil {
+		lg.Panic("failed to create client", zap.Error(err))
+	}
+
+	// TODO: notify stopc
 	cfg := &cloudwatch_agent.Config{
 		Prompt:       prompt,
+		Stopc:        make(chan struct{}),
 		Logger:       lg,
 		LogWriter:    logWriter,
 		MinimumNodes: minimumNodes,
 		Namespace:    namespace,
-		ClientConfig: &client.Config{
-			Logger:         lg,
-			KubectlPath:    kubectlPath,
-			KubeconfigPath: kubeconfigPath,
-		},
-		Region:      region,
-		ClusterName: clusterName,
+		ClientConfig: clientConfig,
+		Client:       cli,
+		Region:       region,
+		ClusterName:  clusterName,
 	}
 
 	ts := cloudwatch_agent.New(cfg)
@@ -121,16 +134,26 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 	}
 	_ = zap.ReplaceGlobals(lg)
 
+	ccfg, err := client.CreateConfig(&client.Config{
+		Logger:         lg,
+		KubectlPath:    kubectlPath,
+		KubeconfigPath: kubeconfigPath,
+	})
+	if err != nil {
+		lg.Panic("failed to create client config", zap.Error(err))
+	}
+	cli, err := k8s_client.NewForConfig(ccfg)
+	if err != nil {
+		lg.Panic("failed to create client", zap.Error(err))
+	}
+
 	cfg := &cloudwatch_agent.Config{
-		Prompt:    prompt,
-		Logger:    lg,
-		LogWriter: logWriter,
-		Namespace: namespace,
-		ClientConfig: &client.Config{
-			Logger:         lg,
-			KubectlPath:    kubectlPath,
-			KubeconfigPath: kubeconfigPath,
-		},
+		Prompt:       prompt,
+		Logger:       lg,
+		LogWriter:    logWriter,
+		Namespace:    namespace,
+		ClientConfig: clientConfig,
+		Client:       cli,
 	}
 
 	ts := cloudwatch_agent.New(cfg)

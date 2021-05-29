@@ -29,11 +29,11 @@ type Config struct {
 	Enable bool `json:"enable"`
 	Prompt bool `json:"-"`
 
-	Logger    *zap.Logger   `json:"-"`
-	LogWriter io.Writer     `json:"-"`
-	Stopc     chan struct{} `json:"-"`
-
-	ClientConfig *client.Config `json:"-"`
+	Stopc        chan struct{}        `json:"-"`
+	Logger       *zap.Logger          `json:"-"`
+	LogWriter    io.Writer            `json:"-"`
+	ClientConfig *client.Config       `json:"-"`
+	Client       k8s_client.Interface `json:"-"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum_nodes"`
@@ -53,24 +53,13 @@ func NewDefault() *Config {
 }
 
 func New(cfg *Config) k8s_tester.Tester {
-	ccfg, err := client.CreateConfig(cfg.ClientConfig)
-	if err != nil {
-		cfg.Logger.Panic("failed to create client config", zap.Error(err))
-	}
-	cli, err := k8s_client.NewForConfig(ccfg)
-	if err != nil {
-		cfg.Logger.Panic("failed to create client", zap.Error(err))
-	}
-
 	return &tester{
 		cfg: cfg,
-		cli: cli,
 	}
 }
 
 type tester struct {
 	cfg *Config
-	cli k8s_client.Interface
 }
 
 var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
@@ -88,7 +77,7 @@ func (ts *tester) Apply() error {
 		return errors.New("cancelled")
 	}
 
-	if nodes, err := client.ListNodes(ts.cli); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+	if nodes, err := client.ListNodes(ts.cfg.Client); len(nodes) < ts.cfg.MinimumNodes || err != nil {
 		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
 	}
 
@@ -377,7 +366,7 @@ func (ts *tester) checkDeployment() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.LogWriter,
 		ts.cfg.Stopc,
-		ts.cli,
+		ts.cfg.Client,
 		time.Minute,
 		20*time.Second,
 		"kube-system",
@@ -470,7 +459,7 @@ func (ts *tester) deleteDeployment() error {
 	ts.cfg.Logger.Info("deleting deployment")
 	foreground := meta_v1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	err := ts.cli.
+	err := ts.cfg.Client.
 		AppsV1().
 		Deployments("kube-system").
 		Delete(

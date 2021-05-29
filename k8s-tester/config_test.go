@@ -41,7 +41,7 @@ func TestEnv(t *testing.T) {
 	}
 }
 
-func TestEnvCloudwatchAgent(t *testing.T) {
+func TestEnvAddOnCloudwatchAgent(t *testing.T) {
 	cfg := NewDefault()
 
 	os.Setenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_ENABLE", "true")
@@ -53,15 +53,15 @@ func TestEnvCloudwatchAgent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !cfg.CloudwatchAgent.Enable {
-		t.Fatalf("unexpected cfg.CloudwatchAgent.Enable %v", cfg.CloudwatchAgent.Enable)
+	if !cfg.AddOnCloudwatchAgent.Enable {
+		t.Fatalf("unexpected cfg.AddOnCloudwatchAgent.Enable %v", cfg.AddOnCloudwatchAgent.Enable)
 	}
-	if cfg.CloudwatchAgent.Namespace != "hello" {
-		t.Fatalf("unexpected cfg.CloudwatchAgent.Namespace %v", cfg.CloudwatchAgent.Namespace)
+	if cfg.AddOnCloudwatchAgent.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnCloudwatchAgent.Namespace %v", cfg.AddOnCloudwatchAgent.Namespace)
 	}
 }
 
-func TestEnvMetricsServer(t *testing.T) {
+func TestEnvAddOnMetricsServer(t *testing.T) {
 	cfg := NewDefault()
 
 	os.Setenv("K8S_TESTER_ADD_ON_METRICS_SERVER_ENABLE", "true")
@@ -73,15 +73,15 @@ func TestEnvMetricsServer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !cfg.MetricsServer.Enable {
-		t.Fatalf("unexpected cfg.MetricsServer.Enable %v", cfg.MetricsServer.Enable)
+	if !cfg.AddOnMetricsServer.Enable {
+		t.Fatalf("unexpected cfg.AddOnMetricsServer.Enable %v", cfg.AddOnMetricsServer.Enable)
 	}
-	if cfg.MetricsServer.Namespace != "hello" {
-		t.Fatalf("unexpected cfg.MetricsServer.Namespace %v", cfg.MetricsServer.Namespace)
+	if cfg.AddOnMetricsServer.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnMetricsServer.Namespace %v", cfg.AddOnMetricsServer.Namespace)
 	}
 }
 
-func TestEnvFluentBit(t *testing.T) {
+func TestEnvAddOnFluentBit(t *testing.T) {
 	cfg := NewDefault()
 
 	os.Setenv("K8S_TESTER_ADD_ON_FLUENT_BIT_ENABLE", "true")
@@ -93,15 +93,15 @@ func TestEnvFluentBit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !cfg.FluentBit.Enable {
-		t.Fatalf("unexpected cfg.FluentBit.Enable %v", cfg.FluentBit.Enable)
+	if !cfg.AddOnFluentBit.Enable {
+		t.Fatalf("unexpected cfg.AddOnFluentBit.Enable %v", cfg.AddOnFluentBit.Enable)
 	}
-	if cfg.FluentBit.Namespace != "hello" {
-		t.Fatalf("unexpected cfg.FluentBit.Namespace %v", cfg.FluentBit.Namespace)
+	if cfg.AddOnFluentBit.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnFluentBit.Namespace %v", cfg.AddOnFluentBit.Namespace)
 	}
 }
 
-func TestEnvKubernetesDashboard(t *testing.T) {
+func TestEnvAddOnKubernetesDashboard(t *testing.T) {
 	cfg := NewDefault()
 
 	os.Setenv("K8S_TESTER_ADD_ON_KUBERNETES_DASHBOARD_ENABLE", "true")
@@ -113,15 +113,15 @@ func TestEnvKubernetesDashboard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !cfg.KubernetesDashboard.Enable {
-		t.Fatalf("unexpected cfg.KubernetesDashboard.Enable %v", cfg.KubernetesDashboard.Enable)
+	if !cfg.AddOnKubernetesDashboard.Enable {
+		t.Fatalf("unexpected cfg.AddOnKubernetesDashboard.Enable %v", cfg.AddOnKubernetesDashboard.Enable)
 	}
-	if cfg.KubernetesDashboard.MinimumNodes != 10 {
-		t.Fatalf("unexpected cfg.KubernetesDashboard.MinimumNodes %v", cfg.KubernetesDashboard.MinimumNodes)
+	if cfg.AddOnKubernetesDashboard.MinimumNodes != 10 {
+		t.Fatalf("unexpected cfg.AddOnKubernetesDashboard.MinimumNodes %v", cfg.AddOnKubernetesDashboard.MinimumNodes)
 	}
 }
 
-func TestEnvNLBHelloWorld(t *testing.T) {
+func TestEnvAddOnNLBHelloWorld(t *testing.T) {
 	cfg := NewDefault()
 
 	os.Setenv("K8S_TESTER_CONFIG_PATH", "test.yaml")
@@ -142,21 +142,21 @@ func TestEnvNLBHelloWorld(t *testing.T) {
 	if cfg.ConfigPath != "test.yaml" {
 		t.Fatalf("unexpected cfg.ConfigPath %v", cfg.ConfigPath)
 	}
-	if !cfg.NLBHelloWorld.Enable {
-		t.Fatalf("unexpected cfg.NLBHelloWorld.Enable %v", cfg.NLBHelloWorld.Enable)
+	if !cfg.AddOnNLBHelloWorld.Enable {
+		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.Enable %v", cfg.AddOnNLBHelloWorld.Enable)
 	}
-	if cfg.NLBHelloWorld.MinimumNodes != 100 {
-		t.Fatalf("unexpected cfg.NLBHelloWorld.MinimumNodes %v", cfg.NLBHelloWorld.MinimumNodes)
+	if cfg.AddOnNLBHelloWorld.MinimumNodes != 100 {
+		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.MinimumNodes %v", cfg.AddOnNLBHelloWorld.MinimumNodes)
 	}
-	if cfg.NLBHelloWorld.Namespace != "hello" {
-		t.Fatalf("unexpected cfg.NLBHelloWorld.Namespace %v", cfg.NLBHelloWorld.Namespace)
+	if cfg.AddOnNLBHelloWorld.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.Namespace %v", cfg.AddOnNLBHelloWorld.Namespace)
 	}
-	if !reflect.DeepEqual(cfg.NLBHelloWorld.DeploymentNodeSelector, map[string]string{"a": "b", "c": "d"}) {
-		t.Fatalf("unexpected cfg.NLBHelloWorld.DeploymentNodeSelector %v", cfg.NLBHelloWorld.DeploymentNodeSelector)
+	if !reflect.DeepEqual(cfg.AddOnNLBHelloWorld.DeploymentNodeSelector, map[string]string{"a": "b", "c": "d"}) {
+		t.Fatalf("unexpected cfg.AddOnNLBHelloWorld.DeploymentNodeSelector %v", cfg.AddOnNLBHelloWorld.DeploymentNodeSelector)
 	}
 }
 
-func TestEnvJobsPi(t *testing.T) {
+func TestEnvAddOnJobsPi(t *testing.T) {
 	cfg := NewDefault()
 
 	os.Setenv("K8S_TESTER_ADD_ON_JOBS_PI_ENABLE", "true")
@@ -174,24 +174,24 @@ func TestEnvJobsPi(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if cfg.JobsPi.MinimumNodes != 100 {
-		t.Fatalf("unexpected cfg.JobsPi.MinimumNodes %v", cfg.JobsPi.MinimumNodes)
+	if cfg.AddOnJobsPi.MinimumNodes != 100 {
+		t.Fatalf("unexpected cfg.AddOnJobsPi.MinimumNodes %v", cfg.AddOnJobsPi.MinimumNodes)
 	}
-	if !cfg.JobsPi.Enable {
-		t.Fatalf("unexpected cfg.JobsPi.Enable %v", cfg.JobsPi.Enable)
+	if !cfg.AddOnJobsPi.Enable {
+		t.Fatalf("unexpected cfg.AddOnJobsPi.Enable %v", cfg.AddOnJobsPi.Enable)
 	}
-	if cfg.JobsPi.Namespace != "hello" {
-		t.Fatalf("unexpected cfg.JobsPi.Namespace %v", cfg.JobsPi.Namespace)
+	if cfg.AddOnJobsPi.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnJobsPi.Namespace %v", cfg.AddOnJobsPi.Namespace)
 	}
-	if cfg.JobsPi.Completes != 222 {
-		t.Fatalf("unexpected cfg.JobsPi.Completes %v", cfg.JobsPi.Completes)
+	if cfg.AddOnJobsPi.Completes != 222 {
+		t.Fatalf("unexpected cfg.AddOnJobsPi.Completes %v", cfg.AddOnJobsPi.Completes)
 	}
-	if cfg.JobsPi.Parallels != 333 {
-		t.Fatalf("unexpected cfg.JobsPi.Parallels %v", cfg.JobsPi.Parallels)
+	if cfg.AddOnJobsPi.Parallels != 333 {
+		t.Fatalf("unexpected cfg.AddOnJobsPi.Parallels %v", cfg.AddOnJobsPi.Parallels)
 	}
 }
 
-func TestEnvJobsEcho(t *testing.T) {
+func TestEnvAddOnJobsEcho(t *testing.T) {
 	cfg := NewDefault()
 
 	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_ENABLE", "true")
@@ -211,27 +211,27 @@ func TestEnvJobsEcho(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !cfg.JobsEcho.Enable {
-		t.Fatalf("unexpected cfg.JobsEcho.Enable %v", cfg.JobsEcho.Enable)
+	if !cfg.AddOnJobsEcho.Enable {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.Enable %v", cfg.AddOnJobsEcho.Enable)
 	}
-	if cfg.JobsEcho.MinimumNodes != 100 {
-		t.Fatalf("unexpected cfg.JobsEcho.MinimumNodes %v", cfg.JobsEcho.MinimumNodes)
+	if cfg.AddOnJobsEcho.MinimumNodes != 100 {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.MinimumNodes %v", cfg.AddOnJobsEcho.MinimumNodes)
 	}
-	if cfg.JobsEcho.Namespace != "hello" {
-		t.Fatalf("unexpected cfg.JobsEcho.Namespace %v", cfg.JobsEcho.Namespace)
+	if cfg.AddOnJobsEcho.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.Namespace %v", cfg.AddOnJobsEcho.Namespace)
 	}
-	if cfg.JobsEcho.Completes != 222 {
-		t.Fatalf("unexpected cfg.JobsEcho.Completes %v", cfg.JobsEcho.Completes)
+	if cfg.AddOnJobsEcho.Completes != 222 {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.Completes %v", cfg.AddOnJobsEcho.Completes)
 	}
-	if cfg.JobsEcho.Parallels != 333 {
-		t.Fatalf("unexpected cfg.JobsEcho.Parallels %v", cfg.JobsEcho.Parallels)
+	if cfg.AddOnJobsEcho.Parallels != 333 {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.Parallels %v", cfg.AddOnJobsEcho.Parallels)
 	}
-	if cfg.JobsEcho.EchoSize != 555 {
-		t.Fatalf("unexpected cfg.JobsEcho.EchoSize %v", cfg.JobsEcho.EchoSize)
+	if cfg.AddOnJobsEcho.EchoSize != 555 {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.EchoSize %v", cfg.AddOnJobsEcho.EchoSize)
 	}
 }
 
-func TestEnvCronJobsEcho(t *testing.T) {
+func TestEnvAddOnCronJobsEcho(t *testing.T) {
 	cfg := NewDefault()
 
 	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_ENABLE", "true")
@@ -257,31 +257,31 @@ func TestEnvCronJobsEcho(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !cfg.CronJobsEcho.Enable {
-		t.Fatalf("unexpected cfg.CronJobsEcho.Enable %v", cfg.CronJobsEcho.Enable)
+	if !cfg.AddOnCronJobsEcho.Enable {
+		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.Enable %v", cfg.AddOnCronJobsEcho.Enable)
 	}
-	if cfg.CronJobsEcho.MinimumNodes != 100 {
-		t.Fatalf("unexpected cfg.CronJobsEcho.MinimumNodes %v", cfg.CronJobsEcho.MinimumNodes)
+	if cfg.AddOnCronJobsEcho.MinimumNodes != 100 {
+		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.MinimumNodes %v", cfg.AddOnCronJobsEcho.MinimumNodes)
 	}
-	if cfg.CronJobsEcho.Namespace != "hello" {
-		t.Fatalf("unexpected cfg.CronJobsEcho.Namespace %v", cfg.CronJobsEcho.Namespace)
+	if cfg.AddOnCronJobsEcho.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.Namespace %v", cfg.AddOnCronJobsEcho.Namespace)
 	}
-	if cfg.CronJobsEcho.Completes != 222 {
-		t.Fatalf("unexpected cfg.CronJobsEcho.Completes %v", cfg.CronJobsEcho.Completes)
+	if cfg.AddOnCronJobsEcho.Completes != 222 {
+		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.Completes %v", cfg.AddOnCronJobsEcho.Completes)
 	}
-	if cfg.CronJobsEcho.Parallels != 333 {
-		t.Fatalf("unexpected cfg.CronJobsEcho.Parallels %v", cfg.CronJobsEcho.Parallels)
+	if cfg.AddOnCronJobsEcho.Parallels != 333 {
+		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.Parallels %v", cfg.AddOnCronJobsEcho.Parallels)
 	}
-	if cfg.CronJobsEcho.EchoSize != 555 {
-		t.Fatalf("unexpected cfg.CronJobsEcho.EchoSize %v", cfg.CronJobsEcho.EchoSize)
+	if cfg.AddOnCronJobsEcho.EchoSize != 555 {
+		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.EchoSize %v", cfg.AddOnCronJobsEcho.EchoSize)
 	}
-	if cfg.CronJobsEcho.Schedule != "*/10 */10 * * *" {
-		t.Fatalf("unexpected cfg.CronJobsEcho.Schedule %v", cfg.CronJobsEcho.Schedule)
+	if cfg.AddOnCronJobsEcho.Schedule != "*/10 */10 * * *" {
+		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.Schedule %v", cfg.AddOnCronJobsEcho.Schedule)
 	}
-	if cfg.CronJobsEcho.SuccessfulJobsHistoryLimit != 55555 {
-		t.Fatalf("unexpected cfg.CronJobsEcho.SuccessfulJobsHistoryLimit %v", cfg.CronJobsEcho.SuccessfulJobsHistoryLimit)
+	if cfg.AddOnCronJobsEcho.SuccessfulJobsHistoryLimit != 55555 {
+		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.SuccessfulJobsHistoryLimit %v", cfg.AddOnCronJobsEcho.SuccessfulJobsHistoryLimit)
 	}
-	if cfg.CronJobsEcho.FailedJobsHistoryLimit != 77777 {
-		t.Fatalf("unexpected cfg.CronJobsEcho.FailedJobsHistoryLimit %v", cfg.CronJobsEcho.FailedJobsHistoryLimit)
+	if cfg.AddOnCronJobsEcho.FailedJobsHistoryLimit != 77777 {
+		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.FailedJobsHistoryLimit %v", cfg.AddOnCronJobsEcho.FailedJobsHistoryLimit)
 	}
 }

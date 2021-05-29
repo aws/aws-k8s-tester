@@ -5,36 +5,110 @@ package k8s_tester
 import (
 	"errors"
 	"fmt"
+	"io"
 	"path"
 	"reflect"
 	"strings"
 
 	"github.com/aws/aws-k8s-tester/client"
+	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
+	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
+	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
+	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
+	kubernetes_dashboard "github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard"
+	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
+	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
+	"github.com/aws/aws-k8s-tester/utils/log"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
 	k8s_client "k8s.io/client-go/kubernetes"
 )
 
 func New(cfg *Config) k8s_tester.Tester {
-	ccfg, err := client.CreateConfig(cfg.ClientConfig)
+	lg, logWriter, _, err := log.NewWithStderrWriter(cfg.LogLevel, cfg.LogOutputs)
 	if err != nil {
-		cfg.Logger.Panic("failed to create client config", zap.Error(err))
+		panic(err)
 	}
-	cli, err := k8s_client.NewForConfig(ccfg)
-	if err != nil {
-		cfg.Logger.Panic("failed to create client", zap.Error(err))
+	_ = zap.ReplaceGlobals(lg)
+
+	ts := &tester{
+		cfg:       cfg,
+		logger:    lg,
+		logWriter: logWriter,
+		clientConfig: &client.Config{
+			Logger:            lg,
+			KubectlPath:       cfg.KubectlPath,
+			KubeconfigPath:    cfg.KubeconfigPath,
+			KubeconfigContext: cfg.KubeconfigContext,
+		},
+		testers: make([]k8s_tester.Tester, 0),
 	}
 
-	return &tester{
-		cfg: cfg,
-		cli: cli,
+	ccfg, err := client.CreateConfig(ts.clientConfig)
+	if err != nil {
+		lg.Panic("failed to create client config", zap.Error(err))
 	}
+	ts.cli, err = k8s_client.NewForConfig(ccfg)
+	if err != nil {
+		lg.Panic("failed to create client", zap.Error(err))
+	}
+
+	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
+	if cfg.AddOnCloudwatchAgent != nil && cfg.AddOnCloudwatchAgent.Enable {
+		cfg.AddOnCloudwatchAgent.ClientConfig = ts.clientConfig
+		cfg.AddOnCloudwatchAgent.Client = ts.cli
+		ts.testers = append(ts.testers, cloudwatch_agent.New(cfg.AddOnCloudwatchAgent))
+	}
+	if cfg.AddOnMetricsServer != nil && cfg.AddOnMetricsServer.Enable {
+		cfg.AddOnMetricsServer.ClientConfig = ts.clientConfig
+		cfg.AddOnMetricsServer.Client = ts.cli
+		ts.testers = append(ts.testers, metrics_server.New(cfg.AddOnMetricsServer))
+	}
+	if cfg.AddOnFluentBit != nil && cfg.AddOnFluentBit.Enable {
+		cfg.AddOnFluentBit.ClientConfig = ts.clientConfig
+		cfg.AddOnFluentBit.Client = ts.cli
+		ts.testers = append(ts.testers, fluent_bit.New(cfg.AddOnFluentBit))
+	}
+	if cfg.AddOnKubernetesDashboard != nil && cfg.AddOnKubernetesDashboard.Enable {
+		cfg.AddOnKubernetesDashboard.ClientConfig = ts.clientConfig
+		cfg.AddOnKubernetesDashboard.Client = ts.cli
+		ts.testers = append(ts.testers, kubernetes_dashboard.New(cfg.AddOnKubernetesDashboard))
+	}
+	if cfg.AddOnNLBHelloWorld != nil && cfg.AddOnNLBHelloWorld.Enable {
+		cfg.AddOnNLBHelloWorld.ClientConfig = ts.clientConfig
+		cfg.AddOnNLBHelloWorld.Client = ts.cli
+		ts.testers = append(ts.testers, nlb_hello_world.New(cfg.AddOnNLBHelloWorld))
+	}
+	if cfg.AddOnJobsPi != nil && cfg.AddOnJobsPi.Enable {
+		cfg.AddOnJobsPi.ClientConfig = ts.clientConfig
+		cfg.AddOnJobsPi.Client = ts.cli
+		ts.testers = append(ts.testers, jobs_pi.New(cfg.AddOnJobsPi))
+	}
+	if cfg.AddOnJobsEcho != nil && cfg.AddOnJobsEcho.Enable {
+		cfg.AddOnJobsEcho.ClientConfig = ts.clientConfig
+		cfg.AddOnJobsEcho.Client = ts.cli
+		ts.testers = append(ts.testers, jobs_echo.New(cfg.AddOnJobsEcho))
+	}
+	if cfg.AddOnCronJobsEcho != nil && cfg.AddOnCronJobsEcho.Enable {
+		cfg.AddOnCronJobsEcho.ClientConfig = ts.clientConfig
+		cfg.AddOnCronJobsEcho.Client = ts.cli
+		ts.testers = append(ts.testers, jobs_echo.New(cfg.AddOnCronJobsEcho))
+	}
+
+	return ts
 }
 
 type tester struct {
 	cfg *Config
-	cli k8s_client.Interface
+
+	logger       *zap.Logger
+	logWriter    io.Writer
+	clientConfig *client.Config
+	cli          k8s_client.Interface
+
+	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
+	testers []k8s_tester.Tester
 }
 
 var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
@@ -48,12 +122,29 @@ func (ts *tester) Apply() error {
 		return errors.New("cancelled")
 	}
 
-	if nodes, err := client.ListNodes(ts.cli); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+	nodes, err := client.ListNodes(ts.cli)
+	if len(nodes) < ts.cfg.MinimumNodes || err != nil {
 		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
+	}
+	ts.cfg.TotalNodes = len(nodes)
+	ts.cfg.Sync()
+
+	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
+	for idx, tt := range ts.testers {
+		_ = idx
+		if !tt.Enabled() {
+			continue
+		}
+		if err := tt.Apply(); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
+
+// 🎉
+// ✗
 
 func (ts *tester) Delete() error {
 	if ok := ts.runPrompt("delete"); !ok {
@@ -61,6 +152,16 @@ func (ts *tester) Delete() error {
 	}
 
 	var errs []string
+
+	for idx := len(ts.testers) - 1; idx >= 0; idx-- {
+		tt := ts.testers[idx]
+		if !tt.Enabled() {
+			continue
+		}
+		if err := tt.Delete(); err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
 
 	if len(errs) > 0 {
 		return errors.New(strings.Join(errs, ", "))

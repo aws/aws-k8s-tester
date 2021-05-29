@@ -39,12 +39,13 @@ type Config struct {
 	Enable bool `json:"enable"`
 	Prompt bool `json:"-"`
 
-	Logger    *zap.Logger   `json:"-"`
-	LogWriter io.Writer     `json:"-"`
-	Stopc     chan struct{} `json:"-"`
+	Stopc        chan struct{}        `json:"-"`
+	Logger       *zap.Logger          `json:"-"`
+	LogWriter    io.Writer            `json:"-"`
+	ClientConfig *client.Config       `json:"-"`
+	Client       k8s_client.Interface `json:"-"`
 
-	ClientConfig *client.Config  `json:"-"`
-	ECRAPI       ecriface.ECRAPI `json:"-"`
+	ECRAPI ecriface.ECRAPI `json:"-"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum_nodes"`
@@ -121,15 +122,6 @@ func NewDefault(jobType string) *Config {
 }
 
 func New(cfg *Config) k8s_tester.Tester {
-	ccfg, err := client.CreateConfig(cfg.ClientConfig)
-	if err != nil {
-		cfg.Logger.Panic("failed to create client config", zap.Error(err))
-	}
-	cli, err := k8s_client.NewForConfig(ccfg)
-	if err != nil {
-		cfg.Logger.Panic("failed to create client", zap.Error(err))
-	}
-
 	if cfg.RepositoryBusyboxPartition != "" &&
 		cfg.RepositoryBusyboxAccountID != "" &&
 		cfg.RepositoryBusyboxRegion != "" &&
@@ -150,13 +142,11 @@ func New(cfg *Config) k8s_tester.Tester {
 
 	return &tester{
 		cfg: cfg,
-		cli: cli,
 	}
 }
 
 type tester struct {
 	cfg *Config
-	cli k8s_client.Interface
 }
 
 var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
@@ -182,11 +172,11 @@ func (ts *tester) Apply() (err error) {
 		return err
 	}
 
-	if nodes, err := client.ListNodes(ts.cli); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+	if nodes, err := client.ListNodes(ts.cfg.Client); len(nodes) < ts.cfg.MinimumNodes || err != nil {
 		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
 	}
 
-	if err := client.CreateNamespace(ts.cfg.Logger, ts.cli, ts.cfg.Namespace); err != nil {
+	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client, ts.cfg.Namespace); err != nil {
 		return err
 	}
 
@@ -214,7 +204,7 @@ func (ts *tester) Delete() (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 
 	if ts.cfg.JobType == "Job" {
-		err = ts.cli.
+		err = ts.cfg.Client.
 			BatchV1().
 			Jobs(ts.cfg.Namespace).
 			Delete(
@@ -226,7 +216,7 @@ func (ts *tester) Delete() (err error) {
 				},
 			)
 	} else {
-		err = ts.cli.
+		err = ts.cfg.Client.
 			BatchV1beta1().
 			CronJobs(ts.cfg.Namespace).
 			Delete(
@@ -249,7 +239,7 @@ func (ts *tester) Delete() (err error) {
 
 	if err := client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
-		ts.cli,
+		ts.cfg.Client,
 		ts.cfg.Namespace,
 		client.DefaultNamespaceDeletionInterval,
 		client.DefaultNamespaceDeletionTimeout,
@@ -423,7 +413,7 @@ func (ts *tester) createJob(busyboxImg string) (err error) {
 			zap.String("object-size", humanize.Bytes(uint64(len(b)))),
 		)
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		_, err = ts.cli.
+		_, err = ts.cfg.Client.
 			BatchV1().
 			Jobs(ts.cfg.Namespace).
 			Create(ctx, &jobObj, meta_v1.CreateOptions{})
@@ -446,7 +436,7 @@ func (ts *tester) createJob(busyboxImg string) (err error) {
 		zap.String("object-size", humanize.Bytes(uint64(len(b)))),
 	)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err = ts.cli.
+	_, err = ts.cfg.Client.
 		BatchV1beta1().
 		CronJobs(ts.cfg.Namespace).
 		Create(ctx, &cronObj, meta_v1.CreateOptions{})
@@ -475,7 +465,7 @@ func (ts *tester) checkJob() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.LogWriter,
 			ts.cfg.Stopc,
-			ts.cli,
+			ts.cfg.Client,
 			time.Minute,
 			5*time.Second,
 			ts.cfg.Namespace,
@@ -488,7 +478,7 @@ func (ts *tester) checkJob() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.LogWriter,
 			ts.cfg.Stopc,
-			ts.cli,
+			ts.cfg.Client,
 			3*time.Minute,
 			5*time.Second,
 			ts.cfg.Namespace,

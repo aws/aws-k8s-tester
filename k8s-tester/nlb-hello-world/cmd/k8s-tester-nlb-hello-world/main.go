@@ -87,7 +87,21 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 
 	nodeSelector := make(map[string]string)
 	if err := json.Unmarshal([]byte(deploymentNodeSelector), &nodeSelector); err != nil {
-		panic(fmt.Errorf("failed to parse %q (%v)", deploymentNodeSelector, err))
+		lg.Panic("failed to parse", zap.String("deloyment-node-selector", deploymentNodeSelector), zap.Error(err))
+	}
+
+	clientConfig := &client.Config{
+		Logger:         lg,
+		KubectlPath:    kubectlPath,
+		KubeconfigPath: kubeconfigPath,
+	}
+	ccfg, err := client.CreateConfig(clientConfig)
+	if err != nil {
+		lg.Panic("failed to create client config", zap.Error(err))
+	}
+	cli, err := k8s_client.NewForConfig(ccfg)
+	if err != nil {
+		lg.Panic("failed to create client", zap.Error(err))
 	}
 
 	cfg := nlb_hello_world.Config{
@@ -96,11 +110,8 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 		LogWriter:    logWriter,
 		MinimumNodes: minimumNodes,
 		Namespace:    namespace,
-		ClientConfig: &client.Config{
-			Logger:         lg,
-			KubectlPath:    kubectlPath,
-			KubeconfigPath: kubeconfigPath,
-		},
+		ClientConfig: clientConfig,
+		Client:       cli,
 
 		Partition: partition,
 		Region:    region,
@@ -125,6 +136,10 @@ func newDelete() *cobra.Command {
 		Short: "Delete resources",
 		Run:   createDeleteFunc,
 	}
+
+	cmd.PersistentFlags().StringVar(&partition, "partition", "aws", "partition for AWS region")
+	cmd.PersistentFlags().StringVar(&region, "region", "", "region for ELB resource")
+
 	return cmd
 }
 
@@ -135,16 +150,30 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 	}
 	_ = zap.ReplaceGlobals(lg)
 
+	clientConfig := &client.Config{
+		Logger:         lg,
+		KubectlPath:    kubectlPath,
+		KubeconfigPath: kubeconfigPath,
+	}
+	ccfg, err := client.CreateConfig(clientConfig)
+	if err != nil {
+		lg.Panic("failed to create client config", zap.Error(err))
+	}
+	cli, err := k8s_client.NewForConfig(ccfg)
+	if err != nil {
+		lg.Panic("failed to create client", zap.Error(err))
+	}
+
 	cfg := &nlb_hello_world.Config{
-		Prompt:    prompt,
-		Logger:    lg,
-		LogWriter: logWriter,
-		Namespace: namespace,
-		ClientConfig: &client.Config{
-			Logger:         lg,
-			KubectlPath:    kubectlPath,
-			KubeconfigPath: kubeconfigPath,
-		},
+		Prompt:       prompt,
+		Logger:       lg,
+		LogWriter:    logWriter,
+		Namespace:    namespace,
+		ClientConfig: clientConfig,
+		Client:       cli,
+
+		Partition: partition,
+		Region:    region,
 	}
 
 	ts := nlb_hello_world.New(cfg)

@@ -36,11 +36,11 @@ type Config struct {
 	Enable bool `json:"enable"`
 	Prompt bool `json:"-"`
 
-	Logger    *zap.Logger   `json:"-"`
-	LogWriter io.Writer     `json:"-"`
-	Stopc     chan struct{} `json:"-"`
-
-	ClientConfig *client.Config `json:"-"`
+	Stopc        chan struct{}        `json:"-"`
+	Logger       *zap.Logger          `json:"-"`
+	LogWriter    io.Writer            `json:"-"`
+	ClientConfig *client.Config       `json:"-"`
+	Client       k8s_client.Interface `json:"-"`
 
 	Region      string `json:"region"`
 	ClusterName string `json:"cluster_name"`
@@ -63,24 +63,13 @@ func NewDefault() *Config {
 }
 
 func New(cfg *Config) k8s_tester.Tester {
-	ccfg, err := client.CreateConfig(cfg.ClientConfig)
-	if err != nil {
-		cfg.Logger.Panic("failed to create client config", zap.Error(err))
-	}
-	cli, err := k8s_client.NewForConfig(ccfg)
-	if err != nil {
-		cfg.Logger.Panic("failed to create client", zap.Error(err))
-	}
-
 	return &tester{
 		cfg: cfg,
-		cli: cli,
 	}
 }
 
 type tester struct {
 	cfg *Config
-	cli k8s_client.Interface
 }
 
 var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
@@ -98,7 +87,7 @@ func (ts *tester) Apply() error {
 		return errors.New("cancelled")
 	}
 
-	if nodes, err := client.ListNodes(ts.cli); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+	if nodes, err := client.ListNodes(ts.cfg.Client); len(nodes) < ts.cfg.MinimumNodes || err != nil {
 		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
 	}
 
@@ -159,7 +148,7 @@ func (ts *tester) Delete() error {
 
 	if err := client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
-		ts.cli,
+		ts.cfg.Client,
 		ts.cfg.Namespace,
 		client.DefaultNamespaceDeletionInterval,
 		client.DefaultNamespaceDeletionTimeout,
@@ -212,7 +201,7 @@ const (
 func (ts *tester) createServiceAccount() error {
 	ts.cfg.Logger.Info("creating cw agent ServiceAccount")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cli.
+	_, err := ts.cfg.Client.
 		CoreV1().
 		ServiceAccounts(ts.cfg.Namespace).
 		Create(
@@ -247,7 +236,7 @@ func (ts *tester) deleteServiceAccount() error {
 	ts.cfg.Logger.Info("deleting cw agent ServiceAccount")
 	foreground := meta_v1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	err := ts.cli.
+	err := ts.cfg.Client.
 		CoreV1().
 		ServiceAccounts(ts.cfg.Namespace).
 		Delete(
@@ -273,7 +262,7 @@ func (ts *tester) deleteServiceAccount() error {
 func (ts *tester) createRBACClusterRole() error {
 	ts.cfg.Logger.Info("creating cw agent RBAC ClusterRole")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cli.
+	_, err := ts.cfg.Client.
 		RbacV1().
 		ClusterRoles().
 		Create(
@@ -384,7 +373,7 @@ func (ts *tester) deleteRBACClusterRole() error {
 	ts.cfg.Logger.Info("deleting cw agent RBAC ClusterRole")
 	foreground := meta_v1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	err := ts.cli.
+	err := ts.cfg.Client.
 		RbacV1().
 		ClusterRoles().
 		Delete(
@@ -410,7 +399,7 @@ func (ts *tester) deleteRBACClusterRole() error {
 func (ts *tester) createRBACClusterRoleBinding() error {
 	ts.cfg.Logger.Info("creating cw agent RBAC ClusterRoleBinding")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cli.
+	_, err := ts.cfg.Client.
 		RbacV1().
 		ClusterRoleBindings().
 		Create(
@@ -458,7 +447,7 @@ func (ts *tester) deleteRBACClusterRoleBinding() error {
 	ts.cfg.Logger.Info("deleting cw agent RBAC ClusterRoleBinding")
 	foreground := meta_v1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	err := ts.cli.
+	err := ts.cfg.Client.
 		RbacV1().
 		ClusterRoleBindings().
 		Delete(
@@ -517,7 +506,7 @@ func (ts *tester) createConfigMapConfig() (err error) {
 	buf.Reset()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err = ts.cli.
+	_, err = ts.cfg.Client.
 		CoreV1().
 		ConfigMaps(ts.cfg.Namespace).
 		Create(
@@ -553,7 +542,7 @@ func (ts *tester) deleteConfigMapConfig() error {
 	ts.cfg.Logger.Info("deleting cw agent ConfigMap config")
 	foreground := meta_v1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	err := ts.cli.
+	err := ts.cfg.Client.
 		CoreV1().
 		ConfigMaps(ts.cfg.Namespace).
 		Delete(
@@ -759,7 +748,7 @@ func (ts *tester) createDaemonSet() (err error) {
 
 	ts.cfg.Logger.Info("creating cw agent DaemonSet", zap.String("name", cwAgentDaemonSetName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err = ts.cli.
+	_, err = ts.cfg.Client.
 		AppsV1().
 		DaemonSets(ts.cfg.Namespace).
 		Create(ctx, &dsObj, meta_v1.CreateOptions{})
@@ -776,7 +765,7 @@ func (ts *tester) deleteDaemonSet() (err error) {
 	foreground := meta_v1.DeletePropagationForeground
 	ts.cfg.Logger.Info("deleting cw agent DaemonSet", zap.String("name", cwAgentDaemonSetName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	err = ts.cli.
+	err = ts.cfg.Client.
 		AppsV1().
 		DaemonSets(ts.cfg.Namespace).
 		Delete(
@@ -813,7 +802,7 @@ func (ts *tester) checkPods() (err error) {
 }
 
 func (ts *tester) _checkPods() error {
-	pods, err := client.ListPods(ts.cfg.Logger, ts.cli, ts.cfg.Namespace, 1000, 5*time.Second)
+	pods, err := client.ListPods(ts.cfg.Logger, ts.cfg.Client, ts.cfg.Namespace, 1000, 5*time.Second)
 	if err != nil {
 		ts.cfg.Logger.Warn("listing pods failed", zap.Error(err))
 		return err
@@ -830,7 +819,7 @@ func (ts *tester) _checkPods() error {
 		return errors.New("no pod found in " + ts.cfg.Namespace)
 	}
 
-	nodes, err := client.ListNodes(ts.cli)
+	nodes, err := client.ListNodes(ts.cfg.Client)
 	if err != nil {
 		return fmt.Errorf("failed to list nodes %v", err)
 	}

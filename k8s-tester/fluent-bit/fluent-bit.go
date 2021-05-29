@@ -41,7 +41,7 @@ var dirOrCreate = v1.HostPathDirectoryOrCreate
 func (ts *tester) createServiceAccount() error {
 	ts.cfg.Logger.Info("creating %s: %s", zap.String("ServiceAccount", appName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cli.
+	_, err := ts.cfg.Client.
 		CoreV1().ServiceAccounts(ts.cfg.Namespace).Create(
 		ctx,
 		&v1.ServiceAccount{
@@ -74,7 +74,7 @@ func (ts *tester) createServiceAccount() error {
 func (ts *tester) createRBACRole() error {
 	ts.cfg.Logger.Info("creating %s: %s", zap.String("Role", appName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cli.
+	_, err := ts.cfg.Client.
 		RbacV1().
 		Roles(ts.cfg.Namespace).
 		Create(
@@ -129,7 +129,7 @@ func (ts *tester) createRBACRole() error {
 func (ts *tester) createRBACRoleBinding() error {
 	ts.cfg.Logger.Info("creating %s: %s", zap.String("RoleBinding", appName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cli.
+	_, err := ts.cfg.Client.
 		RbacV1().
 		RoleBindings(ts.cfg.Namespace).
 		Create(
@@ -177,7 +177,7 @@ func (ts *tester) createRBACRoleBinding() error {
 func (ts *tester) createRBACClusterRole() error {
 	ts.cfg.Logger.Info("creating %s: %s", zap.String("ClusterRole", appName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cli.
+	_, err := ts.cfg.Client.
 		RbacV1().
 		ClusterRoles().
 		Create(
@@ -233,7 +233,7 @@ func (ts *tester) createRBACClusterRole() error {
 func (ts *tester) createRBACClusterRoleBinding() error {
 	ts.cfg.Logger.Info("creating %s: %s", zap.String("ClusterRoleBinding", appName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cli.
+	_, err := ts.cfg.Client.
 		RbacV1().
 		ClusterRoleBindings().
 		Create(
@@ -329,7 +329,7 @@ const ParsersConf = `
 func (ts *tester) createAppConfigMap() error {
 	ts.cfg.Logger.Info("creating %s: %s", zap.String("Configmap", appConfigMapNameConfig))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cli.
+	_, err := ts.cfg.Client.
 		CoreV1().
 		ConfigMaps(ts.cfg.Namespace).
 		Create(
@@ -370,7 +370,7 @@ func (ts *tester) createAppConfigMap() error {
 func (ts *tester) createDaemonSet() error {
 	ts.cfg.Logger.Info("creating %s: %s", zap.String("Daemonset", appName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cli.
+	_, err := ts.cfg.Client.
 		AppsV1().
 		DaemonSets(ts.cfg.Namespace).
 		Create(
@@ -490,7 +490,7 @@ func (ts *tester) checkDaemonSet() error {
 		ts.cfg.Logger,
 		ts.cfg.LogWriter,
 		ts.cfg.Stopc,
-		ts.cli,
+		ts.cfg.Client,
 		10*time.Second,
 		10*time.Second,
 		ts.cfg.Namespace,
@@ -522,7 +522,7 @@ func (ts *tester) checkDaemonSet() error {
 func (ts *tester) createService() error {
 	ts.cfg.Logger.Info("creating %s: %s", zap.String("Service", appName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cli.
+	_, err := ts.cfg.Client.
 		CoreV1().
 		Services(ts.cfg.Namespace).
 		Create(
@@ -570,7 +570,7 @@ func (ts *tester) testHTTPClient() error {
 	ginkgo.By(action)
 	// Create an alpine to curl the HTTP client endpoint of fluent-bit
 	clientPod := newAlpinePod(containerHTTPClient, "curl "+appName)
-	_, err := ts.cli.
+	_, err := ts.cfg.Client.
 		CoreV1().
 		Pods(ts.cfg.Namespace).
 		Create(ctx, clientPod, meta_v1.CreateOptions{})
@@ -588,7 +588,7 @@ func (ts *tester) testHTTPClient() error {
 		ts.cfg.Logger,
 		ts.cfg.LogWriter,
 		ts.cfg.Stopc,
-		ts.cli,
+		ts.cfg.Client,
 		ts.cfg.Namespace,
 		containerHTTPClient,
 	)
@@ -615,7 +615,7 @@ func (ts *tester) testLogsWithinNamespace() error {
 
 	// Create an alpine to curl the HTTP client endpoint of fluent-bit, api/v1/metrics
 	LogWriterPod := newAlpineLoggingPod(loggingPod)
-	_, err := ts.cli.
+	_, err := ts.cfg.Client.
 		CoreV1().
 		Pods(ts.cfg.Namespace).
 		Create(ctx, LogWriterPod, meta_v1.CreateOptions{})
@@ -632,7 +632,7 @@ func (ts *tester) testLogsWithinNamespace() error {
 	// List the pods in the namespace
 	podlist, err := client.ListPods(
 		ts.cfg.Logger,
-		ts.cli,
+		ts.cfg.Client,
 		ts.cfg.Namespace,
 		5,
 		5*time.Second,
@@ -671,7 +671,7 @@ func (ts *tester) testLogsWithinNamespace() error {
 		ts.cfg.Logger,
 		ts.cfg.LogWriter,
 		ts.cfg.Stopc,
-		ts.cli,
+		ts.cfg.Client,
 		ts.cfg.Namespace,
 		fluentpod,
 	)
