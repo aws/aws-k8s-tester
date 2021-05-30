@@ -15,6 +15,9 @@ gofmt -s -w ./cmd/readme-gen
 goimports -w ./cloudwatch-agent
 gofmt -s -w ./cloudwatch-agent
 
+goimports -w ./csi-ebs
+gofmt -s -w ./csi-ebs
+
 goimports -w ./fluent-bit
 gofmt -s -w ./fluent-bit
 

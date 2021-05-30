@@ -32,6 +32,15 @@
 *--------------------------------------------------*----------------------*---------------------------------------*---------*
 
 
+*--------------------------------------------*----------------------*---------------------------------*---------*
+|           ENVIRONMENTAL VARIABLE           |      FIELD TYPE      |              TYPE               | GO TYPE |
+*--------------------------------------------*----------------------*---------------------------------*---------*
+| K8S_TESTER_ADD_ON_FLUENT_BIT_ENABLE        | SETTABLE VIA ENV VAR | *fluent_bit.Config.Enable       | bool    |
+| K8S_TESTER_ADD_ON_FLUENT_BIT_MINIMUM_NODES | SETTABLE VIA ENV VAR | *fluent_bit.Config.MinimumNodes | int     |
+| K8S_TESTER_ADD_ON_FLUENT_BIT_NAMESPACE     | SETTABLE VIA ENV VAR | *fluent_bit.Config.Namespace    | string  |
+*--------------------------------------------*----------------------*---------------------------------*---------*
+
+
 *------------------------------------------------*----------------------*-------------------------------------*---------*
 |             ENVIRONMENTAL VARIABLE             |      FIELD TYPE      |                TYPE                 | GO TYPE |
 *------------------------------------------------*----------------------*-------------------------------------*---------*
@@ -41,13 +50,13 @@
 *------------------------------------------------*----------------------*-------------------------------------*---------*
 
 
-*--------------------------------------------*----------------------*---------------------------------*---------*
-|           ENVIRONMENTAL VARIABLE           |      FIELD TYPE      |              TYPE               | GO TYPE |
-*--------------------------------------------*----------------------*---------------------------------*---------*
-| K8S_TESTER_ADD_ON_FLUENT_BIT_ENABLE        | SETTABLE VIA ENV VAR | *fluent_bit.Config.Enable       | bool    |
-| K8S_TESTER_ADD_ON_FLUENT_BIT_MINIMUM_NODES | SETTABLE VIA ENV VAR | *fluent_bit.Config.MinimumNodes | int     |
-| K8S_TESTER_ADD_ON_FLUENT_BIT_NAMESPACE     | SETTABLE VIA ENV VAR | *fluent_bit.Config.Namespace    | string  |
-*--------------------------------------------*----------------------*---------------------------------*---------*
+*-----------------------------------------------*----------------------*----------------------------------*---------*
+|            ENVIRONMENTAL VARIABLE             |      FIELD TYPE      |               TYPE               | GO TYPE |
+*-----------------------------------------------*----------------------*----------------------------------*---------*
+| K8S_TESTER_ADD_ON_CSI_EBS_ENABLE              | SETTABLE VIA ENV VAR | *csi_ebs.Config.Enable           | bool    |
+| K8S_TESTER_ADD_ON_CSI_EBS_MINIMUM_NODES       | SETTABLE VIA ENV VAR | *csi_ebs.Config.MinimumNodes     | int     |
+| K8S_TESTER_ADD_ON_CSI_EBS_HELM_CHART_REPO_URL | SETTABLE VIA ENV VAR | *csi_ebs.Config.HelmChartRepoURL | string  |
+*-----------------------------------------------*----------------------*----------------------------------*---------*
 
 
 *------------------------------------------------------*----------------------*-------------------------------------------*---------*

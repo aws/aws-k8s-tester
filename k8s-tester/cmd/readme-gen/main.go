@@ -10,6 +10,7 @@ import (
 
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
+	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
@@ -41,11 +42,15 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+fluent_bit.Env()+"_", &fluent_bit.Config{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+metrics_server.Env()+"_", &metrics_server.Config{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+fluent_bit.Env()+"_", &fluent_bit.Config{}))
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+csi_ebs.Env()+"_", &csi_ebs.Config{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

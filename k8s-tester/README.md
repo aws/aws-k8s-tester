@@ -11,17 +11,20 @@ Each test case:
  - MAY implement a CLI with the sub-commands of "apply" and "delete"
 
 To add a new tester,
-1. Create a new directory under `github.com/aws/aws-k8s-tester/k8s-tester`.
-2. Implement `github.com/aws/aws-k8s-tester/k8s-tester/tester.Tester` interface within the new package `github.com/aws/aws-k8s-tester/k8s-tester/NEW-TESTER`.
-3. (Optional) Implement a stand-alone CLI for the test case under `github.com/aws/aws-k8s-tester/k8s-tester/NEW-TESTER/cmd/k8s-tester-NEW-TESTER`.
-4. Import the new configuration struct to `k8s-tester/config.go` with test cases in `k8s-tester/config_test.go`.
-5. Add the new tester to `github.com/aws/aws-k8s-tester/k8s-tester/tester.go`.
-6. Run `github.com/aws/aws-k8s-tester/k8s-tester/vend.sh`.
-7. Add the new tester to `github.com/aws/aws-k8s-tester/k8s-tester/cmd/readme-gen/main.go`.
-8. Run `github.com/aws/aws-k8s-tester/k8s-tester/cmd/readme-gen/vend.sh`.
-9. Update and run `github.com/aws/aws-k8s-tester/k8s-tester/fmt.sh`.
-10. Run `github.com/aws/aws-k8s-tester/k8s-tester/cmd/k8s-tester/vend.sh`.
-11. Run `github.com/aws/aws-k8s-tester/k8s-tester/gen.sh`.
+- Create a new directory under `github.com/aws/aws-k8s-tester/k8s-tester`.
+- Implement `github.com/aws/aws-k8s-tester/k8s-tester/tester.Tester` interface within the new package `github.com/aws/aws-k8s-tester/k8s-tester/NEW-TESTER`.
+- (Optional) Implement a stand-alone CLI for the test case under `github.com/aws/aws-k8s-tester/k8s-tester/NEW-TESTER/cmd/k8s-tester-NEW-TESTER`.
+- Import the new configuration struct to `k8s-tester/config.go` with test cases in `k8s-tester/config_test.go`.
+- Add the new tester to `github.com/aws/aws-k8s-tester/k8s-tester/tester.go`.
+- Update `github.com/aws/aws-k8s-tester/k8s-tester/go.mod`.
+- Run `github.com/aws/aws-k8s-tester/k8s-tester/vend.sh`.
+- Add the new tester to `github.com/aws/aws-k8s-tester/k8s-tester/cmd/readme-gen/main.go`.
+- Update `github.com/aws/aws-k8s-tester/k8s-tester/cmd/readme-gen/go.mod`.
+- Run `github.com/aws/aws-k8s-tester/k8s-tester/cmd/readme-gen/vend.sh`.
+- Update and run `github.com/aws/aws-k8s-tester/k8s-tester/fmt.sh`.
+- Update `github.com/aws/aws-k8s-tester/k8s-tester/cmd/k8s-tester/go.mod`.
+- Run `github.com/aws/aws-k8s-tester/k8s-tester/cmd/k8s-tester/vend.sh`.
+- Run `github.com/aws/aws-k8s-tester/k8s-tester/gen.sh`.
 
 ### Examples
 

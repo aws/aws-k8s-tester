@@ -17,6 +17,7 @@ import (
 	"time"
 
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
+	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
@@ -31,7 +32,7 @@ import (
 )
 
 // Config defines k8s-tester configurations.
-// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
+// tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/eks.go#L617
 // By default, it uses the environmental variables as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
 // TODO: support https://github.com/onsi/ginkgo.
 type Config struct {
@@ -73,17 +74,16 @@ type Config struct {
 	// TotalNodes is the total number of nodes from all node groups.
 	TotalNodes int `json:"total_nodes" read-only:"true"`
 
-	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
+	// tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/eks.go#L617
 	AddOnCloudwatchAgent     *cloudwatch_agent.Config     `json:"add_on_cloudwatch_agent"`
-	AddOnMetricsServer       *metrics_server.Config       `json:"add_on_metrics_server"`
 	AddOnFluentBit           *fluent_bit.Config           `json:"add_on_fluent_bit"`
+	AddOnMetricsServer       *metrics_server.Config       `json:"add_on_metrics_server"`
+	AddOnCSIEBS              *csi_ebs.Config              `json:"add_on_csi_ebs"`
 	AddOnKubernetesDashboard *kubernetes_dashboard.Config `json:"add_on_kubernetes_dashboard"`
-
-	AddOnNLBHelloWorld *nlb_hello_world.Config `json:"add_on_nlb_hello_world"`
-
-	AddOnJobsPi       *jobs_pi.Config   `json:"add_on_jobs_pi"`
-	AddOnJobsEcho     *jobs_echo.Config `json:"add_on_jobs_echo"`
-	AddOnCronJobsEcho *jobs_echo.Config `json:"add_on_cron_jobs_echo"`
+	AddOnNLBHelloWorld       *nlb_hello_world.Config      `json:"add_on_nlb_hello_world"`
+	AddOnJobsPi              *jobs_pi.Config              `json:"add_on_jobs_pi"`
+	AddOnJobsEcho            *jobs_echo.Config            `json:"add_on_jobs_echo"`
+	AddOnCronJobsEcho        *jobs_echo.Config            `json:"add_on_cron_jobs_echo"`
 }
 
 const DefaultMinimumNodes = 1
@@ -115,10 +115,11 @@ func NewDefault() *Config {
 
 		MinimumNodes: DefaultMinimumNodes,
 
-		// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
+		// tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/eks.go#L617
 		AddOnCloudwatchAgent:     cloudwatch_agent.NewDefault(),
-		AddOnMetricsServer:       metrics_server.NewDefault(),
 		AddOnFluentBit:           fluent_bit.NewDefault(),
+		AddOnMetricsServer:       metrics_server.NewDefault(),
+		AddOnCSIEBS:              csi_ebs.NewDefault(),
 		AddOnKubernetesDashboard: kubernetes_dashboard.NewDefault(),
 		AddOnNLBHelloWorld:       nlb_hello_world.NewDefault(),
 		AddOnJobsPi:              jobs_pi.NewDefault(),
@@ -215,7 +216,7 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *Config, got %T", vv)
 	}
 
-	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
+	// tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/eks.go#L617
 	vv, err = parseEnvs(ENV_PREFIX+cloudwatch_agent.Env()+"_", cfg.AddOnCloudwatchAgent)
 	if err != nil {
 		return err
@@ -224,6 +225,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnCloudwatchAgent = av
 	} else {
 		return fmt.Errorf("expected *cloudwatch_agent.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+fluent_bit.Env()+"_", cfg.AddOnFluentBit)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*fluent_bit.Config); ok {
+		cfg.AddOnFluentBit = av
+	} else {
+		return fmt.Errorf("expected *fluent_bit.Config, got %T", vv)
 	}
 
 	vv, err = parseEnvs(ENV_PREFIX+metrics_server.Env()+"_", cfg.AddOnMetricsServer)
@@ -236,14 +247,14 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *metrics_server.Config, got %T", vv)
 	}
 
-	vv, err = parseEnvs(ENV_PREFIX+fluent_bit.Env()+"_", cfg.AddOnFluentBit)
+	vv, err = parseEnvs(ENV_PREFIX+csi_ebs.Env()+"_", cfg.AddOnCSIEBS)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*fluent_bit.Config); ok {
-		cfg.AddOnFluentBit = av
+	if av, ok := vv.(*csi_ebs.Config); ok {
+		cfg.AddOnCSIEBS = av
 	} else {
-		return fmt.Errorf("expected *fluent_bit.Config, got %T", vv)
+		return fmt.Errorf("expected *csi_ebs.Config, got %T", vv)
 	}
 
 	vv, err = parseEnvs(ENV_PREFIX+kubernetes_dashboard.Env()+"_", cfg.AddOnKubernetesDashboard)

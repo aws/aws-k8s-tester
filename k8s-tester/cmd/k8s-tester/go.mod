@@ -14,6 +14,7 @@ replace (
 	github.com/aws/aws-k8s-tester/k8s-tester => ../..
 	github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent => ../../cloudwatch-agent
 	github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit => ../../fluent-bit
+	github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs => ../../csi-ebs
 	github.com/aws/aws-k8s-tester/k8s-tester/helm => ../../helm
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo => ../../jobs-echo
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi => ../../jobs-pi

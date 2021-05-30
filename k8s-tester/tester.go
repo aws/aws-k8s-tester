@@ -13,6 +13,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/client"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
+	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
@@ -67,7 +68,7 @@ type tester struct {
 	logWriter io.Writer
 	cli       client.Client
 
-	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
+	// tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/eks.go#L617
 	testers []k8s_tester.Tester
 }
 
@@ -75,18 +76,22 @@ func (ts *tester) createTesters() {
 	fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("[light_green]createTesters [default](%q)\n"), ts.cfg.ConfigPath)
 
-	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
+	// tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/eks.go#L617
 	if ts.cfg.AddOnCloudwatchAgent != nil && ts.cfg.AddOnCloudwatchAgent.Enable {
 		ts.cfg.AddOnCloudwatchAgent.Client = ts.cli
 		ts.testers = append(ts.testers, cloudwatch_agent.New(ts.cfg.AddOnCloudwatchAgent))
+	}
+	if ts.cfg.AddOnFluentBit != nil && ts.cfg.AddOnFluentBit.Enable {
+		ts.cfg.AddOnFluentBit.Client = ts.cli
+		ts.testers = append(ts.testers, fluent_bit.New(ts.cfg.AddOnFluentBit))
 	}
 	if ts.cfg.AddOnMetricsServer != nil && ts.cfg.AddOnMetricsServer.Enable {
 		ts.cfg.AddOnMetricsServer.Client = ts.cli
 		ts.testers = append(ts.testers, metrics_server.New(ts.cfg.AddOnMetricsServer))
 	}
-	if ts.cfg.AddOnFluentBit != nil && ts.cfg.AddOnFluentBit.Enable {
-		ts.cfg.AddOnFluentBit.Client = ts.cli
-		ts.testers = append(ts.testers, fluent_bit.New(ts.cfg.AddOnFluentBit))
+	if ts.cfg.AddOnCSIEBS != nil && ts.cfg.AddOnCSIEBS.Enable {
+		ts.cfg.AddOnCSIEBS.Client = ts.cli
+		ts.testers = append(ts.testers, csi_ebs.New(ts.cfg.AddOnCSIEBS))
 	}
 	if ts.cfg.AddOnKubernetesDashboard != nil && ts.cfg.AddOnKubernetesDashboard.Enable {
 		ts.cfg.AddOnKubernetesDashboard.Client = ts.cli
@@ -128,7 +133,7 @@ func (ts *tester) Apply() error {
 	ts.cfg.TotalNodes = len(nodes)
 	ts.cfg.Sync()
 
-	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
+	// tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/eks.go#L617
 	for idx, cur := range ts.testers {
 		_ = idx
 		if !cur.Enabled() {

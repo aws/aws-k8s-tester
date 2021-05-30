@@ -66,6 +66,26 @@ func TestEnvAddOnCloudwatchAgent(t *testing.T) {
 	}
 }
 
+func TestEnvAddOnFluentBit(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("K8S_TESTER_ADD_ON_FLUENT_BIT_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_FLUENT_BIT_ENABLE")
+	os.Setenv("K8S_TESTER_ADD_ON_FLUENT_BIT_NAMESPACE", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_FLUENT_BIT_NAMESPACE")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if !cfg.AddOnFluentBit.Enable {
+		t.Fatalf("unexpected cfg.AddOnFluentBit.Enable %v", cfg.AddOnFluentBit.Enable)
+	}
+	if cfg.AddOnFluentBit.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnFluentBit.Namespace %v", cfg.AddOnFluentBit.Namespace)
+	}
+}
+
 func TestEnvAddOnMetricsServer(t *testing.T) {
 	cfg := NewDefault()
 
@@ -86,23 +106,23 @@ func TestEnvAddOnMetricsServer(t *testing.T) {
 	}
 }
 
-func TestEnvAddOnFluentBit(t *testing.T) {
+func TestEnvAddOnCSIEBS(t *testing.T) {
 	cfg := NewDefault()
 
-	os.Setenv("K8S_TESTER_ADD_ON_FLUENT_BIT_ENABLE", "true")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_FLUENT_BIT_ENABLE")
-	os.Setenv("K8S_TESTER_ADD_ON_FLUENT_BIT_NAMESPACE", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_FLUENT_BIT_NAMESPACE")
+	os.Setenv("K8S_TESTER_ADD_ON_CSI_EBS_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CSI_EBS_ENABLE")
+	os.Setenv("K8S_TESTER_ADD_ON_CSI_EBS_NAMESPACE", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CSI_EBS_NAMESPACE")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
 	}
 
-	if !cfg.AddOnFluentBit.Enable {
-		t.Fatalf("unexpected cfg.AddOnFluentBit.Enable %v", cfg.AddOnFluentBit.Enable)
+	if !cfg.AddOnCSIEBS.Enable {
+		t.Fatalf("unexpected cfg.AddOnCSIEBS.Enable %v", cfg.AddOnCSIEBS.Enable)
 	}
-	if cfg.AddOnFluentBit.Namespace != "hello" {
-		t.Fatalf("unexpected cfg.AddOnFluentBit.Namespace %v", cfg.AddOnFluentBit.Namespace)
+	if cfg.AddOnCSIEBS.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnCSIEBS.Namespace %v", cfg.AddOnCSIEBS.Namespace)
 	}
 }
 
