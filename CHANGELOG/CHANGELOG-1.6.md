@@ -21,6 +21,8 @@
 - Add [`k8s-tester/metrics-server`](https://github.com/aws/aws-k8s-tester/commit/b95ed4f88e8143c5b94a5e66448718bf513abf9b).
 - Add [`k8s-tester/kubernetes-dashboard`](https://github.com/aws/aws-k8s-tester/commit/ebe96e838950abc14f1016532e715112d5624f01).
 - Add [`k8s-tester/cloudwatch-agent`](https://github.com/aws/aws-k8s-tester/commit/e46ea545846a662e0e950ee70facfec6e060b5de).
+- Add [`k8s-tester/helm`](https://github.com/aws/aws-k8s-tester/commit/2a2c739f085bec0b4d8d7b2bae0789abe4d54c65).
+- Add [`k8s-tester/csi-ebs`](https://github.com/aws/aws-k8s-tester/commit/075fe2234e9fa0bc14a4b2a314db70ab45670e1a).
 
 ### Dependency
 
