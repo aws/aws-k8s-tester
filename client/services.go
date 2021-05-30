@@ -54,7 +54,7 @@ func WaitForServiceIngressHostname(
 	waitDur time.Duration,
 	accountID string,
 	region string,
-	opts ...OpOption) (hostName string, elbARN string, err error) {
+	opts ...OpOption) (hostName string, elbARN string, elbName string, err error) {
 	ret := Op{}
 	ret.applyOpts(opts)
 
@@ -67,7 +67,7 @@ func WaitForServiceIngressHostname(
 	for time.Since(retryStart) < waitDur {
 		select {
 		case <-stopc:
-			return "", "", errors.New("wait for service aborted")
+			return "", "", "", errors.New("wait for service aborted")
 		case <-time.After(5 * time.Second):
 		}
 
@@ -114,10 +114,11 @@ func WaitForServiceIngressHostname(
 	}
 
 	if hostName == "" {
-		return "", "", errors.New("failed to find LoadBalancer host name")
+		return "", "", "", errors.New("failed to find LoadBalancer host name")
 	}
 
 	// TODO: find better way to find out the NLB/ELB name
+	elbName = strings.Split(hostName, "-")[0]
 	ss := strings.Split(hostName, ".")[0]
 	ss = strings.Replace(ss, "-", "/", -1)
 	elbARN = fmt.Sprintf(
@@ -128,7 +129,7 @@ func WaitForServiceIngressHostname(
 	)
 	lg.Info("found LoadBalancer ELB ARN", zap.String("elb-arn", elbARN))
 
-	return hostName, elbARN, nil
+	return hostName, elbARN, elbName, nil
 }
 
 // FindServiceIngressHostname finds Service's Ingress Hostname to be updated
@@ -142,7 +143,7 @@ func FindServiceIngressHostname(
 	waitDur time.Duration,
 	accountID string,
 	region string,
-	opts ...OpOption) (hostName string, elbARN string, exists bool, err error) {
+	opts ...OpOption) (hostName string, elbARN string, elbName string, exists bool, err error) {
 	ret := Op{}
 	ret.applyOpts(opts)
 
@@ -155,7 +156,7 @@ func FindServiceIngressHostname(
 	for time.Since(retryStart) < waitDur {
 		select {
 		case <-stopc:
-			return "", "", true, errors.New("wait for service aborted")
+			return "", "", "", true, errors.New("wait for service aborted")
 		case <-time.After(5 * time.Second):
 		}
 
@@ -176,7 +177,7 @@ func FindServiceIngressHostname(
 		if err != nil {
 			lg.Warn("failed to get Service; retrying", zap.Error(err))
 			if k8s_errors.IsNotFound(err) {
-				return "", "", false, nil
+				return "", "", "", false, nil
 			}
 			time.Sleep(5 * time.Second)
 			continue
@@ -202,10 +203,11 @@ func FindServiceIngressHostname(
 	}
 
 	if hostName == "" {
-		return "", "", true, errors.New("failed to find LoadBalancer host name")
+		return "", "", "", true, errors.New("failed to find LoadBalancer host name")
 	}
 
 	// TODO: find better way to find out the NLB/ELB name
+	elbName = strings.Split(hostName, "-")[0]
 	ss := strings.Split(hostName, ".")[0]
 	ss = strings.Replace(ss, "-", "/", -1)
 	elbARN = fmt.Sprintf(
@@ -216,5 +218,5 @@ func FindServiceIngressHostname(
 	)
 	lg.Info("found LoadBalancer ELB ARN", zap.String("elb-arn", elbARN))
 
-	return hostName, elbARN, true, nil
+	return hostName, elbARN, elbName, true, nil
 }

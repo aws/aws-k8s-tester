@@ -55,6 +55,13 @@ type Config struct {
 
 	DeploymentNodeSelector map[string]string `json:"deployment_node_selector"`
 	DeploymentReplicas     int32             `json:"deployment_replicas"`
+
+	// ELBName is the name of the ELB created from the service.
+	ELBName string `json:"elb_name" read-only:"true"`
+	// ELBARN is the ARN of the ELB created from the service.
+	ELBARN string `json:"elb_arn" read-only:"true"`
+	// ELBURL is the host name for hello-world service.
+	ELBURL string `json:"elb_url" read-only:"true"`
 }
 
 const (
@@ -162,20 +169,24 @@ func (ts *tester) Delete() error {
 	var errs []string
 
 	// get ELB ARN before deleting the service
-	_, elbARN, exists, err := client.FindServiceIngressHostname(
-		ts.cfg.Logger,
-		ts.cfg.Client,
-		ts.cfg.Namespace,
-		serviceName,
-		ts.cfg.Stopc,
-		3*time.Minute,
-		ts.cfg.AccountID,
-		ts.cfg.Region,
-	)
-	if err != nil {
-		if exists { // maybe already deleted from previous run
-			errs = append(errs, fmt.Sprintf("ELB exists but failed to find ingress ELB ARN (%v)", err))
+	if ts.cfg.ELBARN == "" {
+		_, elbARN, elbName, exists, err := client.FindServiceIngressHostname(
+			ts.cfg.Logger,
+			ts.cfg.Client,
+			ts.cfg.Namespace,
+			serviceName,
+			ts.cfg.Stopc,
+			3*time.Minute,
+			ts.cfg.AccountID,
+			ts.cfg.Region,
+		)
+		if err != nil {
+			if exists { // maybe already deleted from previous run
+				errs = append(errs, fmt.Sprintf("ELB exists but failed to find ingress ELB ARN (%v)", err))
+			}
 		}
+		ts.cfg.ELBARN = elbARN
+		ts.cfg.ELBName = elbName
 	}
 
 	if err := client.DeleteService(
@@ -213,7 +224,7 @@ func (ts *tester) Delete() error {
 	if err := aws_v1_elb.DeleteELBv2(
 		ts.cfg.Logger,
 		ts.cfg.ELB2API,
-		elbARN,
+		ts.cfg.ELBARN,
 	); err != nil {
 		errs = append(errs, fmt.Sprintf("failed to delete ELB (%v)", err))
 	}
@@ -441,7 +452,7 @@ func (ts *tester) checkService() (err error) {
 		}
 	}
 
-	hostName, elbARN, err := client.WaitForServiceIngressHostname(
+	hostName, elbARN, elbName, err := client.WaitForServiceIngressHostname(
 		ts.cfg.Logger,
 		ts.cfg.Client,
 		ts.cfg.Namespace,
@@ -455,10 +466,15 @@ func (ts *tester) checkService() (err error) {
 	if err != nil {
 		return err
 	}
-	appURL := "http://" + hostName
+	elbURL := "http://" + hostName
+
+	ts.cfg.ELBARN = elbARN
+	ts.cfg.ELBName = elbName
+	ts.cfg.ELBURL = elbURL
 
 	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB hello-world ARN: %s\n", elbARN)
-	fmt.Fprintf(ts.cfg.LogWriter, "NLB hello-world URL: %s\n\n", appURL)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB hello-world name: %s\n", elbName)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB hello-world URL: %s\n\n", elbURL)
 
 	ts.cfg.Logger.Info("waiting before testing hello-world Service")
 	time.Sleep(20 * time.Second)
@@ -472,7 +488,7 @@ func (ts *tester) checkService() (err error) {
 		case <-time.After(5 * time.Second):
 		}
 
-		out, err := http.ReadInsecure(ts.cfg.Logger, ioutil.Discard, appURL)
+		out, err := http.ReadInsecure(ts.cfg.Logger, ioutil.Discard, elbURL)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to read NLB hello-world Service; retrying", zap.Error(err))
 			time.Sleep(5 * time.Second)
@@ -491,10 +507,11 @@ func (ts *tester) checkService() (err error) {
 	}
 
 	fmt.Fprintf(ts.cfg.LogWriter, "\nNLB hello-world ARN: %s\n", elbARN)
-	fmt.Fprintf(ts.cfg.LogWriter, "NLB hello-world URL: %s\n\n", appURL)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB hello-world name: %s\n", elbName)
+	fmt.Fprintf(ts.cfg.LogWriter, "NLB hello-world URL: %s\n\n", elbURL)
 
 	if !htmlChecked {
-		return fmt.Errorf("NLB hello-world %q did not return expected HTML output", appURL)
+		return fmt.Errorf("NLB hello-world %q did not return expected HTML output", elbURL)
 	}
 
 	return nil

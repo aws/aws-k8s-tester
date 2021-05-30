@@ -136,7 +136,9 @@ func (ts *tester) Apply() error {
 		}
 		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("\n\n[yellow]*********************************\n"))
 		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("[light_green]testers[%02d].Apply [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := cur.Apply(); err != nil {
+		err := cur.Apply()
+		ts.cfg.Sync()
+		if err != nil {
 			fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("\n\n[yellow]*********************************\n"))
 			fmt.Fprintf(ts.logWriter, ts.cfg.Colorize(fmt.Sprintf("[light_magenta]✗ [default]k8s-tester[%02d].Apply [light_magenta]FAIL [default](%v)\n", idx, err)))
 			return err
