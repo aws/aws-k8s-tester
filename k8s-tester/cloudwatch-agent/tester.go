@@ -28,7 +28,6 @@ import (
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	api_resource "k8s.io/apimachinery/pkg/api/resource"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8s_client "k8s.io/client-go/kubernetes"
 	"k8s.io/utils/exec"
 )
 
@@ -36,11 +35,10 @@ type Config struct {
 	Enable bool `json:"enable"`
 	Prompt bool `json:"-"`
 
-	Stopc        chan struct{}        `json:"-"`
-	Logger       *zap.Logger          `json:"-"`
-	LogWriter    io.Writer            `json:"-"`
-	ClientConfig *client.Config       `json:"-"`
-	Client       k8s_client.Interface `json:"-"`
+	Stopc     chan struct{} `json:"-"`
+	Logger    *zap.Logger   `json:"-"`
+	LogWriter io.Writer     `json:"-"`
+	Client    client.Client `json:"-"`
 
 	Region      string `json:"region"`
 	ClusterName string `json:"cluster_name"`
@@ -842,8 +840,8 @@ func (ts *tester) _checkPods() error {
 		}
 
 		descArgsPods := []string{
-			ts.cfg.ClientConfig.KubectlPath,
-			"--kubeconfig=" + ts.cfg.ClientConfig.KubeconfigPath,
+			ts.cfg.Client.Config().KubectlPath,
+			"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
 			"--namespace=" + ts.cfg.Namespace,
 			"describe",
 			"pods/" + pod.Name,
@@ -851,8 +849,8 @@ func (ts *tester) _checkPods() error {
 		descCmdPods := strings.Join(descArgsPods, " ")
 
 		logArgs := []string{
-			ts.cfg.ClientConfig.KubectlPath,
-			"--kubeconfig=" + ts.cfg.ClientConfig.KubeconfigPath,
+			ts.cfg.Client.Config().KubectlPath,
+			"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
 			"--namespace=" + ts.cfg.Namespace,
 			"logs",
 			"pods/" + pod.Name,

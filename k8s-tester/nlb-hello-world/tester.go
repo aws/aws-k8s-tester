@@ -30,7 +30,6 @@ import (
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	k8s_client "k8s.io/client-go/kubernetes"
 	"k8s.io/utils/exec"
 )
 
@@ -38,11 +37,10 @@ type Config struct {
 	Enable bool `json:"enable"`
 	Prompt bool `json:"-"`
 
-	Stopc        chan struct{}        `json:"-"`
-	Logger       *zap.Logger          `json:"-"`
-	LogWriter    io.Writer            `json:"-"`
-	ClientConfig *client.Config       `json:"-"`
-	Client       k8s_client.Interface `json:"-"`
+	Stopc     chan struct{} `json:"-"`
+	Logger    *zap.Logger   `json:"-"`
+	LogWriter io.Writer     `json:"-"`
+	Client    client.Client `json:"-"`
 
 	ELB2API elbv2iface.ELBV2API `json:"-"`
 
@@ -350,8 +348,8 @@ func (ts *tester) checkDeployment() error {
 		ts.cfg.DeploymentReplicas,
 		client.WithQueryFunc(func() {
 			descArgs := []string{
-				ts.cfg.ClientConfig.KubectlPath,
-				"--kubeconfig=" + ts.cfg.ClientConfig.KubeconfigPath,
+				ts.cfg.Client.Config().KubectlPath,
+				"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
 				"--namespace=" + ts.cfg.Namespace,
 				"describe",
 				"deployment",
@@ -424,8 +422,8 @@ func (ts *tester) createService() error {
 func (ts *tester) checkService() (err error) {
 	queryFunc := func() {
 		args := []string{
-			ts.cfg.ClientConfig.KubectlPath,
-			"--kubeconfig=" + ts.cfg.ClientConfig.KubeconfigPath,
+			ts.cfg.Client.Config().KubectlPath,
+			"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
 			"--namespace=" + ts.cfg.Namespace,
 			"describe",
 			"svc",

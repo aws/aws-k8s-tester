@@ -22,7 +22,6 @@ import (
 	"github.com/aws/aws-k8s-tester/utils/http"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
-	k8s_client "k8s.io/client-go/kubernetes"
 	"k8s.io/utils/exec"
 )
 
@@ -30,11 +29,10 @@ type Config struct {
 	Enable bool `json:"enable"`
 	Prompt bool `json:"-"`
 
-	Stopc        chan struct{}        `json:"-"`
-	Logger       *zap.Logger          `json:"-"`
-	LogWriter    io.Writer            `json:"-"`
-	ClientConfig *client.Config       `json:"-"`
-	Client       k8s_client.Interface `json:"-"`
+	Stopc     chan struct{} `json:"-"`
+	Logger    *zap.Logger   `json:"-"`
+	LogWriter io.Writer     `json:"-"`
+	Client    client.Config `json:"-"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum_nodes"`
@@ -473,8 +471,8 @@ func (ts *tester) applyDashboardYAML() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		output, err = exec.New().CommandContext(
 			ctx,
-			ts.cfg.ClientConfig.KubectlPath,
-			"--kubeconfig="+ts.cfg.ClientConfig.KubeconfigPath,
+			ts.cfg.Client.Config().KubectlPath,
+			"--kubeconfig="+ts.cfg.Client.Config().KubeconfigPath,
 			"apply", "--filename="+fpath,
 		).CombinedOutput()
 		cancel()
@@ -514,8 +512,8 @@ func (ts *tester) checkDeploymentDashboard() (err error) {
 		1,
 		client.WithQueryFunc(func() {
 			descArgs := []string{
-				ts.cfg.ClientConfig.KubectlPath,
-				"--kubeconfig=" + ts.cfg.ClientConfig.KubeconfigPath,
+				ts.cfg.Client.Config().KubectlPath,
+				"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
 				"--namespace=kubernetes-dashboard",
 				"describe",
 				"deployment",
@@ -582,8 +580,8 @@ func (ts *tester) applyEKSAdminYAML() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		output, err = exec.New().CommandContext(
 			ctx,
-			ts.cfg.ClientConfig.KubectlPath,
-			"--kubeconfig="+ts.cfg.ClientConfig.KubeconfigPath,
+			ts.cfg.Client.Config().KubectlPath,
+			"--kubeconfig="+ts.cfg.Client.Config().KubeconfigPath,
 			"apply", "--filename="+fpath,
 		).CombinedOutput()
 		cancel()
@@ -649,13 +647,13 @@ const defaultKubernetesDashboardURL = "http://localhost:8001/api/v1/namespaces/k
 
 func (ts *tester) checkKubeProxy() error {
 	proxyArgs := []string{
-		ts.cfg.ClientConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.ClientConfig.KubeconfigPath,
+		ts.cfg.Client.Config().KubectlPath,
+		"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
 		"proxy",
 	}
 	proxyCmd := strings.Join(proxyArgs, " ")
 
-	ts.cfg.Logger.Info("starting Kubernetes Dashboard proxy", zap.String("cmd-path", ts.cfg.ClientConfig.KubectlPath))
+	ts.cfg.Logger.Info("starting Kubernetes Dashboard proxy", zap.String("cmd-path", ts.cfg.Client.Config().KubectlPath))
 	ctx, proxyCancel := context.WithCancel(context.Background())
 	proxyCmdExec := os_exec.CommandContext(ctx, proxyArgs[0], proxyArgs[1:]...)
 	proxyCmdExec.Stderr = os.Stderr

@@ -497,8 +497,8 @@ func (ts *tester) checkDaemonSet() error {
 		appName,
 		client.WithQueryFunc(func() {
 			descArgs := []string{
-				ts.cfg.ClientConfig.KubectlPath,
-				"--kubeconfig=" + ts.cfg.ClientConfig.KubeconfigPath,
+				ts.cfg.Client.Config().KubectlPath,
+				"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
 				"--namespace=" + ts.cfg.Namespace,
 				"describe",
 				"daemonset",

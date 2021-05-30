@@ -30,7 +30,6 @@ import (
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
 	core_v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8s_client "k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
 )
 
@@ -39,11 +38,10 @@ type Config struct {
 	Enable bool `json:"enable"`
 	Prompt bool `json:"-"`
 
-	Stopc        chan struct{}        `json:"-"`
-	Logger       *zap.Logger          `json:"-"`
-	LogWriter    io.Writer            `json:"-"`
-	ClientConfig *client.Config       `json:"-"`
-	Client       k8s_client.Interface `json:"-"`
+	Stopc     chan struct{} `json:"-"`
+	Logger    *zap.Logger   `json:"-"`
+	LogWriter io.Writer     `json:"-"`
+	Client    client.Client `json:"-"`
 
 	ECRAPI ecriface.ECRAPI `json:"-"`
 

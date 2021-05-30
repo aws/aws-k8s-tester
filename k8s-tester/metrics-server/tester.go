@@ -21,7 +21,6 @@ import (
 	"go.uber.org/zap"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8s_client "k8s.io/client-go/kubernetes"
 	"k8s.io/utils/exec"
 )
 
@@ -29,11 +28,10 @@ type Config struct {
 	Enable bool `json:"enable"`
 	Prompt bool `json:"-"`
 
-	Stopc        chan struct{}        `json:"-"`
-	Logger       *zap.Logger          `json:"-"`
-	LogWriter    io.Writer            `json:"-"`
-	ClientConfig *client.Config       `json:"-"`
-	Client       k8s_client.Interface `json:"-"`
+	Stopc     chan struct{} `json:"-"`
+	Logger    *zap.Logger   `json:"-"`
+	LogWriter io.Writer     `json:"-"`
+	Client    client.Client `json:"-"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum_nodes"`
@@ -316,8 +314,8 @@ func (ts *tester) applyMetricsServerYAML() error {
 	ts.cfg.Logger.Info("applying metrics-server YAML", zap.String("path", fpath))
 
 	applyArgs := []string{
-		ts.cfg.ClientConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.ClientConfig.KubeconfigPath,
+		ts.cfg.Client.Config().KubectlPath,
+		"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
 		"apply",
 		"--filename=" + fpath,
 	}
@@ -374,8 +372,8 @@ func (ts *tester) checkDeployment() (err error) {
 		1,
 		client.WithQueryFunc(func() {
 			descArgs := []string{
-				ts.cfg.ClientConfig.KubectlPath,
-				"--kubeconfig=" + ts.cfg.ClientConfig.KubeconfigPath,
+				ts.cfg.Client.Config().KubectlPath,
+				"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
 				"--namespace=kube-system",
 				"describe",
 				"deployment",
@@ -398,8 +396,8 @@ func (ts *tester) checkDeployment() (err error) {
 
 func (ts *tester) checkMetricsServer() error {
 	logArgs := []string{
-		ts.cfg.ClientConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.ClientConfig.KubeconfigPath,
+		ts.cfg.Client.Config().KubectlPath,
+		"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
 		"--namespace=kube-system",
 		"logs",
 		"--selector=k8s-app=metrics-server",
@@ -409,8 +407,8 @@ func (ts *tester) checkMetricsServer() error {
 	logsCmd := strings.Join(logArgs, " ")
 
 	topNodeArgs := []string{
-		ts.cfg.ClientConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.ClientConfig.KubeconfigPath,
+		ts.cfg.Client.Config().KubectlPath,
+		"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
 		"top",
 		"node",
 	}

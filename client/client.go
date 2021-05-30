@@ -7,8 +7,12 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/utils/file"
+	utils_http "github.com/aws/aws-k8s-tester/utils/http"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
@@ -18,15 +22,74 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8s_util_net "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/wait"
+	k8s_client "k8s.io/client-go/kubernetes"
 	k8s_client_rest "k8s.io/client-go/rest"
 	clientcmd "k8s.io/client-go/tools/clientcmd"
 	clientcmd_api "k8s.io/client-go/tools/clientcmd/api"
 )
 
+// Client defines Kubernetes client interface.
+type Client interface {
+	k8s_client.Interface
+	Config() Config
+}
+
+type client struct {
+	k8s_client.Interface
+	cfg *Config
+}
+
+func (c *client) Config() Config { return *c.cfg }
+
+// New returns the new client interface.
+func New(cfg *Config) (cli Client, err error) {
+	ccfg, err := CreateRestConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	k8sClient, err := k8s_client.NewForConfig(ccfg)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.Logger.Info("mkdir", zap.String("kubectl-path-dir", filepath.Dir(cfg.KubectlPath)))
+	if err = os.MkdirAll(filepath.Dir(cfg.KubectlPath), 0700); err != nil {
+		cfg.Logger.Warn("could not create", zap.String("dir", filepath.Dir(cfg.KubectlPath)), zap.Error(err))
+		return nil, err
+	}
+	if !file.Exist(cfg.KubectlPath) {
+		if cfg.KubectlDownloadURL == "" {
+			cfg.Logger.Warn("kubectl does not exist, kubectl download URL empty", zap.String("kubectl-path", cfg.KubectlPath))
+			return nil, err
+		}
+		cfg.KubectlPath, _ = filepath.Abs(cfg.KubectlPath)
+		cfg.Logger.Info("downloading kubectl", zap.String("kubectl-path", cfg.KubectlPath))
+		if err = utils_http.Download(cfg.Logger, os.Stderr, cfg.KubectlDownloadURL, cfg.KubectlPath); err != nil {
+			cfg.Logger.Warn("failed to download kubectl", zap.Error(err))
+			return nil, err
+		}
+	} else {
+		cfg.Logger.Info("skipping kubectl download; already exist", zap.String("kubectl-path", cfg.KubectlPath))
+	}
+	if err = file.EnsureExecutable(cfg.KubectlPath); err != nil {
+		// file may be already executable while the process does not own the file/directory
+		// ref. https://github.com/aws/aws-k8s-tester/issues/66
+		cfg.Logger.Warn("failed to ensure executable", zap.Error(err))
+		err = nil
+	}
+
+	return &client{
+		Interface: k8sClient,
+		cfg:       cfg,
+	}, nil
+}
+
 // Config defines Kubernetes configuration.
 type Config struct {
 	Logger *zap.Logger
 
+	// KubectlDownloadURL is the URL for downloading kubectl.
+	KubectlDownloadURL string
 	// KubectlPath is the kubectl path.
 	KubectlPath string
 	// KubeconfigPath is the kubeconfig path to load.
@@ -82,14 +145,14 @@ type EKS struct {
 	ClusterCADecoded string
 }
 
-// CreateConfig creates the Kubernetes client configuration.
-func CreateConfig(cfg *Config) (kcfg *k8s_client_rest.Config, err error) {
-	if kcfg, err = createConfigFromKubeconfig(cfg); err != nil {
+// CreateRestConfig creates the Kubernetes client configuration.
+func CreateRestConfig(cfg *Config) (kcfg *k8s_client_rest.Config, err error) {
+	if kcfg, err = createRestConfigFromKubeconfig(cfg); err != nil {
 		cfg.Logger.Error("failed to create config using KUBECONFIG", zap.Error(err))
 	}
 
 	if kcfg == nil && cfg.EKS != nil {
-		kcfg, err = createConfigFromEKS(cfg)
+		kcfg, err = createRestConfigFromEKS(cfg)
 		if kcfg == nil || err != nil {
 			cfg.Logger.Warn("failed to create config previous EKS cluster state")
 			kcfg = nil
@@ -192,7 +255,7 @@ func CreateConfig(cfg *Config) (kcfg *k8s_client_rest.Config, err error) {
 	return kcfg, nil
 }
 
-func createConfigFromKubeconfig(cfg *Config) (kcfg *k8s_client_rest.Config, err error) {
+func createRestConfigFromKubeconfig(cfg *Config) (kcfg *k8s_client_rest.Config, err error) {
 	if cfg.KubeconfigPath == "" {
 		return nil, errors.New("empty KUBECONFIG")
 	}
@@ -232,7 +295,7 @@ func createConfigFromKubeconfig(cfg *Config) (kcfg *k8s_client_rest.Config, err 
 	return kcfg, nil
 }
 
-func createConfigFromEKS(cfg *Config) (kcfg *k8s_client_rest.Config, err error) {
+func createRestConfigFromEKS(cfg *Config) (kcfg *k8s_client_rest.Config, err error) {
 	if cfg.EKS == nil {
 		return nil, errors.New("empty EKS config")
 	}

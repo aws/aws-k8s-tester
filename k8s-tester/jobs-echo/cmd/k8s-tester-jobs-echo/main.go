@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/aws/aws-k8s-tester/client"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
@@ -23,13 +24,14 @@ func init() {
 }
 
 var (
-	prompt         bool
-	logLevel       string
-	logOutputs     []string
-	minimumNodes   int
-	namespace      string
-	kubectlPath    string
-	kubeconfigPath string
+	prompt             bool
+	logLevel           string
+	logOutputs         []string
+	minimumNodes       int
+	namespace          string
+	kubectlDownloadURL string
+	kubectlPath        string
+	kubeconfigPath     string
 )
 
 func init() {
@@ -38,7 +40,8 @@ func init() {
 	rootCmd.PersistentFlags().StringSliceVar(&logOutputs, "log-outputs", []string{"stderr"}, "Additional logger outputs")
 	rootCmd.PersistentFlags().IntVar(&minimumNodes, "minimum-nodes", jobs_echo.DefaultMinimumNodes, "minimum number of Kubernetes nodes required for installing this addon")
 	rootCmd.PersistentFlags().StringVar(&namespace, "namespace", "test-namespace", "'true' to auto-generate path for create config/cluster, overwrites existing --path value")
-	rootCmd.PersistentFlags().StringVar(&kubectlPath, "kubectl-path", "", "kubectl path")
+	rootCmd.PersistentFlags().StringVar(&kubectlDownloadURL, "kubectl-download-url", fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/%s/%s/kubectl", runtime.GOOS, runtime.GOARCH), "kubectl download URL")
+	rootCmd.PersistentFlags().StringVar(&kubectlPath, "kubectl-path", "/tmp/kubectl-test-v1.21.0", "kubectl path")
 	rootCmd.PersistentFlags().StringVar(&kubeconfigPath, "kubeconfig-path", "", "KUBECONFIG path")
 
 	rootCmd.AddCommand(
@@ -101,15 +104,12 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 	}
 	_ = zap.ReplaceGlobals(lg)
 
-	ccfg, err := client.CreateConfig(&client.Config{
-		Logger:         lg,
-		KubectlPath:    kubectlPath,
-		KubeconfigPath: kubeconfigPath,
+	cli, err := client.New(&client.Config{
+		Logger:             lg,
+		KubectlDownloadURL: kubectlDownloadURL,
+		KubectlPath:        kubectlPath,
+		KubeconfigPath:     kubeconfigPath,
 	})
-	if err != nil {
-		lg.Panic("failed to create client config", zap.Error(err))
-	}
-	cli, err := k8s_client.NewForConfig(ccfg)
 	if err != nil {
 		lg.Panic("failed to create client", zap.Error(err))
 	}
@@ -120,7 +120,6 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 		LogWriter:    logWriter,
 		MinimumNodes: minimumNodes,
 		Namespace:    namespace,
-		ClientConfig: clientConfig,
 		Client:       cli,
 
 		RepositoryBusyboxPartition: repositoryBusyboxPartition,
@@ -166,28 +165,23 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 	}
 	_ = zap.ReplaceGlobals(lg)
 
-	clientConfig := &client.Config{
-		Logger:         lg,
-		KubectlPath:    kubectlPath,
-		KubeconfigPath: kubeconfigPath,
-	}
-	ccfg, err := client.CreateConfig(clientConfig)
-	if err != nil {
-		lg.Panic("failed to create client config", zap.Error(err))
-	}
-	cli, err := k8s_client.NewForConfig(ccfg)
+	cli, err := client.New(&client.Config{
+		Logger:             lg,
+		KubectlDownloadURL: kubectlDownloadURL,
+		KubectlPath:        kubectlPath,
+		KubeconfigPath:     kubeconfigPath,
+	})
 	if err != nil {
 		lg.Panic("failed to create client", zap.Error(err))
 	}
 
 	cfg := &jobs_echo.Config{
-		Prompt:       prompt,
-		Logger:       lg,
-		LogWriter:    logWriter,
-		Namespace:    namespace,
-		ClientConfig: clientConfig,
-		Client:       cli,
-		JobType:      jobType,
+		Prompt:    prompt,
+		Logger:    lg,
+		LogWriter: logWriter,
+		Namespace: namespace,
+		Client:    cli,
+		JobType:   jobType,
 	}
 
 	ts := jobs_echo.New(cfg)
