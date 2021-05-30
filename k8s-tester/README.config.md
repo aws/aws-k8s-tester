@@ -67,6 +67,22 @@
 *------------------------------------------------------*----------------------*-------------------------------------------*---------*
 
 
+*-------------------------------------------------------*----------------------*-------------------------------------------*-------------------*
+|                ENVIRONMENTAL VARIABLE                 |      FIELD TYPE      |                   TYPE                    |      GO TYPE      |
+*-------------------------------------------------------*----------------------*-------------------------------------------*-------------------*
+| K8S_TESTER_ADD_ON_PHP_APACHE_ENABLE                   | SETTABLE VIA ENV VAR | *php_apache.Config.Enable                 | bool              |
+| K8S_TESTER_ADD_ON_PHP_APACHE_MINIMUM_NODES            | SETTABLE VIA ENV VAR | *php_apache.Config.MinimumNodes           | int               |
+| K8S_TESTER_ADD_ON_PHP_APACHE_NAMESPACE                | SETTABLE VIA ENV VAR | *php_apache.Config.Namespace              | string            |
+| K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_PARTITION     | SETTABLE VIA ENV VAR | *php_apache.Config.RepositoryPartition    | string            |
+| K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_ACCOUNT_ID    | SETTABLE VIA ENV VAR | *php_apache.Config.RepositoryAccountID    | string            |
+| K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_REGION        | SETTABLE VIA ENV VAR | *php_apache.Config.RepositoryRegion       | string            |
+| K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_NAME          | SETTABLE VIA ENV VAR | *php_apache.Config.RepositoryName         | string            |
+| K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_IMAGE_TAG     | SETTABLE VIA ENV VAR | *php_apache.Config.RepositoryImageTag     | string            |
+| K8S_TESTER_ADD_ON_PHP_APACHE_DEPLOYMENT_NODE_SELECTOR | SETTABLE VIA ENV VAR | *php_apache.Config.DeploymentNodeSelector | map[string]string |
+| K8S_TESTER_ADD_ON_PHP_APACHE_DEPLOYMENT_REPLICAS      | SETTABLE VIA ENV VAR | *php_apache.Config.DeploymentReplicas     | int32             |
+*-------------------------------------------------------*----------------------*-------------------------------------------*-------------------*
+
+
 *------------------------------------------------------------*----------------------*------------------------------------------------*-------------------*
 |                   ENVIRONMENTAL VARIABLE                   |      FIELD TYPE      |                      TYPE                      |      GO TYPE      |
 *------------------------------------------------------------*----------------------*------------------------------------------------*-------------------*

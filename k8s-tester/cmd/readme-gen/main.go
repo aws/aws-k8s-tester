@@ -17,6 +17,7 @@ import (
 	kubernetes_dashboard "github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard"
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
+	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -55,6 +56,10 @@ func createDoc() string {
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+kubernetes_dashboard.Env()+"_", &kubernetes_dashboard.Config{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+php_apache.Env()+"_", &php_apache.Config{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

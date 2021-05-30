@@ -53,8 +53,11 @@ type Config struct {
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
 
+	// DeploymentNodeSelector is configured to overwrite existing node selector
+	// for hello world deployment. If left empty, tester sets default selector.
 	DeploymentNodeSelector map[string]string `json:"deployment_node_selector"`
-	DeploymentReplicas     int32             `json:"deployment_replicas"`
+	// DeploymentReplicas is the number of replicas to deploy using "Deployment" object.
+	DeploymentReplicas int32 `json:"deployment_replicas"`
 
 	// ELBARN is the ARN of the ELB created from the service.
 	ELBARN string `json:"elb_arn" read-only:"true"`
@@ -189,6 +192,7 @@ func (ts *tester) Delete() error {
 		ts.cfg.ELBName = elbName
 	}
 
+	ts.cfg.Logger.Info("deleting service", zap.String("service-name", serviceName))
 	if err := client.DeleteService(
 		ts.cfg.Logger,
 		ts.cfg.Client,
@@ -200,6 +204,7 @@ func (ts *tester) Delete() error {
 	ts.cfg.Logger.Info("wait for a minute after deleting Service")
 	time.Sleep(time.Minute)
 
+	ts.cfg.Logger.Info("deleting deployment", zap.String("deployment-name", deploymentName))
 	if err := client.DeleteDeployment(
 		ts.cfg.Logger,
 		ts.cfg.Client,

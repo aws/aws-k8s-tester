@@ -24,6 +24,7 @@ import (
 	kubernetes_dashboard "github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard"
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
+	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	"github.com/aws/aws-k8s-tester/utils/log"
 	"github.com/aws/aws-k8s-tester/utils/rand"
 	utils_time "github.com/aws/aws-k8s-tester/utils/time"
@@ -80,6 +81,7 @@ type Config struct {
 	AddOnMetricsServer       *metrics_server.Config       `json:"add_on_metrics_server"`
 	AddOnCSIEBS              *csi_ebs.Config              `json:"add_on_csi_ebs"`
 	AddOnKubernetesDashboard *kubernetes_dashboard.Config `json:"add_on_kubernetes_dashboard"`
+	AddOnPHPApache           *php_apache.Config           `json:"add_on_php_apache"`
 	AddOnNLBHelloWorld       *nlb_hello_world.Config      `json:"add_on_nlb_hello_world"`
 	AddOnJobsPi              *jobs_pi.Config              `json:"add_on_jobs_pi"`
 	AddOnJobsEcho            *jobs_echo.Config            `json:"add_on_jobs_echo"`
@@ -121,6 +123,7 @@ func NewDefault() *Config {
 		AddOnMetricsServer:       metrics_server.NewDefault(),
 		AddOnCSIEBS:              csi_ebs.NewDefault(),
 		AddOnKubernetesDashboard: kubernetes_dashboard.NewDefault(),
+		AddOnPHPApache:           php_apache.NewDefault(),
 		AddOnNLBHelloWorld:       nlb_hello_world.NewDefault(),
 		AddOnJobsPi:              jobs_pi.NewDefault(),
 		AddOnJobsEcho:            jobs_echo.NewDefault("Job"),
@@ -265,6 +268,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnKubernetesDashboard = av
 	} else {
 		return fmt.Errorf("expected *kubernetes_dashboard.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+php_apache.Env()+"_", cfg.AddOnPHPApache)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*php_apache.Config); ok {
+		cfg.AddOnPHPApache = av
+	} else {
+		return fmt.Errorf("expected *php_apache.Config, got %T", vv)
 	}
 
 	vv, err = parseEnvs(ENV_PREFIX+nlb_hello_world.Env()+"_", cfg.AddOnNLBHelloWorld)

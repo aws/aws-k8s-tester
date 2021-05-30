@@ -20,6 +20,7 @@ import (
 	kubernetes_dashboard "github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard"
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
+	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
 	"github.com/aws/aws-k8s-tester/k8s-tester/version"
 	"github.com/aws/aws-k8s-tester/utils/log"
@@ -96,6 +97,10 @@ func (ts *tester) createTesters() {
 	if ts.cfg.AddOnKubernetesDashboard != nil && ts.cfg.AddOnKubernetesDashboard.Enable {
 		ts.cfg.AddOnKubernetesDashboard.Client = ts.cli
 		ts.testers = append(ts.testers, kubernetes_dashboard.New(ts.cfg.AddOnKubernetesDashboard))
+	}
+	if ts.cfg.AddOnPHPApache != nil && ts.cfg.AddOnPHPApache.Enable {
+		ts.cfg.AddOnPHPApache.Client = ts.cli
+		ts.testers = append(ts.testers, php_apache.New(ts.cfg.AddOnPHPApache))
 	}
 	if ts.cfg.AddOnNLBHelloWorld != nil && ts.cfg.AddOnNLBHelloWorld.Enable {
 		ts.cfg.AddOnNLBHelloWorld.Client = ts.cli
