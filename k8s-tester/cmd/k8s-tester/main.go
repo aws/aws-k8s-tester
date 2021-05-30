@@ -113,6 +113,17 @@ func newDelete() *cobra.Command {
 }
 
 func createDeleteFunc(cmd *cobra.Command, args []string) {
+	cfg, err := k8s_tester.Load(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load configuration %q (%v)\n", path, err)
+		os.Exit(1)
+	}
+
+	ts := k8s_tester.New(cfg)
+	if err := ts.Delete(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to delete (%v)\n", err)
+		os.Exit(1)
+	}
 
 	fmt.Printf("\n*********************************\n")
 	fmt.Printf("'k8s-tester delete' success\n")
