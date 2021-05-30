@@ -15,6 +15,7 @@ require (
 
 replace (
 	github.com/aws/aws-k8s-tester/client => ../../client
+	github.com/aws/aws-k8s-tester/k8s-tester/helm => ../helm
 	github.com/aws/aws-k8s-tester/k8s-tester/tester => ../tester
 	github.com/aws/aws-k8s-tester/utils => ../../utils
 )

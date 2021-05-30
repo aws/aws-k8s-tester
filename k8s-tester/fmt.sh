@@ -18,6 +18,9 @@ gofmt -s -w ./cloudwatch-agent
 goimports -w ./fluent-bit
 gofmt -s -w ./fluent-bit
 
+goimports -w ./helm
+gofmt -s -w ./helm
+
 goimports -w ./jobs-echo
 gofmt -s -w ./jobs-echo
 

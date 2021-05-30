@@ -56,10 +56,10 @@ type Config struct {
 	DeploymentNodeSelector map[string]string `json:"deployment_node_selector"`
 	DeploymentReplicas     int32             `json:"deployment_replicas"`
 
-	// ELBName is the name of the ELB created from the service.
-	ELBName string `json:"elb_name" read-only:"true"`
 	// ELBARN is the ARN of the ELB created from the service.
 	ELBARN string `json:"elb_arn" read-only:"true"`
+	// ELBName is the name of the ELB created from the service.
+	ELBName string `json:"elb_name" read-only:"true"`
 	// ELBURL is the host name for hello-world service.
 	ELBURL string `json:"elb_url" read-only:"true"`
 }
