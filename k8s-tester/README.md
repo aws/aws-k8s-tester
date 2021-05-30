@@ -11,14 +11,17 @@ Each test case:
  - MAY implement a CLI with the sub-commands of "apply" and "delete"
 
 To add a new tester,
-1. Create a new directory under `"k8s-tester"`.
-2. Implement `"github.com/aws/aws-k8s-tester/k8s-tester/tester.Tester"` interface within the new package.
-3. Optionally, implement a stand-alone CLI for the test case.
+1. Create a new directory under `github.com/aws/aws-k8s-tester/k8s-tester`.
+2. Implement `github.com/aws/aws-k8s-tester/k8s-tester/tester.Tester` interface within the new package `github.com/aws/aws-k8s-tester/k8s-tester/NEW-TESTER`.
+3. (Optional) Implement a stand-alone CLI for the test case under `github.com/aws/aws-k8s-tester/k8s-tester/NEW-TESTER/cmd/k8s-tester-NEW-TESTER`.
 4. Import the new configuration struct to `k8s-tester/config.go` with test cases in `k8s-tester/config_test.go`.
-5. Add the new tester to `k8s-tester/tester.go`.
-6. Add the new tester to `cmd/readme-gen`.
-7. Update and run `k8s-tester/fmt.sh`.
-8. Run `k8s-tester/gen.sh`.
+5. Add the new tester to `github.com/aws/aws-k8s-tester/k8s-tester/tester.go`.
+6. Run `github.com/aws/aws-k8s-tester/k8s-tester/vend.sh`.
+7. Add the new tester to `github.com/aws/aws-k8s-tester/k8s-tester/cmd/readme-gen/main.go`.
+8. Run `github.com/aws/aws-k8s-tester/k8s-tester/cmd/readme-gen/vend.sh`.
+9. Update and run `github.com/aws/aws-k8s-tester/k8s-tester/fmt.sh`.
+10. Run `github.com/aws/aws-k8s-tester/k8s-tester/cmd/k8s-tester/vend.sh`.
+11. Run `github.com/aws/aws-k8s-tester/k8s-tester/gen.sh`.
 
 ### Examples
 
