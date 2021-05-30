@@ -6,9 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"path"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"time"
@@ -23,13 +21,10 @@ import (
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
 	"github.com/aws/aws-k8s-tester/k8s-tester/version"
-	"github.com/aws/aws-k8s-tester/utils/file"
-	"github.com/aws/aws-k8s-tester/utils/http"
 	"github.com/aws/aws-k8s-tester/utils/log"
 	"github.com/dustin/go-humanize"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
-	k8s_client "k8s.io/client-go/kubernetes"
 )
 
 func New(cfg *Config) k8s_tester.Tester {
@@ -43,47 +38,19 @@ func New(cfg *Config) k8s_tester.Tester {
 	fmt.Fprintln(logWriter, "😎 🙏 🚶 ✔️ 👍")
 	fmt.Fprintf(logWriter, cfg.Colorize("[light_green]New k8s-tester %q [default](%q)\n\n"), cfg.ConfigPath, version.Version())
 
-	lg.Info("mkdir", zap.String("kubectl-path-dir", filepath.Dir(cfg.KubectlPath)))
-	if err = os.MkdirAll(filepath.Dir(cfg.KubectlPath), 0700); err != nil {
-		lg.Panic("could not create", zap.String("dir", filepath.Dir(cfg.KubectlPath)), zap.Error(err))
-	}
-	if !file.Exist(cfg.KubectlPath) {
-		if cfg.KubectlDownloadURL == "" {
-			lg.Panic("kubectl does not exist, kubectl download URL empty", zap.String("kubectl-path", cfg.KubectlPath))
-		}
-		cfg.KubectlPath, _ = filepath.Abs(cfg.KubectlPath)
-		lg.Info("downloading kubectl", zap.String("kubectl-path", cfg.KubectlPath))
-		if err = http.Download(lg, os.Stderr, cfg.KubectlDownloadURL, cfg.KubectlPath); err != nil {
-			lg.Panic("failed to download kubectl", zap.Error(err))
-		}
-	} else {
-		lg.Info("skipping kubectl download; already exist", zap.String("kubectl-path", cfg.KubectlPath))
-	}
-	if err = file.EnsureExecutable(cfg.KubectlPath); err != nil {
-		// file may be already executable while the process does not own the file/directory
-		// ref. https://github.com/aws/aws-k8s-tester/issues/66
-		lg.Warn("failed to ensure executable", zap.Error(err))
-		err = nil
-	}
-
 	ts := &tester{
 		cfg:       cfg,
 		logger:    lg,
 		logWriter: logWriter,
-		clientConfig: &client.Config{
-			Logger:            lg,
-			KubectlPath:       cfg.KubectlPath,
-			KubeconfigPath:    cfg.KubeconfigPath,
-			KubeconfigContext: cfg.KubeconfigContext,
-		},
-		testers: make([]k8s_tester.Tester, 0),
+		testers:   make([]k8s_tester.Tester, 0),
 	}
-
-	ccfg, err := client.CreateConfig(ts.clientConfig)
-	if err != nil {
-		lg.Panic("failed to create client config", zap.Error(err))
-	}
-	ts.cli, err = k8s_client.NewForConfig(ccfg)
+	ts.cli, err = client.New(&client.Config{
+		Logger:             lg,
+		KubectlDownloadURL: cfg.KubectlDownloadURL,
+		KubectlPath:        cfg.KubectlPath,
+		KubeconfigPath:     cfg.KubeconfigPath,
+		KubeconfigContext:  cfg.KubeconfigContext,
+	})
 	if err != nil {
 		lg.Panic("failed to create client", zap.Error(err))
 	}
@@ -96,10 +63,9 @@ func New(cfg *Config) k8s_tester.Tester {
 type tester struct {
 	cfg *Config
 
-	logger       *zap.Logger
-	logWriter    io.Writer
-	clientConfig *client.Config
-	cli          k8s_client.Interface
+	logger    *zap.Logger
+	logWriter io.Writer
+	cli       client.Client
 
 	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
 	testers []k8s_tester.Tester
@@ -111,42 +77,34 @@ func (ts *tester) createTesters() {
 
 	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
 	if ts.cfg.AddOnCloudwatchAgent != nil && ts.cfg.AddOnCloudwatchAgent.Enable {
-		ts.cfg.AddOnCloudwatchAgent.ClientConfig = ts.clientConfig
 		ts.cfg.AddOnCloudwatchAgent.Client = ts.cli
 		ts.testers = append(ts.testers, cloudwatch_agent.New(ts.cfg.AddOnCloudwatchAgent))
 	}
 	if ts.cfg.AddOnMetricsServer != nil && ts.cfg.AddOnMetricsServer.Enable {
-		ts.cfg.AddOnMetricsServer.ClientConfig = ts.clientConfig
 		ts.cfg.AddOnMetricsServer.Client = ts.cli
 		ts.testers = append(ts.testers, metrics_server.New(ts.cfg.AddOnMetricsServer))
 	}
 	if ts.cfg.AddOnFluentBit != nil && ts.cfg.AddOnFluentBit.Enable {
-		ts.cfg.AddOnFluentBit.ClientConfig = ts.clientConfig
 		ts.cfg.AddOnFluentBit.Client = ts.cli
 		ts.testers = append(ts.testers, fluent_bit.New(ts.cfg.AddOnFluentBit))
 	}
 	if ts.cfg.AddOnKubernetesDashboard != nil && ts.cfg.AddOnKubernetesDashboard.Enable {
-		ts.cfg.AddOnKubernetesDashboard.ClientConfig = ts.clientConfig
 		ts.cfg.AddOnKubernetesDashboard.Client = ts.cli
 		ts.testers = append(ts.testers, kubernetes_dashboard.New(ts.cfg.AddOnKubernetesDashboard))
 	}
 	if ts.cfg.AddOnNLBHelloWorld != nil && ts.cfg.AddOnNLBHelloWorld.Enable {
-		ts.cfg.AddOnNLBHelloWorld.ClientConfig = ts.clientConfig
 		ts.cfg.AddOnNLBHelloWorld.Client = ts.cli
 		ts.testers = append(ts.testers, nlb_hello_world.New(ts.cfg.AddOnNLBHelloWorld))
 	}
 	if ts.cfg.AddOnJobsPi != nil && ts.cfg.AddOnJobsPi.Enable {
-		ts.cfg.AddOnJobsPi.ClientConfig = ts.clientConfig
 		ts.cfg.AddOnJobsPi.Client = ts.cli
 		ts.testers = append(ts.testers, jobs_pi.New(ts.cfg.AddOnJobsPi))
 	}
 	if ts.cfg.AddOnJobsEcho != nil && ts.cfg.AddOnJobsEcho.Enable {
-		ts.cfg.AddOnJobsEcho.ClientConfig = ts.clientConfig
 		ts.cfg.AddOnJobsEcho.Client = ts.cli
 		ts.testers = append(ts.testers, jobs_echo.New(ts.cfg.AddOnJobsEcho))
 	}
 	if ts.cfg.AddOnCronJobsEcho != nil && ts.cfg.AddOnCronJobsEcho.Enable {
-		ts.cfg.AddOnCronJobsEcho.ClientConfig = ts.clientConfig
 		ts.cfg.AddOnCronJobsEcho.Client = ts.cli
 		ts.testers = append(ts.testers, jobs_echo.New(ts.cfg.AddOnCronJobsEcho))
 	}
@@ -171,22 +129,22 @@ func (ts *tester) Apply() error {
 	ts.cfg.Sync()
 
 	// The tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
-	for idx, tt := range ts.testers {
+	for idx, cur := range ts.testers {
 		_ = idx
-		if !tt.Enabled() {
+		if !cur.Enabled() {
 			continue
 		}
 		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("\n\n[yellow]*********************************\n"))
-		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("[light_green]testers[%02d].Apply [cyan]%q [default](%q, %q)\n"), idx, tt.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := tt.Apply(); err != nil {
-			fmt.Fprintf(ts.logWriter, cfg.Colorize("\n\n[yellow]*********************************\n"))
-			fmt.Fprintf(ts.logWriter, cfg.Colorize(fmt.Sprintf("[light_magenta]✗ [default]k8s-tester[%02d].Apply [light_magenta]FAIL [default](%v)\n", idx, err)))
+		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("[light_green]testers[%02d].Apply [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := cur.Apply(); err != nil {
+			fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, ts.cfg.Colorize(fmt.Sprintf("[light_magenta]✗ [default]k8s-tester[%02d].Apply [light_magenta]FAIL [default](%v)\n", idx, err)))
 			return err
 		}
 	}
 
-	fmt.Fprintf(ts.logWriter, cfg.Colorize("\n\n\n[yellow]*********************************\n"))
-	fmt.Fprintf(ts.logWriter, cfg.Colorize("🎉 [default]k8s-tester eks create cluster [light_green]SUCCESS\n"))
+	fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("\n\n\n[yellow]*********************************\n"))
+	fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("🎉 [default]k8s-tester eks create cluster [light_green]SUCCESS\n"))
 	return nil
 }
 
@@ -200,15 +158,15 @@ func (ts *tester) Delete() error {
 	now := time.Now()
 
 	for idx := len(ts.testers) - 1; idx >= 0; idx-- {
-		tt := ts.testers[idx]
-		if !tt.Enabled() {
+		cur := ts.testers[idx]
+		if !cur.Enabled() {
 			continue
 		}
 		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("\n\n[yellow]*********************************\n"))
 		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("[light_blue]testers[%02d].Delete [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-		if err := tt.Delete(); err != nil {
-			fmt.Fprintf(ts.logWriter, cfg.Colorize("\n\n[yellow]*********************************\n"))
-			fmt.Fprintf(ts.logWriter, cfg.Colorize(fmt.Sprintf("[light_magenta]✗ [default]k8s-tester[%02d].Delete [light_magenta]FAIL [default](%v)\n", idx, err)))
+		if err := cur.Delete(); err != nil {
+			fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("\n\n[yellow]*********************************\n"))
+			fmt.Fprintf(ts.logWriter, ts.cfg.Colorize(fmt.Sprintf("[light_magenta]✗ [default]k8s-tester[%02d].Delete [light_magenta]FAIL [default](%v)\n", idx, err)))
 			errs = append(errs, err.Error())
 		}
 	}
@@ -218,7 +176,7 @@ func (ts *tester) Delete() error {
 		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("[light_blue]Delete [default](%q)\n"), ts.cfg.ConfigPath)
 		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("\n\n💯 😁 👍 :) [light_blue]Delete SUCCESS\n\n\n"))
 
-		ts.lg.Info("successfully finished Delete",
+		ts.logger.Info("successfully finished Delete",
 			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 		)
 
@@ -227,8 +185,8 @@ func (ts *tester) Delete() error {
 		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("[light_blue]Delete [default](%q)\n"), ts.cfg.ConfigPath)
 		fmt.Fprintf(ts.logWriter, ts.cfg.Colorize("🔥 💀 👽 😱 😡 ⛈   (-_-) [light_magenta]Delete FAIL\n"))
 
-		ts.lg.Info("failed Delete",
-			zap.Error(err),
+		ts.logger.Info("failed Delete",
+			zap.Strings("errors", errs),
 			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 		)
 	}

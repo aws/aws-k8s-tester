@@ -32,7 +32,7 @@ type Config struct {
 	Stopc     chan struct{} `json:"-"`
 	Logger    *zap.Logger   `json:"-"`
 	LogWriter io.Writer     `json:"-"`
-	Client    client.Config `json:"-"`
+	Client    client.Client `json:"-"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum_nodes"`
