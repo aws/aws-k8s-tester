@@ -2,23 +2,28 @@
 ```
 
 
-*---------------------------------*----------------------*---------------------------------------*----------*
-|     ENVIRONMENTAL VARIABLE      |      FIELD TYPE      |                 TYPE                  | GO TYPE  |
-*---------------------------------*----------------------*---------------------------------------*----------*
-| K8S_TESTER_PROMPT               | SETTABLE VIA ENV VAR | *k8s_tester.Config.Prompt             | bool     |
-| K8S_TESTER_CLUSTER_NAME         | SETTABLE VIA ENV VAR | *k8s_tester.Config.ClusterName        | string   |
-| K8S_TESTER_CONFIG_PATH          | SETTABLE VIA ENV VAR | *k8s_tester.Config.ConfigPath         | string   |
-| K8S_TESTER_LOG_COLOR            | SETTABLE VIA ENV VAR | *k8s_tester.Config.LogColor           | bool     |
-| K8S_TESTER_LOG_COLOR_OVERRIDE   | SETTABLE VIA ENV VAR | *k8s_tester.Config.LogColorOverride   | string   |
-| K8S_TESTER_LOG_LEVEL            | SETTABLE VIA ENV VAR | *k8s_tester.Config.LogLevel           | string   |
-| K8S_TESTER_LOG_OUTPUTS          | SETTABLE VIA ENV VAR | *k8s_tester.Config.LogOutputs         | []string |
-| K8S_TESTER_KUBECTL_DOWNLOAD_URL | SETTABLE VIA ENV VAR | *k8s_tester.Config.KubectlDownloadURL | string   |
-| K8S_TESTER_KUBECTL_PATH         | SETTABLE VIA ENV VAR | *k8s_tester.Config.KubectlPath        | string   |
-| K8S_TESTER_KUBECONFIG_PATH      | SETTABLE VIA ENV VAR | *k8s_tester.Config.KubeconfigPath     | string   |
-| K8S_TESTER_KUBECONFIG_CONTEXT   | SETTABLE VIA ENV VAR | *k8s_tester.Config.KubeconfigContext  | string   |
-| K8S_TESTER_MINIMUM_NODES        | SETTABLE VIA ENV VAR | *k8s_tester.Config.MinimumNodes       | int      |
-| K8S_TESTER_TOTAL_NODES          | READ-ONLY            | *k8s_tester.Config.TotalNodes         | int      |
-*---------------------------------*----------------------*---------------------------------------*----------*
+*----------------------------------*----------------------*----------------------------------------*---------------*
+|      ENVIRONMENTAL VARIABLE      |      FIELD TYPE      |                  TYPE                  |    GO TYPE    |
+*----------------------------------*----------------------*----------------------------------------*---------------*
+| K8S_TESTER_PROMPT                | SETTABLE VIA ENV VAR | *k8s_tester.Config.Prompt              | bool          |
+| K8S_TESTER_CLUSTER_NAME          | SETTABLE VIA ENV VAR | *k8s_tester.Config.ClusterName         | string        |
+| K8S_TESTER_CONFIG_PATH           | SETTABLE VIA ENV VAR | *k8s_tester.Config.ConfigPath          | string        |
+| K8S_TESTER_LOG_COLOR             | SETTABLE VIA ENV VAR | *k8s_tester.Config.LogColor            | bool          |
+| K8S_TESTER_LOG_COLOR_OVERRIDE    | SETTABLE VIA ENV VAR | *k8s_tester.Config.LogColorOverride    | string        |
+| K8S_TESTER_LOG_LEVEL             | SETTABLE VIA ENV VAR | *k8s_tester.Config.LogLevel            | string        |
+| K8S_TESTER_LOG_OUTPUTS           | SETTABLE VIA ENV VAR | *k8s_tester.Config.LogOutputs          | []string      |
+| K8S_TESTER_KUBECTL_DOWNLOAD_URL  | SETTABLE VIA ENV VAR | *k8s_tester.Config.KubectlDownloadURL  | string        |
+| K8S_TESTER_KUBECTL_PATH          | SETTABLE VIA ENV VAR | *k8s_tester.Config.KubectlPath         | string        |
+| K8S_TESTER_KUBECONFIG_PATH       | SETTABLE VIA ENV VAR | *k8s_tester.Config.KubeconfigPath      | string        |
+| K8S_TESTER_KUBECONFIG_CONTEXT    | SETTABLE VIA ENV VAR | *k8s_tester.Config.KubeconfigContext   | string        |
+| K8S_TESTER_CLIENTS               | SETTABLE VIA ENV VAR | *k8s_tester.Config.Clients             | int           |
+| K8S_TESTER_CLIENT_QPS            | SETTABLE VIA ENV VAR | *k8s_tester.Config.ClientQPS           | float32       |
+| K8S_TESTER_CLIENT_BURST          | SETTABLE VIA ENV VAR | *k8s_tester.Config.ClientBurst         | int           |
+| K8S_TESTER_CLIENT_TIMEOUT        | SETTABLE VIA ENV VAR | *k8s_tester.Config.ClientTimeout       | time.Duration |
+| K8S_TESTER_CLIENT_TIMEOUT_STRING | READ-ONLY            | *k8s_tester.Config.ClientTimeoutString | string        |
+| K8S_TESTER_MINIMUM_NODES         | SETTABLE VIA ENV VAR | *k8s_tester.Config.MinimumNodes        | int           |
+| K8S_TESTER_TOTAL_NODES           | READ-ONLY            | *k8s_tester.Config.TotalNodes          | int           |
+*----------------------------------*----------------------*----------------------------------------*---------------*
 
 
 *--------------------------------------------------*----------------------*---------------------------------------*---------*

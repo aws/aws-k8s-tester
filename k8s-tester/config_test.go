@@ -4,6 +4,7 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestEnv(t *testing.T) {
@@ -17,6 +18,8 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("K8S_TESTER_CLUSTER_NAME")
 	os.Setenv("K8S_TESTER_CLIENTS", "100")
 	defer os.Unsetenv("K8S_TESTER_CLIENTS")
+	os.Setenv("K8S_TESTER_CLIENT_TIMEOUT", "100m")
+	defer os.Unsetenv("K8S_TESTER_CLIENT_TIMEOUT")
 	os.Setenv("K8S_TESTER_KUBECTL_DOWNLOAD_URL", "hello.url")
 	defer os.Unsetenv("K8S_TESTER_KUBECTL_DOWNLOAD_URL")
 	os.Setenv("K8S_TESTER_KUBECONFIG_PATH", "hello.config")
@@ -39,6 +42,9 @@ func TestEnv(t *testing.T) {
 	}
 	if cfg.Clients != 100 {
 		t.Fatalf("unexpected cfg.Clients %v", cfg.Clients)
+	}
+	if cfg.ClientTimeout != 100*time.Minute {
+		t.Fatalf("unexpected cfg.ClientTimeout %v", cfg.ClientTimeout)
 	}
 	if cfg.KubectlDownloadURL != "hello.url" {
 		t.Fatalf("unexpected cfg.KubectlDownloadURL %v", cfg.KubectlDownloadURL)
