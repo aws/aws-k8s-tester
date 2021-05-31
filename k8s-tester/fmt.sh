@@ -15,6 +15,12 @@ gofmt -s -w ./cmd/readme-gen
 goimports -w ./cloudwatch-agent
 gofmt -s -w ./cloudwatch-agent
 
+goimports -w ./configmaps
+gofmt -s -w ./configmaps
+
+goimports -w ./conformance
+gofmt -s -w ./conformance
+
 goimports -w ./csi-ebs
 gofmt -s -w ./csi-ebs
 
@@ -38,6 +44,12 @@ gofmt -s -w ./metrics-server
 
 goimports -w ./nlb-hello-world
 gofmt -s -w ./nlb-hello-world
+
+goimports -w ./php-apache
+gofmt -s -w ./php-apache
+
+goimports -w ./stress
+gofmt -s -w ./stress
 
 goimports -w ./tester
 gofmt -s -w ./tester
