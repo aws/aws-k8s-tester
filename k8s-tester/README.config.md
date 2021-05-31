@@ -51,7 +51,6 @@
 *------------------------------------------------*----------------------*-------------------------------------*---------*
 | K8S_TESTER_ADD_ON_METRICS_SERVER_ENABLE        | SETTABLE VIA ENV VAR | *metrics_server.Config.Enable       | bool    |
 | K8S_TESTER_ADD_ON_METRICS_SERVER_MINIMUM_NODES | SETTABLE VIA ENV VAR | *metrics_server.Config.MinimumNodes | int     |
-| K8S_TESTER_ADD_ON_METRICS_SERVER_NAMESPACE     | SETTABLE VIA ENV VAR | *metrics_server.Config.Namespace    | string  |
 *------------------------------------------------*----------------------*-------------------------------------*---------*
 
 

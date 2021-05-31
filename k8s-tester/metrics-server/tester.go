@@ -15,8 +15,6 @@ import (
 	"github.com/aws/aws-k8s-tester/client"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
 	"github.com/aws/aws-k8s-tester/utils/file"
-	"github.com/aws/aws-k8s-tester/utils/rand"
-	utils_time "github.com/aws/aws-k8s-tester/utils/time"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
@@ -35,8 +33,6 @@ type Config struct {
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum_nodes"`
-	// Namespace to create test resources.
-	Namespace string `json:"namespace"`
 }
 
 const DefaultMinimumNodes int = 1
@@ -45,7 +41,6 @@ func NewDefault() *Config {
 	return &Config{
 		Enable:       false,
 		Prompt:       false,
-		Namespace:    pkgName + "-" + rand.String(10) + "-" + utils_time.GetTS(10),
 		MinimumNodes: DefaultMinimumNodes,
 	}
 }
@@ -114,7 +109,7 @@ func (ts *tester) Delete() error {
 
 func (ts *tester) runPrompt(action string) (ok bool) {
 	if ts.cfg.Prompt {
-		msg := fmt.Sprintf("Ready to %q resources for the namespace %q, should we continue?", action, ts.cfg.Namespace)
+		msg := fmt.Sprintf("Ready to %q resources, should we continue?", action)
 		prompt := promptui.Select{
 			Label: msg,
 			Items: []string{

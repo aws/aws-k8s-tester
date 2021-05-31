@@ -89,6 +89,10 @@ func (ts *tester) Apply() error {
 		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
 	}
 
+	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client.KubernetesClient(), ts.cfg.Namespace); err != nil {
+		return err
+	}
+
 	if err := ts.createServiceAccount(); err != nil {
 		return err
 	}
