@@ -38,8 +38,7 @@ import (
 // By default, it uses the environmental variables as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eksconfig/env.go.
 // TODO: support https://github.com/onsi/ginkgo.
 type Config struct {
-	mu    *sync.RWMutex `json:"-"`
-	Stopc chan struct{} `json:"-"`
+	mu *sync.RWMutex `json:"-"`
 
 	// Prompt is true to enable prompt mode.
 	Prompt bool `json:"prompt"`

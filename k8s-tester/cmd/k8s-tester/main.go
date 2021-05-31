@@ -81,7 +81,12 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 	fmt.Printf("overwriting config file from environment variables with %s\n", version.Version())
 	err = cfg.UpdateFromEnvs()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to load configuration from environment variables: %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to load configuration from environment variables %v\n", err)
+		os.Exit(1)
+	}
+	err = cfg.ValidateAndSetDefaults()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to validate configuration %v\n", err)
 		os.Exit(1)
 	}
 
