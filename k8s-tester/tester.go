@@ -30,9 +30,13 @@ import (
 )
 
 func New(cfg *Config) k8s_tester.Tester {
+	if err := cfg.ValidateAndSetDefaults(); err != nil {
+		panic(fmt.Errorf("failed to validate config %v", err))
+	}
+
 	lg, logWriter, _, err := log.NewWithStderrWriter(cfg.LogLevel, cfg.LogOutputs)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("failed to create logger %v", err))
 	}
 	_ = zap.ReplaceGlobals(lg)
 

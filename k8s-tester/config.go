@@ -25,6 +25,7 @@ import (
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
+	"github.com/aws/aws-k8s-tester/utils/file"
 	"github.com/aws/aws-k8s-tester/utils/log"
 	"github.com/aws/aws-k8s-tester/utils/rand"
 	utils_time "github.com/aws/aws-k8s-tester/utils/time"
@@ -45,9 +46,9 @@ type Config struct {
 
 	// ClusterName is the Kubernetes cluster name.
 	ClusterName string `json:"cluster_name"`
-
 	// ConfigPath is the configuration file path.
 	ConfigPath string `json:"config_path"`
+
 	// LogColor is true to output logs in color.
 	LogColor bool `json:"log_color"`
 	// LogColorOverride is not empty to override "LogColor" setting.
@@ -70,6 +71,45 @@ type Config struct {
 	KubeconfigPath     string `json:"kubeconfig_path"`
 	KubeconfigContext  string `json:"kubeconfig_context"`
 
+	// Clients is the number of kubernetes clients to create.
+	// Default is 1.
+	// This field is used for "eks/stresser" tester. Configure accordingly.
+	// Rate limit is done via "k8s.io/client-go/util/flowcontrol.NewTokenBucketRateLimiter".
+	Clients int `json:"clients"`
+	// ClientQPS is the QPS for kubernetes client.
+	// To use while talking with kubernetes apiserver.
+	//
+	// Kubernetes client DefaultQPS is 5.
+	// Kubernetes client DefaultBurst is 10.
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
+	//
+	// kube-apiserver default inflight requests limits are:
+	// FLAG: --max-mutating-requests-inflight="200"
+	// FLAG: --max-requests-inflight="400"
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
+	//
+	// This field is used for "eks/stresser" tester. Configure accordingly.
+	// Rate limit is done via "k8s.io/client-go/util/flowcontrol.NewTokenBucketRateLimiter".
+	ClientQPS float32 `json:"client_qps"`
+	// ClientBurst is the burst for kubernetes client.
+	// To use while talking with kubernetes apiserver
+	//
+	// Kubernetes client DefaultQPS is 5.
+	// Kubernetes client DefaultBurst is 10.
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
+	//
+	// kube-apiserver default inflight requests limits are:
+	// FLAG: --max-mutating-requests-inflight="200"
+	// FLAG: --max-requests-inflight="400"
+	// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
+	//
+	// This field is used for "eks/stresser" tester. Configure accordingly.
+	// Rate limit is done via "k8s.io/client-go/util/flowcontrol.NewTokenBucketRateLimiter".
+	ClientBurst int `json:"client_burst"`
+	// ClientTimeout is the client timeout.
+	ClientTimeout       time.Duration `json:"client_timeout"`
+	ClientTimeoutString string        `json:"client_timeout_string,omitempty" read-only:"true"`
+
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum_nodes"`
 	// TotalNodes is the total number of nodes from all node groups.
@@ -88,7 +128,17 @@ type Config struct {
 	AddOnCronJobsEcho        *jobs_echo.Config            `json:"add_on_cron_jobs_echo"`
 }
 
-const DefaultMinimumNodes = 1
+const (
+	// DefaultClients is the default number of clients to create.
+	DefaultClients = 2
+	// DefaultClientQPS is the default client QPS.
+	DefaultClientQPS float32 = 10
+	// DefaultClientBurst is the default client burst.
+	DefaultClientBurst = 20
+	// DefaultClientTimeout is the default client timeout.
+	DefaultClientTimeout = 15 * time.Second
+	DefaultMinimumNodes  = 1
+)
 
 func NewDefault() *Config {
 	name := fmt.Sprintf("k8s-%s-%s", utils_time.GetTS(10), rand.String(12))
@@ -115,6 +165,20 @@ func NewDefault() *Config {
 		KubectlPath:        "/tmp/kubectl-test-v1.21.0",
 		KubectlDownloadURL: fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/%s/%s/kubectl", runtime.GOOS, runtime.GOARCH),
 
+		// Kubernetes client DefaultQPS is 5.
+		// Kubernetes client DefaultBurst is 10.
+		// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/client-go/rest/config.go#L43-L46
+		//
+		// kube-apiserver default inflight requests limits are:
+		// FLAG: --max-mutating-requests-inflight="200"
+		// FLAG: --max-requests-inflight="400"
+		// ref. https://github.com/kubernetes/kubernetes/blob/4d0e86f0b8d1eae00a202009858c8739e4c9402e/staging/src/k8s.io/apiserver/pkg/server/config.go#L300-L301
+		//
+		Clients:       DefaultClients,
+		ClientQPS:     DefaultClientQPS,
+		ClientBurst:   DefaultClientBurst,
+		ClientTimeout: DefaultClientTimeout,
+
 		MinimumNodes: DefaultMinimumNodes,
 
 		// tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/eks.go#L617
@@ -129,6 +193,91 @@ func NewDefault() *Config {
 		AddOnJobsEcho:            jobs_echo.NewDefault("Job"),
 		AddOnCronJobsEcho:        jobs_echo.NewDefault("CronJob"),
 	}
+}
+
+// ValidateAndSetDefaults returns an error for invalid configurations.
+// And updates empty fields with default values.
+// At the end, it writes populated YAML to aws-k8s-tester config path.
+// "read-only" fields cannot be set, causing errors.
+func (cfg *Config) ValidateAndSetDefaults() error {
+	if cfg.mu == nil {
+		cfg.mu = new(sync.RWMutex)
+	}
+	cfg.mu.Lock()
+	defer func() {
+		if serr := cfg.unsafeSync(); serr != nil {
+			fmt.Fprintf(os.Stderr, "[WARN] failed to sync config files %v\n", serr)
+		}
+		cfg.mu.Unlock()
+	}()
+
+	if err := cfg.validateConfig(); err != nil {
+		return fmt.Errorf("validateConfig failed [%v]", err)
+	}
+
+	return nil
+}
+
+func (cfg *Config) validateConfig() error {
+	if len(cfg.ClusterName) == 0 {
+		return errors.New("ClusterName is empty")
+	}
+	if cfg.ClusterName != strings.ToLower(cfg.ClusterName) {
+		return fmt.Errorf("ClusterName %q must be in lower-case", cfg.ClusterName)
+	}
+
+	if cfg.Clients == 0 {
+		cfg.Clients = DefaultClients
+	}
+	if cfg.ClientQPS == 0 {
+		cfg.ClientQPS = DefaultClientQPS
+	}
+	if cfg.ClientBurst == 0 {
+		cfg.ClientBurst = DefaultClientBurst
+	}
+	if cfg.ClientTimeout == time.Duration(0) {
+		cfg.ClientTimeout = DefaultClientTimeout
+	}
+	cfg.ClientTimeoutString = cfg.ClientTimeout.String()
+
+	if cfg.ConfigPath == "" {
+		rootDir, err := os.Getwd()
+		if err != nil {
+			rootDir = filepath.Join(os.TempDir(), cfg.ClusterName)
+			if err := os.MkdirAll(rootDir, 0700); err != nil {
+				return err
+			}
+		}
+		cfg.ConfigPath = filepath.Join(rootDir, cfg.ClusterName+".yaml")
+		var p string
+		p, err = filepath.Abs(cfg.ConfigPath)
+		if err != nil {
+			panic(err)
+		}
+		cfg.ConfigPath = p
+	}
+	if err := os.MkdirAll(filepath.Dir(cfg.ConfigPath), 0700); err != nil {
+		return err
+	}
+	if err := file.IsDirWriteable(filepath.Dir(cfg.ConfigPath)); err != nil {
+		return err
+	}
+
+	if len(cfg.LogOutputs) == 1 && (cfg.LogOutputs[0] == "stderr" || cfg.LogOutputs[0] == "stdout") {
+		cfg.LogOutputs = append(cfg.LogOutputs, strings.ReplaceAll(cfg.ConfigPath, ".yaml", "")+".log")
+	}
+	logFilePath := ""
+	for _, fpath := range cfg.LogOutputs {
+		if filepath.Ext(fpath) == ".log" {
+			logFilePath = fpath
+			break
+		}
+	}
+	if logFilePath == "" {
+		return fmt.Errorf("*.log file not found in %q", cfg.LogOutputs)
+	}
+
+	return nil
 }
 
 // ENV_PREFIX is the environment variable prefix.
