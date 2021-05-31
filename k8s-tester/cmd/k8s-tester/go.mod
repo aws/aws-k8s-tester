@@ -4,7 +4,6 @@ go 1.16
 
 require (
 	github.com/aws/aws-k8s-tester/k8s-tester v0.0.0-00010101000000-000000000000
-	github.com/aws/aws-k8s-tester/k8s-tester/php-apache v0.0.0-00010101000000-000000000000 // indirect
 	github.com/aws/aws-k8s-tester/utils v0.0.0-00010101000000-000000000000
 	github.com/spf13/cobra v1.1.3
 )
