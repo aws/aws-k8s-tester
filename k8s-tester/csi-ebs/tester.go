@@ -32,15 +32,20 @@ type Config struct {
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum_nodes"`
 	// HelmChartRepoURL is the helm chart repo URL.
-	// e.g. https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases/download/v0.5.0/helm-chart.tgz
 	HelmChartRepoURL string `json:"helm_chart_repo_url"`
 }
+
+const chartName = "aws-ebs-csi-driver"
 
 const (
 	DefaultMinimumNodes int = 1
 	// https://github.com/kubernetes-sigs/aws-ebs-csi-driver#deploy-driver
 	// https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases
-	DefaultHelmChartRepoURL = "https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases/download/v1.1.0/helm-chart.tgz"
+	//
+	// TODO: not working
+	// https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases/download/v0.5.0/helm-chart.tgz
+	// "gzip: invalid header"
+	DefaultHelmChartRepoURL = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
 )
 
 func NewDefault() *Config {
@@ -127,8 +132,6 @@ func (ts *tester) runPrompt(action string) (ok bool) {
 	}
 	return true
 }
-
-const chartName = "aws-ebs-csi-driver"
 
 // https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/aws-ebs-csi-driver/values.yaml
 func (ts *tester) createHelmCSI() error {
