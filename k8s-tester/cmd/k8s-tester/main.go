@@ -90,14 +90,15 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	ts := k8s_tester.New(cfg)
+
 	txt, err := ioutil.ReadFile(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to read configuration %q (%v)\n", path, err)
 		os.Exit(1)
 	}
-	fmt.Printf("\n\n%q:\n\n%s\n\n\n", path, string(txt))
+	fmt.Printf("\n\n%q:\n\n%s\n\n(%q)\n\n", path, string(txt), path)
 
-	ts := k8s_tester.New(cfg)
 	if err := ts.Apply(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to apply (%v)\n", err)
 		os.Exit(1)
