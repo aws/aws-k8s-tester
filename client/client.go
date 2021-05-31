@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/utils/file"
@@ -18,6 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
+	apiextensions_apiserver_client "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8s_util_net "k8s.io/apimachinery/pkg/util/net"
@@ -27,62 +29,6 @@ import (
 	clientcmd "k8s.io/client-go/tools/clientcmd"
 	clientcmd_api "k8s.io/client-go/tools/clientcmd/api"
 )
-
-// Client defines Kubernetes client interface.
-type Client interface {
-	k8s_client.Interface
-	Config() Config
-}
-
-type client struct {
-	k8s_client.Interface
-	cfg *Config
-}
-
-func (c *client) Config() Config { return *c.cfg }
-
-// New returns the new client interface.
-func New(cfg *Config) (cli Client, err error) {
-	ccfg, err := CreateRestConfig(cfg)
-	if err != nil {
-		return nil, err
-	}
-	k8sClient, err := k8s_client.NewForConfig(ccfg)
-	if err != nil {
-		return nil, err
-	}
-
-	cfg.Logger.Info("mkdir", zap.String("kubectl-path-dir", filepath.Dir(cfg.KubectlPath)))
-	if err = os.MkdirAll(filepath.Dir(cfg.KubectlPath), 0700); err != nil {
-		cfg.Logger.Warn("could not create", zap.String("dir", filepath.Dir(cfg.KubectlPath)), zap.Error(err))
-		return nil, err
-	}
-	if !file.Exist(cfg.KubectlPath) {
-		if cfg.KubectlDownloadURL == "" {
-			cfg.Logger.Warn("kubectl does not exist, kubectl download URL empty", zap.String("kubectl-path", cfg.KubectlPath))
-			return nil, err
-		}
-		cfg.KubectlPath, _ = filepath.Abs(cfg.KubectlPath)
-		cfg.Logger.Info("downloading kubectl", zap.String("kubectl-path", cfg.KubectlPath))
-		if err = utils_http.Download(cfg.Logger, os.Stderr, cfg.KubectlDownloadURL, cfg.KubectlPath); err != nil {
-			cfg.Logger.Warn("failed to download kubectl", zap.Error(err))
-			return nil, err
-		}
-	} else {
-		cfg.Logger.Info("skipping kubectl download; already exist", zap.String("kubectl-path", cfg.KubectlPath))
-	}
-	if err = file.EnsureExecutable(cfg.KubectlPath); err != nil {
-		// file may be already executable while the process does not own the file/directory
-		// ref. https://github.com/aws/aws-k8s-tester/issues/66
-		cfg.Logger.Warn("failed to ensure executable", zap.Error(err))
-		err = nil
-	}
-
-	return &client{
-		Interface: k8sClient,
-		cfg:       cfg,
-	}, nil
-}
 
 // Config defines Kubernetes configuration.
 type Config struct {
@@ -100,6 +46,9 @@ type Config struct {
 	// EKS defines EKS-specific configuration.
 	EKS *EKS
 
+	// Clients is the number of kubernetes clients to create.
+	// Default is 1.
+	Clients int
 	// ClientQPS is the QPS for kubernetes client.
 	// To use while talking with kubernetes apiserver.
 	//
@@ -145,8 +94,108 @@ type EKS struct {
 	ClusterCADecoded string
 }
 
-// CreateRestConfig creates the Kubernetes client configuration.
-func CreateRestConfig(cfg *Config) (kcfg *k8s_client_rest.Config, err error) {
+// Client defines Kubernetes client interface.
+type Client interface {
+	// KubernetesClient returns a new kubernetes client set.
+	KubernetesClient() k8s_client.Interface
+	// APIExtensionsClient returns a new apiextensions client set.
+	APIExtensionsClient() apiextensions_apiserver_client.Interface
+	Config() Config
+}
+
+type client struct {
+	mu  sync.Mutex
+	cfg *Config
+
+	// ref. https://pkg.go.dev/k8s.io/client-go/kubernetes#Interface
+	clients []k8s_client.Interface
+	// ref. https://pkg.go.dev/k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset#Interface
+	extensionClients []apiextensions_apiserver_client.Interface
+	cur              int
+}
+
+func (c *client) KubernetesClient() k8s_client.Interface {
+	c.mu.Lock()
+	if len(c.clients) == 0 {
+		c.mu.Unlock()
+		return nil
+	}
+	c.cur = (c.cur + 1) % len(c.clients)
+	cli := c.clients[c.cur]
+	c.mu.Unlock()
+	return cli
+}
+
+func (c *client) APIExtensionsClient() apiextensions_apiserver_client.Interface {
+	c.mu.Lock()
+	if len(c.extensionClients) == 0 {
+		c.mu.Unlock()
+		return nil
+	}
+	c.cur = (c.cur + 1) % len(c.extensionClients)
+	cli := c.extensionClients[c.cur]
+	c.mu.Unlock()
+	return cli
+}
+
+func (c *client) Config() Config { return *c.cfg }
+
+// New returns the new client interface.
+func New(cfg *Config) (Client, error) {
+	if cfg.Clients < 1 {
+		cfg.Clients = 1
+	}
+	cfg.Logger.Info("mkdir", zap.String("kubectl-path-dir", filepath.Dir(cfg.KubectlPath)))
+	if err := os.MkdirAll(filepath.Dir(cfg.KubectlPath), 0700); err != nil {
+		cfg.Logger.Warn("could not create", zap.String("dir", filepath.Dir(cfg.KubectlPath)), zap.Error(err))
+		return nil, err
+	}
+	if !file.Exist(cfg.KubectlPath) {
+		if cfg.KubectlDownloadURL == "" {
+			cfg.Logger.Warn("kubectl path does not exist, kubectl download URL empty", zap.String("kubectl-path", cfg.KubectlPath))
+			return nil, fmt.Errorf("kubectl path does not exist and empty kubectl download URL", cfg.KubectlPath)
+		}
+		cfg.KubectlPath, _ = filepath.Abs(cfg.KubectlPath)
+		cfg.Logger.Info("downloading kubectl", zap.String("kubectl-path", cfg.KubectlPath))
+		if err := utils_http.Download(cfg.Logger, os.Stderr, cfg.KubectlDownloadURL, cfg.KubectlPath); err != nil {
+			cfg.Logger.Warn("failed to download kubectl", zap.Error(err))
+			return nil, err
+		}
+	} else {
+		cfg.Logger.Info("skipping kubectl download; already exist", zap.String("kubectl-path", cfg.KubectlPath))
+	}
+	if err := file.EnsureExecutable(cfg.KubectlPath); err != nil {
+		// file may be already executable while the process does not own the file/directory
+		// ref. https://github.com/aws/aws-k8s-tester/issues/66
+		cfg.Logger.Warn("failed to ensure executable", zap.Error(err))
+		err = nil
+	}
+
+	ccfg, err := createRestConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	cli := &client{
+		cfg:              cfg,
+		clients:          make([]k8s_client.Interface, cfg.Clients),
+		extensionClients: make([]apiextensions_apiserver_client.Interface, cfg.Clients),
+	}
+	for i := 0; i < cfg.Clients; i++ {
+		cli.clients[i], err = k8s_client.NewForConfig(ccfg)
+		if err != nil {
+			return nil, err
+		}
+		cli.extensionClients[i], err = apiextensions_apiserver_client.NewForConfig(ccfg)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return cli, nil
+}
+
+// createRestConfig creates the Kubernetes client configuration.
+func createRestConfig(cfg *Config) (kcfg *k8s_client_rest.Config, err error) {
 	if kcfg, err = createRestConfigFromKubeconfig(cfg); err != nil {
 		cfg.Logger.Error("failed to create config using KUBECONFIG", zap.Error(err))
 	}

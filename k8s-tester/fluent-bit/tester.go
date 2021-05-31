@@ -69,11 +69,11 @@ func (ts *tester) Apply() error {
 		return errors.New("cancelled")
 	}
 
-	if nodes, err := client.ListNodes(ts.cfg.Client); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+	if nodes, err := client.ListNodes(ts.cfg.Client.KubernetesClient()); len(nodes) < ts.cfg.MinimumNodes || err != nil {
 		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
 	}
 
-	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client, ts.cfg.Namespace); err != nil {
+	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client.KubernetesClient(), ts.cfg.Namespace); err != nil {
 		return err
 	}
 
@@ -125,7 +125,7 @@ func (ts *tester) Delete() error {
 
 	if err := client.DeleteServiceAccount(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		appServiceAccountName,
 	); err != nil {
@@ -135,7 +135,7 @@ func (ts *tester) Delete() error {
 
 	if err := client.DeleteRBACRole(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		appRBACRoleName,
 	); err != nil {
@@ -145,7 +145,7 @@ func (ts *tester) Delete() error {
 
 	if err := client.DeleteRBACRoleBinding(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		appRBACRoleBindingName,
 	); err != nil {
@@ -155,7 +155,7 @@ func (ts *tester) Delete() error {
 
 	if err := client.DeleteConfigmap(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		appConfigMapNameConfig,
 	); err != nil {
@@ -165,7 +165,7 @@ func (ts *tester) Delete() error {
 
 	if err := client.DeleteDaemonSet(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		appName,
 	); err != nil {
@@ -177,7 +177,7 @@ func (ts *tester) Delete() error {
 
 	if err := client.DeleteService(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		appName,
 	); err != nil {
@@ -187,7 +187,7 @@ func (ts *tester) Delete() error {
 
 	if err := client.DeletePod(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		containerHTTPClient,
 	); err != nil {
@@ -197,7 +197,7 @@ func (ts *tester) Delete() error {
 
 	if err := client.DeletePod(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		loggingPod,
 	); err != nil {
@@ -207,7 +207,7 @@ func (ts *tester) Delete() error {
 
 	if err := client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		client.DefaultNamespaceDeletionInterval,
 		client.DefaultNamespaceDeletionTimeout,

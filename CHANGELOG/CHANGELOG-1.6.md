@@ -24,6 +24,8 @@
 - Add [`k8s-tester/helm`](https://github.com/aws/aws-k8s-tester/commit/2a2c739f085bec0b4d8d7b2bae0789abe4d54c65).
 - Add [`k8s-tester/csi-ebs`](https://github.com/aws/aws-k8s-tester/commit/075fe2234e9fa0bc14a4b2a314db70ab45670e1a).
 - Add [`k8s-tester/php-apache`](https://github.com/aws/aws-k8s-tester/commit/a9a70d681e491f9f22ffcad025cc2601ee47cde1).
+- Add [`k8s-tester/conformance`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- Add [`k8s-tester/configmaps`](https://github.com/aws/aws-k8s-tester/commit/TODO).
 
 ### Dependency
 

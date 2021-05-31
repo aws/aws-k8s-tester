@@ -75,7 +75,7 @@ func (ts *tester) Apply() error {
 		return errors.New("cancelled")
 	}
 
-	if nodes, err := client.ListNodes(ts.cfg.Client); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+	if nodes, err := client.ListNodes(ts.cfg.Client.KubernetesClient()); len(nodes) < ts.cfg.MinimumNodes || err != nil {
 		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
 	}
 
@@ -364,7 +364,7 @@ func (ts *tester) checkDeployment() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.LogWriter,
 		ts.cfg.Stopc,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		time.Minute,
 		20*time.Second,
 		"kube-system",
@@ -457,7 +457,7 @@ func (ts *tester) deleteDeployment() error {
 	ts.cfg.Logger.Info("deleting deployment")
 	foreground := meta_v1.DeletePropagationForeground
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	err := ts.cfg.Client.
+	err := ts.cfg.Client.KubernetesClient().
 		AppsV1().
 		Deployments("kube-system").
 		Delete(

@@ -129,11 +129,11 @@ func (ts *tester) Apply() error {
 		return errors.New("cancelled")
 	}
 
-	if nodes, err := client.ListNodes(ts.cfg.Client); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+	if nodes, err := client.ListNodes(ts.cfg.Client.KubernetesClient()); len(nodes) < ts.cfg.MinimumNodes || err != nil {
 		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
 	}
 
-	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client, ts.cfg.Namespace); err != nil {
+	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client.KubernetesClient(), ts.cfg.Namespace); err != nil {
 		return err
 	}
 
@@ -175,7 +175,7 @@ func (ts *tester) Delete() error {
 	if ts.cfg.ELBARN == "" {
 		_, elbARN, elbName, exists, err := client.FindServiceIngressHostname(
 			ts.cfg.Logger,
-			ts.cfg.Client,
+			ts.cfg.Client.KubernetesClient(),
 			ts.cfg.Namespace,
 			serviceName,
 			ts.cfg.Stopc,
@@ -195,7 +195,7 @@ func (ts *tester) Delete() error {
 	ts.cfg.Logger.Info("deleting service", zap.String("service-name", serviceName))
 	if err := client.DeleteService(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		serviceName,
 	); err != nil {
@@ -207,7 +207,7 @@ func (ts *tester) Delete() error {
 	ts.cfg.Logger.Info("deleting deployment", zap.String("deployment-name", deploymentName))
 	if err := client.DeleteDeployment(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		deploymentName,
 	); err != nil {
@@ -236,7 +236,7 @@ func (ts *tester) Delete() error {
 
 	if err := client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		client.DefaultNamespaceDeletionInterval,
 		client.DefaultNamespaceDeletionTimeout,
@@ -283,7 +283,7 @@ func (ts *tester) createDeployment() error {
 	}
 	ts.cfg.Logger.Info("creating NLB hello-world Deployment", zap.Any("node-selector", nodeSelector))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cfg.Client.
+	_, err := ts.cfg.Client.KubernetesClient().
 		AppsV1().
 		Deployments(ts.cfg.Namespace).
 		Create(
@@ -356,7 +356,7 @@ func (ts *tester) checkDeployment() error {
 		ts.cfg.Logger,
 		ts.cfg.LogWriter,
 		ts.cfg.Stopc,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		time.Minute,
 		20*time.Second,
 		ts.cfg.Namespace,
@@ -389,7 +389,7 @@ func (ts *tester) checkDeployment() error {
 func (ts *tester) createService() error {
 	ts.cfg.Logger.Info("creating NLB hello-world Service")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cfg.Client.
+	_, err := ts.cfg.Client.KubernetesClient().
 		CoreV1().
 		Services(ts.cfg.Namespace).
 		Create(
@@ -459,7 +459,7 @@ func (ts *tester) checkService() (err error) {
 
 	hostName, elbARN, elbName, err := client.WaitForServiceIngressHostname(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		serviceName,
 		ts.cfg.Stopc,

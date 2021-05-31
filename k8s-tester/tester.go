@@ -131,7 +131,7 @@ func (ts *tester) Apply() error {
 		return errors.New("cancelled")
 	}
 
-	nodes, err := client.ListNodes(ts.cli)
+	nodes, err := client.ListNodes(ts.cli.KubernetesClient())
 	if len(nodes) < ts.cfg.MinimumNodes || err != nil {
 		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
 	}

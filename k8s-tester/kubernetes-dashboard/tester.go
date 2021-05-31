@@ -73,7 +73,7 @@ func (ts *tester) Apply() error {
 		return errors.New("cancelled")
 	}
 
-	if nodes, err := client.ListNodes(ts.cfg.Client); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+	if nodes, err := client.ListNodes(ts.cfg.Client.KubernetesClient()); len(nodes) < ts.cfg.MinimumNodes || err != nil {
 		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
 	}
 
@@ -504,7 +504,7 @@ func (ts *tester) checkDeploymentDashboard() (err error) {
 		ts.cfg.Logger,
 		ts.cfg.LogWriter,
 		ts.cfg.Stopc,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		time.Minute,
 		20*time.Second,
 		"kubernetes-dashboard",
@@ -618,7 +618,7 @@ func (ts *tester) fetchAuthenticationToken() (token string, err error) {
 		case <-time.After(15 * time.Second):
 		}
 
-		ls, err := client.ListSecrets(ts.cfg.Logger, ts.cfg.Client, "kube-system", 10, 5*time.Second)
+		ls, err := client.ListSecrets(ts.cfg.Logger, ts.cfg.Client.KubernetesClient(), "kube-system", 10, 5*time.Second)
 		if err != nil {
 			return "", fmt.Errorf("failed to list secrets (%v)", err)
 		}

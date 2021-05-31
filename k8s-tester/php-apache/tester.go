@@ -131,11 +131,11 @@ func (ts *tester) Apply() (err error) {
 		return err
 	}
 
-	if nodes, err := client.ListNodes(ts.cfg.Client); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+	if nodes, err := client.ListNodes(ts.cfg.Client.KubernetesClient()); len(nodes) < ts.cfg.MinimumNodes || err != nil {
 		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
 	}
 
-	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client, ts.cfg.Namespace); err != nil {
+	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client.KubernetesClient(), ts.cfg.Namespace); err != nil {
 		return err
 	}
 
@@ -156,7 +156,7 @@ func (ts *tester) Delete() (err error) {
 	ts.cfg.Logger.Info("deleting deployment", zap.String("deployment-name", deploymentName))
 	if err := client.DeleteDeployment(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		deploymentName,
 	); err != nil {
@@ -167,7 +167,7 @@ func (ts *tester) Delete() (err error) {
 
 	if err := client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		client.DefaultNamespaceDeletionInterval,
 		client.DefaultNamespaceDeletionTimeout,
@@ -245,7 +245,7 @@ func (ts *tester) createDeployment(containerImg string) error {
 	}
 	ts.cfg.Logger.Info("creating PHP Apache Deployment", zap.Any("node-selector", nodeSelector))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cfg.Client.
+	_, err := ts.cfg.Client.KubernetesClient().
 		AppsV1().
 		Deployments(ts.cfg.Namespace).
 		Create(
@@ -312,7 +312,7 @@ func (ts *tester) checkDeployment() error {
 		ts.cfg.Logger,
 		ts.cfg.LogWriter,
 		ts.cfg.Stopc,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		time.Minute,
 		20*time.Second,
 		ts.cfg.Namespace,

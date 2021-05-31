@@ -170,11 +170,11 @@ func (ts *tester) Apply() (err error) {
 		return err
 	}
 
-	if nodes, err := client.ListNodes(ts.cfg.Client); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+	if nodes, err := client.ListNodes(ts.cfg.Client.KubernetesClient()); len(nodes) < ts.cfg.MinimumNodes || err != nil {
 		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
 	}
 
-	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client, ts.cfg.Namespace); err != nil {
+	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client.KubernetesClient(), ts.cfg.Namespace); err != nil {
 		return err
 	}
 
@@ -202,7 +202,7 @@ func (ts *tester) Delete() (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 
 	if ts.cfg.JobType == "Job" {
-		err = ts.cfg.Client.
+		err = ts.cfg.Client.KubernetesClient().
 			BatchV1().
 			Jobs(ts.cfg.Namespace).
 			Delete(
@@ -214,7 +214,7 @@ func (ts *tester) Delete() (err error) {
 				},
 			)
 	} else {
-		err = ts.cfg.Client.
+		err = ts.cfg.Client.KubernetesClient().
 			BatchV1beta1().
 			CronJobs(ts.cfg.Namespace).
 			Delete(
@@ -237,7 +237,7 @@ func (ts *tester) Delete() (err error) {
 
 	if err := client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		client.DefaultNamespaceDeletionInterval,
 		client.DefaultNamespaceDeletionTimeout,
@@ -411,7 +411,7 @@ func (ts *tester) createJob(busyboxImg string) (err error) {
 			zap.String("object-size", humanize.Bytes(uint64(len(b)))),
 		)
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		_, err = ts.cfg.Client.
+		_, err = ts.cfg.Client.KubernetesClient().
 			BatchV1().
 			Jobs(ts.cfg.Namespace).
 			Create(ctx, &jobObj, meta_v1.CreateOptions{})
@@ -434,7 +434,7 @@ func (ts *tester) createJob(busyboxImg string) (err error) {
 		zap.String("object-size", humanize.Bytes(uint64(len(b)))),
 	)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err = ts.cfg.Client.
+	_, err = ts.cfg.Client.KubernetesClient().
 		BatchV1beta1().
 		CronJobs(ts.cfg.Namespace).
 		Create(ctx, &cronObj, meta_v1.CreateOptions{})
@@ -463,7 +463,7 @@ func (ts *tester) checkJob() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.LogWriter,
 			ts.cfg.Stopc,
-			ts.cfg.Client,
+			ts.cfg.Client.KubernetesClient(),
 			time.Minute,
 			5*time.Second,
 			ts.cfg.Namespace,
@@ -476,7 +476,7 @@ func (ts *tester) checkJob() (err error) {
 			ts.cfg.Logger,
 			ts.cfg.LogWriter,
 			ts.cfg.Stopc,
-			ts.cfg.Client,
+			ts.cfg.Client.KubernetesClient(),
 			3*time.Minute,
 			5*time.Second,
 			ts.cfg.Namespace,
