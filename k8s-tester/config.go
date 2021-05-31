@@ -612,5 +612,4 @@ export KUBECTL="{{ .KubectlCommand }}"
 {{ .KubectlCommand }} get nodes --show-labels -o=wide
 {{ .KubectlCommand }} get nodes -o=wide
 ###########################
-{{ end }}
 `
