@@ -1823,6 +1823,10 @@ func TestEnvAddOnConformance(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SYSTEMD_LOGS_IMAGE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_E2E_REPO_CONFIG", "/path/to/config.yml")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_E2E_REPO_CONFIG")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_E2E_FOCUS", "sig-network")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_E2E_FOCUS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_E2E_SKIP", "sig-network")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_E2E_SKIP")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -1863,6 +1867,12 @@ func TestEnvAddOnConformance(t *testing.T) {
 	}
 	if cfg.AddOnConformance.SonobuoyE2eRepoConfig != "/path/to/config.yml" {
 		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyE2eRepoConfig %q", cfg.AddOnConformance.SonobuoyE2eRepoConfig)
+	}
+	if cfg.AddOnConformance.SonobuoyRunE2eFocus != "sig-network" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunE2eFocus %q", cfg.AddOnConformance.SonobuoyRunE2eFocus)
+	}
+	if cfg.AddOnConformance.SonobuoyRunE2eSkip != "sig-network" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunE2eSkip %q", cfg.AddOnConformance.SonobuoyRunE2eSkip)
 	}
 }
 
