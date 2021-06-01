@@ -280,6 +280,8 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT                | read-only "false" | *eksconfig.AddOnConformance.SonobuoyRunTimeout              | time.Duration      |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT_STRING         | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyRunTimeoutString        | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE                   | read-only "false" | *eksconfig.AddOnConformance.SonobuoyRunMode                 | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_E2E_FOCUS                  | read-only "false" | *eksconfig.AddOnConformance.SonobuoyRunE2eFocus             | string             |
+| AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_E2E_SKIP                   | read-only "false" | *eksconfig.AddOnConformance.SonobuoyRunE2eSkip              | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE | read-only "false" | *eksconfig.AddOnConformance.SonobuoyRunKubeConformanceImage | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_TAR_GZ_PATH         | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyResultTarGzPath         | string             |
 | AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RESULT_TAR_GZ_S3_KEY       | read-only "true"  | *eksconfig.AddOnConformance.SonobuoyResultTarGzS3Key        | string             |

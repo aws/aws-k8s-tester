@@ -240,6 +240,8 @@ func (ts *tester) runSonobuoy() (err error) {
 		"--namespace=" + ts.cfg.EKSConfig.AddOnConformance.Namespace,
 		"--mode=" + ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunMode,
 		"--kube-conformance-image=" + ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunKubeConformanceImage,
+		"--e2e-focus=" + ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunE2eFocus,
+		"--e2e-skip=" + ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunE2eSkip,
 		"--show-default-podspec=true",
 		fmt.Sprintf("--timeout=%d", timeoutSeconds), // default "10800", 3-hour
 	}
