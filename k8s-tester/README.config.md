@@ -169,4 +169,16 @@
 *----------------------------------------------*----------------------*-----------------------------------*-----------------*
 
 
+*-------------------------------------------*----------------------*--------------------------------*-----------------*
+|          ENVIRONMENTAL VARIABLE           |      FIELD TYPE      |              TYPE              |     GO TYPE     |
+*-------------------------------------------*----------------------*--------------------------------*-----------------*
+| K8S_TESTER_ADD_ON_SECRETS_ENABLE          | SETTABLE VIA ENV VAR | *secrets.Config.Enable         | bool            |
+| K8S_TESTER_ADD_ON_SECRETS_MINIMUM_NODES   | SETTABLE VIA ENV VAR | *secrets.Config.MinimumNodes   | int             |
+| K8S_TESTER_ADD_ON_SECRETS_NAMESPACE       | SETTABLE VIA ENV VAR | *secrets.Config.Namespace      | string          |
+| K8S_TESTER_ADD_ON_SECRETS_OBJECTS         | SETTABLE VIA ENV VAR | *secrets.Config.Objects        | int             |
+| K8S_TESTER_ADD_ON_SECRETS_OBJECT_SIZE     | SETTABLE VIA ENV VAR | *secrets.Config.ObjectSize     | int             |
+| K8S_TESTER_ADD_ON_SECRETS_LATENCY_SUMMARY | READ-ONLY            | *secrets.Config.LatencySummary | latency.Summary |
+*-------------------------------------------*----------------------*--------------------------------*-----------------*
+
+
 ```

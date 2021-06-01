@@ -14,6 +14,7 @@ require (
 	github.com/aws/aws-k8s-tester/k8s-tester/metrics-server v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/php-apache v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/secrets v0.0.0-00010101000000-000000000000
 	github.com/olekukonko/tablewriter v0.0.5
 )
 
@@ -32,6 +33,7 @@ replace (
 	github.com/aws/aws-k8s-tester/k8s-tester/metrics-server => ../../metrics-server
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world => ../../nlb-hello-world
 	github.com/aws/aws-k8s-tester/k8s-tester/php-apache => ../../php-apache
+	github.com/aws/aws-k8s-tester/k8s-tester/secrets => ../../secrets
 	github.com/aws/aws-k8s-tester/k8s-tester/tester => ../../tester
 	github.com/aws/aws-k8s-tester/utils => ../../../utils
 )

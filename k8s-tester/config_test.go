@@ -458,3 +458,43 @@ func TestEnvAddOnConfigmaps(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnConfigmaps.ObjectSize %v", cfg.AddOnConfigmaps.ObjectSize)
 	}
 }
+
+func TestEnvAddOnSecrets(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("K8S_TESTER_CLIENTS", "100")
+	defer os.Unsetenv("K8S_TESTER_CLIENTS")
+	os.Setenv("K8S_TESTER_ADD_ON_SECRETS_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_SECRETS_ENABLE")
+	os.Setenv("K8S_TESTER_ADD_ON_SECRETS_MINIMUM_NODES", "100")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_SECRETS_MINIMUM_NODES")
+	os.Setenv("K8S_TESTER_ADD_ON_SECRETS_NAMESPACE", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_SECRETS_NAMESPACE")
+	os.Setenv("K8S_TESTER_ADD_ON_SECRETS_OBJECTS", `222`)
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_SECRETS_OBJECTS")
+	os.Setenv("K8S_TESTER_ADD_ON_SECRETS_OBJECT_SIZE", `333`)
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_SECRETS_OBJECT_SIZE")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if cfg.Clients != 100 {
+		t.Fatalf("unexpected cfg.Clients %v", cfg.Clients)
+	}
+	if !cfg.AddOnSecrets.Enable {
+		t.Fatalf("unexpected cfg.AddOnSecrets.Enable %v", cfg.AddOnSecrets.Enable)
+	}
+	if cfg.AddOnSecrets.MinimumNodes != 100 {
+		t.Fatalf("unexpected cfg.AddOnSecrets.MinimumNodes %v", cfg.AddOnSecrets.MinimumNodes)
+	}
+	if cfg.AddOnSecrets.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnSecrets.Namespace %v", cfg.AddOnSecrets.Namespace)
+	}
+	if cfg.AddOnSecrets.Objects != 222 {
+		t.Fatalf("unexpected cfg.AddOnSecrets.Objects %v", cfg.AddOnSecrets.Objects)
+	}
+	if cfg.AddOnSecrets.ObjectSize != 333 {
+		t.Fatalf("unexpected cfg.AddOnSecrets.ObjectSize %v", cfg.AddOnSecrets.ObjectSize)
+	}
+}

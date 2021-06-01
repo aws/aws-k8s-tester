@@ -26,6 +26,7 @@ import (
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
+	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
 	"github.com/aws/aws-k8s-tester/utils/file"
 	"github.com/aws/aws-k8s-tester/utils/log"
 	"github.com/aws/aws-k8s-tester/utils/rand"
@@ -127,6 +128,7 @@ type Config struct {
 	AddOnJobsEcho            *jobs_echo.Config            `json:"add_on_jobs_echo"`
 	AddOnCronJobsEcho        *jobs_echo.Config            `json:"add_on_cron_jobs_echo"`
 	AddOnConfigmaps          *configmaps.Config           `json:"add_on_configmaps"`
+	AddOnSecrets             *secrets.Config              `json:"add_on_secrets"`
 }
 
 const (
@@ -194,6 +196,7 @@ func NewDefault() *Config {
 		AddOnJobsEcho:            jobs_echo.NewDefault("Job"),
 		AddOnCronJobsEcho:        jobs_echo.NewDefault("CronJob"),
 		AddOnConfigmaps:          configmaps.NewDefault(),
+		AddOnSecrets:             secrets.NewDefault(),
 	}
 }
 
@@ -479,6 +482,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnConfigmaps = av
 	} else {
 		return fmt.Errorf("expected *configmaps.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+secrets.Env()+"_", cfg.AddOnSecrets)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*secrets.Config); ok {
+		cfg.AddOnSecrets = av
+	} else {
+		return fmt.Errorf("expected *secrets.Config, got %T", vv)
 	}
 
 	return err

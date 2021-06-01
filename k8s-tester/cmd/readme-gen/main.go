@@ -19,6 +19,7 @@ import (
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
+	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -81,6 +82,10 @@ func createDoc() string {
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+configmaps.Env()+"_", &configmaps.Config{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+secrets.Env()+"_", &secrets.Config{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
