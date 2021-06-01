@@ -157,4 +157,16 @@
 *----------------------------------------------------------------*----------------------*----------------------------------------------*---------*
 
 
+*----------------------------------------------*----------------------*-----------------------------------*-----------------*
+|            ENVIRONMENTAL VARIABLE            |      FIELD TYPE      |               TYPE                |     GO TYPE     |
+*----------------------------------------------*----------------------*-----------------------------------*-----------------*
+| K8S_TESTER_ADD_ON_CONFIGMAPS_ENABLE          | SETTABLE VIA ENV VAR | *configmaps.Config.Enable         | bool            |
+| K8S_TESTER_ADD_ON_CONFIGMAPS_MINIMUM_NODES   | SETTABLE VIA ENV VAR | *configmaps.Config.MinimumNodes   | int             |
+| K8S_TESTER_ADD_ON_CONFIGMAPS_NAMESPACE       | SETTABLE VIA ENV VAR | *configmaps.Config.Namespace      | string          |
+| K8S_TESTER_ADD_ON_CONFIGMAPS_OBJECTS         | SETTABLE VIA ENV VAR | *configmaps.Config.Objects        | int             |
+| K8S_TESTER_ADD_ON_CONFIGMAPS_OBJECT_SIZE     | SETTABLE VIA ENV VAR | *configmaps.Config.ObjectSize     | int             |
+| K8S_TESTER_ADD_ON_CONFIGMAPS_LATENCY_SUMMARY | READ-ONLY            | *configmaps.Config.LatencySummary | latency.Summary |
+*----------------------------------------------*----------------------*-----------------------------------*-----------------*
+
+
 ```

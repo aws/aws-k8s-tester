@@ -51,6 +51,9 @@ gofmt -s -w ./nlb-hello-world
 goimports -w ./php-apache
 gofmt -s -w ./php-apache
 
+goimports -w ./secrets
+gofmt -s -w ./secrets
+
 goimports -w ./stress
 gofmt -s -w ./stress
 

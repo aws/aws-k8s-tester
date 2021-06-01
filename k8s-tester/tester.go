@@ -17,6 +17,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/client"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
+	"github.com/aws/aws-k8s-tester/k8s-tester/configmaps"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
@@ -70,6 +71,10 @@ func New(cfg *Config) k8s_tester.Tester {
 		KubectlPath:        cfg.KubectlPath,
 		KubeconfigPath:     cfg.KubeconfigPath,
 		KubeconfigContext:  cfg.KubeconfigContext,
+		Clients:            cfg.Clients,
+		ClientQPS:          cfg.ClientQPS,
+		ClientBurst:        cfg.ClientBurst,
+		ClientTimeout:      cfg.ClientTimeout,
 	})
 	if err != nil {
 		lg.Panic("failed to create client", zap.Error(err))
@@ -172,6 +177,13 @@ func (ts *tester) createTesters() {
 		ts.cfg.AddOnCronJobsEcho.LogWriter = ts.logWriter
 		ts.cfg.AddOnCronJobsEcho.Client = ts.cli
 		ts.testers = append(ts.testers, jobs_echo.New(ts.cfg.AddOnCronJobsEcho))
+	}
+	if ts.cfg.AddOnConfigmaps != nil && ts.cfg.AddOnConfigmaps.Enable {
+		ts.cfg.AddOnConfigmaps.Stopc = ts.stopCreationCh
+		ts.cfg.AddOnConfigmaps.Logger = ts.logger
+		ts.cfg.AddOnConfigmaps.LogWriter = ts.logWriter
+		ts.cfg.AddOnConfigmaps.Client = ts.cli
+		ts.testers = append(ts.testers, configmaps.New(ts.cfg.AddOnConfigmaps))
 	}
 }
 

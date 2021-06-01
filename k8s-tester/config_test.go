@@ -112,9 +112,6 @@ func TestEnvAddOnMetricsServer(t *testing.T) {
 	if !cfg.AddOnMetricsServer.Enable {
 		t.Fatalf("unexpected cfg.AddOnMetricsServer.Enable %v", cfg.AddOnMetricsServer.Enable)
 	}
-	if cfg.AddOnMetricsServer.Namespace != "hello" {
-		t.Fatalf("unexpected cfg.AddOnMetricsServer.Namespace %v", cfg.AddOnMetricsServer.Namespace)
-	}
 }
 
 func TestEnvAddOnCSIEBS(t *testing.T) {
@@ -419,5 +416,45 @@ func TestEnvAddOnCronJobsEcho(t *testing.T) {
 	}
 	if cfg.AddOnCronJobsEcho.FailedJobsHistoryLimit != 77777 {
 		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.FailedJobsHistoryLimit %v", cfg.AddOnCronJobsEcho.FailedJobsHistoryLimit)
+	}
+}
+
+func TestEnvAddOnConfigmaps(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("K8S_TESTER_CLIENTS", "100")
+	defer os.Unsetenv("K8S_TESTER_CLIENTS")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFIGMAPS_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFIGMAPS_ENABLE")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFIGMAPS_MINIMUM_NODES", "100")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFIGMAPS_MINIMUM_NODES")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFIGMAPS_NAMESPACE", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFIGMAPS_NAMESPACE")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFIGMAPS_OBJECTS", `222`)
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFIGMAPS_OBJECTS")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFIGMAPS_OBJECT_SIZE", `333`)
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFIGMAPS_OBJECT_SIZE")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if cfg.Clients != 100 {
+		t.Fatalf("unexpected cfg.Clients %v", cfg.Clients)
+	}
+	if !cfg.AddOnConfigmaps.Enable {
+		t.Fatalf("unexpected cfg.AddOnConfigmaps.Enable %v", cfg.AddOnConfigmaps.Enable)
+	}
+	if cfg.AddOnConfigmaps.MinimumNodes != 100 {
+		t.Fatalf("unexpected cfg.AddOnConfigmaps.MinimumNodes %v", cfg.AddOnConfigmaps.MinimumNodes)
+	}
+	if cfg.AddOnConfigmaps.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnConfigmaps.Namespace %v", cfg.AddOnConfigmaps.Namespace)
+	}
+	if cfg.AddOnConfigmaps.Objects != 222 {
+		t.Fatalf("unexpected cfg.AddOnConfigmaps.Objects %v", cfg.AddOnConfigmaps.Objects)
+	}
+	if cfg.AddOnConfigmaps.ObjectSize != 333 {
+		t.Fatalf("unexpected cfg.AddOnConfigmaps.ObjectSize %v", cfg.AddOnConfigmaps.ObjectSize)
 	}
 }
