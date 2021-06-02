@@ -6,6 +6,10 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.9...v1.6.0).
 
+### Development
+
+- Rename `master` branch to `main`.
+
 ### `client`
 
 - Rename [`KubeConfig*` to `Kubeconfig*`](https://github.com/aws/aws-k8s-tester/commit/e7e10253a44a33ff9c16955a39df43d9e412c944).
