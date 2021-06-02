@@ -10,12 +10,12 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/client"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
 	"github.com/aws/aws-k8s-tester/k8s-tester/configmaps"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
@@ -162,11 +162,8 @@ func NewDefault() *Config {
 		// log file named with cluster name will be added automatically
 		LogOutputs: []string{"stderr"},
 
-		// https://github.com/kubernetes/kubernetes/tags
-		// https://kubernetes.io/docs/tasks/tools/install-kubectl/
-		// https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
-		KubectlPath:        "/tmp/kubectl-test-v1.21.0",
-		KubectlDownloadURL: fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/%s/%s/kubectl", runtime.GOOS, runtime.GOARCH),
+		KubectlPath:        client.DefaultKubectlPath(),
+		KubectlDownloadURL: client.DefaultKubectlDownloadURL(),
 
 		// Kubernetes client DefaultQPS is 5.
 		// Kubernetes client DefaultBurst is 10.

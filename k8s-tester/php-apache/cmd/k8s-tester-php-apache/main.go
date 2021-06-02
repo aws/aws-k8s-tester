@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"runtime"
 
 	"github.com/aws/aws-k8s-tester/client"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
@@ -41,8 +40,8 @@ func init() {
 	rootCmd.PersistentFlags().StringSliceVar(&logOutputs, "log-outputs", []string{"stderr"}, "Additional logger outputs")
 	rootCmd.PersistentFlags().IntVar(&minimumNodes, "minimum-nodes", php_apache.DefaultMinimumNodes, "minimum number of Kubernetes nodes required for installing this addon")
 	rootCmd.PersistentFlags().StringVar(&namespace, "namespace", "test-namespace", "'true' to auto-generate path for create config/cluster, overwrites existing --path value")
-	rootCmd.PersistentFlags().StringVar(&kubectlDownloadURL, "kubectl-download-url", fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v1.21.0/bin/%s/%s/kubectl", runtime.GOOS, runtime.GOARCH), "kubectl download URL")
-	rootCmd.PersistentFlags().StringVar(&kubectlPath, "kubectl-path", "/tmp/kubectl-test-v1.21.0", "kubectl path")
+	rootCmd.PersistentFlags().StringVar(&kubectlDownloadURL, "kubectl-download-url", client.DefaultKubectlDownloadURL(), "kubectl download URL")
+	rootCmd.PersistentFlags().StringVar(&kubectlPath, "kubectl-path", client.DefaultKubectlPath(), "kubectl path")
 	rootCmd.PersistentFlags().StringVar(&kubeconfigPath, "kubeconfig-path", "", "KUBECONFIG path")
 
 	rootCmd.AddCommand(

@@ -7,6 +7,7 @@
 ### `client`
 
 - Rename [`KubeConfig*` to `Kubeconfig*`](https://github.com/aws/aws-k8s-tester/commit/e7e10253a44a33ff9c16955a39df43d9e412c944).
+- Automatically fetch [latest `kubectl` version](https://github.com/aws/aws-k8s-tester/commit/cfd76e8c53f444a3d3d1782a38801bb8d56baa49).
 
 ### `eksconfig`
 
