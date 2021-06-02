@@ -9,6 +9,12 @@
 - Rename [`KubeConfig*` to `Kubeconfig*`](https://github.com/aws/aws-k8s-tester/commit/e7e10253a44a33ff9c16955a39df43d9e412c944).
 - Automatically fetch [latest `kubectl` version](https://github.com/aws/aws-k8s-tester/commit/cfd76e8c53f444a3d3d1782a38801bb8d56baa49).
 
+### `eks`
+
+- Remove [`AmazonEKSServicePolicy` from default cluster role policy](https://github.com/aws/aws-k8s-tester/commit/8fe9e9b696333947b4420a3d08f72498e57d1766).
+  - See https://docs.aws.amazon.com/eks/latest/userguide/service_IAM_role.html.
+  - "Prior to April 16, 2020, AmazonEKSServicePolicy was also required and the suggested name was eksServiceRole. With the AWSServiceRoleForAmazonEKS service-linked role, that policy is no longer required for clusters created on or after April 16, 2020."
+
 ### `eksconfig`
 
 - Set [default EKS version to 1.20](https://github.com/aws/aws-k8s-tester/commit/8f6b05193721b19378cdd1c69f6f2d787341d1f2).
@@ -27,7 +33,7 @@
 - Add [`k8s-tester/php-apache`](https://github.com/aws/aws-k8s-tester/commit/a9a70d681e491f9f22ffcad025cc2601ee47cde1).
 - Add [`k8s-tester/configmaps`](https://github.com/aws/aws-k8s-tester/commit/117fab905c090a3f8501112fc4885cc398f27db7).
 - Add [`k8s-tester/secrets`](https://github.com/aws/aws-k8s-tester/commit/a77b8ceb473fe814bee5cb019f0df0c371185368).
-- Add [`k8s-tester/conformance`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- Add [`k8s-tester/conformance`](https://github.com/aws/aws-k8s-tester/commit/80c0b9e78252ab35cd8d58add52e8aee8615acc8).
 - Add [`k8s-tester/stress`](https://github.com/aws/aws-k8s-tester/commit/TODO).
 - Add [`k8s-tester/clusterloader`](https://github.com/aws/aws-k8s-tester/commit/TODO).
 

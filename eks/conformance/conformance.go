@@ -240,8 +240,6 @@ func (ts *tester) runSonobuoy() (err error) {
 		"--namespace=" + ts.cfg.EKSConfig.AddOnConformance.Namespace,
 		"--mode=" + ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunMode,
 		"--kube-conformance-image=" + ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunKubeConformanceImage,
-		"--e2e-focus=" + ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunE2eFocus,
-		"--e2e-skip=" + ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunE2eSkip,
 		"--show-default-podspec=true",
 		fmt.Sprintf("--timeout=%d", timeoutSeconds), // default "10800", 3-hour
 	}
@@ -253,6 +251,12 @@ func (ts *tester) runSonobuoy() (err error) {
 	}
 	if ts.cfg.EKSConfig.AddOnConformance.SonobuoyE2eRepoConfig != "" {
 		args = append(args, "--e2e-repo-config="+ts.cfg.EKSConfig.AddOnConformance.SonobuoyE2eRepoConfig)
+	}
+	if ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunE2eFocus != "" {
+		args = append(args, "--e2e-focus="+ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunE2eFocus)
+	}
+	if ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunE2eSkip != "" {
+		args = append(args, "--e2e-skip="+ts.cfg.EKSConfig.AddOnConformance.SonobuoyRunE2eSkip)
 	}
 	cmd := strings.Join(args, " ")
 

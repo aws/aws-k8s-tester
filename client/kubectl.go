@@ -1,15 +1,18 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/utils/file"
 	utils_http "github.com/aws/aws-k8s-tester/utils/http"
 	"go.uber.org/zap"
+	"k8s.io/utils/exec"
 )
 
 // ref. https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/
@@ -78,5 +81,15 @@ func installKubectl(lg *zap.Logger, kubectlPath string, kubectlDownloadURL strin
 		lg.Warn("failed to ensure executable", zap.Error(err))
 		err = nil
 	}
-	return err
+
+	var output []byte
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	output, err = exec.New().CommandContext(ctx, kubectlPath, "version", "--client").CombinedOutput()
+	cancel()
+	out := strings.TrimSpace(string(output))
+	if err != nil {
+		return fmt.Errorf("'%s version' failed (output %q, error %v)", kubectlPath, out, err)
+	}
+	fmt.Fprintf(os.Stderr, "\n'%s version' output:\n\n%s\n\n", kubectlPath, out)
+	return nil
 }

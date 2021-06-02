@@ -58,8 +58,8 @@ type AddOnConformance struct {
 	SonobuoyRunMode                 string `json:"sonobuoy-run-mode"`
 	SonobuoyRunKubeConformanceImage string `json:"sonobuoy-run-kube-conformance-image"`
 
-	SonobuoyRunE2eFocus string `json:"sonobuoy-e2e-focus"`
-	SonobuoyRunE2eSkip  string `json:"sonobuoy-e2e-skip"`
+	SonobuoyRunE2eFocus string `json:"sonobuoy-run-e2e-focus"`
+	SonobuoyRunE2eSkip  string `json:"sonobuoy-run-e2e-skip"`
 
 	SonobuoyResultTarGzPath     string `json:"sonobuoy-result-tar-gz-path" read-only:"true"`
 	SonobuoyResultTarGzS3Key    string `json:"sonobuoy-result-tar-gz-s3-key" read-only:"true"`

@@ -13,8 +13,9 @@ import (
 	"github.com/aws/aws-k8s-tester/utils/rand"
 )
 
-// MkTmpDir creates a temp directory.
-func MkTmpDir(baseDir string, pfx string) (dir string) {
+// MkDir creates a directory.
+// If "baseDir" is empty, it uses the os.TempDir.
+func MkDir(baseDir string, pfx string) (dir string) {
 	if baseDir == "" {
 		baseDir = os.TempDir()
 	}
@@ -54,10 +55,10 @@ func WriteToTempDir(p string, d []byte) (path string, err error) {
 }
 
 // GetTempFilePath creates a file path to a temporary file that does not exist yet.
-func GetTempFilePath() (path string) {
-	f, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%x", time.Now().UnixNano()))
+func GetTempFilePath(pfx string) (path string) {
+	f, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("%s%x", pfx, time.Now().UnixNano()))
 	if err != nil {
-		return filepath.Join(os.TempDir(), fmt.Sprintf("%x%s", time.Now().UnixNano(), rand.String(5)))
+		return filepath.Join(os.TempDir(), fmt.Sprintf("%s%x%s", pfx, time.Now().UnixNano(), rand.String(5)))
 	}
 	path = f.Name()
 	f.Close()
