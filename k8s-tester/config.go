@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-k8s-tester/client"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
 	"github.com/aws/aws-k8s-tester/k8s-tester/configmaps"
+	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
@@ -60,14 +61,14 @@ type Config struct {
 	// Useful to skip terminal color check when there is no color device (e.g., Github action worker).
 	LogColorOverride string `json:"log_color_override"`
 	// LogLevel configures log level. Only supports debug, info, warn, error, panic, or fatal. Default 'info'.
-	LogLevel string `json:"log-level"`
+	LogLevel string `json:"log_level"`
 	// LogOutputs is a list of log outputs. Valid values are 'default', 'stderr', 'stdout', or file names.
 	// Logs are appended to the existing file, if any.
 	// Multiple values are accepted. If empty, it sets to 'default', which outputs to stderr.
 	// See https://pkg.go.dev/go.uber.org/zap#Open and https://pkg.go.dev/go.uber.org/zap#Config for more details.
-	LogOutputs []string `json:"log-outputs"`
+	LogOutputs []string `json:"log_outputs"`
 
-	KubectlDownloadURL string `json:"kubectl-download-url"`
+	KubectlDownloadURL string `json:"kubectl_download_url"`
 	KubectlPath        string `json:"kubectl_path"`
 	KubeconfigPath     string `json:"kubeconfig_path"`
 	KubeconfigContext  string `json:"kubeconfig_context"`
@@ -120,6 +121,7 @@ type Config struct {
 	AddOnCloudwatchAgent     *cloudwatch_agent.Config     `json:"add_on_cloudwatch_agent"`
 	AddOnFluentBit           *fluent_bit.Config           `json:"add_on_fluent_bit"`
 	AddOnMetricsServer       *metrics_server.Config       `json:"add_on_metrics_server"`
+	AddOnConformance         *conformance.Config          `json:"add_on_conformance"`
 	AddOnCSIEBS              *csi_ebs.Config              `json:"add_on_csi_ebs"`
 	AddOnKubernetesDashboard *kubernetes_dashboard.Config `json:"add_on_kubernetes_dashboard"`
 	AddOnPHPApache           *php_apache.Config           `json:"add_on_php_apache"`
@@ -185,6 +187,7 @@ func NewDefault() *Config {
 		AddOnCloudwatchAgent:     cloudwatch_agent.NewDefault(),
 		AddOnFluentBit:           fluent_bit.NewDefault(),
 		AddOnMetricsServer:       metrics_server.NewDefault(),
+		AddOnConformance:         conformance.NewDefault(),
 		AddOnCSIEBS:              csi_ebs.NewDefault(),
 		AddOnKubernetesDashboard: kubernetes_dashboard.NewDefault(),
 		AddOnPHPApache:           php_apache.NewDefault(),
@@ -215,6 +218,17 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 
 	if err := cfg.validateConfig(); err != nil {
 		return fmt.Errorf("validateConfig failed [%v]", err)
+	}
+
+	if cfg.AddOnCloudwatchAgent != nil {
+		if err := cfg.AddOnCloudwatchAgent.ValidateAndSetDefaults(cfg.ClusterName); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnConformance != nil {
+		if err := cfg.AddOnConformance.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -399,6 +413,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnMetricsServer = av
 	} else {
 		return fmt.Errorf("expected *metrics_server.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+conformance.Env()+"_", cfg.AddOnConformance)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*conformance.Config); ok {
+		cfg.AddOnConformance = av
+	} else {
+		return fmt.Errorf("expected *conformance.Config, got %T", vv)
 	}
 
 	vv, err = parseEnvs(ENV_PREFIX+csi_ebs.Env()+"_", cfg.AddOnCSIEBS)

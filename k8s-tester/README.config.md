@@ -31,7 +31,7 @@
 *--------------------------------------------------*----------------------*---------------------------------------*---------*
 | K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_ENABLE        | SETTABLE VIA ENV VAR | *cloudwatch_agent.Config.Enable       | bool    |
 | K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_REGION        | SETTABLE VIA ENV VAR | *cloudwatch_agent.Config.Region       | string  |
-| K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_CLUSTER_NAME  | SETTABLE VIA ENV VAR | *cloudwatch_agent.Config.ClusterName  | string  |
+| K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_CLUSTER_NAME  | READ-ONLY            | *cloudwatch_agent.Config.ClusterName  | string  |
 | K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_MINIMUM_NODES | SETTABLE VIA ENV VAR | *cloudwatch_agent.Config.MinimumNodes | int     |
 | K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_NAMESPACE     | SETTABLE VIA ENV VAR | *cloudwatch_agent.Config.Namespace    | string  |
 *--------------------------------------------------*----------------------*---------------------------------------*---------*
@@ -52,6 +52,33 @@
 | K8S_TESTER_ADD_ON_METRICS_SERVER_ENABLE        | SETTABLE VIA ENV VAR | *metrics_server.Config.Enable       | bool    |
 | K8S_TESTER_ADD_ON_METRICS_SERVER_MINIMUM_NODES | SETTABLE VIA ENV VAR | *metrics_server.Config.MinimumNodes | int     |
 *------------------------------------------------*----------------------*-------------------------------------*---------*
+
+
+*-------------------------------------------------------------------*----------------------*-----------------------------------------------------*---------------*
+|                      ENVIRONMENTAL VARIABLE                       |      FIELD TYPE      |                        TYPE                         |    GO TYPE    |
+*-------------------------------------------------------------------*----------------------*-----------------------------------------------------*---------------*
+| K8S_TESTER_ADD_ON_CONFORMANCE_ENABLE                              | SETTABLE VIA ENV VAR | *conformance.Config.Enable                          | bool          |
+| K8S_TESTER_ADD_ON_CONFORMANCE_MINIMUM_NODES                       | SETTABLE VIA ENV VAR | *conformance.Config.MinimumNodes                    | int           |
+| K8S_TESTER_ADD_ON_CONFORMANCE_NAMESPACE                           | SETTABLE VIA ENV VAR | *conformance.Config.Namespace                       | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_KUBECONFIG_PATH                     | SETTABLE VIA ENV VAR | *conformance.Config.KubeconfigPath                  | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_PATH                       | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyPath                    | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL               | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyDownloadURL             | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT                | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyRunTimeout              | time.Duration |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT_STRING         | READ-ONLY            | *conformance.Config.SonobuoyRunTimeoutString        | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT             | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyDeleteTimeout           | time.Duration |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT_STRING      | READ-ONLY            | *conformance.Config.SonobuoyDeleteTimeoutString     | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE                   | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyRunMode                 | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_E2E_FOCUS              | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyRunE2EFocus             | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_E2E_SKIP               | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyRunE2ESkip              | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyRunKubeConformanceImage | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_E2E_REPO_CONFIG        | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyRunE2ERepoConfig        | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_IMAGE                  | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyRunImage                | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_SYSTEMD_LOGS_IMAGE     | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyRunSystemdLogsImage     | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RESULTS_TAR_GZ_PATH        | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyResultsTarGzPath        | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RESULTS_E2E_LOG_PATH       | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyResultsE2ELogPath       | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RESULTS_JUNIT_XML_PATH     | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyResultsJunitXMLPath     | string        |
+| K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RESULTS_OUTPUT_DIR         | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyResultsOutputDir        | string        |
+*-------------------------------------------------------------------*----------------------*-----------------------------------------------------*---------------*
 
 
 *-----------------------------------------------*----------------------*----------------------------------*---------*

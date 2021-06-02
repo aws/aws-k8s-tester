@@ -11,6 +11,7 @@ import (
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
 	"github.com/aws/aws-k8s-tester/k8s-tester/configmaps"
+	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
@@ -50,6 +51,10 @@ func createDoc() string {
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+metrics_server.Env()+"_", &metrics_server.Config{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+conformance.Env()+"_", &conformance.Config{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

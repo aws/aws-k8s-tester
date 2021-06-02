@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-k8s-tester/client"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
 	"github.com/aws/aws-k8s-tester/k8s-tester/configmaps"
+	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
@@ -128,6 +129,14 @@ func (ts *tester) createTesters() {
 		ts.cfg.AddOnMetricsServer.LogWriter = ts.logWriter
 		ts.cfg.AddOnMetricsServer.Client = ts.cli
 		ts.testers = append(ts.testers, metrics_server.New(ts.cfg.AddOnMetricsServer))
+	}
+	if ts.cfg.AddOnConformance != nil && ts.cfg.AddOnConformance.Enable {
+		ts.cfg.AddOnConformance.Stopc = ts.stopCreationCh
+		ts.cfg.AddOnConformance.Logger = ts.logger
+		ts.cfg.AddOnConformance.LogWriter = ts.logWriter
+		ts.cfg.AddOnConformance.Client = ts.cli
+		ts.cfg.AddOnConformance.KubeconfigPath = ts.cfg.KubeconfigPath
+		ts.testers = append(ts.testers, conformance.New(ts.cfg.AddOnConformance))
 	}
 	if ts.cfg.AddOnCSIEBS != nil && ts.cfg.AddOnCSIEBS.Enable {
 		ts.cfg.AddOnCSIEBS.Stopc = ts.stopCreationCh

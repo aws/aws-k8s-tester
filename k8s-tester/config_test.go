@@ -60,20 +60,34 @@ func TestEnv(t *testing.T) {
 func TestEnvAddOnCloudwatchAgent(t *testing.T) {
 	cfg := NewDefault()
 
+	os.Setenv("K8S_TESTER_CLUSTER_NAME", "new-name")
+	defer os.Unsetenv("K8S_TESTER_CLUSTER_NAME")
 	os.Setenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_ENABLE", "true")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_ENABLE")
 	os.Setenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_NAMESPACE", "hello")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_NAMESPACE")
+	os.Setenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_CLUSTER_NAME", "new-name-2")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_CLUSTER_NAME")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
 	}
+	if err := cfg.ValidateAndSetDefaults(); err != nil {
+		t.Fatal(err)
+	}
 
+	if cfg.ClusterName != "new-name" {
+		t.Fatalf("unexpected cfg.ClusterName %v", cfg.AddOnCloudwatchAgent.Enable)
+	}
 	if !cfg.AddOnCloudwatchAgent.Enable {
 		t.Fatalf("unexpected cfg.AddOnCloudwatchAgent.Enable %v", cfg.AddOnCloudwatchAgent.Enable)
 	}
 	if cfg.AddOnCloudwatchAgent.Namespace != "hello" {
 		t.Fatalf("unexpected cfg.AddOnCloudwatchAgent.Namespace %v", cfg.AddOnCloudwatchAgent.Namespace)
+	}
+	// should be overwritten since it's a read-only field
+	if cfg.AddOnCloudwatchAgent.ClusterName != "new-name" {
+		t.Fatalf("unexpected cfg.AddOnCloudwatchAgent.ClusterName %v", cfg.AddOnCloudwatchAgent.ClusterName)
 	}
 }
 

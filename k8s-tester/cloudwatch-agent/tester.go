@@ -41,12 +41,17 @@ type Config struct {
 	Client    client.Client `json:"-"`
 
 	Region      string `json:"region"`
-	ClusterName string `json:"cluster_name"`
+	ClusterName string `json:"cluster_name" read-only:"true"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum_nodes"`
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
+}
+
+func (cfg *Config) ValidateAndSetDefaults(clusterName string) error {
+	cfg.ClusterName = clusterName
+	return nil
 }
 
 const DefaultMinimumNodes int = 1
