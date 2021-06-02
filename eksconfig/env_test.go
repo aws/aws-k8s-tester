@@ -117,7 +117,7 @@ spec:
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_ARN")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_SERVICE_PRINCIPALS", "eks.amazonaws.com,eks-beta-pdx.aws.internal,eks-dev.aws.internal")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_SERVICE_PRINCIPALS")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS", "arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM")
+	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS", "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS")
 	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION", "1.18")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION")
@@ -771,7 +771,6 @@ spec:
 		t.Fatalf("unexpected Parameters.RoleServicePrincipals %+v", cfg.Parameters.RoleServicePrincipals)
 	}
 	expectedRoleManagedPolicyARNs := []string{
-		"arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
 		"arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
 		"arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM",
 	}

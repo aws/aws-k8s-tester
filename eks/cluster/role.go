@@ -46,7 +46,7 @@ Parameters:
 
   RoleManagedPolicyARNs:
     Type: CommaDelimitedList
-    Default: 'arn:aws:iam::aws:policy/AmazonEKSServicePolicy,arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/AmazonSSMFullAccess,arn:aws:iam::aws:policy/AmazonS3FullAccess,arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy,arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy,arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly,arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess'
+    Default: 'arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/AmazonSSMFullAccess,arn:aws:iam::aws:policy/AmazonS3FullAccess,arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy,arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy,arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly,arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess'
     Description: EKS Role managed policy ARNs
 
 Resources:
@@ -211,6 +211,9 @@ Outputs:
 
 `
 
+// Prior to April 16, 2020, AmazonEKSServicePolicy was also required and the suggested name was eksServiceRole. With the AWSServiceRoleForAmazonEKS service-linked role, that policy is no longer required for clusters created on or after April 16, 2020.
+// ref. https://docs.aws.amazon.com/eks/latest/userguide/service_IAM_role.html
+
 func (ts *tester) createClusterRole() error {
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createClusterRole [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
@@ -223,7 +226,6 @@ func (ts *tester) createClusterRole() error {
 			ts.cfg.EKSConfig.Parameters.RoleName,
 			[]string{"eks.amazonaws.com"},
 			[]string{
-				"arn:aws:iam::aws:policy/AmazonEKSServicePolicy",
 				"arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
 			},
 		)
