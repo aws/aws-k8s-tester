@@ -7,13 +7,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/utils/file"
-	utils_http "github.com/aws/aws-k8s-tester/utils/http"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
@@ -145,32 +141,9 @@ func New(cfg *Config) (Client, error) {
 	if cfg.Clients < 1 {
 		cfg.Clients = 1
 	}
-	cfg.Logger.Info("mkdir", zap.String("kubectl-path-dir", filepath.Dir(cfg.KubectlPath)))
-	if err := os.MkdirAll(filepath.Dir(cfg.KubectlPath), 0700); err != nil {
-		cfg.Logger.Warn("could not create", zap.String("dir", filepath.Dir(cfg.KubectlPath)), zap.Error(err))
+	if err := installKubectl(cfg.Logger, cfg.KubectlPath, cfg.KubectlDownloadURL); err != nil {
 		return nil, err
 	}
-	if !file.Exist(cfg.KubectlPath) {
-		if cfg.KubectlDownloadURL == "" {
-			cfg.Logger.Warn("kubectl path does not exist, kubectl download URL empty", zap.String("kubectl-path", cfg.KubectlPath))
-			return nil, fmt.Errorf("kubectl path does not exist and empty kubectl download URL", cfg.KubectlPath)
-		}
-		cfg.KubectlPath, _ = filepath.Abs(cfg.KubectlPath)
-		cfg.Logger.Info("downloading kubectl", zap.String("kubectl-path", cfg.KubectlPath))
-		if err := utils_http.Download(cfg.Logger, os.Stderr, cfg.KubectlDownloadURL, cfg.KubectlPath); err != nil {
-			cfg.Logger.Warn("failed to download kubectl", zap.Error(err))
-			return nil, err
-		}
-	} else {
-		cfg.Logger.Info("skipping kubectl download; already exist", zap.String("kubectl-path", cfg.KubectlPath))
-	}
-	if err := file.EnsureExecutable(cfg.KubectlPath); err != nil {
-		// file may be already executable while the process does not own the file/directory
-		// ref. https://github.com/aws/aws-k8s-tester/issues/66
-		cfg.Logger.Warn("failed to ensure executable", zap.Error(err))
-		err = nil
-	}
-
 	ccfg, err := createRestConfig(cfg)
 	if err != nil {
 		return nil, err
