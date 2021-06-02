@@ -141,9 +141,17 @@ func New(cfg *Config) (Client, error) {
 	if cfg.Clients < 1 {
 		cfg.Clients = 1
 	}
+
+	if cfg.KubectlPath == "" {
+		cfg.KubectlPath = defaultKubectlPath
+	}
+	if cfg.KubectlDownloadURL == "" {
+		cfg.KubectlDownloadURL = defaultKubectlDownloadURL
+	}
 	if err := installKubectl(cfg.Logger, cfg.KubectlPath, cfg.KubectlDownloadURL); err != nil {
 		return nil, err
 	}
+
 	ccfg, err := createRestConfig(cfg)
 	if err != nil {
 		return nil, err
