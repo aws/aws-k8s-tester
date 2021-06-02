@@ -103,6 +103,10 @@ var graceperiod = int64(0)
 
 var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
 
+func Env() string {
+	return "ADD_ON_" + strings.ToUpper(strings.Replace(pkgName, "-", "_", -1))
+}
+
 func NewDefault() *Config {
 	return &Config{
 		Enable:       false,
