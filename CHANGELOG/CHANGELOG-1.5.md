@@ -4,6 +4,8 @@
 
 ## [v1.5.9](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.9) (2021-04-26)
 
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.8...v1.5.9).
+
 ### `client`
 
 - Initial commit for [`"github.com/aws/aws-k8s-tester/client"`](https://github.com/aws/aws-k8s-tester/commit/de76767f6e0972d35370457dc67dd4959b9e638f).

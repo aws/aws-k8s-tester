@@ -16,8 +16,8 @@ config-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/defa
 cw-namespace: aws-k8s-tester-eks
 kubeconfig-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.kubeconfig.yaml
 kubectl-commands-output-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.kubectl.sh
-kubectl-download-url: https://storage.googleapis.com/kubernetes-release/release/v1.18.9/bin/darwin/amd64/kubectl
-kubectl-path: /tmp/kubectl-test-v1.18.9
+kubectl-download-url: https://storage.googleapis.com/kubernetes-release/release/v1.20.7/bin/darwin/amd64/kubectl
+kubectl-path: /tmp/kubectl-test-v1.20.7
 log-color: true
 log-color-override: ""
 log-level: info
@@ -26,7 +26,7 @@ log-outputs:
 - /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.log
 metadata:
   creationTimestamp: null
-name: eks-2021042610-mistyrkf7ksk
+name: eks-2021060215-haze7wjcg0g1
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 parameters:
@@ -48,18 +48,18 @@ parameters:
   role-arn: ""
   role-cfn-stack-id: ""
   role-cfn-stack-yaml-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.role.cfn.yaml
-  role-cfn-stack-yaml-s3-key: eks-2021042610-mistyrkf7ksk/default.role.cfn.yaml
+  role-cfn-stack-yaml-s3-key: eks-2021060215-haze7wjcg0g1/default.role.cfn.yaml
   role-create: true
   role-managed-policy-arns: null
-  role-name: eks-2021042610-mistyrkf7ksk-role
+  role-name: eks-2021060215-haze7wjcg0g1-role
   role-service-principals: null
   signing-name: eks
   tags: null
-  version: "1.18"
-  version-value: 1.18
+  version: "1.20"
+  version-value: 1.2
   vpc-cfn-stack-id: ""
   vpc-cfn-stack-yaml-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.vpc.cfn.yaml
-  vpc-cfn-stack-yaml-s3-key: eks-2021042610-mistyrkf7ksk/default.vpc.cfn.yaml
+  vpc-cfn-stack-yaml-s3-key: eks-2021060215-haze7wjcg0g1/default.vpc.cfn.yaml
   vpc-cidr-block1: 10.0.0.0/16
   vpc-cidr-block2: 10.1.0.0/16
   vpc-cidr-block3: 10.2.0.0/16
@@ -70,12 +70,12 @@ partition: aws
 region: us-west-2
 remote-access-commands-output-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: eks-2021042610-mistyrkf7ksk-remote-access-key
-remote-access-private-key-path: /var/folders/xt/szh_n5x154x2hyhj0zkpd3qr0000gn/T/deluxe3rn4mmafi.insecure.key
+remote-access-key-name: eks-2021060215-haze7wjcg0g1-remote-access-key
+remote-access-private-key-path: /var/folders/xt/szh_n5x154x2hyhj0zkpd3qr0000gn/T/goodc03sfjgjbfl.insecure.key
 s3-bucket-create: true
 s3-bucket-create-keep: true
 s3-bucket-lifecycle-expiration-days: 0
-s3-bucket-name: eks-2021042610-mistyrkf7ksk-s3-bucket
+s3-bucket-name: eks-2021060215-haze7wjcg0g1-s3-bucket
 skip-delete-cluster-and-nodes: false
 spec: {}
 status:
@@ -89,7 +89,7 @@ status:
   cluster-ca-decoded: ""
   cluster-cfn-stack-id: ""
   cluster-cfn-stack-yaml-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.cluster.cfn.yaml
-  cluster-cfn-stack-yaml-s3-key: eks-2021042610-mistyrkf7ksk/default.cluster.cfn.yaml
+  cluster-cfn-stack-yaml-s3-key: eks-2021060215-haze7wjcg0g1/default.cluster.cfn.yaml
   cluster-control-plane-security-group-id: ""
   cluster-oidc-issuer-arn: ""
   cluster-oidc-issuer-ca-thumbprint: ""

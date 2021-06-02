@@ -2,7 +2,9 @@
 
 <hr>
 
-## [v1.5.9](https://github.com/aws/aws-k8s-tester/releases/tag/v1.5.9) (2021)
+## [v1.6.0](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.0) (2021-06-02)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.9...v1.6.0).
 
 ### `client`
 
@@ -18,6 +20,10 @@
 ### `eksconfig`
 
 - Set [default EKS version to 1.20](https://github.com/aws/aws-k8s-tester/commit/8f6b05193721b19378cdd1c69f6f2d787341d1f2).
+- Add [`AddOnConformance.SonobuoyRunE2eFocus`](https://github.com/aws/aws-k8s-tester/pull/217).
+  - Set via `AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_E2E_FOCUS`.
+- Add [`AddOnConformance.SonobuoyRunE2eSkip`](https://github.com/aws/aws-k8s-tester/pull/217).
+  - Set via `AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_SONOBUOY_RUN_E2E_SKIP`.
 
 ### `k8s-tester`
 
