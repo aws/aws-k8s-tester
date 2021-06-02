@@ -44,8 +44,6 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.9...v1.6.0
 - Add [`k8s-tester/configmaps`](https://github.com/aws/aws-k8s-tester/commit/117fab905c090a3f8501112fc4885cc398f27db7).
 - Add [`k8s-tester/secrets`](https://github.com/aws/aws-k8s-tester/commit/a77b8ceb473fe814bee5cb019f0df0c371185368).
 - Add [`k8s-tester/conformance`](https://github.com/aws/aws-k8s-tester/commit/80c0b9e78252ab35cd8d58add52e8aee8615acc8).
-- Add [`k8s-tester/stress`](https://github.com/aws/aws-k8s-tester/commit/TODO).
-- Add [`k8s-tester/clusterloader`](https://github.com/aws/aws-k8s-tester/commit/TODO).
 
 ### Dependency
 
