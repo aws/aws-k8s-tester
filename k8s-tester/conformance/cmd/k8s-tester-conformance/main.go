@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/client"
 	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
@@ -57,6 +58,24 @@ func main() {
 	os.Exit(0)
 }
 
+var (
+	sonobuoyPath                    string
+	sonobuoyDownloadURL             string
+	sonobuoyRunTimeout              time.Duration
+	sonobuoyDeleteTimeout           time.Duration
+	sonobuoyRunMode                 string
+	sonobuoyRunE2EFocus             string
+	sonobuoyRunE2ESkip              string
+	sonobuoyRunKubeConformanceImage string
+	sonobuoyRunE2ERepoConfig        string
+	sonobuoyRunImage                string
+	sonobuoyRunSystemdLogsImage     string
+	sonobuoyResultsTarGzPath        string
+	sonobuoyResultsE2ELogPath       string
+	sonobuoyResultsJunitXMLPath     string
+	sonobuoyResultsOutputDir        string
+)
+
 func newApply() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "apply",
@@ -64,7 +83,21 @@ func newApply() *cobra.Command {
 		Run:   createApplyFunc,
 	}
 
-	// TODO: add flags
+	rootCmd.PersistentFlags().StringVar(&sonobuoyPath, "sonobuoy-path", conformance.DefaultSonobuoyPath(), "sonobuoy path")
+	rootCmd.PersistentFlags().StringVar(&sonobuoyDownloadURL, "sonobuoy-download-url", conformance.DefaultSonobuoyDownloadURL(), "sonobuoy download URL")
+	rootCmd.PersistentFlags().DurationVar(&sonobuoyRunTimeout, "sonobuoy-run-timeout", conformance.DefaultSonobuoyRunTimeout, "sonobuoy run timeout")
+	rootCmd.PersistentFlags().DurationVar(&sonobuoyDeleteTimeout, "sonobuoy-delete timeout", conformance.DefaultSonobuoyDeleteTimeout, "sonobuoy delete timeout")
+	rootCmd.PersistentFlags().StringVar(&sonobuoyRunMode, "sonobuoy-run-mode", conformance.DefaultSonobuoyRunMode, "sonobuoy run mode")
+	rootCmd.PersistentFlags().StringVar(&sonobuoyRunE2EFocus, "sonobuoy-run-e2e-focus", "", "sonobuoy run e2e focus")
+	rootCmd.PersistentFlags().StringVar(&sonobuoyRunE2ESkip, "sonobuoy-run-e2e-skip", "", "sonobuoy run e2e skip")
+	rootCmd.PersistentFlags().StringVar(&sonobuoyRunKubeConformanceImage, "sonobuoy-run-kube-conformance-image", conformance.DefaultSonobuoyRunKubeConformanceImage, "sonobuoy run kube conformance image")
+	rootCmd.PersistentFlags().StringVar(&sonobuoyRunE2ERepoConfig, "sonobuoy-run-e2e-repo-config", "", "sonobuoy run e2e repo config")
+	rootCmd.PersistentFlags().StringVar(&sonobuoyRunImage, "sonobuoy-run-image", "", "sonobuoy run image")
+	rootCmd.PersistentFlags().StringVar(&sonobuoyRunSystemdLogsImage, "sonobuoy-run-systemd-logs-image", "", "sonobuoy run systemd logs image")
+	rootCmd.PersistentFlags().StringVar(&sonobuoyResultsTarGzPath, "sonobuoy-results-tar-gz-path", "", "sonobuoy results tar.gz path")
+	rootCmd.PersistentFlags().StringVar(&sonobuoyResultsE2ELogPath, "sonobuoy-results-e2e-log-path", "", "sonobuoy e2e log path")
+	rootCmd.PersistentFlags().StringVar(&sonobuoyResultsJunitXMLPath, "sonobuoy-results-junit-xml-path", "", "sonobuoy results Junit XML path")
+	rootCmd.PersistentFlags().StringVar(&sonobuoyResultsOutputDir, "sonobuoy-results-output-dir", "", "sonobuoy results output dir")
 
 	return cmd
 }
@@ -94,7 +127,21 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 		Namespace:    namespace,
 		Client:       cli,
 
-		// TODO: add flags
+		SonobuoyPath:                    sonobuoyPath,
+		SonobuoyDownloadURL:             sonobuoyDownloadURL,
+		SonobuoyRunTimeout:              sonobuoyRunTimeout,
+		SonobuoyDeleteTimeout:           sonobuoyDeleteTimeout,
+		SonobuoyRunMode:                 sonobuoyRunMode,
+		SonobuoyRunE2EFocus:             sonobuoyRunE2EFocus,
+		SonobuoyRunE2ESkip:              sonobuoyRunE2ESkip,
+		SonobuoyRunKubeConformanceImage: sonobuoyRunKubeConformanceImage,
+		SonobuoyRunE2ERepoConfig:        sonobuoyRunE2ERepoConfig,
+		SonobuoyRunImage:                sonobuoyRunImage,
+		SonobuoyRunSystemdLogsImage:     sonobuoyRunSystemdLogsImage,
+		SonobuoyResultsTarGzPath:        sonobuoyResultsTarGzPath,
+		SonobuoyResultsE2ELogPath:       sonobuoyResultsE2ELogPath,
+		SonobuoyResultsJunitXMLPath:     sonobuoyResultsJunitXMLPath,
+		SonobuoyResultsOutputDir:        sonobuoyResultsOutputDir,
 	}
 
 	ts := conformance.New(cfg)
@@ -139,6 +186,10 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 		LogWriter: logWriter,
 		Namespace: namespace,
 		Client:    cli,
+
+		SonobuoyPath:          sonobuoyPath,
+		SonobuoyDownloadURL:   sonobuoyDownloadURL,
+		SonobuoyDeleteTimeout: sonobuoyDeleteTimeout,
 	}
 
 	ts := conformance.New(cfg)

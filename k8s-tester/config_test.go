@@ -66,8 +66,6 @@ func TestEnvAddOnCloudwatchAgent(t *testing.T) {
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_ENABLE")
 	os.Setenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_NAMESPACE", "hello")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_NAMESPACE")
-	os.Setenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_CLUSTER_NAME", "new-name-2")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLOUDWATCH_AGENT_CLUSTER_NAME")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -75,6 +73,7 @@ func TestEnvAddOnCloudwatchAgent(t *testing.T) {
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		t.Fatal(err)
 	}
+	os.RemoveAll(cfg.ConfigPath)
 
 	if cfg.ClusterName != "new-name" {
 		t.Fatalf("unexpected cfg.ClusterName %v", cfg.AddOnCloudwatchAgent.Enable)
@@ -116,8 +115,6 @@ func TestEnvAddOnMetricsServer(t *testing.T) {
 
 	os.Setenv("K8S_TESTER_ADD_ON_METRICS_SERVER_ENABLE", "true")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_METRICS_SERVER_ENABLE")
-	os.Setenv("K8S_TESTER_ADD_ON_METRICS_SERVER_NAMESPACE", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_METRICS_SERVER_NAMESPACE")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -125,6 +122,101 @@ func TestEnvAddOnMetricsServer(t *testing.T) {
 
 	if !cfg.AddOnMetricsServer.Enable {
 		t.Fatalf("unexpected cfg.AddOnMetricsServer.Enable %v", cfg.AddOnMetricsServer.Enable)
+	}
+}
+
+func TestEnvAddOnConformance(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_ENABLE")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_NAMESPACE", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_NAMESPACE")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_PATH", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_PATH")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT", "1h")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT", "1h")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_DELETE_TIMEOUT")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_MODE")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_E2E_FOCUS", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_E2E_FOCUS")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_E2E_SKIP", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_E2E_SKIP")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_KUBE_CONFORMANCE_IMAGE")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_E2E_REPO_CONFIG", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_E2E_REPO_CONFIG")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_IMAGE", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_IMAGE")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_SYSTEMD_LOGS_IMAGE", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_SYSTEMD_LOGS_IMAGE")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RESULTS_TAR_GZ_PATH", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RESULTS_TAR_GZ_PATH")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RESULTS_E2E_LOG_PATH", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RESULTS_E2E_LOG_PATH")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RESULTS_JUNIT_XML_PATH", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RESULTS_JUNIT_XML_PATH")
+	os.Setenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RESULTS_OUTPUT_DIR", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RESULTS_OUTPUT_DIR")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if !cfg.AddOnConformance.Enable {
+		t.Fatalf("unexpected cfg.AddOnConformance.Enable %v", cfg.AddOnConformance.Enable)
+	}
+	if cfg.AddOnConformance.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnConformance.Namespace %v", cfg.AddOnConformance.Namespace)
+	}
+	if cfg.AddOnConformance.SonobuoyPath != "hello" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyPath %v", cfg.AddOnConformance.SonobuoyPath)
+	}
+	if cfg.AddOnConformance.SonobuoyDownloadURL != "hello" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyDownloadURL %v", cfg.AddOnConformance.SonobuoyDownloadURL)
+	}
+	if cfg.AddOnConformance.SonobuoyRunTimeout != time.Hour {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunTimeout %v", cfg.AddOnConformance.SonobuoyRunTimeout)
+	}
+	if cfg.AddOnConformance.SonobuoyDeleteTimeout != time.Hour {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyDeleteTimeout %v", cfg.AddOnConformance.SonobuoyDeleteTimeout)
+	}
+	if cfg.AddOnConformance.SonobuoyRunMode != "hello" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunMode %v", cfg.AddOnConformance.SonobuoyRunMode)
+	}
+	if cfg.AddOnConformance.SonobuoyRunE2EFocus != "hello" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunE2EFocus %v", cfg.AddOnConformance.SonobuoyRunE2EFocus)
+	}
+	if cfg.AddOnConformance.SonobuoyRunE2ESkip != "hello" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunE2ESkip %v", cfg.AddOnConformance.SonobuoyRunE2ESkip)
+	}
+	if cfg.AddOnConformance.SonobuoyRunKubeConformanceImage != "hello" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunKubeConformanceImage %v", cfg.AddOnConformance.SonobuoyRunKubeConformanceImage)
+	}
+	if cfg.AddOnConformance.SonobuoyRunE2ERepoConfig != "hello" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunE2ERepoConfig %v", cfg.AddOnConformance.SonobuoyRunE2ERepoConfig)
+	}
+	if cfg.AddOnConformance.SonobuoyRunImage != "hello" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunImage %v", cfg.AddOnConformance.SonobuoyRunImage)
+	}
+	if cfg.AddOnConformance.SonobuoyRunSystemdLogsImage != "hello" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyRunSystemdLogsImage %v", cfg.AddOnConformance.SonobuoyRunSystemdLogsImage)
+	}
+	if cfg.AddOnConformance.SonobuoyResultsTarGzPath != "hello" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyResultsTarGzPath %v", cfg.AddOnConformance.SonobuoyResultsTarGzPath)
+	}
+	if cfg.AddOnConformance.SonobuoyResultsE2ELogPath != "hello" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyResultsE2ELogPath %v", cfg.AddOnConformance.SonobuoyResultsE2ELogPath)
+	}
+	if cfg.AddOnConformance.SonobuoyResultsJunitXMLPath != "hello" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyResultsJunitXMLPath %v", cfg.AddOnConformance.SonobuoyResultsJunitXMLPath)
+	}
+	if cfg.AddOnConformance.SonobuoyResultsOutputDir != "hello" {
+		t.Fatalf("unexpected cfg.AddOnConformance.SonobuoyResultsOutputDir %v", cfg.AddOnConformance.SonobuoyResultsOutputDir)
 	}
 }
 
