@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/client"
+	helm "github.com/aws/aws-k8s-tester/k8s-tester/helm"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
 	"github.com/aws/aws-k8s-tester/utils/rand"
 	utils_time "github.com/aws/aws-k8s-tester/utils/time"
@@ -21,12 +22,12 @@ import (
 	core_v1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	storage_v1 "k8s.io/api/storage/v1"
-
 	storagev1 "k8s.io/api/storage/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	api_resource "k8s.io/apimachinery/pkg/api/resource"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/exec"
 )
 
 type Config struct {
@@ -187,13 +188,21 @@ func (ts *tester) runPrompt(action string) (ok bool) {
 var dirOrCreate = v1.HostPathDirectoryOrCreate
 
 func (ts *tester) installEBSHelmChart() error {
+	getAllArgs := []string{
+		ts.cfg.Client.Config().KubectlPath,
+		"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
+		"--namespace=kube-system",
+		"get",
+		"all",
+	}
+	getAllCmd := strings.Join(getAllArgs, " ")
 	ts.cfg.Logger.Info("creating %s: %s", zap.String("Helm Chart", chartName))
-	err := client.InstallHelm(client.HelmInstallConfig{
+	err := helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		LogWriter:      ts.cfg.LogWriter,
 		Stopc:          ts.cfg.Stopc,
 		Timeout:        5 * time.Minute,
-		KubeConfigPath: ts.cfg.Client.Config().KubeconfigPath,
+		KubeconfigPath: ts.cfg.Client.Config().KubeconfigPath,
 		Namespace:      "kube-system",
 		ChartRepoURL:   chartRepoURL,
 		ChartName:      chartName,
@@ -202,6 +211,17 @@ func (ts *tester) installEBSHelmChart() error {
 		LogFunc: func(format string, v ...interface{}) {
 			ts.cfg.Logger.Info(fmt.Sprintf("[install] "+format, v...))
 		},
+		QueryFunc: func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(ctx, getAllArgs[0], getAllArgs[1:]...).CombinedOutput()
+			cancel()
+			out := strings.TrimSpace(string(output))
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl get all' failed", zap.Error(err))
+			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
+		},
+		QueryInterval: 15 * time.Second,
 	})
 	if err != nil {
 		if k8s_errors.IsAlreadyExists(err) {
@@ -216,11 +236,11 @@ func (ts *tester) installEBSHelmChart() error {
 
 func (ts *tester) deleteEBSHelmChart() error {
 	ts.cfg.Logger.Info("deleting %s: %s", zap.String("Helm Chart", chartName))
-	err := client.UninstallHelm(client.HelmInstallConfig{
+	err := helm.Uninstall(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		LogWriter:      ts.cfg.LogWriter,
 		Timeout:        3 * time.Minute,
-		KubeConfigPath: ts.cfg.Client.Config().KubeconfigPath,
+		KubeconfigPath: ts.cfg.Client.Config().KubeconfigPath,
 		Namespace:      "kube-system",
 		ChartName:      chartName,
 		ReleaseName:    chartName,
