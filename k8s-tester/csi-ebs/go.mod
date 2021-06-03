@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/aws/aws-k8s-tester/client v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/helm v0.0.0-20210602225304-3e5119396cf5 // indirect
 	github.com/aws/aws-k8s-tester/k8s-tester/tester v0.0.0-20210512161402-cf8f6d8f50e2
 	github.com/aws/aws-k8s-tester/utils v0.0.0-20210512161402-cf8f6d8f50e2
 	github.com/docker/docker v20.10.2+incompatible // indirect
@@ -15,11 +16,13 @@ require (
 	k8s.io/api v0.21.1
 	k8s.io/apimachinery v0.21.1
 	k8s.io/client-go v1.5.2 // indirect
+	k8s.io/utils v0.0.0-20210527160623-6fdb442a123b // indirect
 	rsc.io/letsencrypt v0.0.3 // indirect
 )
 
 replace (
 	github.com/aws/aws-k8s-tester/client => /Users/jonahjo/go/src/github.com/aws-k8s-tester/client
+	github.com/aws/aws-k8s-tester/helm => ../helm
 	github.com/aws/aws-k8s-tester/utils => ../../utils
 	k8s.io/api => k8s.io/api v0.21.1
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.21.1

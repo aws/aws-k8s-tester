@@ -281,15 +281,16 @@ func Install(cfg InstallConfig) (err error) {
 	}
 
 	rs, err := install.Run(chart, cfg.Values)
-	if err != nil {
-		cfg.Logger.Warn("failed to install chart", zap.String("release-name", cfg.ReleaseName), zap.Error(err))
+	if strings.Contains(err.Error(), "cannot re-use a name") {
+		cfg.Logger.Info("chart already installed", zap.String("release-name", cfg.ReleaseName))
 	} else {
-		cfg.Logger.Info("installed chart",
-			zap.String("namespace", rs.Namespace),
-			zap.String("name", rs.Name),
-			zap.String("version", fmt.Sprintf("%v", rs.Version)),
-		)
+		cfg.Logger.Warn("failed to install chart", zap.String("release-name", cfg.ReleaseName), zap.Error(err))
 	}
+	cfg.Logger.Info("installed chart",
+		zap.String("namespace", rs.Namespace),
+		zap.String("name", rs.Name),
+		zap.String("version", fmt.Sprintf("%v", rs.Version)),
+	)
 
 	if cfg.QueryFunc != nil {
 		close(donec1)
