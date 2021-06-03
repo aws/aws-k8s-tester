@@ -50,6 +50,29 @@ for arch in ${ARCHS}; do
   done
 done
 
+WHAT="k8s-tester"
+PACKAGE_NAME='github.com/aws/aws-k8s-tester/k8s-tester'
+pushd ./k8s-tester
+for arch in ${ARCHS}; do
+  for os in ${TARGETS}; do
+    for bin in ${WHAT}; do
+      echo "=== Building arch=${arch}, os=${os}, target=${bin} ==="
+      CGO_ENABLED=0 \
+        GOARCH=${arch} \
+        GOOS=${os} \
+        go build \
+        -v \
+        -ldflags "-s -w \
+        -X ${PACKAGE_NAME}/version.GitCommit=${GIT_COMMIT} \
+        -X ${PACKAGE_NAME}/version.ReleaseVersion=${RELEASE_VERSION} \
+        -X ${PACKAGE_NAME}/version.BuildTime=${BUILD_TIME}" \
+        -o ../bin/${bin}-${RELEASE_VERSION}-${os}-${arch} \
+        ./cmd/${bin}
+    done
+  done
+done
+popd
+
 echo ""
 echo "Success! Your shiny new binaries are ready."
 echo "find ./bin -type f"

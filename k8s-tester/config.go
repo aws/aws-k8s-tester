@@ -264,7 +264,7 @@ func (cfg *Config) validateConfig() error {
 				return err
 			}
 		}
-		cfg.ConfigPath = filepath.Join(rootDir, cfg.ClusterName+".yaml")
+		cfg.ConfigPath = filepath.Join(rootDir, cfg.ClusterName+".k8s-tester.yaml")
 		var p string
 		p, err = filepath.Abs(cfg.ConfigPath)
 		if err != nil {
