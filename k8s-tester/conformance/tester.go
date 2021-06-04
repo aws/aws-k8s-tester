@@ -44,8 +44,6 @@ type Config struct {
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
 
-	KubeconfigPath string `json:"kubeconfig_path"`
-
 	// SonobuoyPath is the path to download the "sonobuoy".
 	SonobuoyPath string `json:"sonobuoy_path"`
 	// SonobuoyDownloadURL is the download URL to download "sonobuoy" binary from.
@@ -141,8 +139,6 @@ func NewDefault() *Config {
 		Prompt:       false,
 		MinimumNodes: DefaultMinimumNodes,
 		Namespace:    pkgName + "-" + rand.String(10) + "-" + utils_time.GetTS(10),
-
-		KubeconfigPath: "",
 
 		SonobuoyPath:        DefaultSonobuoyPath(),
 		SonobuoyDownloadURL: DefaultSonobuoyDownloadURL(),

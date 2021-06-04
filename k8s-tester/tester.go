@@ -17,6 +17,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/client"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
+	"github.com/aws/aws-k8s-tester/k8s-tester/clusterloader"
 	"github.com/aws/aws-k8s-tester/k8s-tester/configmaps"
 	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
@@ -137,7 +138,6 @@ func (ts *tester) createTesters() {
 		ts.cfg.AddOnConformance.Logger = ts.logger
 		ts.cfg.AddOnConformance.LogWriter = ts.logWriter
 		ts.cfg.AddOnConformance.Client = ts.cli
-		ts.cfg.AddOnConformance.KubeconfigPath = ts.cfg.KubeconfigPath
 		ts.testers = append(ts.testers, conformance.New(ts.cfg.AddOnConformance))
 	}
 	if ts.cfg.AddOnCSIEBS != nil && ts.cfg.AddOnCSIEBS.Enable {
@@ -209,6 +209,13 @@ func (ts *tester) createTesters() {
 		ts.cfg.AddOnSecrets.LogWriter = ts.logWriter
 		ts.cfg.AddOnSecrets.Client = ts.cli
 		ts.testers = append(ts.testers, secrets.New(ts.cfg.AddOnSecrets))
+	}
+	if ts.cfg.AddOnClusterloader != nil && ts.cfg.AddOnClusterloader.Enable {
+		ts.cfg.AddOnClusterloader.Stopc = ts.stopCreationCh
+		ts.cfg.AddOnClusterloader.Logger = ts.logger
+		ts.cfg.AddOnClusterloader.LogWriter = ts.logWriter
+		ts.cfg.AddOnClusterloader.Client = ts.cli
+		ts.testers = append(ts.testers, clusterloader.New(ts.cfg.AddOnClusterloader))
 	}
 }
 

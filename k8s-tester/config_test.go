@@ -639,3 +639,83 @@ func TestEnvAddOnSecrets(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnSecrets.ObjectSize %v", cfg.AddOnSecrets.ObjectSize)
 	}
 }
+
+func TestEnvAddOnClusterloader(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_ENABLE")
+	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_CLUSTERLOADER_PATH", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_CLUSTERLOADER_PATH")
+	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_CLUSTERLOADER_DOWNLOAD_URL", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_CLUSTERLOADER_DOWNLOAD_URL")
+	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_RUNS", "10")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_RUNS")
+	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_RUN_TIMEOUT", "10h")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_RUN_TIMEOUT")
+	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_CONFIG_PATH", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_CONFIG_PATH")
+	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_RUN_FROM_CLUSTER", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_RUN_FROM_CLUSTER")
+	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_NODES", "100")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_NODES")
+	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_NODES_PER_NAMESPACE", "100")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_NODES_PER_NAMESPACE")
+	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_PODS_PER_NODE", "100")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_PODS_PER_NODE")
+	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_MEDIUM_STATEFUL_SETS_PER_NAMESPACE", "5000")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_MEDIUM_STATEFUL_SETS_PER_NAMESPACE")
+	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_CL2_USE_HOST_NETWORK_PODS", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_CL2_USE_HOST_NETWORK_PODS")
+	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_CL2_SCHEDULER_THROUGHPUT_THRESHOLD", "1000")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_CL2_SCHEDULER_THROUGHPUT_THRESHOLD")
+	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_ENABLE_SYSTEM_POD_METRICS", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_ENABLE_SYSTEM_POD_METRICS")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if !cfg.AddOnClusterloader.Enable {
+		t.Fatalf("unexpected cfg.AddOnClusterloader.Enable %v", cfg.AddOnClusterloader.Enable)
+	}
+	if cfg.AddOnClusterloader.ClusterloaderPath != "hello" {
+		t.Fatalf("unexpected cfg.AddOnClusterloader.ClusterloaderPath %v", cfg.AddOnClusterloader.ClusterloaderPath)
+	}
+	if cfg.AddOnClusterloader.ClusterloaderDownloadURL != "hello" {
+		t.Fatalf("unexpected cfg.AddOnClusterloader.ClusterloaderDownloadURL %v", cfg.AddOnClusterloader.ClusterloaderDownloadURL)
+	}
+	if cfg.AddOnClusterloader.Runs != 10 {
+		t.Fatalf("unexpected cfg.AddOnClusterloader.Runs %v", cfg.AddOnClusterloader.Runs)
+	}
+	if cfg.AddOnClusterloader.RunTimeout != 10*time.Hour {
+		t.Fatalf("unexpected cfg.AddOnClusterloader.RunTimeout %v", cfg.AddOnClusterloader.RunTimeout)
+	}
+	if cfg.AddOnClusterloader.TestConfigPath != "hello" {
+		t.Fatalf("unexpected cfg.AddOnClusterloader.TestConfigPath %v", cfg.AddOnClusterloader.TestConfigPath)
+	}
+	if !cfg.AddOnClusterloader.RunFromCluster {
+		t.Fatalf("unexpected cfg.AddOnClusterloader.RunFromCluster %v", cfg.AddOnClusterloader.RunFromCluster)
+	}
+	if cfg.AddOnClusterloader.Nodes != 100 {
+		t.Fatalf("unexpected cfg.AddOnClusterloader.Nodes %v", cfg.AddOnClusterloader.Nodes)
+	}
+	if cfg.AddOnClusterloader.TestOverride.NodesPerNamespace != 100 {
+		t.Fatalf("unexpected cfg.AddOnClusterloader.TestOverride.NodesPerNamespace %v", cfg.AddOnClusterloader.TestOverride.NodesPerNamespace)
+	}
+	if cfg.AddOnClusterloader.TestOverride.PodsPerNode != 100 {
+		t.Fatalf("unexpected cfg.AddOnClusterloader.TestOverride.PodsPerNode %v", cfg.AddOnClusterloader.TestOverride.PodsPerNode)
+	}
+	if cfg.AddOnClusterloader.TestOverride.MediumStatefulSetsPerNamespace != 5000 {
+		t.Fatalf("unexpected cfg.AddOnClusterloader.TestOverride.MediumStatefulSetsPerNamespace %v", cfg.AddOnClusterloader.TestOverride.MediumStatefulSetsPerNamespace)
+	}
+	if !cfg.AddOnClusterloader.TestOverride.CL2UseHostNetworkPods {
+		t.Fatalf("unexpected cfg.AddOnClusterloader.TestOverride.CL2UseHostNetworkPods %v", cfg.AddOnClusterloader.TestOverride.CL2UseHostNetworkPods)
+	}
+	if cfg.AddOnClusterloader.TestOverride.CL2SchedulerThroughputThreshold != 1000 {
+		t.Fatalf("unexpected cfg.AddOnClusterloader.TestOverride.CL2SchedulerThroughputThreshold %v", cfg.AddOnClusterloader.TestOverride.CL2SchedulerThroughputThreshold)
+	}
+	if !cfg.AddOnClusterloader.TestOverride.EnableSystemPodMetrics {
+		t.Fatalf("unexpected cfg.AddOnClusterloader.TestOverride.EnableSystemPodMetrics %v", cfg.AddOnClusterloader.TestOverride.EnableSystemPodMetrics)
+	}
+}

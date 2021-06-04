@@ -13,6 +13,7 @@ replace (
 
 	github.com/aws/aws-k8s-tester/k8s-tester => ../..
 	github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent => ../../cloudwatch-agent
+	github.com/aws/aws-k8s-tester/k8s-tester/clusterloader => ../../clusterloader
 	github.com/aws/aws-k8s-tester/k8s-tester/configmaps => ../../configmaps
 	github.com/aws/aws-k8s-tester/k8s-tester/conformance => ../../conformance
 	github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs => ../../csi-ebs

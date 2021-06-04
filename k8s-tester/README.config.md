@@ -60,7 +60,6 @@
 | K8S_TESTER_ADD_ON_CONFORMANCE_ENABLE                              | SETTABLE VIA ENV VAR | *conformance.Config.Enable                          | bool          |
 | K8S_TESTER_ADD_ON_CONFORMANCE_MINIMUM_NODES                       | SETTABLE VIA ENV VAR | *conformance.Config.MinimumNodes                    | int           |
 | K8S_TESTER_ADD_ON_CONFORMANCE_NAMESPACE                           | SETTABLE VIA ENV VAR | *conformance.Config.Namespace                       | string        |
-| K8S_TESTER_ADD_ON_CONFORMANCE_KUBECONFIG_PATH                     | SETTABLE VIA ENV VAR | *conformance.Config.KubeconfigPath                  | string        |
 | K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_PATH                       | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyPath                    | string        |
 | K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_DOWNLOAD_URL               | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyDownloadURL             | string        |
 | K8S_TESTER_ADD_ON_CONFORMANCE_SONOBUOY_RUN_TIMEOUT                | SETTABLE VIA ENV VAR | *conformance.Config.SonobuoyRunTimeout              | time.Duration |
@@ -217,6 +216,48 @@
 | K8S_TESTER_ADD_ON_SECRETS_OBJECT_SIZE     | SETTABLE VIA ENV VAR | *secrets.Config.ObjectSize     | int             |
 | K8S_TESTER_ADD_ON_SECRETS_LATENCY_SUMMARY | READ-ONLY            | *secrets.Config.LatencySummary | latency.Summary |
 *-------------------------------------------*----------------------*--------------------------------*-----------------*
+
+
+*-------------------------------------------------------------*----------------------*------------------------------------------------*------------------------*
+|                   ENVIRONMENTAL VARIABLE                    |      FIELD TYPE      |                      TYPE                      |        GO TYPE         |
+*-------------------------------------------------------------*----------------------*------------------------------------------------*------------------------*
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_ENABLE                      | SETTABLE VIA ENV VAR | *clusterloader.Config.Enable                   | bool                   |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_MINIMUM_NODES               | SETTABLE VIA ENV VAR | *clusterloader.Config.MinimumNodes             | int                    |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_CLUSTERLOADER_PATH          | SETTABLE VIA ENV VAR | *clusterloader.Config.ClusterloaderPath        | string                 |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_CLUSTERLOADER_DOWNLOAD_URL  | SETTABLE VIA ENV VAR | *clusterloader.Config.ClusterloaderDownloadURL | string                 |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_PROVIDER                    | SETTABLE VIA ENV VAR | *clusterloader.Config.Provider                 | string                 |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_RUNS                        | SETTABLE VIA ENV VAR | *clusterloader.Config.Runs                     | int                    |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_RUN_TIMEOUT                 | SETTABLE VIA ENV VAR | *clusterloader.Config.RunTimeout               | time.Duration          |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_RUN_TIMEOUT_STRING          | READ-ONLY            | *clusterloader.Config.RunTimeoutString         | string                 |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_CONFIG_PATH            | SETTABLE VIA ENV VAR | *clusterloader.Config.TestConfigPath           | string                 |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_RUN_FROM_CLUSTER            | SETTABLE VIA ENV VAR | *clusterloader.Config.RunFromCluster           | bool                   |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_NODES                       | SETTABLE VIA ENV VAR | *clusterloader.Config.Nodes                    | int                    |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_REPORT_DIR             | READ-ONLY            | *clusterloader.Config.TestReportDir            | string                 |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_REPORT_DIR_TAR_GZ_PATH | READ-ONLY            | *clusterloader.Config.TestReportDirTarGzPath   | string                 |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_LOG_PATH               | READ-ONLY            | *clusterloader.Config.TestLogPath              | string                 |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_POD_STARTUP_LATENCY         | READ-ONLY            | *clusterloader.Config.PodStartupLatency        | clusterloader.PerfData |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_POD_STARTUP_LATENCY_PATH    | READ-ONLY            | *clusterloader.Config.PodStartupLatencyPath    | string                 |
+*-------------------------------------------------------------*----------------------*------------------------------------------------*------------------------*
+
+
+*----------------------------------------------------------------------------------*----------------------*-------------------------------------------------------------*---------*
+|                              ENVIRONMENTAL VARIABLE                              |      FIELD TYPE      |                            TYPE                             | GO TYPE |
+*----------------------------------------------------------------------------------*----------------------*-------------------------------------------------------------*---------*
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_PATH                               | READ-ONLY            | *clusterloader.TestOverride.Path                            | string  |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_NODES_PER_NAMESPACE                | SETTABLE VIA ENV VAR | *clusterloader.TestOverride.NodesPerNamespace               | int     |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_PODS_PER_NODE                      | SETTABLE VIA ENV VAR | *clusterloader.TestOverride.PodsPerNode                     | int     |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_BIG_GROUP_SIZE                     | SETTABLE VIA ENV VAR | *clusterloader.TestOverride.BigGroupSize                    | int     |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_MEDIUM_GROUP_SIZE                  | SETTABLE VIA ENV VAR | *clusterloader.TestOverride.MediumGroupSize                 | int     |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_SMALL_GROUP_SIZE                   | SETTABLE VIA ENV VAR | *clusterloader.TestOverride.SmallGroupSize                  | int     |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_SMALL_STATEFUL_SETS_PER_NAMESPACE  | SETTABLE VIA ENV VAR | *clusterloader.TestOverride.SmallStatefulSetsPerNamespace   | int     |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_MEDIUM_STATEFUL_SETS_PER_NAMESPACE | SETTABLE VIA ENV VAR | *clusterloader.TestOverride.MediumStatefulSetsPerNamespace  | int     |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_CL2_USE_HOST_NETWORK_PODS          | SETTABLE VIA ENV VAR | *clusterloader.TestOverride.CL2UseHostNetworkPods           | bool    |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_CL2_LOAD_TEST_THROUGHPUT           | SETTABLE VIA ENV VAR | *clusterloader.TestOverride.CL2LoadTestThroughput           | int     |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_CL2_ENABLE_PVS                     | SETTABLE VIA ENV VAR | *clusterloader.TestOverride.CL2EnablePVS                    | bool    |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_CL2_SCHEDULER_THROUGHPUT_THRESHOLD | SETTABLE VIA ENV VAR | *clusterloader.TestOverride.CL2SchedulerThroughputThreshold | int     |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_PROMETHEUS_SCRAPE_KUBE_PROXY       | SETTABLE VIA ENV VAR | *clusterloader.TestOverride.PrometheusScrapeKubeProxy       | bool    |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_ENABLE_SYSTEM_POD_METRICS          | SETTABLE VIA ENV VAR | *clusterloader.TestOverride.EnableSystemPodMetrics          | bool    |
+*----------------------------------------------------------------------------------*----------------------*-------------------------------------------------------------*---------*
 
 
 ```

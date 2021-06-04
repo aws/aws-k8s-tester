@@ -10,6 +10,7 @@ import (
 
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
+	"github.com/aws/aws-k8s-tester/k8s-tester/clusterloader"
 	"github.com/aws/aws-k8s-tester/k8s-tester/configmaps"
 	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
@@ -96,6 +97,14 @@ func createDoc() string {
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+secrets.Env()+"_", &secrets.Config{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+clusterloader.Env()+"_", &clusterloader.Config{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+clusterloader.EnvTestOverride()+"_", &clusterloader.TestOverride{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

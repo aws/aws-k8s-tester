@@ -17,6 +17,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/client"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
+	"github.com/aws/aws-k8s-tester/k8s-tester/clusterloader"
 	"github.com/aws/aws-k8s-tester/k8s-tester/configmaps"
 	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
@@ -133,6 +134,7 @@ type Config struct {
 	AddOnCSRs                *csrs.Config                 `json:"add_on_csrs"`
 	AddOnConfigmaps          *configmaps.Config           `json:"add_on_configmaps"`
 	AddOnSecrets             *secrets.Config              `json:"add_on_secrets"`
+	AddOnClusterloader       *clusterloader.Config        `json:"add_on_clusterloader"`
 }
 
 const (
@@ -200,6 +202,7 @@ func NewDefault() *Config {
 		AddOnCSRs:                csrs.NewDefault(),
 		AddOnConfigmaps:          configmaps.NewDefault(),
 		AddOnSecrets:             secrets.NewDefault(),
+		AddOnClusterloader:       clusterloader.NewDefault(),
 	}
 }
 
@@ -223,13 +226,23 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return fmt.Errorf("validateConfig failed [%v]", err)
 	}
 
-	if cfg.AddOnCloudwatchAgent != nil {
+	if cfg.AddOnCloudwatchAgent != nil && cfg.AddOnCloudwatchAgent.Enable {
 		if err := cfg.AddOnCloudwatchAgent.ValidateAndSetDefaults(cfg.ClusterName); err != nil {
 			return err
 		}
 	}
-	if cfg.AddOnConformance != nil {
+	if cfg.AddOnConformance != nil && cfg.AddOnConformance.Enable {
 		if err := cfg.AddOnConformance.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnCSRs != nil && cfg.AddOnCSRs.Enable {
+		if err := cfg.AddOnCSRs.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnClusterloader != nil && cfg.AddOnClusterloader.Enable {
+		if err := cfg.AddOnClusterloader.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}
@@ -526,6 +539,28 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnSecrets = av
 	} else {
 		return fmt.Errorf("expected *secrets.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+clusterloader.Env()+"_", cfg.AddOnClusterloader)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*clusterloader.Config); ok {
+		cfg.AddOnClusterloader = av
+	} else {
+		return fmt.Errorf("expected *clusterloader.Config, got %T", vv)
+	}
+
+	if cfg.AddOnClusterloader != nil {
+		vv, err = parseEnvs(ENV_PREFIX+clusterloader.EnvTestOverride()+"_", cfg.AddOnClusterloader.TestOverride)
+		if err != nil {
+			return err
+		}
+		if av, ok := vv.(*clusterloader.TestOverride); ok {
+			cfg.AddOnClusterloader.TestOverride = av
+		} else {
+			return fmt.Errorf("expected *clusterloader.TestOverride, got %T", vv)
+		}
 	}
 
 	return err
