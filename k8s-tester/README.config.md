@@ -184,6 +184,17 @@
 *----------------------------------------------------------------*----------------------*----------------------------------------------*---------*
 
 
+*-------------------------------------------------------*----------------------*------------------------------------------*-----------------*
+|                ENVIRONMENTAL VARIABLE                 |      FIELD TYPE      |                   TYPE                   |     GO TYPE     |
+*-------------------------------------------------------*----------------------*------------------------------------------*-----------------*
+| K8S_TESTER_ADD_ON_CSRS_ENABLE                         | SETTABLE VIA ENV VAR | *csrs.Config.Enable                      | bool            |
+| K8S_TESTER_ADD_ON_CSRS_MINIMUM_NODES                  | SETTABLE VIA ENV VAR | *csrs.Config.MinimumNodes                | int             |
+| K8S_TESTER_ADD_ON_CSRS_OBJECTS                        | SETTABLE VIA ENV VAR | *csrs.Config.Objects                     | int             |
+| K8S_TESTER_ADD_ON_CSRS_INITIAL_REQUEST_CONDITION_TYPE | SETTABLE VIA ENV VAR | *csrs.Config.InitialRequestConditionType | string          |
+| K8S_TESTER_ADD_ON_CSRS_LATENCY_SUMMARY                | READ-ONLY            | *csrs.Config.LatencySummary              | latency.Summary |
+*-------------------------------------------------------*----------------------*------------------------------------------*-----------------*
+
+
 *----------------------------------------------*----------------------*-----------------------------------*-----------------*
 |            ENVIRONMENTAL VARIABLE            |      FIELD TYPE      |               TYPE                |     GO TYPE     |
 *----------------------------------------------*----------------------*-----------------------------------*-----------------*

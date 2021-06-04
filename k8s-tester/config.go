@@ -20,6 +20,7 @@ import (
 	"github.com/aws/aws-k8s-tester/k8s-tester/configmaps"
 	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
+	"github.com/aws/aws-k8s-tester/k8s-tester/csrs"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
@@ -129,6 +130,7 @@ type Config struct {
 	AddOnJobsPi              *jobs_pi.Config              `json:"add_on_jobs_pi"`
 	AddOnJobsEcho            *jobs_echo.Config            `json:"add_on_jobs_echo"`
 	AddOnCronJobsEcho        *jobs_echo.Config            `json:"add_on_cron_jobs_echo"`
+	AddOnCSRs                *csrs.Config                 `json:"add_on_csrs"`
 	AddOnConfigmaps          *configmaps.Config           `json:"add_on_configmaps"`
 	AddOnSecrets             *secrets.Config              `json:"add_on_secrets"`
 }
@@ -195,6 +197,7 @@ func NewDefault() *Config {
 		AddOnJobsPi:              jobs_pi.NewDefault(),
 		AddOnJobsEcho:            jobs_echo.NewDefault("Job"),
 		AddOnCronJobsEcho:        jobs_echo.NewDefault("CronJob"),
+		AddOnCSRs:                csrs.NewDefault(),
 		AddOnConfigmaps:          configmaps.NewDefault(),
 		AddOnSecrets:             secrets.NewDefault(),
 	}
@@ -503,6 +506,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnConfigmaps = av
 	} else {
 		return fmt.Errorf("expected *configmaps.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+csrs.Env()+"_", cfg.AddOnCSRs)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*csrs.Config); ok {
+		cfg.AddOnCSRs = av
+	} else {
+		return fmt.Errorf("expected *csrs.Config, got %T", vv)
 	}
 
 	vv, err = parseEnvs(ENV_PREFIX+secrets.Env()+"_", cfg.AddOnSecrets)

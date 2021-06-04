@@ -20,6 +20,7 @@ import (
 	"github.com/aws/aws-k8s-tester/k8s-tester/configmaps"
 	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
+	"github.com/aws/aws-k8s-tester/k8s-tester/csrs"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
@@ -27,6 +28,7 @@ import (
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
+	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
 	"github.com/aws/aws-k8s-tester/k8s-tester/version"
 	"github.com/aws/aws-k8s-tester/utils/log"
@@ -187,12 +189,26 @@ func (ts *tester) createTesters() {
 		ts.cfg.AddOnCronJobsEcho.Client = ts.cli
 		ts.testers = append(ts.testers, jobs_echo.New(ts.cfg.AddOnCronJobsEcho))
 	}
+	if ts.cfg.AddOnCSRs != nil && ts.cfg.AddOnCSRs.Enable {
+		ts.cfg.AddOnCSRs.Stopc = ts.stopCreationCh
+		ts.cfg.AddOnCSRs.Logger = ts.logger
+		ts.cfg.AddOnCSRs.LogWriter = ts.logWriter
+		ts.cfg.AddOnCSRs.Client = ts.cli
+		ts.testers = append(ts.testers, csrs.New(ts.cfg.AddOnCSRs))
+	}
 	if ts.cfg.AddOnConfigmaps != nil && ts.cfg.AddOnConfigmaps.Enable {
 		ts.cfg.AddOnConfigmaps.Stopc = ts.stopCreationCh
 		ts.cfg.AddOnConfigmaps.Logger = ts.logger
 		ts.cfg.AddOnConfigmaps.LogWriter = ts.logWriter
 		ts.cfg.AddOnConfigmaps.Client = ts.cli
 		ts.testers = append(ts.testers, configmaps.New(ts.cfg.AddOnConfigmaps))
+	}
+	if ts.cfg.AddOnSecrets != nil && ts.cfg.AddOnSecrets.Enable {
+		ts.cfg.AddOnSecrets.Stopc = ts.stopCreationCh
+		ts.cfg.AddOnSecrets.Logger = ts.logger
+		ts.cfg.AddOnSecrets.LogWriter = ts.logWriter
+		ts.cfg.AddOnSecrets.Client = ts.cli
+		ts.testers = append(ts.testers, secrets.New(ts.cfg.AddOnSecrets))
 	}
 }
 

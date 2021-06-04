@@ -525,6 +525,41 @@ func TestEnvAddOnCronJobsEcho(t *testing.T) {
 	}
 }
 
+func TestEnvAddOnCSRs(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("K8S_TESTER_CLIENTS", "100")
+	defer os.Unsetenv("K8S_TESTER_CLIENTS")
+	os.Setenv("K8S_TESTER_ADD_ON_CSRS_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CSRS_ENABLE")
+	os.Setenv("K8S_TESTER_ADD_ON_CSRS_MINIMUM_NODES", "100")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CSRS_MINIMUM_NODES")
+	os.Setenv("K8S_TESTER_ADD_ON_CSRS_OBJECTS", `222`)
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CSRS_OBJECTS")
+	os.Setenv("K8S_TESTER_ADD_ON_CSRS_INITIAL_REQUEST_CONDITION_TYPE", "Approved")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CSRS_INITIAL_REQUEST_CONDITION_TYPE")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if cfg.Clients != 100 {
+		t.Fatalf("unexpected cfg.Clients %v", cfg.Clients)
+	}
+	if !cfg.AddOnCSRs.Enable {
+		t.Fatalf("unexpected cfg.AddOnCSRs.Enable %v", cfg.AddOnCSRs.Enable)
+	}
+	if cfg.AddOnCSRs.MinimumNodes != 100 {
+		t.Fatalf("unexpected cfg.AddOnCSRs.MinimumNodes %v", cfg.AddOnCSRs.MinimumNodes)
+	}
+	if cfg.AddOnCSRs.Objects != 222 {
+		t.Fatalf("unexpected cfg.AddOnCSRs.Objects %v", cfg.AddOnCSRs.Objects)
+	}
+	if cfg.AddOnCSRs.InitialRequestConditionType != "Approved" {
+		t.Fatalf("unexpected cfg.AddOnCSRs.InitialRequestConditionType %v", cfg.AddOnCSRs.InitialRequestConditionType)
+	}
+}
+
 func TestEnvAddOnConfigmaps(t *testing.T) {
 	cfg := NewDefault()
 

@@ -16,6 +16,7 @@ replace (
 	github.com/aws/aws-k8s-tester/k8s-tester/configmaps => ../../configmaps
 	github.com/aws/aws-k8s-tester/k8s-tester/conformance => ../../conformance
 	github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs => ../../csi-ebs
+	github.com/aws/aws-k8s-tester/k8s-tester/csrs => ../../csrs
 	github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit => ../../fluent-bit
 	github.com/aws/aws-k8s-tester/k8s-tester/helm => ../../helm
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo => ../../jobs-echo
