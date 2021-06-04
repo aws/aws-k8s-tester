@@ -2,6 +2,24 @@
 
 <hr>
 
+## [v1.6.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.1) (2021-06)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.0...v1.6.1).
+
+### `k8s-tester`
+
+- Add [`k8s-tester/csrs`](https://github.com/aws/aws-k8s-tester/commit/90ef22a2e6505189f998d1f6ed738fe05f73d56d).
+- Add [`k8s-tester/clusterloader`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- Add [`k8s-tester/stress`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+
+### Go
+
+- Compile with [*Go 1.16.5*](https://golang.org/doc/devel/release.html#go1.16).
+
+
+<hr>
+
+
 ## [v1.6.0](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.0) (2021-06-02)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.5.9...v1.6.0).

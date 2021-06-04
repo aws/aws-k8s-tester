@@ -26,6 +26,8 @@ To add a new tester,
 - Run `github.com/aws/aws-k8s-tester/k8s-tester/cmd/k8s-tester/vend.sh`.
 - Run `github.com/aws/aws-k8s-tester/k8s-tester/gen.sh`.
 
+See [example commit to add `k8s-tester/csrs`](https://github.com/aws/aws-k8s-tester/commit/90ef22a2e6505189f998d1f6ed738fe05f73d56d).
+
 ### Examples
 
 See [`README.config.md`](./README.config.md) for all settings.
