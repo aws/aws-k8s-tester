@@ -47,6 +47,7 @@ type Config struct {
 	// ClusterloaderDownloadURL is the download URL to download "clusterloader" binary from.
 	ClusterloaderDownloadURL string `json:"clusterloader_download_url"`
 
+	// Provider is the provider name for "clusterloader2".
 	Provider string `json:"provider"`
 
 	// Runs is the number of "clusterloader2" runs back-to-back.
