@@ -27,7 +27,7 @@ To add a new tester,
 - Run `github.com/aws/aws-k8s-tester/k8s-tester/gen.sh`.
 
 See example commits:
-- [`k8s-tester/clusterloader`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- [`k8s-tester/clusterloader`](https://github.com/aws/aws-k8s-tester/commit/7b9113c21f440623ec01bdea5d81a74176100746).
 - [`k8s-tester/stress`](https://github.com/aws/aws-k8s-tester/commit/TODO).
 - [`k8s-tester/csrs`](https://github.com/aws/aws-k8s-tester/commit/90ef22a2e6505189f998d1f6ed738fe05f73d56d).
 
