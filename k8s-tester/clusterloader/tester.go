@@ -253,10 +253,9 @@ func (ts *tester) Apply() (err error) {
 	}
 	ts.cfg.Logger.Info("mkdir report dir", zap.String("dir", ts.cfg.TestReportDir))
 
-	if err := ts.cfg.TestOverride.Sync(); err != nil {
+	if err := ts.cfg.TestOverride.Sync(ts.cfg.Logger); err != nil {
 		return err
 	}
-	ts.cfg.Logger.Info("wrote test override file", zap.String("path", ts.cfg.TestOverride.Path))
 
 	ts.testLogFile, err = os.OpenFile(ts.cfg.TestLogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
@@ -267,208 +266,25 @@ func (ts *tester) Apply() (err error) {
 		ts.testLogFile.Close()
 	}()
 
-	// stream command run outputs for debugging purposes
-	checkDonec := make(chan struct{})
-	go func() {
-		defer func() {
-			close(checkDonec)
-		}()
-		for {
-			select {
-			case <-ts.cfg.Stopc:
-				ts.cfg.Logger.Info("exiting cluster loader command output checks")
-				return
-			case <-ts.rootCtx.Done():
-				ts.cfg.Logger.Info("exiting cluster loader command output checks")
-				return
-			case <-time.After(10 * time.Second):
-			}
+	checkDonec := ts.streamTestLogs()
+	runErr := ts.runCL2s(checkDonec)
 
-			if ts.testLogFile != nil {
-				ts.testLogFile.Sync()
-			}
-			ts.cfg.Logger.Info("checking cluster loader command output from logs file")
-			b, lerr := ioutil.ReadFile(ts.cfg.TestLogPath)
-			if lerr != nil {
-				ts.cfg.Logger.Warn("failed to read cluster loader command output from logs file", zap.Error(lerr))
-				continue
-			}
-			output := strings.TrimSpace(string(b))
-			lines := strings.Split(output, "\n")
-			linesN := len(lines)
-
-			ts.cfg.Logger.Info("checked cluster loader command output from logs file", zap.Int("total-lines", linesN))
-			if linesN > 15 {
-				output = strings.Join(lines[linesN-15:], "\n")
-			}
-			fmt.Fprintf(ts.cfg.LogWriter, "\n%q output:\n%s\n\n", ts.cfg.TestLogPath, output)
-		}
-	}()
-
-	args := ts.getCL2Args()
-	now := time.Now()
-	errc := make(chan error)
-	ts.rootCtx, ts.rootCancel = context.WithTimeout(context.Background(), ts.cfg.RunTimeout)
-	go func() {
-		for i := 0; i < ts.cfg.Runs; i++ {
-			select {
-			case <-ts.rootCtx.Done():
-				return
-			case <-time.After(5 * time.Second):
-			}
-
-			rerr := ts.runCL2(i, args)
-			if rerr == nil {
-				ts.cfg.Logger.Info("completed cluster loader", zap.Int("current-run", i), zap.Int("total-runs", ts.cfg.Runs))
-				continue
-			}
-
-			ts.cfg.Logger.Warn("checking cluster loader error from log file", zap.Error(rerr))
-			b, lerr := ioutil.ReadFile(ts.cfg.TestLogPath)
-			if lerr != nil {
-				ts.cfg.Logger.Warn("failed to read cluster loader command output from logs file", zap.Error(lerr))
-				errc <- rerr
-				return
-			}
-			output := strings.TrimSpace(string(b))
-			lines := strings.Split(output, "\n")
-			linesN := len(lines)
-			if linesN > 15 {
-				output = strings.Join(lines[linesN-15:], "\n")
-			}
-
-			if strings.Contains(output, skipErr) {
-				ts.cfg.Logger.Warn("cluster loader failed but continue", zap.String("skip-error-message", skipErr))
-				continue
-			}
-
-			errc <- rerr
-			return
-		}
-		errc <- nil
-	}()
-	var runErr error
-	select {
-	case <-ts.donec:
-		ts.cfg.Logger.Info("done cluster loader")
-	case <-ts.cfg.Stopc:
-		ts.cfg.Logger.Info("stopping cluster loader")
-	case <-ts.rootCtx.Done():
-		ts.cfg.Logger.Info("timed out cluster loader")
-	case runErr = <-errc:
-		if runErr == nil {
-			ts.cfg.Logger.Info("successfully ran cluster loader",
-				zap.String("took", time.Since(now).String()),
-				zap.Int("total-runs", ts.cfg.Runs),
-			)
-		} else {
-			ts.cfg.Logger.Warn("failed to run cluster loader",
-				zap.String("took", time.Since(now).String()),
-				zap.Int("total-runs", ts.cfg.Runs),
-				zap.Error(runErr),
-			)
-		}
-	}
-	ts.rootCancel()
-	select {
-	case <-checkDonec:
-		ts.cfg.Logger.Info("confirmed exit cluster loader command output checks")
-	case <-time.After(3 * time.Minute):
-		ts.cfg.Logger.Warn("took too long to confirm exit cluster loader command output checks")
-	}
-	if runErr != nil {
-		ts.cfg.Logger.Warn("failed to run cluster loader", zap.Error(runErr))
-	} else {
-		ts.cfg.Logger.Info("successfully ran cluster loader")
+	testFinishedCount, err := ts.countTestFinishes()
+	if err != nil {
+		return err
 	}
 
-	lout, lerr := ioutil.ReadFile(ts.cfg.TestLogPath)
-	if lerr != nil {
-		ts.cfg.Logger.Warn("failed to read cluster loader log output", zap.Error(lerr))
-		return lerr
+	podStartupLats, err := ts.appendResultsToTestLogPath()
+	if err != nil {
+		return err
 	}
-	logOutput := string(lout)
-	testFinishedCount := strings.Count(logOutput, `] Test Finished`)
-
-	// append results in "TestLogPath"
-	// "0777" to fix "scp: /var/log/cluster-loader-remote.log: Permission denied"
-	logFile, cerr := os.OpenFile(ts.cfg.TestLogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
-	if cerr != nil {
-		return fmt.Errorf("open(%q): %v", ts.cfg.TestLogPath, cerr)
-	}
-	defer logFile.Close()
-
-	podStartupLats := make([]PerfData, 0)
-	cerr = filepath.Walk(ts.cfg.TestReportDir, func(path string, info os.FileInfo, ferr error) error {
-		if ferr != nil {
-			return ferr
-		}
-		if info.IsDir() {
-			return nil
-		}
-		ts.cfg.Logger.Info("found report", zap.String("path", path))
-
-		if strings.HasPrefix(filepath.Base(path), "PodStartupLatency_") {
-			ts.cfg.Logger.Info("parsing PodStartupLatency", zap.String("path", path))
-			p, perr := parsePodStartupLatency(path)
-			if perr != nil {
-				ts.cfg.Logger.Warn("failed to parse PodStartupLatency", zap.String("path", path))
-				return perr
-			}
-			ts.cfg.Logger.Info("parsed PodStartupLatency", zap.String("path", path))
-			podStartupLats = append(podStartupLats, p)
-		}
-
-		if _, werr := logFile.WriteString(fmt.Sprintf("\n\n\nreport output from %q:\n\n", path)); werr != nil {
-			ts.cfg.Logger.Warn("failed to write report to log file", zap.Error(werr))
-			return nil
-		}
-
-		b, lerr := ioutil.ReadFile(path)
-		if lerr != nil {
-			ts.cfg.Logger.Warn("failed to read cluster loader command output from logs file", zap.Error(lerr))
-			if _, werr := logFile.WriteString(fmt.Sprintf("failed to write %v", lerr)); werr != nil {
-				ts.cfg.Logger.Warn("failed to write report to log file", zap.Error(werr))
-				return nil
-			}
-		} else {
-			if _, werr := logFile.Write(b); werr != nil {
-				ts.cfg.Logger.Warn("failed to write report to log file", zap.Error(werr))
-				return nil
-			}
-		}
-		return nil
-	})
-	if cerr != nil {
-		return cerr
-	}
-	ts.cfg.PodStartupLatency = mergePodStartupLatency(podStartupLats...)
-	podStartupLatData, derr := json.Marshal(ts.cfg.PodStartupLatency)
-	if derr != nil {
-		ts.cfg.Logger.Warn("failed to marshal PodStartupLatency", zap.Error(derr))
-		return derr
-	}
-	if cerr = ioutil.WriteFile(ts.cfg.PodStartupLatencyPath, podStartupLatData, 0600); cerr != nil {
-		ts.cfg.Logger.Warn("failed to write PodStartupLatency", zap.Error(cerr))
-		return cerr
+	if err = ts.collectPodStartupLatency(podStartupLats); err != nil {
+		return err
 	}
 
-	ts.cfg.Logger.Info("tar-gzipping report dir", zap.String("report-dir", ts.cfg.TestReportDir), zap.String("file-path", ts.cfg.TestReportDirTarGzPath))
-	if cerr = os.RemoveAll(ts.cfg.TestReportDirTarGzPath); cerr != nil {
-		ts.cfg.Logger.Warn("failed to remove temp file", zap.Error(cerr))
-		return cerr
+	if err = ts.compressReports(); err != nil {
+		return err
 	}
-	if cerr = archiver.Archive([]string{ts.cfg.TestReportDir}, ts.cfg.TestReportDirTarGzPath); cerr != nil {
-		ts.cfg.Logger.Warn("archive failed", zap.Error(cerr))
-		return cerr
-	}
-	stat, cerr := os.Stat(ts.cfg.TestReportDirTarGzPath)
-	if cerr != nil {
-		ts.cfg.Logger.Warn("failed to os stat", zap.Error(cerr))
-		return cerr
-	}
-	sz := humanize.Bytes(uint64(stat.Size()))
-	ts.cfg.Logger.Info("tar-gzipped report dir", zap.String("report-dir", ts.cfg.TestReportDir), zap.String("file-path", ts.cfg.TestReportDirTarGzPath), zap.String("file-size", sz))
 
 	if testFinishedCount == ts.cfg.Runs {
 		ts.cfg.Logger.Info("completed expected test runs; overriding error",
@@ -529,6 +345,47 @@ func (ts *tester) runPrompt(action string) (ok bool) {
 	return true
 }
 
+// stream command run outputs for debugging purposes
+func (ts *tester) streamTestLogs() (checkDonec chan struct{}) {
+	checkDonec = make(chan struct{})
+	go func() {
+		defer func() {
+			close(checkDonec)
+		}()
+		for {
+			select {
+			case <-ts.cfg.Stopc:
+				ts.cfg.Logger.Info("exiting cluster loader command output checks")
+				return
+			case <-ts.rootCtx.Done():
+				ts.cfg.Logger.Info("exiting cluster loader command output checks")
+				return
+			case <-time.After(10 * time.Second):
+			}
+
+			if ts.testLogFile != nil {
+				ts.testLogFile.Sync()
+			}
+			ts.cfg.Logger.Info("checking cluster loader command output from logs file")
+			b, lerr := ioutil.ReadFile(ts.cfg.TestLogPath)
+			if lerr != nil {
+				ts.cfg.Logger.Warn("failed to read cluster loader command output from logs file", zap.Error(lerr))
+				continue
+			}
+			output := strings.TrimSpace(string(b))
+			lines := strings.Split(output, "\n")
+			linesN := len(lines)
+
+			ts.cfg.Logger.Info("checked cluster loader command output from logs file", zap.Int("total-lines", linesN))
+			if linesN > 15 {
+				output = strings.Join(lines[linesN-15:], "\n")
+			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n%q output:\n%s\n\n", ts.cfg.TestLogPath, output)
+		}
+	}()
+	return checkDonec
+}
+
 func (ts *tester) getCL2Args() (args []string) {
 	args = []string{
 		ts.cfg.ClusterloaderPath,
@@ -559,6 +416,183 @@ func (ts *tester) runCL2(idx int, args []string) (err error) {
 	err = cmd.Run()
 	cancel()
 	return err
+}
+
+func (ts *tester) runCL2s(checkDonec chan struct{}) (runErr error) {
+	args := ts.getCL2Args()
+	now := time.Now()
+	errc := make(chan error)
+	ts.rootCtx, ts.rootCancel = context.WithTimeout(context.Background(), ts.cfg.RunTimeout)
+	go func() {
+		for i := 0; i < ts.cfg.Runs; i++ {
+			select {
+			case <-ts.rootCtx.Done():
+				return
+			case <-time.After(5 * time.Second):
+			}
+
+			rerr := ts.runCL2(i, args)
+			if rerr == nil {
+				ts.cfg.Logger.Info("completed cluster loader", zap.Int("current-run", i), zap.Int("total-runs", ts.cfg.Runs))
+				continue
+			}
+
+			ts.cfg.Logger.Warn("checking cluster loader error from log file", zap.Error(rerr))
+			b, lerr := ioutil.ReadFile(ts.cfg.TestLogPath)
+			if lerr != nil {
+				ts.cfg.Logger.Warn("failed to read cluster loader command output from logs file", zap.Error(lerr))
+				errc <- rerr
+				return
+			}
+			output := strings.TrimSpace(string(b))
+			lines := strings.Split(output, "\n")
+			linesN := len(lines)
+			if linesN > 15 {
+				output = strings.Join(lines[linesN-15:], "\n")
+			}
+
+			if strings.Contains(output, skipErr) {
+				ts.cfg.Logger.Warn("cluster loader failed but continue", zap.String("skip-error-message", skipErr))
+				continue
+			}
+
+			errc <- rerr
+			return
+		}
+		errc <- nil
+	}()
+	select {
+	case <-ts.donec:
+		ts.cfg.Logger.Info("done cluster loader")
+	case <-ts.cfg.Stopc:
+		ts.cfg.Logger.Info("stopping cluster loader")
+	case <-ts.rootCtx.Done():
+		ts.cfg.Logger.Info("timed out cluster loader")
+	case runErr = <-errc:
+		if runErr == nil {
+			ts.cfg.Logger.Info("successfully ran cluster loader",
+				zap.String("took", time.Since(now).String()),
+				zap.Int("total-runs", ts.cfg.Runs),
+			)
+		} else {
+			ts.cfg.Logger.Warn("failed to run cluster loader",
+				zap.String("took", time.Since(now).String()),
+				zap.Int("total-runs", ts.cfg.Runs),
+				zap.Error(runErr),
+			)
+		}
+	}
+	ts.rootCancel()
+	select {
+	case <-checkDonec:
+		ts.cfg.Logger.Info("confirmed exit cluster loader command output checks")
+	case <-time.After(3 * time.Minute):
+		ts.cfg.Logger.Warn("took too long to confirm exit cluster loader command output checks")
+	}
+	if runErr != nil {
+		ts.cfg.Logger.Warn("failed to run cluster loader", zap.Error(runErr))
+	} else {
+		ts.cfg.Logger.Info("successfully ran cluster loader")
+	}
+	return runErr
+}
+
+func (ts *tester) countTestFinishes() (testFinishedCount int, err error) {
+	ts.cfg.Logger.Info("counting test finishes", zap.String("test-log-path", ts.cfg.TestLogPath))
+	lout, err := ioutil.ReadFile(ts.cfg.TestLogPath)
+	if err != nil {
+		return 0, err
+	}
+	logOutput := string(lout)
+	testFinishedCount = strings.Count(logOutput, `] Test Finished`)
+	return testFinishedCount, nil
+}
+
+func (ts *tester) appendResultsToTestLogPath() (podStartupLats []PerfData, err error) {
+	// append results in "TestLogPath"
+	// "0777" to fix "scp: /var/log/cluster-loader-remote.log: Permission denied"
+	logFile, cerr := os.OpenFile(ts.cfg.TestLogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0777)
+	if cerr != nil {
+		return nil, fmt.Errorf("open(%q): %v", ts.cfg.TestLogPath, cerr)
+	}
+	defer logFile.Close()
+
+	podStartupLats = make([]PerfData, 0)
+	cerr = filepath.Walk(ts.cfg.TestReportDir, func(path string, info os.FileInfo, ferr error) error {
+		if ferr != nil {
+			return ferr
+		}
+		if info.IsDir() {
+			return nil
+		}
+		ts.cfg.Logger.Info("found report", zap.String("path", path))
+
+		if strings.HasPrefix(filepath.Base(path), "PodStartupLatency_") {
+			ts.cfg.Logger.Info("parsing PodStartupLatency", zap.String("path", path))
+			p, perr := parsePodStartupLatency(path)
+			if perr != nil {
+				ts.cfg.Logger.Warn("failed to parse PodStartupLatency", zap.String("path", path))
+				return perr
+			}
+			ts.cfg.Logger.Info("parsed PodStartupLatency", zap.String("path", path))
+			podStartupLats = append(podStartupLats, p)
+		}
+
+		if _, werr := logFile.WriteString(fmt.Sprintf("\n\n\nreport output from %q:\n\n", path)); werr != nil {
+			ts.cfg.Logger.Warn("failed to write report to log file", zap.Error(werr))
+			return nil
+		}
+
+		b, lerr := ioutil.ReadFile(path)
+		if lerr != nil {
+			ts.cfg.Logger.Warn("failed to read cluster loader command output from logs file", zap.Error(lerr))
+			if _, werr := logFile.WriteString(fmt.Sprintf("failed to write %v", lerr)); werr != nil {
+				ts.cfg.Logger.Warn("failed to write report to log file", zap.Error(werr))
+				return nil
+			}
+		} else {
+			if _, werr := logFile.Write(b); werr != nil {
+				ts.cfg.Logger.Warn("failed to write report to log file", zap.Error(werr))
+				return nil
+			}
+		}
+		return nil
+	})
+	return podStartupLats, cerr
+}
+
+func (ts *tester) collectPodStartupLatency(podStartupLats []PerfData) error {
+	ts.cfg.PodStartupLatency = mergePodStartupLatency(podStartupLats...)
+	podStartupLatData, err := json.Marshal(ts.cfg.PodStartupLatency)
+	if err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(ts.cfg.PodStartupLatencyPath, podStartupLatData, 0600); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ts *tester) compressReports() error {
+	ts.cfg.Logger.Info("tar-gzipping report dir", zap.String("report-dir", ts.cfg.TestReportDir), zap.String("file-path", ts.cfg.TestReportDirTarGzPath))
+	if err := os.RemoveAll(ts.cfg.TestReportDirTarGzPath); err != nil {
+		ts.cfg.Logger.Warn("failed to remove temp file", zap.Error(err))
+		return err
+	}
+
+	if err := archiver.Archive([]string{ts.cfg.TestReportDir}, ts.cfg.TestReportDirTarGzPath); err != nil {
+		ts.cfg.Logger.Warn("archive failed", zap.Error(err))
+		return err
+	}
+	stat, err := os.Stat(ts.cfg.TestReportDirTarGzPath)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to os stat", zap.Error(err))
+		return err
+	}
+
+	sz := humanize.Bytes(uint64(stat.Size()))
+	ts.cfg.Logger.Info("tar-gzipped report dir", zap.String("report-dir", ts.cfg.TestReportDir), zap.String("file-path", ts.cfg.TestReportDirTarGzPath), zap.String("file-size", sz))
+	return nil
 }
 
 /*

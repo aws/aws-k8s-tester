@@ -154,11 +154,12 @@ func newDefaultTestOverride() *TestOverride {
 	}
 }
 
-func (to *TestOverride) Sync() error {
+func (to *TestOverride) Sync(lg *zap.Logger) error {
 	if to.Path == "" {
 		to.Path = DefaultTestOverridePath()
 	}
 
+	lg.Info("writing test override file", zap.String("path", to.Path))
 	buf := bytes.NewBuffer(nil)
 	tpl := template.Must(template.New("templateTestOverrides").Parse(templateTestOverrides))
 	if err := tpl.Execute(buf, to); err != nil {
@@ -172,7 +173,12 @@ func (to *TestOverride) Sync() error {
 	}
 	_, err = f.Write(buf.Bytes())
 	f.Close()
-	return err
+	if err != nil {
+		return err
+	}
+
+	lg.Info("wrote test override file", zap.String("path", to.Path))
+	return nil
 }
 
 // ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2/testing/load
