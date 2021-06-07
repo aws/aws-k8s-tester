@@ -30,6 +30,7 @@ import (
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
+	aws_v1_ecr "github.com/aws/aws-k8s-tester/utils/aws/v1/ecr"
 	"github.com/aws/aws-k8s-tester/utils/file"
 	"github.com/aws/aws-k8s-tester/utils/log"
 	"github.com/aws/aws-k8s-tester/utils/rand"
@@ -470,6 +471,17 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 	} else {
 		return fmt.Errorf("expected *php_apache.Config, got %T", vv)
 	}
+	if cfg.AddOnPHPApache != nil {
+		vv, err = parseEnvs(ENV_PREFIX+php_apache.EnvRepository()+"_", cfg.AddOnPHPApache.Repository)
+		if err != nil {
+			return err
+		}
+		if av, ok := vv.(*aws_v1_ecr.Repository); ok {
+			cfg.AddOnPHPApache.Repository = av
+		} else {
+			return fmt.Errorf("expected *aws_v1_ecr.Repository, got %T", vv)
+		}
+	}
 
 	vv, err = parseEnvs(ENV_PREFIX+nlb_hello_world.Env()+"_", cfg.AddOnNLBHelloWorld)
 	if err != nil {
@@ -500,6 +512,17 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 	} else {
 		return fmt.Errorf("expected *jobs_echo.Config, got %T", vv)
 	}
+	if cfg.AddOnJobsEcho != nil {
+		vv, err = parseEnvs(ENV_PREFIX+jobs_echo.EnvRepository("Job")+"_", cfg.AddOnJobsEcho.Repository)
+		if err != nil {
+			return err
+		}
+		if av, ok := vv.(*aws_v1_ecr.Repository); ok {
+			cfg.AddOnJobsEcho.Repository = av
+		} else {
+			return fmt.Errorf("expected *aws_v1_ecr.Repository, got %T", vv)
+		}
+	}
 
 	vv, err = parseEnvs(ENV_PREFIX+jobs_echo.Env("CronJob")+"_", cfg.AddOnCronJobsEcho)
 	if err != nil {
@@ -509,6 +532,17 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnCronJobsEcho = av
 	} else {
 		return fmt.Errorf("expected *jobs_echo.Config, got %T", vv)
+	}
+	if cfg.AddOnCronJobsEcho != nil {
+		vv, err = parseEnvs(ENV_PREFIX+jobs_echo.EnvRepository("CronJob")+"_", cfg.AddOnCronJobsEcho.Repository)
+		if err != nil {
+			return err
+		}
+		if av, ok := vv.(*aws_v1_ecr.Repository); ok {
+			cfg.AddOnCronJobsEcho.Repository = av
+		} else {
+			return fmt.Errorf("expected *aws_v1_ecr.Repository, got %T", vv)
+		}
 	}
 
 	vv, err = parseEnvs(ENV_PREFIX+configmaps.Env()+"_", cfg.AddOnConfigmaps)
@@ -550,7 +584,6 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 	} else {
 		return fmt.Errorf("expected *clusterloader.Config, got %T", vv)
 	}
-
 	if cfg.AddOnClusterloader != nil {
 		vv, err = parseEnvs(ENV_PREFIX+clusterloader.EnvTestOverride()+"_", cfg.AddOnClusterloader.TestOverride)
 		if err != nil {

@@ -58,11 +58,11 @@ func main() {
 }
 
 var (
-	repositoryBusyboxPartition string
-	repositoryBusyboxAccountID string
-	repositoryBusyboxRegion    string
-	repositoryBusyboxName      string
-	repositoryBusyboxImageTag  string
+	repositoryPartition string
+	repositoryAccountID string
+	repositoryRegion    string
+	repositoryName      string
+	repositoryImageTag  string
 
 	jobType                    string
 	completes                  int32
@@ -80,11 +80,11 @@ func newApply() *cobra.Command {
 		Run:   createApplyFunc,
 	}
 
-	cmd.PersistentFlags().StringVar(&repositoryBusyboxPartition, "repository-busybox-partition", "", `used for deciding between "amazonaws.com" and "amazonaws.com.cn"`)
-	cmd.PersistentFlags().StringVar(&repositoryBusyboxAccountID, "repository-busybox-account-id", "", "account ID for tester ECR image")
-	cmd.PersistentFlags().StringVar(&repositoryBusyboxRegion, "repository-busybox-region", "", "ECR repository region to pull from")
-	cmd.PersistentFlags().StringVar(&repositoryBusyboxName, "repository-busybox-name", "", "repository name for tester ECR image")
-	cmd.PersistentFlags().StringVar(&repositoryBusyboxImageTag, "repository-busybox-image-tag", "", "image tag for tester ECR image")
+	cmd.PersistentFlags().StringVar(&repositoryPartition, "repository-partition", "", `used for deciding between "amazonaws.com" and "amazonaws.com.cn"`)
+	cmd.PersistentFlags().StringVar(&repositoryAccountID, "repository-account-id", "", "account ID for tester ECR image")
+	cmd.PersistentFlags().StringVar(&repositoryRegion, "repository-region", "", "ECR repository region to pull from")
+	cmd.PersistentFlags().StringVar(&repositoryName, "repository-name", "", "repository name for tester ECR image")
+	cmd.PersistentFlags().StringVar(&repositoryImageTag, "repository-image-tag", "", "image tag for tester ECR image")
 
 	cmd.PersistentFlags().StringVar(&jobType, "job-type", jobs_echo.DefaultJobType, "job type, Job or CronJob")
 	cmd.PersistentFlags().Int32Var(&completes, "completes", jobs_echo.DefaultCompletes, "desired number of successfully finished pods")
@@ -118,14 +118,16 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 		Logger:       lg,
 		LogWriter:    logWriter,
 		MinimumNodes: minimumNodes,
-		Namespace:    namespace,
 		Client:       cli,
 
-		RepositoryBusyboxPartition: repositoryBusyboxPartition,
-		RepositoryBusyboxAccountID: repositoryBusyboxAccountID,
-		RepositoryBusyboxRegion:    repositoryBusyboxRegion,
-		RepositoryBusyboxName:      repositoryBusyboxName,
-		RepositoryBusyboxImageTag:  repositoryBusyboxImageTag,
+		Namespace: namespace,
+		Repository: &aws_v1_ecr.Repository{
+			Partition: repositoryPartition,
+			AccountID: repositoryAccountID,
+			Region:    repositoryRegion,
+			Name:      repositoryName,
+			ImageTag:  repositoryImageTag,
+		},
 
 		JobType: jobType,
 

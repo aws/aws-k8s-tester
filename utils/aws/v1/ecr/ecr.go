@@ -17,6 +17,150 @@ import (
 	"go.uber.org/zap"
 )
 
+// Repository represents an ECR image.
+type Repository struct {
+	// Partition is used for deciding between "amazonaws.com" and "amazonaws.com.cn".
+	Partition string `json:"partition"`
+	// AccountID is the account ID for tester ECR image.
+	// e.g. "my-app" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/my-app"
+	AccountID string `json:"account_id"`
+	// Region is the ECR repository region to pull from.
+	Region string `json:"region"`
+	// Name is the repositoryName for tester ECR image.
+	// e.g. "my-app" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/my-app"
+	Name string `json:"name"`
+	// ImageTag is the image tag for tester ECR image.
+	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/my-app:latest"
+	ImageTag string `json:"image_tag"`
+}
+
+func (repo *Repository) IsEmpty() bool {
+	if repo == nil {
+		return true
+	}
+	return repo.Partition == "" ||
+		repo.AccountID == "" ||
+		repo.Region == "" ||
+		repo.Name == "" ||
+		repo.ImageTag == ""
+}
+
+// Check checks if the specified repository exists, and returns the repository URI + ":" + image tag.
+// It returns "true" for "ok" if the repository exists.
+func (repo *Repository) Check(lg *zap.Logger, svc ecriface.ECRAPI) (img string, ok bool, err error) {
+	if repo == nil {
+		return "", false, errors.New("empty field for describe ECR image")
+	}
+	if svc == nil {
+		return "", false, errors.New("empty ECRAPI for describe ECR image")
+	}
+	if repo.Partition == "" ||
+		repo.AccountID == "" ||
+		repo.Region == "" ||
+		repo.Name == "" ||
+		repo.ImageTag == "" {
+		return "", false, errors.New("empty field for describe ECR image")
+	}
+
+	// e.g. 602401143452.dkr.ecr.us-west-2.amazonaws.com/amazon-k8s-cni:v1.6.3
+	ecrHost := "amazonaws.com"
+	switch repo.Partition {
+	case endpoints.AwsCnPartitionID:
+		ecrHost = "amazonaws.com.cn"
+	default:
+	}
+	img = fmt.Sprintf("%s.dkr.ecr.%s.%s/%s:%s", repo.AccountID, repo.Region, ecrHost, repo.Name, repo.ImageTag)
+
+	lg.Info("describing an ECR repository",
+		zap.String("repo-account-id", repo.AccountID),
+		zap.String("repo-region", repo.Region),
+		zap.String("repo-name", repo.Name),
+		zap.String("image-tag", repo.ImageTag),
+		zap.String("image", img),
+	)
+	repoOut, err := svc.DescribeRepositories(&ecr.DescribeRepositoriesInput{
+		RegistryId:      aws.String(repo.AccountID),
+		RepositoryNames: aws.StringSlice([]string{repo.Name}),
+	})
+	if err != nil {
+		ev, ok := err.(awserr.Error)
+		if !ok {
+			return img, false, err
+		}
+		switch ev.Code() {
+		case "RepositoryNotFoundException":
+			lg.Warn("ECR repo not found", zap.String("error-code", ev.Code()), zap.Error(err))
+			ok = false
+		default:
+		}
+		return img, ok, err
+	}
+	if len(repoOut.Repositories) != 1 {
+		return img, true, fmt.Errorf("%q expected 1 ECR repository, got %d", repo.Name, len(repoOut.Repositories))
+	}
+	rv := repoOut.Repositories[0]
+	repoAccountID2 := aws.StringValue(rv.RegistryId)
+	repoARN := aws.StringValue(rv.RepositoryArn)
+	repoName2 := aws.StringValue(rv.RepositoryName)
+	repoURI := aws.StringValue(rv.RepositoryUri)
+	img = repoURI + ":" + repo.ImageTag
+	lg.Info(
+		"described an ECR repository",
+		zap.String("repo-arn", repoARN),
+		zap.String("repo-region", repo.Region),
+		zap.String("repo-name", repoName2),
+		zap.String("repo-uri", repoURI),
+		zap.String("image", img),
+	)
+	if repoAccountID2 != repo.AccountID {
+		return img, true, fmt.Errorf("unexpected ECR repository account ID %q (expected %q)", repoAccountID2, repo.AccountID)
+	}
+	if repoName2 != repo.Name {
+		return img, true, fmt.Errorf("unexpected ECR repository name %q", repoName2)
+	}
+	if !strings.Contains(repoURI, repo.Region) {
+		return img, true, fmt.Errorf("region %q not found in URI %q", repo.Region, repoURI)
+	}
+
+	lg.Info("describing images",
+		zap.String("repo-name", repo.Name),
+		zap.String("repo-uri", repoURI),
+		zap.String("image-tag", repo.ImageTag),
+	)
+	imgOut, err := svc.DescribeImages(&ecr.DescribeImagesInput{
+		RegistryId:     aws.String(repo.AccountID),
+		RepositoryName: aws.String(repo.Name),
+		ImageIds: []*ecr.ImageIdentifier{
+			{
+				ImageTag: aws.String(repo.ImageTag),
+			},
+		},
+	})
+	if err != nil {
+		lg.Warn("failed to describe image", zap.Error(err))
+		return img, true, err
+	}
+	if len(imgOut.ImageDetails) == 0 {
+		return img, true, fmt.Errorf("image tag %q not found", repo.ImageTag)
+	}
+	lg.Info("described images",
+		zap.String("repo-name", repo.Name),
+		zap.String("image-tag", repo.ImageTag),
+		zap.Int("images", len(imgOut.ImageDetails)),
+	)
+	for i, img := range imgOut.ImageDetails {
+		lg.Info("found an image",
+			zap.Int("index", i),
+			zap.String("requested-tag", repo.ImageTag),
+			zap.Strings("returned-tags", aws.StringValueSlice(img.ImageTags)),
+			zap.String("digest", aws.StringValue(img.ImageDigest)),
+			zap.String("pushed-at", fmt.Sprintf("%v", aws.TimeValue(img.ImagePushedAt))),
+			zap.String("size", humanize.Bytes(uint64(aws.Int64Value(img.ImageSizeInBytes)))),
+		)
+	}
+	return img, true, nil
+}
+
 // Check checks if the specified repository exists, and returns the repository URI + ":" + image tag.
 // It returns "true" for "ok" if the repository exists.
 func Check(

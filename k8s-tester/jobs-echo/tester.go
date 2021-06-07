@@ -50,19 +50,9 @@ type Config struct {
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
 
-	// RepositoryBusyboxPartition is used for deciding between "amazonaws.com" and "amazonaws.com.cn".
-	RepositoryBusyboxPartition string `json:"repository_busybox_partition,omitempty"`
-	// RepositoryBusyboxAccountID is the account ID for tester ECR image.
-	// e.g. "busybox" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/busybox"
-	RepositoryBusyboxAccountID string `json:"repository_busybox_account_id,omitempty"`
-	// RepositoryBusyboxRegion is the ECR repository region to pull from.
-	RepositoryBusyboxRegion string `json:"repository_busybox_region,omitempty"`
-	// RepositoryBusyboxName is the repositoryName for tester ECR image.
-	// e.g. "busybox" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/busybox"
-	RepositoryBusyboxName string `json:"repository_busybox_name,omitempty"`
-	// RepositoryBusyboxImageTag is the image tag for tester ECR image.
-	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/busybox:latest"
-	RepositoryBusyboxImageTag string `json:"repository_busybox_image_tag,omitempty"`
+	// Repository defines a custom ECR image repository.
+	// For "busybox".
+	Repository *aws_v1_ecr.Repository `json:"repository,omitempty"`
 
 	// JobType is either "Job" or "CronJob".
 	JobType string `json:"job_type"`
@@ -109,6 +99,7 @@ func NewDefault(jobType string) *Config {
 		Prompt:                     false,
 		MinimumNodes:               DefaultMinimumNodes,
 		Namespace:                  pkgName + "-" + rand.String(10) + "-" + utils_time.GetTS(10),
+		Repository:                 &aws_v1_ecr.Repository{},
 		JobType:                    jobType,
 		Completes:                  DefaultCompletes,
 		Parallels:                  DefaultParallels,
@@ -120,22 +111,18 @@ func NewDefault(jobType string) *Config {
 }
 
 func New(cfg *Config) k8s_tester.Tester {
-	if cfg.RepositoryBusyboxPartition != "" &&
-		cfg.RepositoryBusyboxAccountID != "" &&
-		cfg.RepositoryBusyboxRegion != "" &&
-		cfg.RepositoryBusyboxName != "" &&
-		cfg.RepositoryBusyboxImageTag != "" {
+	if !cfg.Repository.IsEmpty() {
 		awsCfg := aws_v1.Config{
 			Logger:        cfg.Logger,
 			DebugAPICalls: cfg.Logger.Core().Enabled(zapcore.DebugLevel),
-			Partition:     cfg.RepositoryBusyboxPartition,
-			Region:        cfg.RepositoryBusyboxRegion,
+			Partition:     cfg.Repository.Partition,
+			Region:        cfg.Repository.Region,
 		}
 		awsSession, _, _, err := aws_v1.New(&awsCfg)
 		if err != nil {
 			cfg.Logger.Panic("failed to create aws session", zap.Error(err))
 		}
-		cfg.ECRAPI = ecr.New(awsSession, aws.NewConfig().WithRegion(cfg.RepositoryBusyboxRegion))
+		cfg.ECRAPI = ecr.New(awsSession, aws.NewConfig().WithRegion(cfg.Repository.Region))
 	}
 
 	return &tester{
@@ -156,6 +143,10 @@ func Env(jobType string) string {
 	return "ADD_ON_CRON_" + strings.ToUpper(strings.Replace(pkgName, "-", "_", -1))
 }
 
+func EnvRepository(jobType string) string {
+	return Env(jobType) + "_REPOSITORY"
+}
+
 func (ts *tester) Name() string { return pkgName }
 
 func (ts *tester) Enabled() bool { return ts.cfg.Enable }
@@ -165,7 +156,7 @@ func (ts *tester) Apply() (err error) {
 		return errors.New("cancelled")
 	}
 
-	bsyImg, err := ts.checkECRImage()
+	img, err := ts.checkECRImage()
 	if err != nil {
 		return err
 	}
@@ -178,7 +169,7 @@ func (ts *tester) Apply() (err error) {
 		return err
 	}
 
-	if err := ts.createJob(bsyImg); err != nil {
+	if err := ts.createJob(img); err != nil {
 		return err
 	}
 
@@ -280,29 +271,15 @@ const (
 	jobBusyboxImageName = "busybox"
 )
 
-func (ts *tester) checkECRImage() (busyboxImg string, err error) {
+func (ts *tester) checkECRImage() (img string, err error) {
 	// check ECR permission
 	// ref. https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/jobs-echo/jobs-echo.go#L75-L90
-	busyboxImg = jobBusyboxImageName
-	if ts.cfg.RepositoryBusyboxAccountID != "" &&
-		ts.cfg.RepositoryBusyboxRegion != "" &&
-		ts.cfg.RepositoryBusyboxName != "" &&
-		ts.cfg.RepositoryBusyboxImageTag != "" &&
-		ts.cfg.ECRAPI != nil {
-		busyboxImg, _, err = aws_v1_ecr.Check(
-			ts.cfg.Logger,
-			ts.cfg.ECRAPI,
-			ts.cfg.RepositoryBusyboxPartition,
-			ts.cfg.RepositoryBusyboxAccountID,
-			ts.cfg.RepositoryBusyboxRegion,
-			ts.cfg.RepositoryBusyboxName,
-			ts.cfg.RepositoryBusyboxImageTag,
-		)
-		if err != nil {
-			return "", err
-		}
+	img, _, err = ts.cfg.Repository.Check(ts.cfg.Logger, ts.cfg.ECRAPI)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to describe ECR image", zap.Error(err))
+		img = jobBusyboxImageName
 	}
-	return busyboxImg, nil
+	return img, nil
 }
 
 func (ts *tester) createJobObject(busyboxImg string) (batch_v1.Job, batch_v1beta1.CronJob, string, error) {

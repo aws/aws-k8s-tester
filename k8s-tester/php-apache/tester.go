@@ -47,19 +47,9 @@ type Config struct {
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
 
-	// RepositoryPartition is used for deciding between "amazonaws.com" and "amazonaws.com.cn".
-	RepositoryPartition string `json:"repository_partition,omitempty"`
-	// RepositoryAccountID is the account ID for tester ECR image.
-	// e.g. "php-apache" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/php-apache"
-	RepositoryAccountID string `json:"repository_account_id,omitempty"`
-	// RepositoryRegion is the ECR repository region to pull from.
-	RepositoryRegion string `json:"repository_region,omitempty"`
-	// RepositoryName is the repositoryName for tester ECR image.
-	// e.g. "php-apache" for "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/php-apache"
-	RepositoryName string `json:"repository_name,omitempty"`
-	// RepositoryImageTag is the image tag for tester ECR image.
-	// e.g. "latest" for image URI "[ACCOUNT_ID].dkr.ecr.[REGION].amazonaws.com/php-apache:latest"
-	RepositoryImageTag string `json:"repository_image_tag,omitempty"`
+	// Repository defines a custom ECR image repository.
+	// For "php-apache".
+	Repository *aws_v1_ecr.Repository `json:"repository,omitempty"`
 
 	// DeploymentNodeSelector is configured to overwrite existing node selector
 	// for PHP Apache deployment. If left empty, tester sets default selector.
@@ -79,27 +69,24 @@ func NewDefault() *Config {
 		Prompt:             false,
 		MinimumNodes:       DefaultMinimumNodes,
 		Namespace:          pkgName + "-" + rand.String(10) + "-" + utils_time.GetTS(10),
+		Repository:         &aws_v1_ecr.Repository{},
 		DeploymentReplicas: DefaultDeploymentReplicas,
 	}
 }
 
 func New(cfg *Config) k8s_tester.Tester {
-	if cfg.RepositoryPartition != "" &&
-		cfg.RepositoryAccountID != "" &&
-		cfg.RepositoryRegion != "" &&
-		cfg.RepositoryName != "" &&
-		cfg.RepositoryImageTag != "" {
+	if !cfg.Repository.IsEmpty() {
 		awsCfg := aws_v1.Config{
 			Logger:        cfg.Logger,
 			DebugAPICalls: cfg.Logger.Core().Enabled(zapcore.DebugLevel),
-			Partition:     cfg.RepositoryPartition,
-			Region:        cfg.RepositoryRegion,
+			Partition:     cfg.Repository.Partition,
+			Region:        cfg.Repository.Region,
 		}
 		awsSession, _, _, err := aws_v1.New(&awsCfg)
 		if err != nil {
 			cfg.Logger.Panic("failed to create aws session", zap.Error(err))
 		}
-		cfg.ECRAPI = ecr.New(awsSession, aws.NewConfig().WithRegion(cfg.RepositoryRegion))
+		cfg.ECRAPI = ecr.New(awsSession, aws.NewConfig().WithRegion(cfg.Repository.Region))
 	}
 
 	return &tester{
@@ -117,6 +104,10 @@ func Env() string {
 	return "ADD_ON_" + strings.ToUpper(strings.Replace(pkgName, "-", "_", -1))
 }
 
+func EnvRepository() string {
+	return Env() + "_REPOSITORY"
+}
+
 func (ts *tester) Name() string { return pkgName }
 
 func (ts *tester) Enabled() bool { return ts.cfg.Enable }
@@ -126,7 +117,7 @@ func (ts *tester) Apply() (err error) {
 		return errors.New("cancelled")
 	}
 
-	phpApacheImg, err := ts.checkECRImage()
+	img, err := ts.checkECRImage()
 	if err != nil {
 		return err
 	}
@@ -139,7 +130,7 @@ func (ts *tester) Apply() (err error) {
 		return err
 	}
 
-	if err := ts.createDeployment(phpApacheImg); err != nil {
+	if err := ts.createDeployment(img); err != nil {
 		return err
 	}
 
@@ -211,29 +202,15 @@ const (
 	appImageName   = "pjlewis/php-apache"
 )
 
-func (ts *tester) checkECRImage() (phpApacheImg string, err error) {
+func (ts *tester) checkECRImage() (img string, err error) {
 	// check ECR permission
 	// ref. https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/jobs-echo/jobs-echo.go#L75-L90
-	phpApacheImg = appImageName
-	if ts.cfg.RepositoryAccountID != "" &&
-		ts.cfg.RepositoryRegion != "" &&
-		ts.cfg.RepositoryName != "" &&
-		ts.cfg.RepositoryImageTag != "" &&
-		ts.cfg.ECRAPI != nil {
-		phpApacheImg, _, err = aws_v1_ecr.Check(
-			ts.cfg.Logger,
-			ts.cfg.ECRAPI,
-			ts.cfg.RepositoryPartition,
-			ts.cfg.RepositoryAccountID,
-			ts.cfg.RepositoryRegion,
-			ts.cfg.RepositoryName,
-			ts.cfg.RepositoryImageTag,
-		)
-		if err != nil {
-			return "", err
-		}
+	img, _, err = ts.cfg.Repository.Check(ts.cfg.Logger, ts.cfg.ECRAPI)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to describe ECR image", zap.Error(err))
+		img = appImageName
 	}
-	return phpApacheImg, nil
+	return img, nil
 }
 
 func (ts *tester) createDeployment(containerImg string) error {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/client"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
+	aws_v1_ecr "github.com/aws/aws-k8s-tester/utils/aws/v1/ecr"
 	"github.com/aws/aws-k8s-tester/utils/log"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -114,15 +115,15 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 		Logger:       lg,
 		LogWriter:    logWriter,
 		MinimumNodes: minimumNodes,
-		Namespace:    namespace,
 		Client:       cli,
-
-		RepositoryPartition: repositoryPartition,
-		RepositoryAccountID: repositoryAccountID,
-		RepositoryRegion:    repositoryRegion,
-		RepositoryName:      repositoryName,
-		RepositoryImageTag:  repositoryImageTag,
-
+		Namespace:    namespace,
+		Repository: &aws_v1_ecr.Repository{
+			Partition: repositoryPartition,
+			AccountID: repositoryAccountID,
+			Region:    repositoryRegion,
+			Name:      repositoryName,
+			ImageTag:  repositoryImageTag,
+		},
 		DeploymentNodeSelector: nodeSelector,
 		DeploymentReplicas:     deploymentReplicas,
 	}

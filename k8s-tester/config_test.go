@@ -290,20 +290,20 @@ func TestEnvAddOnPHPApache(t *testing.T) {
 	if cfg.AddOnPHPApache.Namespace != "hello" {
 		t.Fatalf("unexpected cfg.AddOnPHPApache.Namespace %v", cfg.AddOnPHPApache.Namespace)
 	}
-	if cfg.AddOnPHPApache.RepositoryPartition != "aws" {
-		t.Fatalf("unexpected cfg.AddOnPHPApache.RepositoryPartition %v", cfg.AddOnPHPApache.RepositoryPartition)
+	if cfg.AddOnPHPApache.Repository.Partition != "aws" {
+		t.Fatalf("unexpected cfg.AddOnPHPApache.Repository.Partition %v", cfg.AddOnPHPApache.Repository.Partition)
 	}
-	if cfg.AddOnPHPApache.RepositoryAccountID != "123" {
-		t.Fatalf("unexpected cfg.AddOnPHPApache.RepositoryAccountID %v", cfg.AddOnPHPApache.RepositoryAccountID)
+	if cfg.AddOnPHPApache.Repository.AccountID != "123" {
+		t.Fatalf("unexpected cfg.AddOnPHPApache.Repository.AccountID %v", cfg.AddOnPHPApache.Repository.AccountID)
 	}
-	if cfg.AddOnPHPApache.RepositoryRegion != "hello" {
-		t.Fatalf("unexpected cfg.AddOnPHPApache.RepositoryRegion %v", cfg.AddOnPHPApache.RepositoryRegion)
+	if cfg.AddOnPHPApache.Repository.Region != "hello" {
+		t.Fatalf("unexpected cfg.AddOnPHPApache.Repository.Region %v", cfg.AddOnPHPApache.Repository.Region)
 	}
-	if cfg.AddOnPHPApache.RepositoryName != "hello" {
-		t.Fatalf("unexpected cfg.AddOnPHPApache.RepositoryName %v", cfg.AddOnPHPApache.RepositoryName)
+	if cfg.AddOnPHPApache.Repository.Name != "hello" {
+		t.Fatalf("unexpected cfg.AddOnPHPApache.Repository.Name %v", cfg.AddOnPHPApache.Repository.Name)
 	}
-	if cfg.AddOnPHPApache.RepositoryImageTag != "hello" {
-		t.Fatalf("unexpected cfg.AddOnPHPApache.RepositoryImageTag %v", cfg.AddOnPHPApache.RepositoryImageTag)
+	if cfg.AddOnPHPApache.Repository.ImageTag != "hello" {
+		t.Fatalf("unexpected cfg.AddOnPHPApache.Repository.ImageTag %v", cfg.AddOnPHPApache.Repository.ImageTag)
 	}
 	if !reflect.DeepEqual(cfg.AddOnPHPApache.DeploymentNodeSelector, map[string]string{"a": "b", "c": "d"}) {
 		t.Fatalf("unexpected cfg.AddOnPHPApache.DeploymentNodeSelector %v", cfg.AddOnPHPApache.DeploymentNodeSelector)
@@ -389,16 +389,16 @@ func TestEnvAddOnJobsEcho(t *testing.T) {
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO_MINIMUM_NODES")
 	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_NAMESPACE", "hello")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO_NAMESPACE")
-	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_PARTITION", "aws")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_PARTITION")
-	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_ACCOUNT_ID", "123")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_ACCOUNT_ID")
-	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_REGION", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_REGION")
-	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_NAME", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_NAME")
-	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_IMAGE_TAG", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_IMAGE_TAG")
+	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_PARTITION", "aws")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_PARTITION")
+	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_ACCOUNT_ID", "123")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_ACCOUNT_ID")
+	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_REGION", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_REGION")
+	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_NAME", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_NAME")
+	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_IMAGE_TAG", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_IMAGE_TAG")
 	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_COMPLETES", `222`)
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_JOBS_ECHO_COMPLETES")
 	os.Setenv("K8S_TESTER_ADD_ON_JOBS_ECHO_PARALLELS", `333`)
@@ -419,20 +419,20 @@ func TestEnvAddOnJobsEcho(t *testing.T) {
 	if cfg.AddOnJobsEcho.Namespace != "hello" {
 		t.Fatalf("unexpected cfg.AddOnJobsEcho.Namespace %v", cfg.AddOnJobsEcho.Namespace)
 	}
-	if cfg.AddOnJobsEcho.RepositoryBusyboxPartition != "aws" {
-		t.Fatalf("unexpected cfg.AddOnJobsEcho.RepositoryBusyboxPartition %v", cfg.AddOnJobsEcho.RepositoryBusyboxPartition)
+	if cfg.AddOnJobsEcho.Repository.Partition != "aws" {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.Repository.Partition %v", cfg.AddOnJobsEcho.Repository.Partition)
 	}
-	if cfg.AddOnJobsEcho.RepositoryBusyboxAccountID != "123" {
-		t.Fatalf("unexpected cfg.AddOnJobsEcho.RepositoryBusyboxAccountID %v", cfg.AddOnJobsEcho.RepositoryBusyboxAccountID)
+	if cfg.AddOnJobsEcho.Repository.AccountID != "123" {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.Repository.AccountID %v", cfg.AddOnJobsEcho.Repository.AccountID)
 	}
-	if cfg.AddOnJobsEcho.RepositoryBusyboxRegion != "hello" {
-		t.Fatalf("unexpected cfg.AddOnJobsEcho.RepositoryBusyboxRegion %v", cfg.AddOnJobsEcho.RepositoryBusyboxRegion)
+	if cfg.AddOnJobsEcho.Repository.Region != "hello" {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.Repository.Region %v", cfg.AddOnJobsEcho.Repository.Region)
 	}
-	if cfg.AddOnJobsEcho.RepositoryBusyboxName != "hello" {
-		t.Fatalf("unexpected cfg.AddOnJobsEcho.RepositoryBusyboxName %v", cfg.AddOnJobsEcho.RepositoryBusyboxName)
+	if cfg.AddOnJobsEcho.Repository.Name != "hello" {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.Repository.Name %v", cfg.AddOnJobsEcho.Repository.Name)
 	}
-	if cfg.AddOnJobsEcho.RepositoryBusyboxImageTag != "hello" {
-		t.Fatalf("unexpected cfg.AddOnJobsEcho.RepositoryBusyboxImageTag %v", cfg.AddOnJobsEcho.RepositoryBusyboxImageTag)
+	if cfg.AddOnJobsEcho.Repository.ImageTag != "hello" {
+		t.Fatalf("unexpected cfg.AddOnJobsEcho.Repository.ImageTag %v", cfg.AddOnJobsEcho.Repository.ImageTag)
 	}
 	if cfg.AddOnJobsEcho.Completes != 222 {
 		t.Fatalf("unexpected cfg.AddOnJobsEcho.Completes %v", cfg.AddOnJobsEcho.Completes)
@@ -454,16 +454,16 @@ func TestEnvAddOnCronJobsEcho(t *testing.T) {
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_MINIMUM_NODES")
 	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_NAMESPACE", "hello")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_NAMESPACE")
-	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_PARTITION", "aws")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_PARTITION")
-	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_ACCOUNT_ID", "123")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_ACCOUNT_ID")
-	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_REGION", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_REGION")
-	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_NAME", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_NAME")
-	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_IMAGE_TAG", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_IMAGE_TAG")
+	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_PARTITION", "aws")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_PARTITION")
+	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_ACCOUNT_ID", "123")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_ACCOUNT_ID")
+	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_REGION", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_REGION")
+	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_NAME", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_NAME")
+	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_IMAGE_TAG", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_IMAGE_TAG")
 	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_COMPLETES", `222`)
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_COMPLETES")
 	os.Setenv("K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_PARALLELS", `333`)
@@ -490,20 +490,20 @@ func TestEnvAddOnCronJobsEcho(t *testing.T) {
 	if cfg.AddOnCronJobsEcho.Namespace != "hello" {
 		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.Namespace %v", cfg.AddOnCronJobsEcho.Namespace)
 	}
-	if cfg.AddOnCronJobsEcho.RepositoryBusyboxPartition != "aws" {
-		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.RepositoryBusyboxPartition %v", cfg.AddOnCronJobsEcho.RepositoryBusyboxPartition)
+	if cfg.AddOnCronJobsEcho.Repository.Partition != "aws" {
+		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.Repository.Partition %v", cfg.AddOnCronJobsEcho.Repository.Partition)
 	}
-	if cfg.AddOnCronJobsEcho.RepositoryBusyboxAccountID != "123" {
-		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.RepositoryBusyboxAccountID %v", cfg.AddOnCronJobsEcho.RepositoryBusyboxAccountID)
+	if cfg.AddOnCronJobsEcho.Repository.AccountID != "123" {
+		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.Repository.AccountID %v", cfg.AddOnCronJobsEcho.Repository.AccountID)
 	}
-	if cfg.AddOnCronJobsEcho.RepositoryBusyboxRegion != "hello" {
-		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.RepositoryBusyboxRegion %v", cfg.AddOnCronJobsEcho.RepositoryBusyboxRegion)
+	if cfg.AddOnCronJobsEcho.Repository.Region != "hello" {
+		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.Repository.Region %v", cfg.AddOnCronJobsEcho.Repository.Region)
 	}
-	if cfg.AddOnCronJobsEcho.RepositoryBusyboxName != "hello" {
-		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.RepositoryBusyboxName %v", cfg.AddOnCronJobsEcho.RepositoryBusyboxName)
+	if cfg.AddOnCronJobsEcho.Repository.Name != "hello" {
+		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.Repository.Name %v", cfg.AddOnCronJobsEcho.Repository.Name)
 	}
-	if cfg.AddOnCronJobsEcho.RepositoryBusyboxImageTag != "hello" {
-		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.RepositoryBusyboxImageTag %v", cfg.AddOnCronJobsEcho.RepositoryBusyboxImageTag)
+	if cfg.AddOnCronJobsEcho.Repository.ImageTag != "hello" {
+		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.Repository.ImageTag %v", cfg.AddOnCronJobsEcho.Repository.ImageTag)
 	}
 	if cfg.AddOnCronJobsEcho.Completes != 222 {
 		t.Fatalf("unexpected cfg.AddOnCronJobsEcho.Completes %v", cfg.AddOnCronJobsEcho.Completes)

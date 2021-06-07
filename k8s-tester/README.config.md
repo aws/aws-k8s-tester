@@ -103,14 +103,20 @@
 | K8S_TESTER_ADD_ON_PHP_APACHE_ENABLE                   | SETTABLE VIA ENV VAR | *php_apache.Config.Enable                 | bool              |
 | K8S_TESTER_ADD_ON_PHP_APACHE_MINIMUM_NODES            | SETTABLE VIA ENV VAR | *php_apache.Config.MinimumNodes           | int               |
 | K8S_TESTER_ADD_ON_PHP_APACHE_NAMESPACE                | SETTABLE VIA ENV VAR | *php_apache.Config.Namespace              | string            |
-| K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_PARTITION     | SETTABLE VIA ENV VAR | *php_apache.Config.RepositoryPartition    | string            |
-| K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_ACCOUNT_ID    | SETTABLE VIA ENV VAR | *php_apache.Config.RepositoryAccountID    | string            |
-| K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_REGION        | SETTABLE VIA ENV VAR | *php_apache.Config.RepositoryRegion       | string            |
-| K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_NAME          | SETTABLE VIA ENV VAR | *php_apache.Config.RepositoryName         | string            |
-| K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_IMAGE_TAG     | SETTABLE VIA ENV VAR | *php_apache.Config.RepositoryImageTag     | string            |
 | K8S_TESTER_ADD_ON_PHP_APACHE_DEPLOYMENT_NODE_SELECTOR | SETTABLE VIA ENV VAR | *php_apache.Config.DeploymentNodeSelector | map[string]string |
 | K8S_TESTER_ADD_ON_PHP_APACHE_DEPLOYMENT_REPLICAS      | SETTABLE VIA ENV VAR | *php_apache.Config.DeploymentReplicas     | int32             |
 *-------------------------------------------------------*----------------------*-------------------------------------------*-------------------*
+
+
+*----------------------------------------------------*----------------------*---------------------------*---------*
+|               ENVIRONMENTAL VARIABLE               |      FIELD TYPE      |           TYPE            | GO TYPE |
+*----------------------------------------------------*----------------------*---------------------------*---------*
+| K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_PARTITION  | SETTABLE VIA ENV VAR | *ecr.Repository.Partition | string  |
+| K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_ACCOUNT_ID | SETTABLE VIA ENV VAR | *ecr.Repository.AccountID | string  |
+| K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_REGION     | SETTABLE VIA ENV VAR | *ecr.Repository.Region    | string  |
+| K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_NAME       | SETTABLE VIA ENV VAR | *ecr.Repository.Name      | string  |
+| K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_IMAGE_TAG  | SETTABLE VIA ENV VAR | *ecr.Repository.ImageTag  | string  |
+*----------------------------------------------------*----------------------*---------------------------*---------*
 
 
 *------------------------------------------------------------*----------------------*------------------------------------------------*-------------------*
@@ -147,11 +153,6 @@
 | K8S_TESTER_ADD_ON_JOBS_ECHO_ENABLE                        | SETTABLE VIA ENV VAR | *jobs_echo.Config.Enable                     | bool    |
 | K8S_TESTER_ADD_ON_JOBS_ECHO_MINIMUM_NODES                 | SETTABLE VIA ENV VAR | *jobs_echo.Config.MinimumNodes               | int     |
 | K8S_TESTER_ADD_ON_JOBS_ECHO_NAMESPACE                     | SETTABLE VIA ENV VAR | *jobs_echo.Config.Namespace                  | string  |
-| K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_PARTITION  | SETTABLE VIA ENV VAR | *jobs_echo.Config.RepositoryBusyboxPartition | string  |
-| K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_ACCOUNT_ID | SETTABLE VIA ENV VAR | *jobs_echo.Config.RepositoryBusyboxAccountID | string  |
-| K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_REGION     | SETTABLE VIA ENV VAR | *jobs_echo.Config.RepositoryBusyboxRegion    | string  |
-| K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_NAME       | SETTABLE VIA ENV VAR | *jobs_echo.Config.RepositoryBusyboxName      | string  |
-| K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_BUSYBOX_IMAGE_TAG  | SETTABLE VIA ENV VAR | *jobs_echo.Config.RepositoryBusyboxImageTag  | string  |
 | K8S_TESTER_ADD_ON_JOBS_ECHO_JOB_TYPE                      | SETTABLE VIA ENV VAR | *jobs_echo.Config.JobType                    | string  |
 | K8S_TESTER_ADD_ON_JOBS_ECHO_COMPLETES                     | SETTABLE VIA ENV VAR | *jobs_echo.Config.Completes                  | int32   |
 | K8S_TESTER_ADD_ON_JOBS_ECHO_PARALLELS                     | SETTABLE VIA ENV VAR | *jobs_echo.Config.Parallels                  | int32   |
@@ -162,17 +163,23 @@
 *-----------------------------------------------------------*----------------------*----------------------------------------------*---------*
 
 
+*---------------------------------------------------*----------------------*---------------------------*---------*
+|              ENVIRONMENTAL VARIABLE               |      FIELD TYPE      |           TYPE            | GO TYPE |
+*---------------------------------------------------*----------------------*---------------------------*---------*
+| K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_PARTITION  | SETTABLE VIA ENV VAR | *ecr.Repository.Partition | string  |
+| K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_ACCOUNT_ID | SETTABLE VIA ENV VAR | *ecr.Repository.AccountID | string  |
+| K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_REGION     | SETTABLE VIA ENV VAR | *ecr.Repository.Region    | string  |
+| K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_NAME       | SETTABLE VIA ENV VAR | *ecr.Repository.Name      | string  |
+| K8S_TESTER_ADD_ON_JOBS_ECHO_REPOSITORY_IMAGE_TAG  | SETTABLE VIA ENV VAR | *ecr.Repository.ImageTag  | string  |
+*---------------------------------------------------*----------------------*---------------------------*---------*
+
+
 *----------------------------------------------------------------*----------------------*----------------------------------------------*---------*
 |                     ENVIRONMENTAL VARIABLE                     |      FIELD TYPE      |                     TYPE                     | GO TYPE |
 *----------------------------------------------------------------*----------------------*----------------------------------------------*---------*
 | K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_ENABLE                        | SETTABLE VIA ENV VAR | *jobs_echo.Config.Enable                     | bool    |
 | K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_MINIMUM_NODES                 | SETTABLE VIA ENV VAR | *jobs_echo.Config.MinimumNodes               | int     |
 | K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_NAMESPACE                     | SETTABLE VIA ENV VAR | *jobs_echo.Config.Namespace                  | string  |
-| K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_PARTITION  | SETTABLE VIA ENV VAR | *jobs_echo.Config.RepositoryBusyboxPartition | string  |
-| K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_ACCOUNT_ID | SETTABLE VIA ENV VAR | *jobs_echo.Config.RepositoryBusyboxAccountID | string  |
-| K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_REGION     | SETTABLE VIA ENV VAR | *jobs_echo.Config.RepositoryBusyboxRegion    | string  |
-| K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_NAME       | SETTABLE VIA ENV VAR | *jobs_echo.Config.RepositoryBusyboxName      | string  |
-| K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_BUSYBOX_IMAGE_TAG  | SETTABLE VIA ENV VAR | *jobs_echo.Config.RepositoryBusyboxImageTag  | string  |
 | K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_JOB_TYPE                      | SETTABLE VIA ENV VAR | *jobs_echo.Config.JobType                    | string  |
 | K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_COMPLETES                     | SETTABLE VIA ENV VAR | *jobs_echo.Config.Completes                  | int32   |
 | K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_PARALLELS                     | SETTABLE VIA ENV VAR | *jobs_echo.Config.Parallels                  | int32   |
@@ -181,6 +188,17 @@
 | K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_SUCCESSFUL_JOBS_HISTORY_LIMIT | SETTABLE VIA ENV VAR | *jobs_echo.Config.SuccessfulJobsHistoryLimit | int32   |
 | K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_FAILED_JOBS_HISTORY_LIMIT     | SETTABLE VIA ENV VAR | *jobs_echo.Config.FailedJobsHistoryLimit     | int32   |
 *----------------------------------------------------------------*----------------------*----------------------------------------------*---------*
+
+
+*--------------------------------------------------------*----------------------*---------------------------*---------*
+|                 ENVIRONMENTAL VARIABLE                 |      FIELD TYPE      |           TYPE            | GO TYPE |
+*--------------------------------------------------------*----------------------*---------------------------*---------*
+| K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_PARTITION  | SETTABLE VIA ENV VAR | *ecr.Repository.Partition | string  |
+| K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_ACCOUNT_ID | SETTABLE VIA ENV VAR | *ecr.Repository.AccountID | string  |
+| K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_REGION     | SETTABLE VIA ENV VAR | *ecr.Repository.Region    | string  |
+| K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_NAME       | SETTABLE VIA ENV VAR | *ecr.Repository.Name      | string  |
+| K8S_TESTER_ADD_ON_CRON_JOBS_ECHO_REPOSITORY_IMAGE_TAG  | SETTABLE VIA ENV VAR | *ecr.Repository.ImageTag  | string  |
+*--------------------------------------------------------*----------------------*---------------------------*---------*
 
 
 *-------------------------------------------------------*----------------------*------------------------------------------*-----------------*
