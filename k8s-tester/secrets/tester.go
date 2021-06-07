@@ -23,6 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 	core_v1 "k8s.io/api/core/v1"
+	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -80,6 +81,17 @@ type Config struct {
 	ObjectSize int `json:"object_size"`
 
 	LatencySummary latency.Summary `json:"latency_summary" read-only:"true"`
+}
+
+func (cfg *Config) ValidateAndSetDefaults() error {
+	if cfg.MinimumNodes == 0 {
+		cfg.MinimumNodes = DefaultMinimumNodes
+	}
+	if cfg.Namespace == "" {
+		return errors.New("empty Namespace")
+	}
+
+	return nil
 }
 
 const (
@@ -181,8 +193,8 @@ func (ts *tester) Apply() error {
 			}
 		}
 	}
-	fmt.Fprintf(ts.cfg.LogWriter, "\n\nLatencySummary:\n%s\n", ts.cfg.LatencySummary.Table())
 
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\nLatencySummary:\n%s\n", ts.cfg.LatencySummary.Table())
 	return nil
 }
 
@@ -280,8 +292,10 @@ func (ts *tester) startWrites() (latencies latency.Durations) {
 		writeRequestLatencyMs.Observe(tookMS)
 		latencies = append(latencies, took)
 		if err != nil {
-			writeRequestsFailureTotal.Inc()
-			ts.cfg.Logger.Warn("write secret failed", zap.String("namespace", ts.cfg.Namespace), zap.Error(err))
+			if !k8s_errors.IsAlreadyExists(err) {
+				writeRequestsFailureTotal.Inc()
+				ts.cfg.Logger.Warn("write secret failed", zap.String("namespace", ts.cfg.Namespace), zap.Error(err))
+			}
 		} else {
 			writeRequestsSuccessTotal.Inc()
 			if i%20 == 0 {

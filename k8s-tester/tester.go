@@ -30,6 +30,7 @@ import (
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
+	"github.com/aws/aws-k8s-tester/k8s-tester/stress"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
 	"github.com/aws/aws-k8s-tester/k8s-tester/version"
 	"github.com/aws/aws-k8s-tester/utils/log"
@@ -65,7 +66,7 @@ func New(cfg *Config) k8s_tester.Tester {
 	}
 	signal.Notify(ts.osSig, syscall.SIGTERM, syscall.SIGINT)
 
-	fmt.Fprintf(logWriter, ts.color("\n\n\n[yellow]*********************************\n"))
+	fmt.Fprint(logWriter, ts.color("\n\n\n[yellow]*********************************\n"))
 	fmt.Fprintln(logWriter, "😎 🙏 🚶 ✔️ 👍")
 	fmt.Fprintf(logWriter, ts.color("[light_green]New k8s-tester %q [default](%q)\n\n"), cfg.ConfigPath, version.Version())
 
@@ -108,7 +109,7 @@ type tester struct {
 }
 
 func (ts *tester) createTesters() {
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createTesters [default](%q)\n"), ts.cfg.ConfigPath)
 
 	// tester order is defined as https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/eks.go#L617
@@ -217,6 +218,13 @@ func (ts *tester) createTesters() {
 		ts.cfg.AddOnClusterloader.Client = ts.cli
 		ts.testers = append(ts.testers, clusterloader.New(ts.cfg.AddOnClusterloader))
 	}
+	if ts.cfg.AddOnStress != nil && ts.cfg.AddOnStress.Enable {
+		ts.cfg.AddOnStress.Stopc = ts.stopCreationCh
+		ts.cfg.AddOnStress.Logger = ts.logger
+		ts.cfg.AddOnStress.LogWriter = ts.logWriter
+		ts.cfg.AddOnStress.Client = ts.cli
+		ts.testers = append(ts.testers, stress.New(ts.cfg.AddOnStress))
+	}
 }
 
 var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
@@ -239,14 +247,14 @@ func (ts *tester) Apply() (err error) {
 
 	now := time.Now()
 	defer func() {
-		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Fprintf(ts.logWriter, ts.color("[light_green]Apply.defer [default](%q)\n"), ts.cfg.ConfigPath)
 		fmt.Fprintf(ts.logWriter, "\n\n# to uninstall add-ons\nk8s-tester delete --path %s\n\n", ts.cfg.ConfigPath)
 		ts.cfg.Sync()
 		ts.logFile.Sync()
 
 		if err == nil {
-			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 			fmt.Fprintf(ts.logWriter, ts.color("[light_green]kubectl [default](%q)\n"), ts.cfg.ConfigPath)
 			fmt.Fprintln(ts.logWriter, ts.cfg.KubectlCommands())
 
@@ -255,8 +263,8 @@ func (ts *tester) Apply() (err error) {
 			)
 
 			ts.logger.Sugar().Infof("Apply.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
-			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Fprintf(ts.logWriter, ts.color("\n\n💯 😁 👍 :) [light_green]Apply SUCCESS\n\n\n"))
+			fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprint(ts.logWriter, ts.color("\n\n💯 😁 👍 :) [light_green]Apply SUCCESS\n\n\n"))
 
 			fmt.Fprintf(ts.logWriter, "\n\n# to uninstall add-ons\nk8s-tester delete --path %s\n\n", ts.cfg.ConfigPath)
 			ts.cfg.Sync()
@@ -265,8 +273,8 @@ func (ts *tester) Apply() (err error) {
 		}
 
 		fmt.Fprintf(ts.logWriter, ts.color("\n\n\n[light_magenta]Apply FAIL ERROR:\n\n[default]%v\n\n\n"), err)
-		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 ⛈   (-_-) [light_magenta]Apply FAIL\n"))
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprint(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 ⛈   (-_-) [light_magenta]Apply FAIL\n"))
 		fmt.Fprintf(ts.logWriter, "\n\n# to uninstall add-ons\nk8s-tester delete --path %s\n\n", ts.cfg.ConfigPath)
 		ts.logger.Warn("Apply failed; reverting resource creation",
 			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
@@ -279,8 +287,8 @@ func (ts *tester) Apply() (err error) {
 			ts.logger.Warn("reverted Apply")
 		}
 		fmt.Fprintf(ts.logWriter, ts.color("\n\n\n[light_magenta]Apply FAIL ERROR:\n\n[default]%v\n\n\n"), err)
-		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Fprintf(ts.logWriter, ts.color("\n\n🔥 💀 👽 😱 😡 ⛈   (-_-) [light_magenta]Apply FAIL\n\n\n"))
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprint(ts.logWriter, ts.color("\n\n🔥 💀 👽 😱 😡 ⛈   (-_-) [light_magenta]Apply FAIL\n\n\n"))
 		fmt.Fprintf(ts.logWriter, "\n\n# to uninstall add-ons\nk8s-tester delete --path %s\n\n", ts.cfg.ConfigPath)
 
 		ts.logger.Sugar().Infof("Apply.defer end (%s, %s)", ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
@@ -292,7 +300,7 @@ func (ts *tester) Apply() (err error) {
 		if !cur.Enabled() {
 			continue
 		}
-		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Fprintf(ts.logWriter, ts.color("[light_green]testers[%02d].Apply [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		err = catchInterrupt(
 			ts.logger,
@@ -304,14 +312,14 @@ func (ts *tester) Apply() (err error) {
 		)
 		ts.cfg.Sync()
 		if err != nil {
-			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Fprintf(ts.logWriter, ts.color(fmt.Sprintf("[light_magenta]✗ [default]k8s-tester[%02d].Apply [light_magenta]FAIL [default](%v)\n", idx, err)))
+			fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprint(ts.logWriter, ts.color(fmt.Sprintf("[light_magenta]✗ [default]k8s-tester[%02d].Apply [light_magenta]FAIL [default](%v)\n", idx, err)))
 			return err
 		}
 	}
 
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n\n[yellow]*********************************\n"))
-	fmt.Fprintf(ts.logWriter, ts.color("🎉 [default]k8s-tester eks create cluster [light_green]SUCCESS\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("🎉 [default]k8s-tester eks create cluster [light_green]SUCCESS\n"))
 	return nil
 }
 
@@ -335,28 +343,28 @@ func (ts *tester) delete() error {
 		if !cur.Enabled() {
 			continue
 		}
-		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Fprintf(ts.logWriter, ts.color("[light_blue]testers[%02d].Delete [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprint(ts.logWriter, ts.color("[light_blue]testers[%02d].Delete [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := cur.Delete(); err != nil {
-			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Fprintf(ts.logWriter, ts.color(fmt.Sprintf("[light_magenta]✗ [default]k8s-tester[%02d].Delete [light_magenta]FAIL [default](%v)\n", idx, err)))
+			fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprint(ts.logWriter, ts.color(fmt.Sprintf("[light_magenta]✗ [default]k8s-tester[%02d].Delete [light_magenta]FAIL [default](%v)\n", idx, err)))
 			errs = append(errs, err.Error())
 		}
 	}
 
 	if len(errs) == 0 {
-		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Fprintf(ts.logWriter, ts.color("[light_blue]Delete [default](%q)\n"), ts.cfg.ConfigPath)
-		fmt.Fprintf(ts.logWriter, ts.color("\n\n💯 😁 👍 :) [light_blue]Delete SUCCESS\n\n\n"))
+		fmt.Fprint(ts.logWriter, ts.color("\n\n💯 😁 👍 :) [light_blue]Delete SUCCESS\n\n\n"))
 
 		ts.logger.Info("successfully finished Delete",
 			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 		)
 
 	} else {
-		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Fprintf(ts.logWriter, ts.color("[light_blue]Delete [default](%q)\n"), ts.cfg.ConfigPath)
-		fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 ⛈   (-_-) [light_magenta]Delete FAIL\n"))
+		fmt.Fprint(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 ⛈   (-_-) [light_magenta]Delete FAIL\n"))
 
 		ts.logger.Info("failed Delete",
 			zap.Strings("errors", errs),

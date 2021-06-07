@@ -33,6 +33,14 @@ type Config struct {
 	Namespace string `json:"namespace"`
 }
 
+func (cfg *Config) ValidateAndSetDefaults() error {
+	if cfg.MinimumNodes == 0 {
+		cfg.MinimumNodes = DefaultMinimumNodes
+	}
+
+	return nil
+}
+
 const DefaultMinimumNodes int = 1
 
 func NewDefault() *Config {

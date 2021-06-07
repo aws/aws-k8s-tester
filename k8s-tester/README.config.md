@@ -278,4 +278,34 @@
 *----------------------------------------------------------------------------------*----------------------*-------------------------------------------------------------*---------*
 
 
+*-----------------------------------------------------*----------------------*----------------------------------------*-----------------*
+|               ENVIRONMENTAL VARIABLE                |      FIELD TYPE      |                  TYPE                  |     GO TYPE     |
+*-----------------------------------------------------*----------------------*----------------------------------------*-----------------*
+| K8S_TESTER_ADD_ON_STRESS_ENABLE                     | SETTABLE VIA ENV VAR | *stress.Config.Enable                  | bool            |
+| K8S_TESTER_ADD_ON_STRESS_MINIMUM_NODES              | SETTABLE VIA ENV VAR | *stress.Config.MinimumNodes            | int             |
+| K8S_TESTER_ADD_ON_STRESS_NAMESPACE                  | SETTABLE VIA ENV VAR | *stress.Config.Namespace               | string          |
+| K8S_TESTER_ADD_ON_STRESS_RUN_TIMEOUT                | SETTABLE VIA ENV VAR | *stress.Config.RunTimeout              | time.Duration   |
+| K8S_TESTER_ADD_ON_STRESS_RUN_TIMEOUT_STRING         | READ-ONLY            | *stress.Config.RunTimeoutString        | string          |
+| K8S_TESTER_ADD_ON_STRESS_OBJECT_KEY_PREFIX          | SETTABLE VIA ENV VAR | *stress.Config.ObjectKeyPrefix         | string          |
+| K8S_TESTER_ADD_ON_STRESS_OBJECTS                    | SETTABLE VIA ENV VAR | *stress.Config.Objects                 | int             |
+| K8S_TESTER_ADD_ON_STRESS_OBJECT_SIZE                | SETTABLE VIA ENV VAR | *stress.Config.ObjectSize              | int             |
+| K8S_TESTER_ADD_ON_STRESS_UPDATE_CONCURRENCY         | SETTABLE VIA ENV VAR | *stress.Config.UpdateConcurrency       | int             |
+| K8S_TESTER_ADD_ON_STRESS_LIST_LIMIT                 | SETTABLE VIA ENV VAR | *stress.Config.ListLimit               | int64           |
+| K8S_TESTER_ADD_ON_STRESS_LATENCY_SUMMARY_WRITES     | READ-ONLY            | *stress.Config.LatencySummaryWrites    | latency.Summary |
+| K8S_TESTER_ADD_ON_STRESS_LATENCY_SUMMARY_GETS       | READ-ONLY            | *stress.Config.LatencySummaryGets      | latency.Summary |
+| K8S_TESTER_ADD_ON_STRESS_LATENCY_SUMMARY_RANGE_GETS | READ-ONLY            | *stress.Config.LatencySummaryRangeGets | latency.Summary |
+*-----------------------------------------------------*----------------------*----------------------------------------*-----------------*
+
+
+*------------------------------------------------*----------------------*---------------------------*---------*
+|             ENVIRONMENTAL VARIABLE             |      FIELD TYPE      |           TYPE            | GO TYPE |
+*------------------------------------------------*----------------------*---------------------------*---------*
+| K8S_TESTER_ADD_ON_STRESS_REPOSITORY_PARTITION  | SETTABLE VIA ENV VAR | *ecr.Repository.Partition | string  |
+| K8S_TESTER_ADD_ON_STRESS_REPOSITORY_ACCOUNT_ID | SETTABLE VIA ENV VAR | *ecr.Repository.AccountID | string  |
+| K8S_TESTER_ADD_ON_STRESS_REPOSITORY_REGION     | SETTABLE VIA ENV VAR | *ecr.Repository.Region    | string  |
+| K8S_TESTER_ADD_ON_STRESS_REPOSITORY_NAME       | SETTABLE VIA ENV VAR | *ecr.Repository.Name      | string  |
+| K8S_TESTER_ADD_ON_STRESS_REPOSITORY_IMAGE_TAG  | SETTABLE VIA ENV VAR | *ecr.Repository.ImageTag  | string  |
+*------------------------------------------------*----------------------*---------------------------*---------*
+
+
 ```

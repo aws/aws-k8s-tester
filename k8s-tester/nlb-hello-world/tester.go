@@ -67,6 +67,17 @@ type Config struct {
 	ELBURL string `json:"elb_url" read-only:"true"`
 }
 
+func (cfg *Config) ValidateAndSetDefaults() error {
+	if cfg.MinimumNodes == 0 {
+		cfg.MinimumNodes = DefaultMinimumNodes
+	}
+	if cfg.Namespace == "" {
+		return errors.New("empty Namespace")
+	}
+
+	return nil
+}
+
 const (
 	DefaultMinimumNodes       int   = 1
 	DefaultDeploymentReplicas int32 = 2
@@ -351,7 +362,7 @@ func (ts *tester) createDeployment() error {
 func (ts *tester) checkDeployment() error {
 	timeout := 7*time.Minute + time.Duration(ts.cfg.DeploymentReplicas)*time.Minute
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	_, err := client.WaitForDeploymentCompletes(
+	_, err := client.WaitForDeploymentAvailables(
 		ctx,
 		ts.cfg.Logger,
 		ts.cfg.LogWriter,

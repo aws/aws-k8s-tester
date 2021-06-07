@@ -45,9 +45,12 @@ func (repo *Repository) IsEmpty() bool {
 		repo.ImageTag == ""
 }
 
-// Check checks if the specified repository exists, and returns the repository URI + ":" + image tag.
-// It returns "true" for "ok" if the repository exists.
-func (repo *Repository) Check(lg *zap.Logger, svc ecriface.ECRAPI) (img string, ok bool, err error) {
+// Describe checks if the specified repository exists, and returns the repository URI + ":" + image tag.
+// It returns "true" for "exists" if the repository exists.
+// This method succeeds if and only if the ECR image exists and the caller is able to verify via "ecr:DescribeImages".
+// The success of this operation does not guarantee the success of image pull.
+// This will fail even when the image describe fails and the caller can still pull the images.
+func (repo *Repository) Describe(lg *zap.Logger, svc ecriface.ECRAPI) (img string, exists bool, err error) {
 	if repo == nil {
 		return "", false, errors.New("empty field for describe ECR image")
 	}
@@ -90,10 +93,10 @@ func (repo *Repository) Check(lg *zap.Logger, svc ecriface.ECRAPI) (img string, 
 		switch ev.Code() {
 		case "RepositoryNotFoundException":
 			lg.Warn("ECR repo not found", zap.String("error-code", ev.Code()), zap.Error(err))
-			ok = false
+			exists = false
 		default:
 		}
-		return img, ok, err
+		return img, exists, err
 	}
 	if len(repoOut.Repositories) != 1 {
 		return img, true, fmt.Errorf("%q expected 1 ECR repository, got %d", repo.Name, len(repoOut.Repositories))

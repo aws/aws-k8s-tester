@@ -35,6 +35,14 @@ type Config struct {
 	HelmChartRepoURL string `json:"helm_chart_repo_url"`
 }
 
+func (cfg *Config) ValidateAndSetDefaults() error {
+	if cfg.MinimumNodes == 0 {
+		cfg.MinimumNodes = DefaultMinimumNodes
+	}
+
+	return nil
+}
+
 const chartName = "aws-ebs-csi-driver"
 
 const (

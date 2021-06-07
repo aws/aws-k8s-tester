@@ -50,7 +50,15 @@ type Config struct {
 }
 
 func (cfg *Config) ValidateAndSetDefaults(clusterName string) error {
+	if cfg.MinimumNodes == 0 {
+		cfg.MinimumNodes = DefaultMinimumNodes
+	}
+	if cfg.Namespace == "" {
+		return errors.New("empty Namespace")
+	}
+
 	cfg.ClusterName = clusterName
+
 	return nil
 }
 

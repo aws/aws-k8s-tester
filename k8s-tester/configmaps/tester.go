@@ -82,6 +82,17 @@ type Config struct {
 	LatencySummary latency.Summary `json:"latency_summary" read-only:"true"`
 }
 
+func (cfg *Config) ValidateAndSetDefaults() error {
+	if cfg.MinimumNodes == 0 {
+		cfg.MinimumNodes = DefaultMinimumNodes
+	}
+	if cfg.Namespace == "" {
+		return errors.New("empty Namespace")
+	}
+
+	return nil
+}
+
 const (
 	DefaultMinimumNodes int = 1
 	DefaultObjects      int = 10
@@ -181,8 +192,8 @@ func (ts *tester) Apply() error {
 			}
 		}
 	}
-	fmt.Fprintf(ts.cfg.LogWriter, "\n\nLatencySummary:\n%s\n", ts.cfg.LatencySummary.Table())
 
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\nLatencySummary:\n%s\n", ts.cfg.LatencySummary.Table())
 	return nil
 }
 

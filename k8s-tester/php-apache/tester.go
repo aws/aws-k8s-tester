@@ -40,8 +40,6 @@ type Config struct {
 	LogWriter io.Writer     `json:"-"`
 	Client    client.Client `json:"-"`
 
-	ECRAPI ecriface.ECRAPI `json:"-"`
-
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum_nodes"`
 	// Namespace to create test resources.
@@ -56,6 +54,17 @@ type Config struct {
 	DeploymentNodeSelector map[string]string `json:"deployment_node_selector"`
 	// DeploymentReplicas is the number of replicas to deploy using "Deployment" object.
 	DeploymentReplicas int32 `json:"deployment_replicas"`
+}
+
+func (cfg *Config) ValidateAndSetDefaults() error {
+	if cfg.MinimumNodes == 0 {
+		cfg.MinimumNodes = DefaultMinimumNodes
+	}
+	if cfg.Namespace == "" {
+		return errors.New("empty Namespace")
+	}
+
+	return nil
 }
 
 const (
@@ -75,6 +84,9 @@ func NewDefault() *Config {
 }
 
 func New(cfg *Config) k8s_tester.Tester {
+	ts := &tester{
+		cfg: cfg,
+	}
 	if !cfg.Repository.IsEmpty() {
 		awsCfg := aws_v1.Config{
 			Logger:        cfg.Logger,
@@ -86,16 +98,14 @@ func New(cfg *Config) k8s_tester.Tester {
 		if err != nil {
 			cfg.Logger.Panic("failed to create aws session", zap.Error(err))
 		}
-		cfg.ECRAPI = ecr.New(awsSession, aws.NewConfig().WithRegion(cfg.Repository.Region))
+		ts.ecrAPI = ecr.New(awsSession, aws.NewConfig().WithRegion(cfg.Repository.Region))
 	}
-
-	return &tester{
-		cfg: cfg,
-	}
+	return ts
 }
 
 type tester struct {
-	cfg *Config
+	cfg    *Config
+	ecrAPI ecriface.ECRAPI
 }
 
 var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
@@ -131,6 +141,10 @@ func (ts *tester) Apply() (err error) {
 	}
 
 	if err := ts.createDeployment(img); err != nil {
+		return err
+	}
+
+	if err := ts.checkDeployment(); err != nil {
 		return err
 	}
 
@@ -205,7 +219,7 @@ const (
 func (ts *tester) checkECRImage() (img string, err error) {
 	// check ECR permission
 	// ref. https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/jobs-echo/jobs-echo.go#L75-L90
-	img, _, err = ts.cfg.Repository.Check(ts.cfg.Logger, ts.cfg.ECRAPI)
+	img, _, err = ts.cfg.Repository.Describe(ts.cfg.Logger, ts.ecrAPI)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to describe ECR image", zap.Error(err))
 		img = appImageName
@@ -284,7 +298,7 @@ func (ts *tester) createDeployment(containerImg string) error {
 func (ts *tester) checkDeployment() error {
 	timeout := 7*time.Minute + time.Duration(ts.cfg.DeploymentReplicas)*time.Minute
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	_, err := client.WaitForDeploymentCompletes(
+	_, err := client.WaitForDeploymentAvailables(
 		ctx,
 		ts.cfg.Logger,
 		ts.cfg.LogWriter,

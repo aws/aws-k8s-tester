@@ -29,6 +29,7 @@ import (
 	batch_v1 "k8s.io/api/batch/v1"
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
 	core_v1 "k8s.io/api/core/v1"
+	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -42,8 +43,6 @@ type Config struct {
 	Logger    *zap.Logger   `json:"-"`
 	LogWriter io.Writer     `json:"-"`
 	Client    client.Client `json:"-"`
-
-	ECRAPI ecriface.ECRAPI `json:"-"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum_nodes"`
@@ -76,6 +75,17 @@ type Config struct {
 	// FailedJobsHistoryLimit is the number of failed finished CronJobs to retain.
 	// Defaults to 1.
 	FailedJobsHistoryLimit int32 `json:"failed_jobs_history_limit"`
+}
+
+func (cfg *Config) ValidateAndSetDefaults() error {
+	if cfg.MinimumNodes == 0 {
+		cfg.MinimumNodes = DefaultMinimumNodes
+	}
+	if cfg.Namespace == "" {
+		return errors.New("empty Namespace")
+	}
+
+	return nil
 }
 
 // writes total 100 MB data to etcd
@@ -111,6 +121,9 @@ func NewDefault(jobType string) *Config {
 }
 
 func New(cfg *Config) k8s_tester.Tester {
+	ts := &tester{
+		cfg: cfg,
+	}
 	if !cfg.Repository.IsEmpty() {
 		awsCfg := aws_v1.Config{
 			Logger:        cfg.Logger,
@@ -122,16 +135,14 @@ func New(cfg *Config) k8s_tester.Tester {
 		if err != nil {
 			cfg.Logger.Panic("failed to create aws session", zap.Error(err))
 		}
-		cfg.ECRAPI = ecr.New(awsSession, aws.NewConfig().WithRegion(cfg.Repository.Region))
+		ts.ecrAPI = ecr.New(awsSession, aws.NewConfig().WithRegion(cfg.Repository.Region))
 	}
-
-	return &tester{
-		cfg: cfg,
-	}
+	return ts
 }
 
 type tester struct {
-	cfg *Config
+	cfg    *Config
+	ecrAPI ecriface.ECRAPI
 }
 
 var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
@@ -274,7 +285,7 @@ const (
 func (ts *tester) checkECRImage() (img string, err error) {
 	// check ECR permission
 	// ref. https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/jobs-echo/jobs-echo.go#L75-L90
-	img, _, err = ts.cfg.Repository.Check(ts.cfg.Logger, ts.cfg.ECRAPI)
+	img, _, err = ts.cfg.Repository.Describe(ts.cfg.Logger, ts.ecrAPI)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to describe ECR image", zap.Error(err))
 		img = jobBusyboxImageName
@@ -394,6 +405,10 @@ func (ts *tester) createJob(busyboxImg string) (err error) {
 			Create(ctx, &jobObj, meta_v1.CreateOptions{})
 		cancel()
 		if err != nil {
+			if k8s_errors.IsAlreadyExists(err) {
+				ts.cfg.Logger.Info("job already exists")
+				return nil
+			}
 			return fmt.Errorf("failed to create Job (%v)", err)
 		}
 		ts.cfg.Logger.Info("created a Job object")
@@ -417,6 +432,10 @@ func (ts *tester) createJob(busyboxImg string) (err error) {
 		Create(ctx, &cronObj, meta_v1.CreateOptions{})
 	cancel()
 	if err != nil {
+		if k8s_errors.IsAlreadyExists(err) {
+			ts.cfg.Logger.Info("job already exists")
+			return nil
+		}
 		return fmt.Errorf("failed to create CronJob (%v)", err)
 	}
 	ts.cfg.Logger.Info("created a CronJob object")

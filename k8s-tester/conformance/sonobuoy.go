@@ -20,6 +20,7 @@ import (
 )
 
 var (
+	// ref. https://github.com/vmware-tanzu/sonobuoy/releases
 	defaultSonobuoyVersion = "0.50.0"
 	defaultSonobuoyPath    = fmt.Sprintf("/tmp/sonobuoy-%s", defaultSonobuoyVersion)
 	// ref. https://github.com/vmware-tanzu/sonobuoy/releases

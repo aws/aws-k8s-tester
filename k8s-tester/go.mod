@@ -18,6 +18,7 @@ require (
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/php-apache v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/secrets v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/stress v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/tester v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/utils v0.0.0-00010101000000-000000000000
 	github.com/dustin/go-humanize v1.0.0
@@ -45,6 +46,7 @@ replace (
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world => ./nlb-hello-world
 	github.com/aws/aws-k8s-tester/k8s-tester/php-apache => ./php-apache
 	github.com/aws/aws-k8s-tester/k8s-tester/secrets => ./secrets
+	github.com/aws/aws-k8s-tester/k8s-tester/stress => ./stress
 	github.com/aws/aws-k8s-tester/k8s-tester/tester => ./tester
 	github.com/aws/aws-k8s-tester/k8s-tester/version => ./tester
 	github.com/aws/aws-k8s-tester/utils => ../utils

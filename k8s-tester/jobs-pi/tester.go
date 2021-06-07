@@ -21,6 +21,7 @@ import (
 	"go.uber.org/zap"
 	batch_v1 "k8s.io/api/batch/v1"
 	core_v1 "k8s.io/api/core/v1"
+	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -44,6 +45,17 @@ type Config struct {
 	// Parallels is the the maximum desired number of pods the
 	// job should run at any given time.
 	Parallels int32 `json:"parallels"`
+}
+
+func (cfg *Config) ValidateAndSetDefaults() error {
+	if cfg.MinimumNodes == 0 {
+		cfg.MinimumNodes = DefaultMinimumNodes
+	}
+	if cfg.Namespace == "" {
+		return errors.New("empty Namespace")
+	}
+
+	return nil
 }
 
 const (
@@ -241,6 +253,10 @@ func (ts *tester) createJob() (err error) {
 		Create(ctx, &obj, meta_v1.CreateOptions{})
 	cancel()
 	if err != nil {
+		if k8s_errors.IsAlreadyExists(err) {
+			ts.cfg.Logger.Info("job already exists")
+			return nil
+		}
 		return fmt.Errorf("failed to create Job (%v)", err)
 	}
 

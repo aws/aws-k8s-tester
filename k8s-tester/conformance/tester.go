@@ -82,6 +82,10 @@ type Config struct {
 }
 
 func (cfg *Config) ValidateAndSetDefaults() error {
+	if cfg.MinimumNodes == 0 {
+		cfg.MinimumNodes = DefaultMinimumNodes
+	}
+
 	if cfg.SonobuoyPath == "" {
 		cfg.SonobuoyPath = DefaultSonobuoyPath()
 	}

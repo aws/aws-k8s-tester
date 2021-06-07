@@ -27,6 +27,7 @@ replace (
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world => ../../nlb-hello-world
 	github.com/aws/aws-k8s-tester/k8s-tester/php-apache => ../../php-apache
 	github.com/aws/aws-k8s-tester/k8s-tester/secrets => ../../secrets
+	github.com/aws/aws-k8s-tester/k8s-tester/stress => ../../stress
 	github.com/aws/aws-k8s-tester/k8s-tester/tester => ../../tester
 	github.com/aws/aws-k8s-tester/utils => ../../../utils
 )

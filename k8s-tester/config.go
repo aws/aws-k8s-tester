@@ -30,6 +30,7 @@ import (
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
+	"github.com/aws/aws-k8s-tester/k8s-tester/stress"
 	aws_v1_ecr "github.com/aws/aws-k8s-tester/utils/aws/v1/ecr"
 	"github.com/aws/aws-k8s-tester/utils/file"
 	"github.com/aws/aws-k8s-tester/utils/log"
@@ -136,6 +137,7 @@ type Config struct {
 	AddOnConfigmaps          *configmaps.Config           `json:"add_on_configmaps"`
 	AddOnSecrets             *secrets.Config              `json:"add_on_secrets"`
 	AddOnClusterloader       *clusterloader.Config        `json:"add_on_clusterloader"`
+	AddOnStress              *stress.Config               `json:"add_on_stress"`
 }
 
 const (
@@ -204,6 +206,7 @@ func NewDefault() *Config {
 		AddOnConfigmaps:          configmaps.NewDefault(),
 		AddOnSecrets:             secrets.NewDefault(),
 		AddOnClusterloader:       clusterloader.NewDefault(),
+		AddOnStress:              stress.NewDefault(),
 	}
 }
 
@@ -232,8 +235,53 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			return err
 		}
 	}
+	if cfg.AddOnFluentBit != nil && cfg.AddOnFluentBit.Enable {
+		if err := cfg.AddOnFluentBit.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnMetricsServer != nil && cfg.AddOnMetricsServer.Enable {
+		if err := cfg.AddOnMetricsServer.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
 	if cfg.AddOnConformance != nil && cfg.AddOnConformance.Enable {
 		if err := cfg.AddOnConformance.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnCSIEBS != nil && cfg.AddOnCSIEBS.Enable {
+		if err := cfg.AddOnCSIEBS.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnKubernetesDashboard != nil && cfg.AddOnKubernetesDashboard.Enable {
+		if err := cfg.AddOnKubernetesDashboard.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnPHPApache != nil && cfg.AddOnPHPApache.Enable {
+		if err := cfg.AddOnPHPApache.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnNLBHelloWorld != nil && cfg.AddOnNLBHelloWorld.Enable {
+		if err := cfg.AddOnNLBHelloWorld.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnJobsPi != nil && cfg.AddOnJobsPi.Enable {
+		if err := cfg.AddOnJobsPi.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnJobsEcho != nil && cfg.AddOnJobsEcho.Enable {
+		if err := cfg.AddOnJobsEcho.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnCronJobsEcho != nil && cfg.AddOnCronJobsEcho.Enable {
+		if err := cfg.AddOnCronJobsEcho.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}
@@ -242,8 +290,23 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			return err
 		}
 	}
+	if cfg.AddOnConfigmaps != nil && cfg.AddOnConfigmaps.Enable {
+		if err := cfg.AddOnConfigmaps.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnSecrets != nil && cfg.AddOnSecrets.Enable {
+		if err := cfg.AddOnSecrets.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
 	if cfg.AddOnClusterloader != nil && cfg.AddOnClusterloader.Enable {
 		if err := cfg.AddOnClusterloader.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnStress != nil && cfg.AddOnStress.Enable {
+		if err := cfg.AddOnStress.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}
@@ -593,6 +656,27 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 			cfg.AddOnClusterloader.TestOverride = av
 		} else {
 			return fmt.Errorf("expected *clusterloader.TestOverride, got %T", vv)
+		}
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+stress.Env()+"_", cfg.AddOnStress)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*stress.Config); ok {
+		cfg.AddOnStress = av
+	} else {
+		return fmt.Errorf("expected *stress.Config, got %T", vv)
+	}
+	if cfg.AddOnStress != nil {
+		vv, err = parseEnvs(ENV_PREFIX+stress.EnvRepository()+"_", cfg.AddOnStress.Repository)
+		if err != nil {
+			return err
+		}
+		if av, ok := vv.(*aws_v1_ecr.Repository); ok {
+			cfg.AddOnStress.Repository = av
+		} else {
+			return fmt.Errorf("expected *aws_v1_ecr.Repository, got %T", vv)
 		}
 	}
 

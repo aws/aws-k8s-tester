@@ -16,8 +16,8 @@ import (
 	k8s_client "k8s.io/client-go/kubernetes"
 )
 
-// WaitForDeploymentCompletes waits till target replicas are ready in the Deployment.
-func WaitForDeploymentCompletes(
+// WaitForDeploymentAvailables waits till target replicas are ready in the Deployment.
+func WaitForDeploymentAvailables(
 	ctx context.Context,
 	lg *zap.Logger,
 	logWriter io.Writer,
@@ -36,8 +36,8 @@ func WaitForDeploymentCompletes(
 		pollInterval = DefaultNamespacePollInterval
 	}
 
-	sp := newSpinner(logWriter, "Waiting for Deployment completes "+deploymentName)
-	lg.Info("waiting Deployment completes",
+	sp := newSpinner(logWriter, "Waiting for Deployment availables "+deploymentName)
+	lg.Info("waiting Deployment availables",
 		zap.String("namespace", namespace),
 		zap.String("job-name", deploymentName),
 		zap.String("initial-wait", initialWait.String()),
