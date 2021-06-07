@@ -39,7 +39,7 @@ const (
 var dirOrCreate = v1.HostPathDirectoryOrCreate
 
 func (ts *tester) createServiceAccount() error {
-	ts.cfg.Logger.Info("creating %s: %s", zap.String("ServiceAccount", appName))
+	ts.cfg.Logger.Info("creating: ", zap.String("ServiceAccount", appName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.Client.KubernetesClient().
 		CoreV1().ServiceAccounts(ts.cfg.Namespace).Create(
@@ -72,7 +72,7 @@ func (ts *tester) createServiceAccount() error {
 }
 
 func (ts *tester) createRBACRole() error {
-	ts.cfg.Logger.Info("creating %s: %s", zap.String("Role", appName))
+	ts.cfg.Logger.Info("creating: ", zap.String("Role", appName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.Client.KubernetesClient().
 		RbacV1().
@@ -127,7 +127,7 @@ func (ts *tester) createRBACRole() error {
 }
 
 func (ts *tester) createRBACRoleBinding() error {
-	ts.cfg.Logger.Info("creating %s: %s", zap.String("RoleBinding", appName))
+	ts.cfg.Logger.Info("creating: ", zap.String("RoleBinding", appName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.Client.KubernetesClient().
 		RbacV1().
@@ -175,7 +175,7 @@ func (ts *tester) createRBACRoleBinding() error {
 }
 
 func (ts *tester) createRBACClusterRole() error {
-	ts.cfg.Logger.Info("creating %s: %s", zap.String("ClusterRole", appName))
+	ts.cfg.Logger.Info("creating: ", zap.String("ClusterRole", appName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.Client.KubernetesClient().
 		RbacV1().
@@ -231,7 +231,7 @@ func (ts *tester) createRBACClusterRole() error {
 }
 
 func (ts *tester) createRBACClusterRoleBinding() error {
-	ts.cfg.Logger.Info("creating %s: %s", zap.String("ClusterRoleBinding", appName))
+	ts.cfg.Logger.Info("creating: ", zap.String("ClusterRoleBinding", appName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.Client.KubernetesClient().
 		RbacV1().
@@ -327,7 +327,7 @@ const ParsersConf = `
 `
 
 func (ts *tester) createAppConfigMap() error {
-	ts.cfg.Logger.Info("creating %s: %s", zap.String("Configmap", appConfigMapNameConfig))
+	ts.cfg.Logger.Info("creating: ", zap.String("Configmap", appConfigMapNameConfig))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.Client.KubernetesClient().
 		CoreV1().
@@ -368,7 +368,7 @@ func (ts *tester) createAppConfigMap() error {
 }
 
 func (ts *tester) createDaemonSet() error {
-	ts.cfg.Logger.Info("creating %s: %s", zap.String("Daemonset", appName))
+	ts.cfg.Logger.Info("creating: ", zap.String("Daemonset", appName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.Client.KubernetesClient().
 		AppsV1().
@@ -520,7 +520,7 @@ func (ts *tester) checkDaemonSet() error {
 }
 
 func (ts *tester) createService() error {
-	ts.cfg.Logger.Info("creating %s: %s", zap.String("Service", appName))
+	ts.cfg.Logger.Info("creating: ", zap.String("Service", appName))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.Client.KubernetesClient().
 		CoreV1().
@@ -564,7 +564,7 @@ func (ts *tester) createService() error {
 }
 
 func (ts *tester) testHTTPClient() error {
-	ts.cfg.Logger.Info("Testing HTTP Client for %s: %s", zap.String("Daemonset", appName))
+	ts.cfg.Logger.Info("Testing HTTP Client for ", zap.String("Daemonset", appName))
 	action := fmt.Sprintf("Creating Pod %v to test HTTP Client", containerHTTPClient)
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	ginkgo.By(action)
@@ -579,7 +579,7 @@ func (ts *tester) testHTTPClient() error {
 		if k8s_errors.IsAlreadyExists(err) {
 			ts.cfg.Logger.Info("resource already exists", zap.String("Pod", containerHTTPClient))
 		}
-		ts.cfg.Logger.Info("failed to create %s: %s (%v)", zap.String("Pod", containerHTTPClient))
+		ts.cfg.Logger.Info("failed to create ", zap.String("Pod", containerHTTPClient))
 	}
 	// Wait 15 seconds for the pod to be spawned
 	time.Sleep(10 * time.Second)
@@ -608,7 +608,7 @@ func (ts *tester) testHTTPClient() error {
 
 //testLogsWithinNamespace Tests the ability of the logging container to gather applciation logs from a pod within the same namespace.
 func (ts *tester) testLogsWithinNamespace() error {
-	ts.cfg.Logger.Info("Testing ability to display container logs from another container in the same namespace for %s: %s", zap.String("Daemonset", appName))
+	ts.cfg.Logger.Info("Testing ability to display container logs from another container in the same namespace for ", zap.String("Daemonset", appName))
 	action := fmt.Sprintf("Creating Pod %v to test logging within namespace", loggingPod)
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	ginkgo.By(action)
@@ -624,7 +624,7 @@ func (ts *tester) testLogsWithinNamespace() error {
 		if k8s_errors.IsAlreadyExists(err) {
 			ts.cfg.Logger.Info("resource already exists", zap.String("Pod", loggingPod))
 		}
-		ts.cfg.Logger.Info("failed to create %s: %s (%v)", zap.String("Pod", loggingPod))
+		ts.cfg.Logger.Info("failed to create ", zap.String("Pod", loggingPod))
 		ts.cfg.Logger.Warn("'failure: ", zap.Error(err))
 	}
 	time.Sleep(10 * time.Second)

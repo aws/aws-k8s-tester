@@ -725,11 +725,6 @@ func (ts *tester) createDaemonSet() (err error) {
 					},
 				},
 			},
-
-			NodeSelector: map[string]string{
-				// do not deploy in fake nodes, obviously
-				"NodeType": "regular",
-			},
 		},
 	}
 
