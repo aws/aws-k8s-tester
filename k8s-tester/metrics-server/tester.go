@@ -177,7 +177,7 @@ subjects:
   namespace: kube-system
 
 ---
-apiVersion: apiregistration.k8s.io/v1beta1
+apiVersion: apiregistration.k8s.io/v1
 kind: APIService
 metadata:
   name: v1beta1.metrics.k8s.io
@@ -223,7 +223,7 @@ spec:
         emptyDir: {}
       containers:
       - name: metrics-server
-        image: k8s.gcr.io/metrics-server-amd64:v0.3.6
+        image: k8s.gcr.io/metrics-server/metrics-server:v0.5.0
         imagePullPolicy: IfNotPresent
         args:
         - --cert-dir=/tmp
