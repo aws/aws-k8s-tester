@@ -8,7 +8,7 @@ ARG GOPROXY=direct
 RUN go build -v . && pwd && ls . && pwd
 RUN ./k8s-tester-stress --help
 
-FROM amazonlinux:latest
+FROM public.ecr.aws/amazonlinux/amazonlinux:latest
 RUN yum update -y && yum install -y which python3 pip3 && yum clean all && pip3 install awscli --upgrade --user
 ENV PATH=/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 RUN echo ${PATH}
