@@ -290,7 +290,7 @@
 | K8S_TESTER_ADD_ON_STRESS_OBJECTS                    | SETTABLE VIA ENV VAR | *stress.Config.Objects                 | int             |
 | K8S_TESTER_ADD_ON_STRESS_OBJECT_SIZE                | SETTABLE VIA ENV VAR | *stress.Config.ObjectSize              | int             |
 | K8S_TESTER_ADD_ON_STRESS_UPDATE_CONCURRENCY         | SETTABLE VIA ENV VAR | *stress.Config.UpdateConcurrency       | int             |
-| K8S_TESTER_ADD_ON_STRESS_LIST_LIMIT                 | SETTABLE VIA ENV VAR | *stress.Config.ListLimit               | int64           |
+| K8S_TESTER_ADD_ON_STRESS_LIST_BATCH_LIMIT           | SETTABLE VIA ENV VAR | *stress.Config.ListBatchLimit          | int64           |
 | K8S_TESTER_ADD_ON_STRESS_LATENCY_SUMMARY_WRITES     | READ-ONLY            | *stress.Config.LatencySummaryWrites    | latency.Summary |
 | K8S_TESTER_ADD_ON_STRESS_LATENCY_SUMMARY_GETS       | READ-ONLY            | *stress.Config.LatencySummaryGets      | latency.Summary |
 | K8S_TESTER_ADD_ON_STRESS_LATENCY_SUMMARY_RANGE_GETS | READ-ONLY            | *stress.Config.LatencySummaryRangeGets | latency.Summary |

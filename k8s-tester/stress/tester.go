@@ -170,9 +170,9 @@ type Config struct {
 	// UpdateConcurrency is the number of concurrent routines to issue update requests.
 	// Do not set too high, instead distribute this tester as distributed workers to maximize concurrency.
 	UpdateConcurrency int `json:"update_concurrency"`
-	// ListLimit is the number of objects to return for each list response.
+	// ListBatchLimit is the number of objects to return for each list response.
 	// If negative, the tester disables list calls (only runs mutable requests).
-	ListLimit int64 `json:"list_limit"`
+	ListBatchLimit int64 `json:"list_batch_limit"`
 
 	// LatencySummaryWrites represents latencies for "Create" and "Update" requests.
 	LatencySummaryWrites latency.Summary `json:"latency_summary_writes" read-only:"true"`
@@ -221,7 +221,7 @@ const (
 	// ObjectSize: 300000, // 0.3 MB
 
 	DefaultUpdateConcurrency int   = 10
-	DefaultListLimit         int64 = 1000
+	DefaultListBatchLimit    int64 = 1000
 )
 
 var defaultObjectKeyPrefix string = fmt.Sprintf("pod%s", rand.String(7))
@@ -243,7 +243,7 @@ func NewDefault() *Config {
 		Objects:           DefaultObjects,
 		ObjectSize:        DefaultObjectSize,
 		UpdateConcurrency: DefaultUpdateConcurrency,
-		ListLimit:         DefaultListLimit,
+		ListBatchLimit:    DefaultListBatchLimit,
 	}
 }
 
@@ -608,12 +608,12 @@ func (ts *tester) startUpdates(podImg string) (latenciesWrites latency.Durations
 }
 
 func (ts *tester) startRangeGets() (latenciesRangeGets latency.Durations) {
-	if ts.cfg.ListLimit < 0 {
-		ts.cfg.Logger.Info("skipping range gets", zap.Int64("list-limit", ts.cfg.ListLimit))
+	if ts.cfg.ListBatchLimit < 0 {
+		ts.cfg.Logger.Info("skipping range gets", zap.Int64("list-limit", ts.cfg.ListBatchLimit))
 		return latenciesRangeGets
 	}
 
-	ts.cfg.Logger.Info("listing for range gets", zap.Int64("list-limit", ts.cfg.ListLimit))
+	ts.cfg.Logger.Info("listing for range gets", zap.Int64("list-limit", ts.cfg.ListBatchLimit))
 	latenciesRangeGets = make(latency.Durations, 0, 20000)
 
 	for i := 0; true; i++ {
@@ -632,7 +632,7 @@ func (ts *tester) startRangeGets() (latenciesRangeGets latency.Durations) {
 		_, err := ts.cfg.Client.KubernetesClient().
 			CoreV1().
 			Pods(ts.cfg.Namespace).
-			List(ctx, meta_v1.ListOptions{Limit: ts.cfg.ListLimit})
+			List(ctx, meta_v1.ListOptions{Limit: ts.cfg.ListBatchLimit})
 		cancel()
 		took := time.Since(start)
 		tookMS := float64(took / time.Millisecond)

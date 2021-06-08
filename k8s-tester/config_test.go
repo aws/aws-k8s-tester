@@ -741,6 +741,8 @@ func TestEnvAddOnStress(t *testing.T) {
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_REPOSITORY_IMAGE_TAG")
 	os.Setenv("K8S_TESTER_ADD_ON_STRESS_UPDATE_CONCURRENCY", "1000")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_UPDATE_CONCURRENCY")
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_LIST_BATCH_LIMIT", "3000")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_LIST_BATCH_LIMIT")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
 		t.Fatal(err)
@@ -772,5 +774,8 @@ func TestEnvAddOnStress(t *testing.T) {
 	}
 	if cfg.AddOnStress.UpdateConcurrency != 1000 {
 		t.Fatalf("unexpected cfg.AddOnStress.UpdateConcurrency %v", cfg.AddOnStress.UpdateConcurrency)
+	}
+	if cfg.AddOnStress.ListBatchLimit != 3000 {
+		t.Fatalf("unexpected cfg.AddOnStress.ListBatchLimit %v", cfg.AddOnStress.ListBatchLimit)
 	}
 }

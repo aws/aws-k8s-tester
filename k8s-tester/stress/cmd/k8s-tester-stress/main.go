@@ -72,7 +72,7 @@ var (
 	objects           int
 	objectSize        int
 	updateConcurrency int
-	listLimit         int64
+	listBatchLimit    int64
 )
 
 func newApply() *cobra.Command {
@@ -94,7 +94,7 @@ func newApply() *cobra.Command {
 	cmd.PersistentFlags().IntVar(&objects, "objects", stress.DefaultObjects, "number of objects")
 	cmd.PersistentFlags().IntVar(&objectSize, "object-size", stress.DefaultObjectSize, "object size")
 	cmd.PersistentFlags().IntVar(&updateConcurrency, "update-concurrency", stress.DefaultUpdateConcurrency, "update concurrency")
-	cmd.PersistentFlags().Int64Var(&listLimit, "list-limit", stress.DefaultListLimit, "list limit")
+	cmd.PersistentFlags().Int64Var(&listBatchLimit, "list-batch-limit", stress.DefaultListBatchLimit, "list limit")
 
 	return cmd
 }
@@ -138,7 +138,7 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 		Objects:           objects,
 		ObjectSize:        objectSize,
 		UpdateConcurrency: updateConcurrency,
-		ListLimit:         listLimit,
+		ListBatchLimit:    listBatchLimit,
 	}
 
 	ts := stress.New(cfg)
