@@ -1,9 +1,10 @@
-FROM golang AS k8s-tester-stress
+FROM public.ecr.aws/bitnami/golang:latest AS k8s-tester-stress
 RUN go version
 ADD ./ /go/src/github.com/aws/aws-k8s-tester
 WORKDIR /go/src/github.com/aws/aws-k8s-tester/k8s-tester/stress/cmd/k8s-tester-stress
 ARG RELEASE_VERSION=latest
 ARG OS_TARGETS=linux
+ARG GOPROXY=direct
 RUN go build -v . && pwd && ls . && pwd
 RUN ./k8s-tester-stress --help
 
@@ -13,4 +14,3 @@ ENV PATH=/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbi
 RUN echo ${PATH}
 RUN /root/.local/bin/aws --version
 RUN aws --version
-
