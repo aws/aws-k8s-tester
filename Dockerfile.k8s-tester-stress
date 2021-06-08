@@ -1,0 +1,16 @@
+FROM golang AS k8s-tester-stress
+RUN go version
+ADD ./ /go/src/github.com/aws/aws-k8s-tester
+WORKDIR /go/src/github.com/aws/aws-k8s-tester/k8s-tester/stress/cmd/k8s-tester-stress
+ARG RELEASE_VERSION=latest
+ARG OS_TARGETS=linux
+RUN go build -v . && pwd && ls . && pwd
+RUN ./k8s-tester-stress --help
+
+FROM amazonlinux:latest
+RUN yum update -y && yum install -y which python3 pip3 && yum clean all && pip3 install awscli --upgrade --user
+ENV PATH=/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+RUN echo ${PATH}
+RUN /root/.local/bin/aws --version
+RUN aws --version
+
