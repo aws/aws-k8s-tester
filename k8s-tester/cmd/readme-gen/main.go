@@ -24,6 +24,7 @@ import (
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
 	"github.com/aws/aws-k8s-tester/k8s-tester/stress"
+	stress_in_cluster "github.com/aws/aws-k8s-tester/k8s-tester/stress/in-cluster"
 	aws_v1_ecr "github.com/aws/aws-k8s-tester/utils/aws/v1/ecr"
 	"github.com/olekukonko/tablewriter"
 )
@@ -72,7 +73,6 @@ func createDoc() string {
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+php_apache.Env()+"_", &php_apache.Config{}))
 	b.WriteByte('\n')
-	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+php_apache.EnvRepository()+"_", &aws_v1_ecr.Repository{}))
 
 	b.WriteByte('\n')
@@ -87,13 +87,11 @@ func createDoc() string {
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+jobs_echo.Env("Job")+"_", &jobs_echo.Config{}))
 	b.WriteByte('\n')
-	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+jobs_echo.EnvRepository("Job")+"_", &aws_v1_ecr.Repository{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+jobs_echo.Env("CronJob")+"_", &jobs_echo.Config{}))
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+jobs_echo.EnvRepository("CronJob")+"_", &aws_v1_ecr.Repository{}))
 
@@ -112,8 +110,6 @@ func createDoc() string {
 	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+clusterloader.Env()+"_", &clusterloader.Config{}))
-
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+clusterloader.EnvTestOverride()+"_", &clusterloader.TestOverride{}))
 
@@ -121,8 +117,15 @@ func createDoc() string {
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+stress.Env()+"_", &stress.Config{}))
 	b.WriteByte('\n')
-	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+stress.EnvRepository()+"_", &aws_v1_ecr.Repository{}))
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+stress_in_cluster.Env()+"_", &stress_in_cluster.Config{}))
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+stress_in_cluster.EnvK8sTesterStressRepository()+"_", &aws_v1_ecr.Repository{}))
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+stress_in_cluster.EnvK8sTesterStressCLI()+"_", &stress_in_cluster.K8sTesterStressCLI{}))
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+stress_in_cluster.EnvK8sTesterStressCLIBusyboxRepository()+"_", &aws_v1_ecr.Repository{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

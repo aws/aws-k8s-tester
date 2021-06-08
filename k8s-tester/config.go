@@ -31,6 +31,7 @@ import (
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
 	"github.com/aws/aws-k8s-tester/k8s-tester/stress"
+	stress_in_cluster "github.com/aws/aws-k8s-tester/k8s-tester/stress/in-cluster"
 	aws_v1_ecr "github.com/aws/aws-k8s-tester/utils/aws/v1/ecr"
 	"github.com/aws/aws-k8s-tester/utils/file"
 	"github.com/aws/aws-k8s-tester/utils/log"
@@ -138,6 +139,7 @@ type Config struct {
 	AddOnSecrets             *secrets.Config              `json:"add_on_secrets"`
 	AddOnClusterloader       *clusterloader.Config        `json:"add_on_clusterloader"`
 	AddOnStress              *stress.Config               `json:"add_on_stress"`
+	AddOnStressInCluster     *stress_in_cluster.Config    `json:"add_on_stress_in_cluster"`
 }
 
 const (
@@ -207,6 +209,7 @@ func NewDefault() *Config {
 		AddOnSecrets:             secrets.NewDefault(),
 		AddOnClusterloader:       clusterloader.NewDefault(),
 		AddOnStress:              stress.NewDefault(),
+		AddOnStressInCluster:     stress_in_cluster.NewDefault(),
 	}
 }
 
@@ -307,6 +310,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.AddOnStress != nil && cfg.AddOnStress.Enable {
 		if err := cfg.AddOnStress.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnStressInCluster != nil && cfg.AddOnStressInCluster.Enable {
+		if err := cfg.AddOnStressInCluster.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}
@@ -675,6 +683,47 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		}
 		if av, ok := vv.(*aws_v1_ecr.Repository); ok {
 			cfg.AddOnStress.Repository = av
+		} else {
+			return fmt.Errorf("expected *aws_v1_ecr.Repository, got %T", vv)
+		}
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+stress_in_cluster.Env()+"_", cfg.AddOnStressInCluster)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*stress_in_cluster.Config); ok {
+		cfg.AddOnStressInCluster = av
+	} else {
+		return fmt.Errorf("expected *stress_in_cluster.Config, got %T", vv)
+	}
+	if cfg.AddOnStressInCluster != nil {
+		vv, err = parseEnvs(ENV_PREFIX+stress_in_cluster.EnvK8sTesterStressRepository()+"_", cfg.AddOnStressInCluster.K8sTesterStressRepository)
+		if err != nil {
+			return err
+		}
+		if av, ok := vv.(*aws_v1_ecr.Repository); ok {
+			cfg.AddOnStressInCluster.K8sTesterStressRepository = av
+		} else {
+			return fmt.Errorf("expected *aws_v1_ecr.Repository, got %T", vv)
+		}
+
+		vv, err = parseEnvs(ENV_PREFIX+stress_in_cluster.EnvK8sTesterStressCLI()+"_", cfg.AddOnStressInCluster.K8sTesterStressCLI)
+		if err != nil {
+			return err
+		}
+		if av, ok := vv.(*stress_in_cluster.K8sTesterStressCLI); ok {
+			cfg.AddOnStressInCluster.K8sTesterStressCLI = av
+		} else {
+			return fmt.Errorf("expected *stress_in_cluster.K8sTesterStressCLI, got %T", vv)
+		}
+
+		vv, err = parseEnvs(ENV_PREFIX+stress_in_cluster.EnvK8sTesterStressCLIBusyboxRepository()+"_", cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository)
+		if err != nil {
+			return err
+		}
+		if av, ok := vv.(*aws_v1_ecr.Repository); ok {
+			cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository = av
 		} else {
 			return fmt.Errorf("expected *aws_v1_ecr.Repository, got %T", vv)
 		}

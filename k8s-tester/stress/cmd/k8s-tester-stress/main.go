@@ -60,6 +60,7 @@ func main() {
 }
 
 var (
+	ecrBusyBoxImage     string
 	repositoryPartition string
 	repositoryAccountID string
 	repositoryRegion    string
@@ -82,6 +83,7 @@ func newApply() *cobra.Command {
 		Run:   createApplyFunc,
 	}
 
+	cmd.PersistentFlags().StringVar(&ecrBusyBoxImage, "ecr-busybox-image", "", "if not empty, we skip ECR image describe")
 	cmd.PersistentFlags().StringVar(&repositoryPartition, "repository-partition", "", `used for deciding between "amazonaws.com" and "amazonaws.com.cn"`)
 	cmd.PersistentFlags().StringVar(&repositoryAccountID, "repository-account-id", "", "account ID for tester ECR image")
 	cmd.PersistentFlags().StringVar(&repositoryRegion, "repository-region", "", "ECR repository region to pull from")
@@ -124,6 +126,7 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 		MinimumNodes: minimumNodes,
 		Namespace:    namespace,
 
+		ECRBusyboxImage: ecrBusyBoxImage,
 		Repository: &aws_v1_ecr.Repository{
 			Partition: repositoryPartition,
 			AccountID: repositoryAccountID,

@@ -31,6 +31,7 @@ import (
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
 	"github.com/aws/aws-k8s-tester/k8s-tester/stress"
+	stress_in_cluster "github.com/aws/aws-k8s-tester/k8s-tester/stress/in-cluster"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
 	"github.com/aws/aws-k8s-tester/k8s-tester/version"
 	"github.com/aws/aws-k8s-tester/utils/log"
@@ -224,6 +225,13 @@ func (ts *tester) createTesters() {
 		ts.cfg.AddOnStress.LogWriter = ts.logWriter
 		ts.cfg.AddOnStress.Client = ts.cli
 		ts.testers = append(ts.testers, stress.New(ts.cfg.AddOnStress))
+	}
+	if ts.cfg.AddOnStressInCluster != nil && ts.cfg.AddOnStressInCluster.Enable {
+		ts.cfg.AddOnStressInCluster.Stopc = ts.stopCreationCh
+		ts.cfg.AddOnStressInCluster.Logger = ts.logger
+		ts.cfg.AddOnStressInCluster.LogWriter = ts.logWriter
+		ts.cfg.AddOnStressInCluster.Client = ts.cli
+		ts.testers = append(ts.testers, stress_in_cluster.New(ts.cfg.AddOnStressInCluster))
 	}
 }
 

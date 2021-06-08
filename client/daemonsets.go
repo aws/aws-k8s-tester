@@ -16,28 +16,28 @@ import (
 )
 
 // DeleteDaemonSet deletes namespace with given name.
-func DeleteDaemonSet(lg *zap.Logger, c k8s_client.Interface, namespace string, Name string) error {
+func DeleteDaemonSet(lg *zap.Logger, c k8s_client.Interface, namespace string, name string) error {
 	deleteFunc := func() error {
-		lg.Info("deleting DaemonSet", zap.String("namespace", namespace), zap.String("name", Name))
+		lg.Info("deleting DaemonSet", zap.String("namespace", namespace), zap.String("name", name))
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		err := c.
 			AppsV1().
 			DaemonSets(namespace).
 			Delete(
 				ctx,
-				Name,
+				name,
 				deleteOption,
 			)
 		cancel()
 		if err == nil {
-			lg.Info("deleted DaemonSets", zap.String("namespace", namespace), zap.String("name", Name))
+			lg.Info("deleted DaemonSets", zap.String("namespace", namespace), zap.String("name", name))
 			return nil
 		}
 		if k8s_errors.IsNotFound(err) || k8s_errors.IsGone(err) {
-			lg.Info("DaemonSets already deleted", zap.String("namespace", namespace), zap.String("name", Name), zap.Error(err))
+			lg.Info("DaemonSets already deleted", zap.String("namespace", namespace), zap.String("name", name), zap.Error(err))
 			return nil
 		}
-		lg.Warn("failed to delete DaemonSets", zap.String("namespace", namespace), zap.String("name", Name), zap.Error(err))
+		lg.Warn("failed to delete DaemonSets", zap.String("namespace", namespace), zap.String("name", name), zap.Error(err))
 		return err
 	}
 	// requires "k8s_errors.IsNotFound"

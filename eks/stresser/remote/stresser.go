@@ -580,6 +580,8 @@ func (ts *tester) deleteRBACClusterRoleBinding() error {
 	return nil
 }
 
+// TODO: no need to mount kubeconfig since we are creating in-cluster kubernetes client
+
 func (ts *tester) createConfigMap() error {
 	ts.cfg.Logger.Info("creating config map")
 

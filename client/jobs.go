@@ -13,10 +13,71 @@ import (
 	batch_v1beta1 "k8s.io/api/batch/v1beta1"
 	core_v1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	k8s_client "k8s.io/client-go/kubernetes"
 )
+
+// DeleteJob deletes Job with given name.
+func DeleteJob(lg *zap.Logger, c k8s_client.Interface, namespace string, name string) error {
+	deleteFunc := func() error {
+		lg.Info("deleting Job", zap.String("namespace", namespace), zap.String("name", name))
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		err := c.
+			BatchV1().
+			Jobs(namespace).
+			Delete(
+				ctx,
+				name,
+				deleteOption,
+			)
+		cancel()
+		if err == nil {
+			lg.Info("deleted Job", zap.String("name", name))
+			return nil
+		}
+		if k8s_errors.IsNotFound(err) || k8s_errors.IsGone(err) {
+			lg.Info("Job already deleted", zap.String("name", name), zap.Error(err))
+			return nil
+		}
+		lg.Warn("failed to delete Job", zap.String("name", name), zap.Error(err))
+		return err
+	}
+	// requires "k8s_errors.IsNotFound"
+	// ref. https://github.com/aws/aws-k8s-tester/issues/79
+	return RetryWithExponentialBackOff(RetryFunction(deleteFunc, Allow(k8s_errors.IsNotFound)))
+}
+
+// DeleteCronJob deletes CronJob with given name.
+func DeleteCronJob(lg *zap.Logger, c k8s_client.Interface, namespace string, name string) error {
+	deleteFunc := func() error {
+		lg.Info("deleting CronJob", zap.String("namespace", namespace), zap.String("name", name))
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		err := c.
+			BatchV1beta1().
+			CronJobs(namespace).
+			Delete(
+				ctx,
+				name,
+				deleteOption,
+			)
+		cancel()
+		if err == nil {
+			lg.Info("deleted CronJob", zap.String("name", name))
+			return nil
+		}
+		if k8s_errors.IsNotFound(err) || k8s_errors.IsGone(err) {
+			lg.Info("CronJob already deleted", zap.String("name", name), zap.Error(err))
+			return nil
+		}
+		lg.Warn("failed to delete CronJob", zap.String("name", name), zap.Error(err))
+		return err
+	}
+	// requires "k8s_errors.IsNotFound"
+	// ref. https://github.com/aws/aws-k8s-tester/issues/79
+	return RetryWithExponentialBackOff(RetryFunction(deleteFunc, Allow(k8s_errors.IsNotFound)))
+}
 
 // WaitForJobCompletes waits for all Job completion,
 // by counting the number of pods in the namespace.

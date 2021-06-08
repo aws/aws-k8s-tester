@@ -779,3 +779,108 @@ func TestEnvAddOnStress(t *testing.T) {
 		t.Fatalf("unexpected cfg.AddOnStress.ListBatchLimit %v", cfg.AddOnStress.ListBatchLimit)
 	}
 }
+
+func TestEnvAddOnStressInCluster(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_ENABLE")
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_NAMESPACE", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_NAMESPACE")
+
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_COMPLETES", `222`)
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_COMPLETES")
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_PARALLELS", `333`)
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_PARALLELS")
+
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_REPOSITORY_PARTITION", "aws")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_REPOSITORY_PARTITION")
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_REPOSITORY_ACCOUNT_ID", "123")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_REPOSITORY_ACCOUNT_ID")
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_REPOSITORY_REGION", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_REPOSITORY_REGION")
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_REPOSITORY_NAME", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_REPOSITORY_NAME")
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_REPOSITORY_IMAGE_TAG", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_REPOSITORY_IMAGE_TAG")
+
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_RUN_TIMEOUT", "11h")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_RUN_TIMEOUT")
+
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_BUSYBOX_REPOSITORY_PARTITION", "aws")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_BUSYBOX_REPOSITORY_PARTITION")
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_BUSYBOX_REPOSITORY_ACCOUNT_ID", "123")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_BUSYBOX_REPOSITORY_ACCOUNT_ID")
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_BUSYBOX_REPOSITORY_REGION", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_BUSYBOX_REPOSITORY_REGION")
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_BUSYBOX_REPOSITORY_NAME", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_BUSYBOX_REPOSITORY_NAME")
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_BUSYBOX_REPOSITORY_IMAGE_TAG", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_BUSYBOX_REPOSITORY_IMAGE_TAG")
+
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_UPDATE_CONCURRENCY", "1000")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_UPDATE_CONCURRENCY")
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_LIST_BATCH_LIMIT", "3000")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_LIST_BATCH_LIMIT")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if !cfg.AddOnStressInCluster.Enable {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.Enable %v", cfg.AddOnStressInCluster.Enable)
+	}
+	if cfg.AddOnStressInCluster.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.Namespace %v", cfg.AddOnStressInCluster.Namespace)
+	}
+
+	if cfg.AddOnStressInCluster.Completes != 222 {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.Completes %v", cfg.AddOnStressInCluster.Completes)
+	}
+	if cfg.AddOnStressInCluster.Parallels != 333 {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.Parallels %v", cfg.AddOnStressInCluster.Parallels)
+	}
+
+	if cfg.AddOnStressInCluster.K8sTesterStressRepository.Partition != "aws" {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.K8sTesterStressRepository.Partition %v", cfg.AddOnStressInCluster.K8sTesterStressRepository.Partition)
+	}
+	if cfg.AddOnStressInCluster.K8sTesterStressRepository.AccountID != "123" {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.K8sTesterStressRepository.AccountID %v", cfg.AddOnStressInCluster.K8sTesterStressRepository.AccountID)
+	}
+	if cfg.AddOnStressInCluster.K8sTesterStressRepository.Region != "hello" {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.K8sTesterStressRepository.Region %v", cfg.AddOnStressInCluster.K8sTesterStressRepository.Region)
+	}
+	if cfg.AddOnStressInCluster.K8sTesterStressRepository.Name != "hello" {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.K8sTesterStressRepository.Name %v", cfg.AddOnStressInCluster.K8sTesterStressRepository.Name)
+	}
+	if cfg.AddOnStressInCluster.K8sTesterStressRepository.ImageTag != "hello" {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.K8sTesterStressRepository.ImageTag %v", cfg.AddOnStressInCluster.K8sTesterStressRepository.ImageTag)
+	}
+
+	if cfg.AddOnStressInCluster.K8sTesterStressCLI.RunTimeout != 11*time.Hour {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.K8sTesterStressCLI.RunTimeout %v", cfg.AddOnStressInCluster.K8sTesterStressCLI.RunTimeout)
+	}
+
+	if cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository.Partition != "aws" {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository.Partition %v", cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository.Partition)
+	}
+	if cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository.AccountID != "123" {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository.AccountID %v", cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository.AccountID)
+	}
+	if cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository.Region != "hello" {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository.Region %v", cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository.Region)
+	}
+	if cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository.Name != "hello" {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository.Name %v", cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository.Name)
+	}
+	if cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository.ImageTag != "hello" {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository.ImageTag %v", cfg.AddOnStressInCluster.K8sTesterStressCLI.BusyboxRepository.ImageTag)
+	}
+
+	if cfg.AddOnStressInCluster.K8sTesterStressCLI.UpdateConcurrency != 1000 {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.UpdateConcurrency %v", cfg.AddOnStressInCluster.K8sTesterStressCLI.UpdateConcurrency)
+	}
+	if cfg.AddOnStressInCluster.K8sTesterStressCLI.ListBatchLimit != 3000 {
+		t.Fatalf("unexpected cfg.AddOnStressInCluster.ListBatchLimit %v", cfg.AddOnStressInCluster.K8sTesterStressCLI.ListBatchLimit)
+	}
+}

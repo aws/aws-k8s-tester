@@ -150,15 +150,17 @@ type Config struct {
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
 
+	// ECRBusyboxImage is the ECR image URI with tag.
+	// If not empty, it skips ECR repository describe calls.
+	ECRBusyboxImage string `json:"ecr_busybox_image"`
 	// Repository defines a custom ECR image repository.
 	// For "busybox".
-	Repository *aws_v1_ecr.Repository `json:"repository,omitempty"`
+	Repository *aws_v1_ecr.Repository `json:"busybox_repository,omitempty"`
 
 	// RunTimeout is the duration of stress runs.
 	// After timeout, it stops all stress requests.
 	RunTimeout       time.Duration `json:"run_timeout"`
 	RunTimeoutString string        `json:"run_timeout_string" read-only:"true"`
-
 	// ObjectKeyPrefix is the key prefix for "Pod" objects.
 	ObjectKeyPrefix string `json:"object_key_prefix"`
 	// Objects is the desired number of objects to create and update.
@@ -236,6 +238,7 @@ func NewDefault() *Config {
 		Prompt:            false,
 		MinimumNodes:      DefaultMinimumNodes,
 		Namespace:         pkgName + "-" + rand.String(10) + "-" + utils_time.GetTS(10),
+		ECRBusyboxImage:   "",
 		Repository:        &aws_v1_ecr.Repository{},
 		RunTimeout:        DefaultRunTimeout,
 		RunTimeoutString:  DefaultRunTimeout.String(),
@@ -253,7 +256,7 @@ func New(cfg *Config) k8s_tester.Tester {
 		donec:          make(chan struct{}),
 		donecCloseOnce: new(sync.Once),
 	}
-	if !cfg.Repository.IsEmpty() {
+	if cfg.ECRBusyboxImage == "" && !cfg.Repository.IsEmpty() {
 		awsCfg := aws_v1.Config{
 			Logger:        cfg.Logger,
 			DebugAPICalls: cfg.Logger.Core().Enabled(zapcore.DebugLevel),
@@ -290,14 +293,17 @@ func (ts *tester) Name() string { return pkgName }
 
 func (ts *tester) Enabled() bool { return ts.cfg.Enable }
 
-func (ts *tester) Apply() error {
+func (ts *tester) Apply() (err error) {
 	if ok := ts.runPrompt("apply"); !ok {
 		return errors.New("cancelled")
 	}
 
-	podImg, err := ts.checkECRImage()
-	if err != nil {
-		return err
+	podImg := ts.cfg.ECRBusyboxImage
+	if podImg == "" {
+		podImg, err = ts.checkECRImage()
+		if err != nil {
+			return err
+		}
 	}
 
 	if nodes, err := client.ListNodes(ts.cfg.Client.KubernetesClient()); len(nodes) < ts.cfg.MinimumNodes || err != nil {

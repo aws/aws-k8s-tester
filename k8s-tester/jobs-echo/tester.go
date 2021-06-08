@@ -85,6 +85,25 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return errors.New("empty Namespace")
 	}
 
+	if cfg.Completes == 0 {
+		cfg.Completes = DefaultCompletes
+	}
+	if cfg.Parallels == 0 {
+		cfg.Parallels = DefaultParallels
+	}
+	if cfg.EchoSize == 0 {
+		cfg.EchoSize = DefaultEchoSize
+	}
+	if cfg.Schedule == "" {
+		cfg.Schedule = DefaultSchedule
+	}
+	if cfg.SuccessfulJobsHistoryLimit == 0 {
+		cfg.SuccessfulJobsHistoryLimit = DefaultSuccessfulJobsHistoryLimit
+	}
+	if cfg.FailedJobsHistoryLimit == 0 {
+		cfg.FailedJobsHistoryLimit = DefaultFailedJobsHistoryLimit
+	}
+
 	return nil
 }
 
