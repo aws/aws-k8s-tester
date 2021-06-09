@@ -625,7 +625,7 @@ func (ts *tester) createCronJobObject(k8sTesterStressImg string, busyboxImg stri
 	// do not pass kubeconfig to use in-cluster client
 	cmd := "/k8s-tester-stress --prompt=false"
 	cmd += fmt.Sprintf(" --namespace %s", ts.cfg.Namespace)
-	cmd += " --kubectl-path aaa"
+	cmd += " --kubectl-path /kubectl"
 	cmd += fmt.Sprintf(" apply --ecr-busybox-image %s", busyboxImg)
 	cmd += fmt.Sprintf(" --run-timeout %s", ts.cfg.K8sTesterStressCLI.RunTimeout)
 	cmd += fmt.Sprintf(" --object-key-prefix %s", ts.cfg.K8sTesterStressCLI.ObjectKeyPrefix)
