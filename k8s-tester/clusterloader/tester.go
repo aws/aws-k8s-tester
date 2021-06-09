@@ -121,7 +121,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.TestReportDirTarGzPath == "" {
 		cfg.TestReportDirTarGzPath = DefaultTestReportDirTarGzPath()
 	}
-	if strings.HasSuffix(cfg.TestReportDirTarGzPath, ".tar.gz") {
+	if !strings.HasSuffix(cfg.TestReportDirTarGzPath, ".tar.gz") {
 		return fmt.Errorf("TestReportDirTarGzPath %q requires .tar.gz suffix", cfg.TestReportDirTarGzPath)
 	}
 	if cfg.TestLogPath == "" {
