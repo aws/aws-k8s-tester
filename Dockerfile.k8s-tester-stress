@@ -14,3 +14,10 @@ ENV PATH=/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbi
 RUN echo ${PATH}
 RUN /root/.local/bin/aws --version
 RUN aws --version
+
+RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+RUN chmod +x ./kubectl
+COPY ./kubectl /kubectl
+COPY --from=k8s-tester-stress /go/src/github.com/aws/aws-k8s-tester/k8s-tester/stress/cmd/k8s-tester-stress/k8s-tester-stress /k8s-tester-stress
+RUN /k8s-tester-stress --help
+RUN /kubectl --help
