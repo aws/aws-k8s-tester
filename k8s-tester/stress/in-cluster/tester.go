@@ -64,10 +64,8 @@ type Config struct {
 	// Schedule is the CronJob schedule.
 	Schedule string `json:"schedule"`
 	// SuccessfulJobsHistoryLimit is the number of successful finished CronJobs to retain.
-	// Defaults to 3.
 	SuccessfulJobsHistoryLimit int32 `json:"successful_jobs_history_limit"`
 	// FailedJobsHistoryLimit is the number of failed finished CronJobs to retain.
-	// Defaults to 1.
 	FailedJobsHistoryLimit int32 `json:"failed_jobs_history_limit"`
 
 	// K8sTesterStressCLI defines flags for "k8s-tester-stress".
@@ -149,8 +147,8 @@ const (
 	DefaultCompletes                  int32  = 10
 	DefaultParallels                  int32  = 10
 	DefaultSchedule                   string = "*/10 * * * *" // every 10-min
-	DefaultSuccessfulJobsHistoryLimit int32  = 3
-	DefaultFailedJobsHistoryLimit     int32  = 1
+	DefaultSuccessfulJobsHistoryLimit int32  = 10
+	DefaultFailedJobsHistoryLimit     int32  = 10
 
 	DefaultRunTimeout = time.Minute
 
@@ -699,6 +697,9 @@ func (ts *tester) createCronJobObject(k8sTesterStressImg string, busyboxImg stri
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      cronJobName,
 			Namespace: ts.cfg.Namespace,
+			Labels: map[string]string{
+				"cronjob-name": cronJobName,
+			},
 		},
 		Spec: batch_v1.JobSpec{
 			Completions: &ts.cfg.Completes,
@@ -716,6 +717,9 @@ func (ts *tester) createCronJobObject(k8sTesterStressImg string, busyboxImg stri
 		ObjectMeta: meta_v1.ObjectMeta{
 			Name:      cronJobName,
 			Namespace: ts.cfg.Namespace,
+			Labels: map[string]string{
+				"cronjob-name": cronJobName,
+			},
 		},
 		Spec: batch_v1beta1.CronJobSpec{
 			Schedule:                   ts.cfg.Schedule,
@@ -790,17 +794,34 @@ func (ts *tester) checkCronJob() (err error) {
 				"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
 				"--namespace=" + ts.cfg.Namespace,
 				"describe",
-				"job",
-				cronJobName,
+				"cronjob.batch/" + cronJobName,
 			}
 			descCmd := strings.Join(descArgs, " ")
 			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			descOutput, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 			cancel()
 			if err != nil {
-				ts.cfg.Logger.Warn("'kubectl describe job' failed", zap.Error(err))
+				ts.cfg.Logger.Warn("'kubectl describe cronjob' failed", zap.Error(err))
 			}
 			out := string(descOutput)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", descCmd, out)
+
+			descArgs = []string{
+				ts.cfg.Client.Config().KubectlPath,
+				"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
+				"--namespace=" + ts.cfg.Namespace,
+				"describe",
+				"job",
+				cronJobName,
+			}
+			descCmd = strings.Join(descArgs, " ")
+			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+			descOutput, err = exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+			cancel()
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe job' failed", zap.Error(err))
+			}
+			out = string(descOutput)
 			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", descCmd, out)
 
 			argsLogs := []string{
@@ -808,7 +829,7 @@ func (ts *tester) checkCronJob() (err error) {
 				"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
 				"--namespace=" + ts.cfg.Namespace,
 				"logs",
-				"--selector=job-name=" + cronJobName,
+				"--selector=cronjob-name=" + cronJobName,
 				"--timestamps",
 				"--tail=10",
 			}
@@ -844,7 +865,7 @@ func (ts *tester) checkCronJob() (err error) {
 				cmdOutput, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 				cancel()
 				if err != nil {
-					ts.cfg.Logger.Warn("'kubectl describe job' failed", zap.Error(err))
+					ts.cfg.Logger.Warn("'kubectl describe pod' failed", zap.Error(err))
 				}
 				out := string(cmdOutput)
 				fmt.Fprintf(ts.cfg.LogWriter, "\"%s\" output:\n\n%s\n\n", descCmd, out)

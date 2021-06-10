@@ -70,10 +70,8 @@ type Config struct {
 	// Schedule is the CronJob schedule.
 	Schedule string `json:"schedule"`
 	// SuccessfulJobsHistoryLimit is the number of successful finished CronJobs to retain.
-	// Defaults to 3.
 	SuccessfulJobsHistoryLimit int32 `json:"successful_jobs_history_limit"`
 	// FailedJobsHistoryLimit is the number of failed finished CronJobs to retain.
-	// Defaults to 1.
 	FailedJobsHistoryLimit int32 `json:"failed_jobs_history_limit"`
 }
 
@@ -118,8 +116,8 @@ const (
 	DefaultParallels                  int32  = 10
 	DefaultEchoSize                   int32  = 100 * 1024
 	DefaultSchedule                   string = "*/10 * * * *" // every 10-min
-	DefaultSuccessfulJobsHistoryLimit int32  = 3
-	DefaultFailedJobsHistoryLimit     int32  = 1
+	DefaultSuccessfulJobsHistoryLimit int32  = 10
+	DefaultFailedJobsHistoryLimit     int32  = 10
 )
 
 func NewDefault(jobType string) *Config {
