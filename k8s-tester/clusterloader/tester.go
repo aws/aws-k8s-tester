@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -24,7 +25,6 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/mholt/archiver/v3"
 	"go.uber.org/zap"
-	"k8s.io/utils/exec"
 )
 
 // TODO: support s3 uploads
@@ -433,16 +433,37 @@ I0610 03:20:23.917693   16894 clusterloader.go:234] ----------------------------
     "type": "NamespaceDeletionDiscoveryFailure"
 },
 */
+// each clusterloader2 run takes about 2-minute
+// but may stuck with test namespace deletion
 func (ts *tester) runCL2(idx int, args []string) (err error) {
 	ts.cfg.Logger.Info("running clusterloader2", zap.Int("index", idx), zap.String("command", strings.Join(args, " ")))
-	// each clusterloader2 run takes about 2-minute
-	// but may stuck with test namespace deletion
-	ctx, cancel := context.WithTimeout(ts.rootCtx, 5*time.Minute)
-	cmd := exec.New().CommandContext(ctx, args[0], args[1:]...)
-	cmd.SetStderr(ts.testLogFile)
-	cmd.SetStdout(ts.testLogFile)
-	err = cmd.Run()
-	cancel()
+	timeout := 3 * time.Minute
+	ctx, cancel := context.WithTimeout(ts.rootCtx, 2*timeout)
+	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
+	cmd.Stderr = ts.testLogFile
+	cmd.Stdout = ts.testLogFile
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+	errc := make(chan error)
+	go func() {
+		errc <- cmd.Wait()
+	}()
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("command context timeout %v", err)
+	case <-time.After(timeout):
+		cancel()
+		ts.cfg.Logger.Warn("command timeout, gracefully interrupting", zap.String("timeout", timeout.String()))
+		iterr := cmd.Process.Signal(os.Interrupt)
+		time.Sleep(5 * time.Second)
+		ts.cfg.Logger.Warn("interrupted command", zap.Error(iterr))
+		err = fmt.Errorf("command timeout after %v", timeout)
+	case err = <-errc:
+		cancel()
+		return fmt.Errorf("command failed %v", err)
+	}
 	return err
 }
 
