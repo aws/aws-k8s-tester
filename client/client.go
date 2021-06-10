@@ -178,7 +178,7 @@ func New(cfg *Config) (Client, error) {
 // createRestConfig creates the Kubernetes client configuration.
 func createRestConfig(cfg *Config) (kcfg *k8s_client_rest.Config, err error) {
 	if kcfg, err = createRestConfigFromKubeconfig(cfg); err != nil {
-		cfg.Logger.Error("failed to create config using KUBECONFIG", zap.Error(err))
+		cfg.Logger.Warn("failed to create config using KUBECONFIG", zap.Error(err))
 	}
 
 	if kcfg == nil && cfg.EKS != nil {

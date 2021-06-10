@@ -453,6 +453,7 @@ func (ts *tester) createServiceAccount() error {
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
 // ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+// e.g., nodes is forbidden: User "system:serviceaccount:stress-in-cluster...:default" cannot list resource "nodes" in API group "" at the cluster scope
 func (ts *tester) createRBACClusterRole() error {
 	ts.cfg.Logger.Info("creating stresser RBAC ClusterRole")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -636,22 +637,29 @@ func (ts *tester) createCronJobObject(k8sTesterStressImg string, busyboxImg stri
 	dirOrCreate := core_v1.HostPathDirectoryOrCreate
 	podSpec := core_v1.PodTemplateSpec{
 		Spec: core_v1.PodSpec{
+			ServiceAccountName: serviceAccountName,
+
 			// spec.template.spec.restartPolicy: Unsupported value: "Always": supported values: "OnFailure", "Never"
-			RestartPolicy: core_v1.RestartPolicyOnFailure,
+			// ref. https://github.com/kubernetes/kubernetes/issues/54870
+			RestartPolicy: core_v1.RestartPolicyNever,
+
 			Containers: []core_v1.Container{
 				{
 					Name:            cronJobName,
 					Image:           k8sTesterStressImg,
 					ImagePullPolicy: core_v1.PullAlways,
+
 					Command: []string{
 						"/bin/sh",
 						"-ec",
 						cmd,
 					},
+
 					// grant access "/dev/kmsg"
 					SecurityContext: &v1.SecurityContext{
 						Privileged: boolRef(true),
 					},
+
 					// ref. https://kubernetes.io/docs/concepts/cluster-administration/logging/
 					VolumeMounts: []core_v1.VolumeMount{
 						{ // to execute
