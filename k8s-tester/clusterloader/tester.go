@@ -58,7 +58,9 @@ type Config struct {
 
 	// TestConfigPath is the clusterloader2 test configuration file.
 	// Must be located along with other configuration files.
-	// e.g. ${HOME}/go/src/k8s.io/perf-tests/clusterloader2/testing/load/config.yaml
+	// For instance, if the clusterloader2 default configuration file is located at
+	// ${HOME}/go/src/k8s.io/perf-tests/clusterloader2/testing/load/config.yaml,
+	// then run this tester from "${HOME}/go/src/k8s.io/perf-tests/clusterloader2".
 	// ref. https://github.com/kubernetes/perf-tests/blob/master/clusterloader2/testing/load/config.yaml
 	// Set via "--testconfig" flag.
 	TestConfigPath string `json:"test_config_path"`
