@@ -651,7 +651,7 @@ func (ts *tester) startRangeGets() (latenciesRangeGets latency.Durations) {
 		latenciesRangeGets = append(latenciesRangeGets, took)
 		if err != nil {
 			rangeGetRequestsFailureTotal.Inc()
-			if i%200 == 0 {
+			if i%10 == 0 {
 				ts.cfg.Logger.Warn("list pod failed", zap.String("namespace", ts.cfg.Namespace), zap.Error(err))
 			}
 		} else {
