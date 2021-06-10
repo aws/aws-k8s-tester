@@ -321,7 +321,7 @@ func (ts *tester) Apply() (err error) {
 		ts.cfg.Sync()
 		if err != nil {
 			fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Fprint(ts.logWriter, ts.color(fmt.Sprintf("[light_magenta]✗ [default]k8s-tester[%02d].Apply [light_magenta]FAIL [default](%v)\n", idx, err)))
+			fmt.Fprintf(ts.logWriter, ts.color("[light_magenta]✗ [default]k8s-tester[%02d].Apply [light_magenta]FAIL [default](%v)\n"), idx, err)
 			return err
 		}
 	}
@@ -352,10 +352,10 @@ func (ts *tester) delete() error {
 			continue
 		}
 		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Fprint(ts.logWriter, ts.color("[light_blue]testers[%02d].Delete [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Fprintf(ts.logWriter, ts.color("[light_blue]testers[%02d].Delete [cyan]%q [default](%q, %q)\n"), idx, cur.Name(), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := cur.Delete(); err != nil {
 			fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Fprint(ts.logWriter, ts.color(fmt.Sprintf("[light_magenta]✗ [default]k8s-tester[%02d].Delete [light_magenta]FAIL [default](%v)\n", idx, err)))
+			fmt.Fprintf(ts.logWriter, ts.color("[light_magenta]✗ [default]k8s-tester[%02d].Delete [light_magenta]FAIL [default](%v)\n"), idx, err)
 			errs = append(errs, err.Error())
 		}
 	}
