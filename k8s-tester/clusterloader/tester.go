@@ -415,10 +415,29 @@ func (ts *tester) getCL2Args() (args []string) {
 	return args
 }
 
-// takes about 2-minute
+/*
+E0610 03:20:23.917606   16894 simple_test_executor.go:391] Resource cleanup error: [timed out waiting for the condition
+timed out waiting for the condition]
+I0610 03:20:23.917636   16894 clusterloader.go:227] --------------------------------------------------------------------------------
+I0610 03:20:23.917650   16894 clusterloader.go:228] Test Finished
+I0610 03:20:23.917666   16894 clusterloader.go:229]   Test: ./testing/load/config.yaml
+I0610 03:20:23.917681   16894 clusterloader.go:230]   Status: Success
+I0610 03:20:23.917693   16894 clusterloader.go:234] --------------------------------------------------------------------------------
+
+/tmp/kubectl-v1.21.1 --kubeconfig=/tmp/eks-2021060922-sunahvg04tie.kubeconfig.yaml get ns
+{
+    "lastTransitionTime": "2021-06-10T03:10:28Z",
+    "message": "Discovery failed for some groups, 1 failing: unable to retrieve the complete list of server APIs: metrics.k8s.io/v1beta1: the server is currently unable to handle the request",
+    "reason": "DiscoveryFailed",
+    "status": "True",
+    "type": "NamespaceDeletionDiscoveryFailure"
+},
+*/
 func (ts *tester) runCL2(idx int, args []string) (err error) {
 	ts.cfg.Logger.Info("running clusterloader2", zap.Int("index", idx), zap.String("command", strings.Join(args, " ")))
-	ctx, cancel := context.WithTimeout(ts.rootCtx, 120*time.Minute)
+	// each clusterloader2 run takes about 2-minute
+	// but may stuck with test namespace deletion
+	ctx, cancel := context.WithTimeout(ts.rootCtx, 5*time.Minute)
 	cmd := exec.New().CommandContext(ctx, args[0], args[1:]...)
 	cmd.SetStderr(ts.testLogFile)
 	cmd.SetStdout(ts.testLogFile)
@@ -461,6 +480,7 @@ func (ts *tester) runCL2s(checkDonec chan struct{}) (runErr error) {
 			}
 
 			if strings.Contains(output, `Status: Success`) {
+				// e.g., "Resource cleanup error: [timed out)"...
 				ts.cfg.Logger.Warn("cluster loader command exited but continue for its success status")
 				continue
 			}
