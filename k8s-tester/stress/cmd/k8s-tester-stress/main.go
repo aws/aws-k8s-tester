@@ -42,7 +42,7 @@ func init() {
 	rootCmd.PersistentFlags().StringSliceVar(&logOutputs, "log-outputs", []string{"stderr"}, "Additional logger outputs")
 	rootCmd.PersistentFlags().IntVar(&minimumNodes, "minimum-nodes", stress.DefaultMinimumNodes, "minimum number of Kubernetes nodes required for installing this addon")
 	rootCmd.PersistentFlags().StringVar(&namespace, "namespace", "test-namespace", "'true' to auto-generate path for create config/cluster, overwrites existing --path value")
-	rootCmd.PersistentFlags().StringVar(&skipNamespaceCreation, "skip-namespace-creation", stress.DefaultSkipNamespaceCreation, "'true' to skip namespace creation")
+	rootCmd.PersistentFlags().BoolVar(&skipNamespaceCreation, "skip-namespace-creation", stress.DefaultSkipNamespaceCreation, "'true' to skip namespace creation")
 	rootCmd.PersistentFlags().StringVar(&kubectlDownloadURL, "kubectl-download-url", client.DefaultKubectlDownloadURL(), "kubectl download URL")
 	rootCmd.PersistentFlags().StringVar(&kubectlPath, "kubectl-path", client.DefaultKubectlPath(), "kubectl path")
 	rootCmd.PersistentFlags().StringVar(&kubeconfigPath, "kubeconfig-path", "", "KUBECONFIG path")
