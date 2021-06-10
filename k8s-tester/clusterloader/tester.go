@@ -382,14 +382,10 @@ func (ts *tester) streamTestLogs() (checkDonec chan struct{}) {
 				ts.cfg.Logger.Warn("failed to read cluster loader command output from logs file", zap.Error(lerr))
 				continue
 			}
-			output := strings.TrimSpace(string(b))
-			lines := strings.Split(output, "\n")
-			linesN := len(lines)
+			output := tailLogs(b)
+			linesN := strings.Count(output, "\n")
 
 			ts.cfg.Logger.Info("checked cluster loader command output from logs file", zap.Int("total-lines", linesN))
-			if linesN > 15 {
-				output = strings.Join(lines[linesN-15:], "\n")
-			}
 			fmt.Fprintf(ts.cfg.LogWriter, "\n%q output:\n%s\n\n", ts.cfg.TestLogPath, output)
 		}
 	}()
@@ -495,22 +491,7 @@ func (ts *tester) runCL2s(checkDonec chan struct{}) (runErr error) {
 				errc <- rerr
 				return
 			}
-			output := strings.TrimSpace(string(b))
-			lines := strings.Split(output, "\n")
-			linesN := len(lines)
-			newLines := make([]string, 0, linesN)
-			for _, line := range lines {
-				// remove "fetching profile data from is not possible from provider: eks"
-				if strings.Contains(line, "profile.go") && strings.Contains(line, "eks") {
-					continue
-				}
-				newLines = append(newLines, line)
-			}
-			newLinesN := len(newLines)
-			if newLinesN > 15 {
-				newLines = newLines[newLinesN-15:]
-			}
-			output = strings.Join(newLines, "\n")
+			output := tailLogs(b)
 
 			if strings.Contains(output, `Status: Success`) {
 				// e.g., "Resource cleanup error: [timed out)"...
@@ -711,3 +692,24 @@ I0610 07:56:44.169761   27280 phase_latency.go:146] PodStartupLatency: perc50: 8
 */
 
 const skipErr = `action gather failed for SchedulingMetrics`
+
+func tailLogs(b []byte) string {
+	output := strings.TrimSpace(string(b))
+	lines := strings.Split(output, "\n")
+	newLines := make([]string, 0, len(lines))
+	for _, line := range lines {
+		// remove "fetching profile data from is not possible from provider: eks"
+		if strings.Contains(line, "profile.go") &&
+			strings.Contains(line, "fetching profile") &&
+			strings.Contains(line, "eks") {
+			continue
+		}
+		newLines = append(newLines, line)
+	}
+	newLinesN := len(newLines)
+	if newLinesN > 15 {
+		newLines = newLines[newLinesN-15:]
+	}
+	output = strings.Join(newLines, "\n")
+	return output
+}
