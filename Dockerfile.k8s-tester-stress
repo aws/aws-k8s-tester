@@ -13,6 +13,8 @@ ARG RELEASE_VERSION=latest
 ARG OS_TARGETS=linux
 ARG GOPROXY=direct
 RUN go build -o /k8s-tester-stress -v .
+WORKDIR /
+RUN rm -rf /go/src/github.com/aws/aws-k8s-tester
 RUN /k8s-tester-stress --help
 
 RUN curl -L https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o /tmp/kubectl
