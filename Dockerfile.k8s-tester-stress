@@ -13,10 +13,8 @@ ARG RELEASE_VERSION=latest
 ARG OS_TARGETS=linux
 ARG GOPROXY=direct
 RUN go build -o /k8s-tester-stress -v .
-
-RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o /kubectl
-RUN chmod +x /kubectl
-COPY --from=k8s-tester-stress /go/src/github.com/aws/aws-k8s-tester/k8s-tester/stress/cmd/k8s-tester-stress/k8s-tester-stress /k8s-tester-stress
-
-RUN /kubectl --help
 RUN /k8s-tester-stress --help
+
+RUN curl -L https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o /tmp/kubectl
+RUN mv /tmp/kubectl /kubectl && chmod +x /kubectl
+RUN /kubectl --help
