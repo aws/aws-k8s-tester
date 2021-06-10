@@ -281,6 +281,7 @@
 | K8S_TESTER_ADD_ON_STRESS_ENABLE                     | SETTABLE VIA ENV VAR | *stress.Config.Enable                  | bool            |
 | K8S_TESTER_ADD_ON_STRESS_MINIMUM_NODES              | SETTABLE VIA ENV VAR | *stress.Config.MinimumNodes            | int             |
 | K8S_TESTER_ADD_ON_STRESS_NAMESPACE                  | SETTABLE VIA ENV VAR | *stress.Config.Namespace               | string          |
+| K8S_TESTER_ADD_ON_STRESS_SKIP_NAMESPACE_CREATION    | SETTABLE VIA ENV VAR | *stress.Config.SkipNamespaceCreation   | bool            |
 | K8S_TESTER_ADD_ON_STRESS_ECR_BUSYBOX_IMAGE          | SETTABLE VIA ENV VAR | *stress.Config.ECRBusyboxImage         | string          |
 | K8S_TESTER_ADD_ON_STRESS_RUN_TIMEOUT                | SETTABLE VIA ENV VAR | *stress.Config.RunTimeout              | time.Duration   |
 | K8S_TESTER_ADD_ON_STRESS_RUN_TIMEOUT_STRING         | READ-ONLY            | *stress.Config.RunTimeoutString        | string          |

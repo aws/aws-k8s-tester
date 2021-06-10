@@ -623,7 +623,7 @@ func (ts *tester) createConfigmap() error {
 func (ts *tester) createCronJobObject(k8sTesterStressImg string, busyboxImg string) (batch_v1beta1.CronJob, string, error) {
 	// do not pass kubeconfig to use in-cluster client
 	cmd := "/k8s-tester-stress --prompt=false --minimum-nodes=0"
-	cmd += fmt.Sprintf(" --namespace %s", ts.cfg.Namespace)
+	cmd += fmt.Sprintf(" --namespace %s --skip-namespace-creation=true", ts.cfg.Namespace)
 	cmd += " --kubectl-path /kubectl"
 	cmd += fmt.Sprintf(" apply --ecr-busybox-image %s", busyboxImg)
 	cmd += fmt.Sprintf(" --run-timeout %s", ts.cfg.K8sTesterStressCLI.RunTimeout)

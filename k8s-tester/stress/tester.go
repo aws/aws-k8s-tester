@@ -148,7 +148,8 @@ type Config struct {
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum_nodes"`
 	// Namespace to create test resources.
-	Namespace string `json:"namespace"`
+	Namespace             string `json:"namespace"`
+	SkipNamespaceCreation bool   `json:"skip_namespace_creation"`
 
 	// ECRBusyboxImage is the ECR image URI with tag.
 	// If not empty, it skips ECR repository describe calls.
@@ -209,8 +210,10 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 }
 
 const (
-	DefaultMinimumNodes int = 1
-	DefaultRunTimeout       = time.Minute
+	DefaultMinimumNodes          int = 1
+	DefaultSkipNamespaceCreation     = false
+
+	DefaultRunTimeout = time.Minute
 
 	DefaultObjects    int = -1
 	DefaultObjectSize int = 10 * 1024 // 10 KB
@@ -231,19 +234,20 @@ func DefaultObjectKeyPrefix() string {
 
 func NewDefault() *Config {
 	return &Config{
-		Enable:            false,
-		Prompt:            false,
-		MinimumNodes:      DefaultMinimumNodes,
-		Namespace:         pkgName + "-" + rand.String(10) + "-" + utils_time.GetTS(10),
-		ECRBusyboxImage:   "",
-		Repository:        &aws_v1_ecr.Repository{},
-		RunTimeout:        DefaultRunTimeout,
-		RunTimeoutString:  DefaultRunTimeout.String(),
-		ObjectKeyPrefix:   DefaultObjectKeyPrefix(),
-		Objects:           DefaultObjects,
-		ObjectSize:        DefaultObjectSize,
-		UpdateConcurrency: DefaultUpdateConcurrency,
-		ListBatchLimit:    DefaultListBatchLimit,
+		Enable:                false,
+		Prompt:                false,
+		MinimumNodes:          DefaultMinimumNodes,
+		Namespace:             pkgName + "-" + rand.String(10) + "-" + utils_time.GetTS(10),
+		SkipNamespaceCreation: DefaultSkipNamespaceCreation,
+		ECRBusyboxImage:       "",
+		Repository:            &aws_v1_ecr.Repository{},
+		RunTimeout:            DefaultRunTimeout,
+		RunTimeoutString:      DefaultRunTimeout.String(),
+		ObjectKeyPrefix:       DefaultObjectKeyPrefix(),
+		Objects:               DefaultObjects,
+		ObjectSize:            DefaultObjectSize,
+		UpdateConcurrency:     DefaultUpdateConcurrency,
+		ListBatchLimit:        DefaultListBatchLimit,
 	}
 }
 
@@ -309,8 +313,10 @@ func (ts *tester) Apply() (err error) {
 		}
 	}
 
-	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client.KubernetesClient(), ts.cfg.Namespace); err != nil {
-		return err
+	if !ts.cfg.SkipNamespaceCreation {
+		if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client.KubernetesClient(), ts.cfg.Namespace); err != nil {
+			return err
+		}
 	}
 
 	latenciesWritesCh, latenciesGetsCh := make(chan latency.Durations), make(chan latency.Durations)
