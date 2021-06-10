@@ -144,14 +144,15 @@ type Config struct {
 
 const (
 	// DefaultClients is the default number of clients to create.
-	DefaultClients = 2
+	DefaultClients = 1
 	// DefaultClientQPS is the default client QPS.
 	DefaultClientQPS float32 = 10
 	// DefaultClientBurst is the default client burst.
-	DefaultClientBurst = 20
+	DefaultClientBurst = 10
 	// DefaultClientTimeout is the default client timeout.
-	DefaultClientTimeout = 15 * time.Second
-	DefaultMinimumNodes  = 1
+	DefaultClientTimeout = 20 * time.Second
+
+	DefaultMinimumNodes = 1
 )
 
 func NewDefault() *Config {
