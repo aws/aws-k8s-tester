@@ -659,6 +659,8 @@ func TestEnvAddOnClusterloader(t *testing.T) {
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_RUN_FROM_CLUSTER")
 	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_NODES", "100")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_NODES")
+	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_ENABLE_EXEC_SERVICE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_ENABLE_EXEC_SERVICE")
 	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_NODES_PER_NAMESPACE", "100")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_NODES_PER_NAMESPACE")
 	os.Setenv("K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_OVERRIDE_PODS_PER_NODE", "100")
@@ -699,6 +701,9 @@ func TestEnvAddOnClusterloader(t *testing.T) {
 	}
 	if cfg.AddOnClusterloader.Nodes != 100 {
 		t.Fatalf("unexpected cfg.AddOnClusterloader.Nodes %v", cfg.AddOnClusterloader.Nodes)
+	}
+	if !cfg.AddOnClusterloader.EnableExecService {
+		t.Fatalf("unexpected cfg.AddOnClusterloader.EnableExecService %v", cfg.AddOnClusterloader.EnableExecService)
 	}
 	if cfg.AddOnClusterloader.TestOverride.NodesPerNamespace != 100 {
 		t.Fatalf("unexpected cfg.AddOnClusterloader.TestOverride.NodesPerNamespace %v", cfg.AddOnClusterloader.TestOverride.NodesPerNamespace)

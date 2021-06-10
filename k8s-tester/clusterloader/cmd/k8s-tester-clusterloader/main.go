@@ -67,8 +67,9 @@ var (
 
 	testConfigPath string
 
-	runFromCluster bool
-	nodes          int
+	runFromCluster    bool
+	nodes             int
+	enableExecService bool
 
 	nodesPerNamespace int
 	podsPerNode       int
@@ -103,6 +104,7 @@ func newApply() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&testConfigPath, "test-config-path", "", "clusterloader test config path")
 	rootCmd.PersistentFlags().BoolVar(&runFromCluster, "run-from-cluster", clusterloader.DefaultRunFromCluster, "to run clusterloader2 in cluster")
 	rootCmd.PersistentFlags().IntVar(&nodes, "nodes", clusterloader.DefaultNodes, "clusterloader nodes")
+	rootCmd.PersistentFlags().BoolVar(&enableExecService, "enable-exec-service", clusterloader.DefaultEnableExecService, "clusterloader enable exec service")
 	rootCmd.PersistentFlags().IntVar(&nodesPerNamespace, "nodes-per-namespace", clusterloader.DefaultNodesPerNamespace, "clusterloader nodes per namespace")
 	rootCmd.PersistentFlags().IntVar(&podsPerNode, "pods-per-node", clusterloader.DefaultPodsPerNode, "clusterloader pods per node")
 	rootCmd.PersistentFlags().IntVar(&bigGroupSize, "big-group-size", clusterloader.DefaultBigGroupSize, "clusterloader big group size")
@@ -154,8 +156,9 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 
 		TestConfigPath: testConfigPath,
 
-		RunFromCluster: runFromCluster,
-		Nodes:          nodes,
+		RunFromCluster:    runFromCluster,
+		Nodes:             nodes,
+		EnableExecService: enableExecService,
 
 		TestOverride: &clusterloader.TestOverride{
 			Path: clusterloader.DefaultTestOverridePath(),

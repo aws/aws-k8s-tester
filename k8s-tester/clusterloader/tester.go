@@ -73,6 +73,10 @@ type Config struct {
 	// Nodes is the number of nodes.
 	// Set via "--nodes" flag.
 	Nodes int `json:"nodes"`
+	// EnableExecService is set to "true" to allow executing arbitrary commands from a pod running in the cluster.
+	// Set via "--enable-exec-service" flag.
+	// ref. https://github.com/kubernetes/perf-tests/blob/master/clusterloader2/cmd/clusterloader.go#L120
+	EnableExecService bool `json:"enable_exec_service"`
 
 	// TestOverride defines "testoverrides" flag values.
 	// Set via "--testoverrides" flag.
@@ -171,8 +175,9 @@ const (
 	DefaultRuns       = 2
 	DefaultRunTimeout = 30 * time.Minute
 
-	DefaultRunFromCluster = false
-	DefaultNodes          = 10
+	DefaultRunFromCluster    = false
+	DefaultNodes             = 10
+	DefaultEnableExecService = false
 )
 
 func NewDefault() *Config {
@@ -189,8 +194,9 @@ func NewDefault() *Config {
 		Runs:       DefaultRuns,
 		RunTimeout: DefaultRunTimeout,
 
-		RunFromCluster: DefaultRunFromCluster,
-		Nodes:          DefaultNodes,
+		RunFromCluster:    DefaultRunFromCluster,
+		Nodes:             DefaultNodes,
+		EnableExecService: DefaultEnableExecService,
 
 		TestOverride: newDefaultTestOverride(),
 
@@ -393,6 +399,7 @@ func (ts *tester) getCL2Args() (args []string) {
 		ts.cfg.ClusterloaderPath,
 		"--logtostderr",     // log to standard error instead of files (default true)
 		"--alsologtostderr", // log to standard error as well as files
+		fmt.Sprintf("--enable-exec-service=%v", ts.cfg.EnableExecService),
 		"--testconfig=" + ts.cfg.TestConfigPath,
 		"--testoverrides=" + ts.cfg.TestOverride.Path,
 		"--report-dir=" + ts.cfg.TestReportDir,

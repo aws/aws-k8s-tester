@@ -247,6 +247,7 @@
 | K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_CONFIG_PATH            | SETTABLE VIA ENV VAR | *clusterloader.Config.TestConfigPath           | string                 |
 | K8S_TESTER_ADD_ON_CLUSTERLOADER_RUN_FROM_CLUSTER            | SETTABLE VIA ENV VAR | *clusterloader.Config.RunFromCluster           | bool                   |
 | K8S_TESTER_ADD_ON_CLUSTERLOADER_NODES                       | SETTABLE VIA ENV VAR | *clusterloader.Config.Nodes                    | int                    |
+| K8S_TESTER_ADD_ON_CLUSTERLOADER_ENABLE_EXEC_SERVICE         | SETTABLE VIA ENV VAR | *clusterloader.Config.EnableExecService        | bool                   |
 | K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_REPORT_DIR             | READ-ONLY            | *clusterloader.Config.TestReportDir            | string                 |
 | K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_REPORT_DIR_TAR_GZ_PATH | READ-ONLY            | *clusterloader.Config.TestReportDirTarGzPath   | string                 |
 | K8S_TESTER_ADD_ON_CLUSTERLOADER_TEST_LOG_PATH               | READ-ONLY            | *clusterloader.Config.TestLogPath              | string                 |
