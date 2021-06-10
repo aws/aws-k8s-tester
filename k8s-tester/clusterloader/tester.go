@@ -498,13 +498,27 @@ func (ts *tester) runCL2s(checkDonec chan struct{}) (runErr error) {
 			output := strings.TrimSpace(string(b))
 			lines := strings.Split(output, "\n")
 			linesN := len(lines)
-			if linesN > 15 {
-				output = strings.Join(lines[linesN-15:], "\n")
+			newLines := make([]string, 0, linesN)
+			for _, line := range lines {
+				// remove "fetching profile data from is not possible from provider: eks"
+				if strings.Contains(line, "profile.go") && strings.Contains(line, "eks") {
+					continue
+				}
+				newLines = append(newLines, line)
 			}
+			newLinesN := len(newLines)
+			if newLinesN > 15 {
+				newLines = newLines[newLinesN-15:]
+			}
+			output = strings.Join(newLines, "\n")
 
 			if strings.Contains(output, `Status: Success`) {
 				// e.g., "Resource cleanup error: [timed out)"...
 				ts.cfg.Logger.Warn("cluster loader command exited but continue for its success status")
+				continue
+			}
+			if strings.Contains(output, `PodStartupLatency: perc`) {
+				ts.cfg.Logger.Warn("cluster loader command exited but continue for its success report")
 				continue
 			}
 			if strings.Contains(output, skipErr) {
@@ -688,6 +702,12 @@ I0610 01:33:32.780768    7596 clusterloader.go:234] ----------------------------
 
 JUnit report was created: /tmp/clusterloader-test-report-dir-168713f4aacf6138/junit.xml
 E0610 01:43:32.811103    7596 clusterloader.go:359] Error while tearing down exec service: timed out waiting for the condition
+*/
+
+/*
+I0610 07:56:44.169615   27280 phase_latency.go:146] PodStartupLatency: perc50: 6.183378663s, perc90: 11.146006032s, perc99: 12.55199317s
+I0610 07:56:44.169689   27280 phase_latency.go:146] PodStartupLatency: perc50: 8.048347299s, perc90: 14.55199317s, perc99: 16.545840721s
+I0610 07:56:44.169761   27280 phase_latency.go:146] PodStartupLatency: perc50: 8.048347299s, perc90: 14.980628148s, perc99: 16.545840721s; threshold 1h0m0s
 */
 
 const skipErr = `action gather failed for SchedulingMetrics`
