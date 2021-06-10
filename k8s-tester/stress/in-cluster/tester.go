@@ -452,7 +452,9 @@ func (ts *tester) createServiceAccount() error {
 
 // ref. https://github.com/kubernetes/client-go/tree/master/examples/in-cluster-client-configuration
 // ref. https://kubernetes.io/docs/reference/access-authn-authz/rbac/
-// e.g., nodes is forbidden: User "system:serviceaccount:stress-in-cluster...:default" cannot list resource "nodes" in API group "" at the cluster scope
+// need skip list nodes and namespace creation
+// e.g., nodes is forbidden: User "system:serviceaccount:stress..." cannot list resource "nodes" in API group "" at the cluster scope
+// e.g., namespaces is forbidden: User "system:serviceaccount:..." cannot create resource "namespaces" in API group "" at the cluster scope)
 func (ts *tester) createRBACClusterRole() error {
 	ts.cfg.Logger.Info("creating stresser RBAC ClusterRole")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)

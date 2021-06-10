@@ -732,6 +732,8 @@ func TestEnvAddOnStress(t *testing.T) {
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_ENABLE")
 	os.Setenv("K8S_TESTER_ADD_ON_STRESS_NAMESPACE", "hello")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_NAMESPACE")
+	os.Setenv("K8S_TESTER_ADD_ON_STRESS_SKIP_NAMESPACE_CREATION", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_SKIP_NAMESPACE_CREATION")
 	os.Setenv("K8S_TESTER_ADD_ON_STRESS_RUN_TIMEOUT", "11h")
 	defer os.Unsetenv("K8S_TESTER_ADD_ON_STRESS_RUN_TIMEOUT")
 	os.Setenv("K8S_TESTER_ADD_ON_STRESS_REPOSITORY_PARTITION", "aws")
@@ -758,6 +760,9 @@ func TestEnvAddOnStress(t *testing.T) {
 	}
 	if cfg.AddOnStress.Namespace != "hello" {
 		t.Fatalf("unexpected cfg.AddOnStress.Namespace %v", cfg.AddOnStress.Namespace)
+	}
+	if !cfg.AddOnStress.SkipNamespaceCreation {
+		t.Fatalf("unexpected cfg.AddOnStress.SkipNamespaceCreation %v", cfg.AddOnStress.SkipNamespaceCreation)
 	}
 	if cfg.AddOnStress.RunTimeout != 11*time.Hour {
 		t.Fatalf("unexpected cfg.AddOnStress.RunTimeout %v", cfg.AddOnStress.RunTimeout)
