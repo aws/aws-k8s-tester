@@ -39,9 +39,6 @@ type Config struct {
 }
 
 func (cfg *Config) ValidateAndSetDefaults() error {
-	if cfg.MinimumNodes == 0 {
-		cfg.MinimumNodes = DefaultMinimumNodes
-	}
 
 	return nil
 }
@@ -81,8 +78,10 @@ func (ts *tester) Apply() error {
 		return errors.New("cancelled")
 	}
 
-	if nodes, err := client.ListNodes(ts.cfg.Client.KubernetesClient()); len(nodes) < ts.cfg.MinimumNodes || err != nil {
-		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
+	if ts.cfg.MinimumNodes > 0 {
+		if nodes, err := client.ListNodes(ts.cfg.Client.KubernetesClient()); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+			return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
+		}
 	}
 
 	if err := ts.applyDashboardYAML(); err != nil {

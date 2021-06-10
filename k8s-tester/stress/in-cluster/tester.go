@@ -99,9 +99,6 @@ type K8sTesterStressCLI struct {
 }
 
 func (cfg *Config) ValidateAndSetDefaults() error {
-	if cfg.MinimumNodes == 0 {
-		cfg.MinimumNodes = DefaultMinimumNodes
-	}
 	if cfg.Namespace == "" {
 		return errors.New("empty Namespace")
 	}
@@ -269,8 +266,10 @@ func (ts *tester) Apply() (err error) {
 		return err
 	}
 
-	if nodes, err := client.ListNodes(ts.cfg.Client.KubernetesClient()); len(nodes) < ts.cfg.MinimumNodes || err != nil {
-		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
+	if ts.cfg.MinimumNodes > 0 {
+		if nodes, err := client.ListNodes(ts.cfg.Client.KubernetesClient()); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+			return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
+		}
 	}
 
 	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client.KubernetesClient(), ts.cfg.Namespace); err != nil {
@@ -623,7 +622,7 @@ func (ts *tester) createConfigmap() error {
 
 func (ts *tester) createCronJobObject(k8sTesterStressImg string, busyboxImg string) (batch_v1beta1.CronJob, string, error) {
 	// do not pass kubeconfig to use in-cluster client
-	cmd := "/k8s-tester-stress --prompt=false"
+	cmd := "/k8s-tester-stress --prompt=false --minimum-nodes=0"
 	cmd += fmt.Sprintf(" --namespace %s", ts.cfg.Namespace)
 	cmd += " --kubectl-path /kubectl"
 	cmd += fmt.Sprintf(" apply --ecr-busybox-image %s", busyboxImg)
