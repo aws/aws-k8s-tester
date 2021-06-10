@@ -420,7 +420,7 @@ func (ts *tester) createServiceAccount() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.Client.KubernetesClient().
 		CoreV1().
-		ServiceAccounts(ts.cfg.Namespace).
+		ServiceAccounts("default").
 		Create(
 			ctx,
 			&v1.ServiceAccount{
@@ -430,7 +430,7 @@ func (ts *tester) createServiceAccount() error {
 				},
 				ObjectMeta: meta_v1.ObjectMeta{
 					Name:      serviceAccountName,
-					Namespace: ts.cfg.Namespace,
+					Namespace: "default",
 					Labels: map[string]string{
 						"app.kubernetes.io/name": appName,
 					},
@@ -553,7 +553,7 @@ func (ts *tester) createRBACClusterRoleBinding() error {
 						APIGroup:  "",
 						Kind:      "ServiceAccount",
 						Name:      serviceAccountName,
-						Namespace: ts.cfg.Namespace,
+						Namespace: "default",
 					},
 					{ // https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 						APIGroup: "rbac.authorization.k8s.io",
