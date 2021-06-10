@@ -369,7 +369,6 @@ func (ts *tester) streamTestLogs() (checkDonec chan struct{}) {
 			if ts.testLogFile != nil {
 				ts.testLogFile.Sync()
 			}
-			ts.cfg.Logger.Info("checking cluster loader command output from logs file")
 			b, lerr := ioutil.ReadFile(ts.cfg.TestLogPath)
 			if lerr != nil {
 				ts.cfg.Logger.Warn("failed to read cluster loader command output from logs file", zap.Error(lerr))
@@ -443,7 +442,7 @@ func (ts *tester) runCL2s(checkDonec chan struct{}) (runErr error) {
 			ts.cfg.Logger.Warn("checking cluster loader error from log file", zap.Error(rerr))
 			b, lerr := ioutil.ReadFile(ts.cfg.TestLogPath)
 			if lerr != nil {
-				ts.cfg.Logger.Warn("failed to read cluster loader command output from logs file", zap.Error(lerr))
+				ts.cfg.Logger.Warn("failed to read cluster loader error from logs file", zap.Error(lerr))
 				errc <- rerr
 				return
 			}
@@ -454,6 +453,10 @@ func (ts *tester) runCL2s(checkDonec chan struct{}) (runErr error) {
 				output = strings.Join(lines[linesN-15:], "\n")
 			}
 
+			if strings.Contains(output, `Status: Success`) {
+				ts.cfg.Logger.Warn("cluster loader command exited but continue for its success status")
+				continue
+			}
 			if strings.Contains(output, skipErr) {
 				ts.cfg.Logger.Warn("cluster loader failed but continue", zap.String("skip-error-message", skipErr))
 				continue
@@ -623,6 +626,18 @@ I0621 01:15:53.007928     415 simple_test_executor.go:94]
 {"level":"info","ts":"2020-06-21T01:16:20.231-0700","caller":"cluster-loader/cluster-loader.go:201","msg":"checked cluster loader command output from logs file","total-lines":153}
 I0621 01:15:53.007938     415 probes.go:131] Probe DnsLookupLatency wasn't started, skipping the Dispose() step
 I0621 01:15:53.007977     415 probes.go:131] Probe InClusterNetworkLatency wasn't started, skipping the Dispose() step
+*/
+
+/*
+DO NOT FAIL THE TEST JUST BECAUSE IT CANNOT TEAR DOWN EXEC
+
+I0610 01:33:32.780753    7596 clusterloader.go:228] Test Finished
+I0610 01:33:32.780758    7596 clusterloader.go:229]   Test: ./testing/load/config.yaml
+I0610 01:33:32.780763    7596 clusterloader.go:230]   Status: Success
+I0610 01:33:32.780768    7596 clusterloader.go:234] --------------------------------------------------------------------------------
+
+JUnit report was created: /tmp/clusterloader-test-report-dir-168713f4aacf6138/junit.xml
+E0610 01:43:32.811103    7596 clusterloader.go:359] Error while tearing down exec service: timed out waiting for the condition
 */
 
 const skipErr = `action gather failed for SchedulingMetrics`
