@@ -539,12 +539,7 @@ func (ts *tester) startUpdates(podImg string) (latenciesWrites latency.Durations
 
 		podName := fmt.Sprintf("%s%d", ts.cfg.ObjectKeyPrefix, i%10)
 
-		wg := &sync.WaitGroup{}
-		wg.Add(ts.cfg.UpdateConcurrency)
-
 		updateFunc := func() error {
-			defer wg.Done()
-
 			podClient := ts.cfg.Client.KubernetesClient().CoreV1().Pods(ts.cfg.Namespace)
 
 			start := time.Now()
@@ -602,11 +597,16 @@ func (ts *tester) startUpdates(podImg string) (latenciesWrites latency.Durations
 			return updateErr
 		}
 
-		// exponential backoff to prevent apiserver overloads
-		// conflict happens when other clients overwrites the existing value
-		// ref. https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+		wg := &sync.WaitGroup{}
+		wg.Add(ts.cfg.UpdateConcurrency)
 		for j := 0; j < ts.cfg.UpdateConcurrency; j++ {
-			go retry.RetryOnConflict(retry.DefaultRetry, updateFunc)
+			go func() {
+				// exponential backoff to prevent apiserver overloads
+				// conflict happens when other clients overwrites the existing value
+				// ref. https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+				retry.RetryOnConflict(retry.DefaultRetry, updateFunc)
+				wg.Done()
+			}()
 		}
 		wg.Wait()
 	}
