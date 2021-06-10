@@ -71,7 +71,7 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 	} else {
 		cfg = k8s_tester.NewDefault()
 		if autoPath {
-			path = filepath.Join(os.TempDir(), cfg.ClusterName+".yaml")
+			path = filepath.Join(os.TempDir(), cfg.ClusterName+".k8s-tester.yaml")
 		}
 		cfg.ConfigPath = path
 		fmt.Fprintf(os.Stderr, "cannot find configuration; wrote a new one %q\n", path)

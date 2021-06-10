@@ -34,6 +34,7 @@ import (
 	rbac_v1 "k8s.io/api/rbac/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/exec"
 	"sigs.k8s.io/yaml"
 )
 
@@ -763,11 +764,12 @@ func (ts *tester) createCronJob(k8sTesterStressImg string, busyboxImg string) er
 }
 
 func (ts *tester) checkCronJob() (err error) {
-	timeout := 15*time.Minute + 5*time.Minute*time.Duration(ts.cfg.Completes)
+	timeout := 15*time.Minute + ts.cfg.K8sTesterStressCLI.RunTimeout*time.Duration(ts.cfg.Completes)
 	if timeout > 3*time.Hour {
 		timeout = 3 * time.Hour
 	}
 
+	ts.cfg.Logger.Info("checking cron job", zap.String("timeout", timeout.String()))
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	var pods []core_v1.Pod
 	_, pods, err = client.WaitForCronJobCompletes(
@@ -781,6 +783,91 @@ func (ts *tester) checkCronJob() (err error) {
 		ts.cfg.Namespace,
 		cronJobName,
 		int(ts.cfg.Completes),
+
+		client.WithQueryFunc(func() {
+			descArgs := []string{
+				ts.cfg.Client.Config().KubectlPath,
+				"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
+				"--namespace=" + ts.cfg.Namespace,
+				"describe",
+				"job",
+				cronJobName,
+			}
+			descCmd := strings.Join(descArgs, " ")
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			descOutput, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+			cancel()
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe job' failed", zap.Error(err))
+			}
+			out := string(descOutput)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\n\"%s\" output:\n\n%s\n\n", descCmd, out)
+
+			argsLogs := []string{
+				ts.cfg.Client.Config().KubectlPath,
+				"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
+				"--namespace=" + ts.cfg.Namespace,
+				"logs",
+				"--selector=job-name=" + cronJobName,
+				"--timestamps",
+				"--tail=10",
+			}
+			cmdLogs := strings.Join(argsLogs, " ")
+			ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+			logsOutput, err := exec.New().CommandContext(ctx, argsLogs[0], argsLogs[1:]...).CombinedOutput()
+			cancel()
+			out = string(logsOutput)
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
+			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\":\n%s\n", cmdLogs, out)
+		}),
+
+		client.WithPodFunc(func(pod core_v1.Pod) {
+			switch pod.Status.Phase {
+			case core_v1.PodFailed:
+				ts.cfg.Logger.Warn("pod failed",
+					zap.String("namespace", pod.Namespace),
+					zap.String("pod-name", pod.Name),
+					zap.String("pod-status-phase", fmt.Sprintf("%v", pod.Status.Phase)),
+				)
+				descArgs := []string{
+					ts.cfg.Client.Config().KubectlPath,
+					"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
+					"--namespace=" + pod.Namespace,
+					"describe",
+					"pod",
+					pod.Name,
+				}
+				descCmd := strings.Join(descArgs, " ")
+				ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+				cmdOutput, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+				cancel()
+				if err != nil {
+					ts.cfg.Logger.Warn("'kubectl describe job' failed", zap.Error(err))
+				}
+				out := string(cmdOutput)
+				fmt.Fprintf(ts.cfg.LogWriter, "\"%s\" output:\n\n%s\n\n", descCmd, out)
+
+				logsArgs := []string{
+					ts.cfg.Client.Config().KubectlPath,
+					"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
+					"--namespace=" + pod.Namespace,
+					"logs",
+					fmt.Sprintf("pod/%s", pod.Name),
+					"--timestamps",
+				}
+				logsCmd := strings.Join(logsArgs, " ")
+				ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+				cmdOutput, err = exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
+				cancel()
+				if err != nil {
+					ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
+				}
+				out = string(cmdOutput)
+				fmt.Fprintf(ts.cfg.LogWriter, "\"%s\" output:\n\n%s\n\n", logsCmd, out)
+			}
+		}),
 	)
 	cancel()
 	if err != nil {
