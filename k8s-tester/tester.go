@@ -22,6 +22,7 @@ import (
 	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
 	"github.com/aws/aws-k8s-tester/k8s-tester/csrs"
+	falco "github.com/aws/aws-k8s-tester/k8s-tester/falco"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
@@ -232,6 +233,13 @@ func (ts *tester) createTesters() {
 		ts.cfg.AddOnStressInCluster.LogWriter = ts.logWriter
 		ts.cfg.AddOnStressInCluster.Client = ts.cli
 		ts.testers = append(ts.testers, stress_in_cluster.New(ts.cfg.AddOnStressInCluster))
+	}
+	if ts.cfg.AddOnFalco != nil && ts.cfg.AddOnFalco.Enable {
+		ts.cfg.AddOnFalco.Stopc = ts.stopCreationCh
+		ts.cfg.AddOnFalco.Logger = ts.logger
+		ts.cfg.AddOnFalco.LogWriter = ts.logWriter
+		ts.cfg.AddOnFalco.Client = ts.cli
+		ts.testers = append(ts.testers, falco.New(ts.cfg.AddOnFalco))
 	}
 }
 
