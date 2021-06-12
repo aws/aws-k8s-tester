@@ -13,7 +13,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.0...v1.6.1
 - Add [`k8s-tester/stress`](https://github.com/aws/aws-k8s-tester/commit/310f44bc0da12ca093b02f74680b34131d6283a6).
 - Add [`k8s-tester/stress/in-cluster`](https://github.com/aws/aws-k8s-tester/commit/e0b5fa0b0fb97851d86d268d093f4754617c638b).
 - Add [`k8s-tester/falco`](https://github.com/aws/aws-k8s-tester/pull/221).
-- Add [`k8s-tester/nlb-guestbook`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- Add [`k8s-tester/nlb-guestbook`](https://github.com/aws/aws-k8s-tester/commit/6c985cfabff769c020d2f1f131c4106607fa5d95).
 
 ### Go
 
