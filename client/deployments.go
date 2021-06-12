@@ -39,7 +39,7 @@ func WaitForDeploymentAvailables(
 	sp := newSpinner(logWriter, "Waiting for Deployment availables "+deploymentName)
 	lg.Info("waiting Deployment availables",
 		zap.String("namespace", namespace),
-		zap.String("job-name", deploymentName),
+		zap.String("deployment-name", deploymentName),
 		zap.String("initial-wait", initialWait.String()),
 		zap.String("poll-interval", pollInterval.String()),
 		zap.String("ctx-duration-left", durationTillDeadline(ctx).String()),

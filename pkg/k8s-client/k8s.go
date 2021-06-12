@@ -744,7 +744,7 @@ func WaitForReplicationControllerCompletes(
 	sp := spinner.New(logWriter, "Waiting for ReplicationController completes "+replicationControllerName)
 	lg.Info("waiting ReplicationController completes",
 		zap.String("namespace", namespace),
-		zap.String("job-name", replicationControllerName),
+		zap.String("replication-controller-name", replicationControllerName),
 		zap.String("initial-wait", initialWait.String()),
 		zap.String("poll-interval", pollInterval.String()),
 		zap.String("ctx-duration-left", ctxutil.DurationTillDeadline(ctx).String()),
@@ -834,7 +834,7 @@ func WaitForDeploymentCompletes(
 	sp := spinner.New(logWriter, "Waiting for Deployment completes "+deploymentName)
 	lg.Info("waiting Deployment completes",
 		zap.String("namespace", namespace),
-		zap.String("job-name", deploymentName),
+		zap.String("deployment-name", deploymentName),
 		zap.String("initial-wait", initialWait.String()),
 		zap.String("poll-interval", pollInterval.String()),
 		zap.String("ctx-duration-left", ctxutil.DurationTillDeadline(ctx).String()),

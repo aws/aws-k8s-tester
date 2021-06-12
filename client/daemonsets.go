@@ -67,7 +67,7 @@ func WaitForDaemonSetCompletes(
 	sp := newSpinner(logWriter, "Waiting for Deployment completes "+daemonsetName)
 	lg.Info("waiting DaemonSets completes",
 		zap.String("namespace", namespace),
-		zap.String("job-name", daemonsetName),
+		zap.String("daemonset-name", daemonsetName),
 		zap.String("initial-wait", initialWait.String()),
 		zap.String("poll-interval", pollInterval.String()),
 		zap.String("ctx-duration-left", durationTillDeadline(ctx).String()),
