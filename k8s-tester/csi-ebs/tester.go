@@ -1,4 +1,4 @@
-// Package csi_ebs a simple metrics server.
+// Package csi_ebs installs CSI EBS driver.
 // Replace https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/csi-ebs/csi-ebs.go.
 package csi_ebs
 

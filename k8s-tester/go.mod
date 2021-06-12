@@ -22,6 +22,7 @@ require (
 	github.com/aws/aws-k8s-tester/k8s-tester/secrets v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/stress v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/tester v0.0.0-20210610170531-2e5d31e5196c
+	github.com/aws/aws-k8s-tester/k8s-tester/wordpress v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/utils v0.0.0-20210610170531-2e5d31e5196c
 	github.com/dustin/go-humanize v1.0.0
 	github.com/manifoldco/promptui v0.8.0
@@ -54,6 +55,7 @@ replace (
 	github.com/aws/aws-k8s-tester/k8s-tester/secrets => ./secrets
 	github.com/aws/aws-k8s-tester/k8s-tester/stress => ./stress
 	github.com/aws/aws-k8s-tester/k8s-tester/tester => ./tester
-	github.com/aws/aws-k8s-tester/k8s-tester/version => ./tester
+	github.com/aws/aws-k8s-tester/k8s-tester/version => ./version
+	github.com/aws/aws-k8s-tester/k8s-tester/wordpress => ./wordpress
 	github.com/aws/aws-k8s-tester/utils => ../utils
 )

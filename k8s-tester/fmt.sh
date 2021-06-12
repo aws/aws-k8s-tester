@@ -71,3 +71,6 @@ gofmt -s -w ./tester
 
 goimports -w ./version
 gofmt -s -w ./version
+
+goimports -w ./wordpress
+gofmt -s -w ./wordpress

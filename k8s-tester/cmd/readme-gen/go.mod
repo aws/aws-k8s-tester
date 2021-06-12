@@ -16,10 +16,12 @@ require (
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/metrics-server v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/nlb-guestbook v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/php-apache v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/secrets v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/stress v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/wordpress v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/utils v0.0.0-20210610170531-2e5d31e5196c
 	github.com/olekukonko/tablewriter v0.0.5
 )
@@ -46,5 +48,6 @@ replace (
 	github.com/aws/aws-k8s-tester/k8s-tester/secrets => ../../secrets
 	github.com/aws/aws-k8s-tester/k8s-tester/stress => ../../stress
 	github.com/aws/aws-k8s-tester/k8s-tester/tester => ../../tester
+	github.com/aws/aws-k8s-tester/k8s-tester/wordpress => ../../wordpress
 	github.com/aws/aws-k8s-tester/utils => ../../../utils
 )

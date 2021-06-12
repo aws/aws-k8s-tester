@@ -30,5 +30,6 @@ replace (
 	github.com/aws/aws-k8s-tester/k8s-tester/secrets => ../../secrets
 	github.com/aws/aws-k8s-tester/k8s-tester/stress => ../../stress
 	github.com/aws/aws-k8s-tester/k8s-tester/tester => ../../tester
+	github.com/aws/aws-k8s-tester/k8s-tester/wordpress => ../../wordpress
 	github.com/aws/aws-k8s-tester/utils => ../../../utils
 )

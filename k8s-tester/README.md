@@ -33,10 +33,11 @@ See example commits:
 - [`k8s-tester/csrs`](https://github.com/aws/aws-k8s-tester/commit/90ef22a2e6505189f998d1f6ed738fe05f73d56d).
 - [`k8s-tester/falco`](https://github.com/aws/aws-k8s-tester/pull/221).
 - [`k8s-tester/nlb-guestbook`](https://github.com/aws/aws-k8s-tester/commit/6c985cfabff769c020d2f1f131c4106607fa5d95).
+- [`k8s-tester/wordpress`](https://github.com/aws/aws-k8s-tester/commit/TODO).
 
 ### Environmental variables
 
-Total 19 test cases!
+Total 20 test cases!
 
 ```
 *----------------------------------*----------------------*----------------------------------------*---------------*
@@ -187,6 +188,22 @@ Total 19 test cases!
 | K8S_TESTER_ADD_ON_NLB_HELLO_WORLD_ELB_NAME                 | READ-ONLY            | *nlb_hello_world.Config.ELBName                | string            |
 | K8S_TESTER_ADD_ON_NLB_HELLO_WORLD_ELB_URL                  | READ-ONLY            | *nlb_hello_world.Config.ELBURL                 | string            |
 *------------------------------------------------------------*----------------------*------------------------------------------------*-------------------*
+
+*-------------------------------------------*----------------------*--------------------------------*---------*
+|          ENVIRONMENTAL VARIABLE           |      FIELD TYPE      |              TYPE              | GO TYPE |
+*-------------------------------------------*----------------------*--------------------------------*---------*
+| K8S_TESTER_ADD_ON_WORDPRESS_ENABLE        | SETTABLE VIA ENV VAR | *wordpress.Config.Enable       | bool    |
+| K8S_TESTER_ADD_ON_WORDPRESS_ACCOUNT_ID    | READ-ONLY            | *wordpress.Config.AccountID    | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_PARTITION     | SETTABLE VIA ENV VAR | *wordpress.Config.Partition    | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_REGION        | SETTABLE VIA ENV VAR | *wordpress.Config.Region       | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_MINIMUM_NODES | SETTABLE VIA ENV VAR | *wordpress.Config.MinimumNodes | int     |
+| K8S_TESTER_ADD_ON_WORDPRESS_NAMESPACE     | SETTABLE VIA ENV VAR | *wordpress.Config.Namespace    | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_USER_NAME     | SETTABLE VIA ENV VAR | *wordpress.Config.UserName     | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_PASSWORD      | SETTABLE VIA ENV VAR | *wordpress.Config.Password     | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_ELB_ARN       | READ-ONLY            | *wordpress.Config.ELBARN       | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_ELB_NAME      | READ-ONLY            | *wordpress.Config.ELBName      | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_ELB_URL       | READ-ONLY            | *wordpress.Config.ELBURL       | string  |
+*-------------------------------------------*----------------------*--------------------------------*---------*
 
 *-----------------------------------------*----------------------*------------------------------*---------*
 |         ENVIRONMENTAL VARIABLE          |      FIELD TYPE      |             TYPE             | GO TYPE |

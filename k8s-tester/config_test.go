@@ -400,6 +400,36 @@ func TestEnvAddOnNLBHelloWorld(t *testing.T) {
 	}
 }
 
+func TestEnvAddOnWordpress(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("K8S_TESTER_CONFIG_PATH", "test.yaml")
+	defer os.Unsetenv("K8S_TESTER_CONFIG_PATH")
+	os.Setenv("K8S_TESTER_ADD_ON_WORDPRESS_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_WORDPRESS_ENABLE")
+	os.Setenv("K8S_TESTER_ADD_ON_WORDPRESS_MINIMUM_NODES", "100")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_WORDPRESS_MINIMUM_NODES")
+	os.Setenv("K8S_TESTER_ADD_ON_WORDPRESS_NAMESPACE", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_WORDPRESS_NAMESPACE")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if cfg.ConfigPath != "test.yaml" {
+		t.Fatalf("unexpected cfg.ConfigPath %v", cfg.ConfigPath)
+	}
+	if !cfg.AddOnWordpress.Enable {
+		t.Fatalf("unexpected cfg.AddOnWordpress.Enable %v", cfg.AddOnWordpress.Enable)
+	}
+	if cfg.AddOnWordpress.MinimumNodes != 100 {
+		t.Fatalf("unexpected cfg.AddOnWordpress.MinimumNodes %v", cfg.AddOnWordpress.MinimumNodes)
+	}
+	if cfg.AddOnWordpress.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnWordpress.Namespace %v", cfg.AddOnWordpress.Namespace)
+	}
+}
+
 func TestEnvAddOnJobsPi(t *testing.T) {
 	cfg := NewDefault()
 

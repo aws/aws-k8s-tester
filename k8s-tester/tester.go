@@ -36,6 +36,7 @@ import (
 	stress_in_cluster "github.com/aws/aws-k8s-tester/k8s-tester/stress/in-cluster"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
 	"github.com/aws/aws-k8s-tester/k8s-tester/version"
+	"github.com/aws/aws-k8s-tester/k8s-tester/wordpress"
 	"github.com/aws/aws-k8s-tester/utils/log"
 	"github.com/dustin/go-humanize"
 	"github.com/manifoldco/promptui"
@@ -178,6 +179,13 @@ func (ts *tester) createTesters() {
 		ts.cfg.AddOnNLBHelloWorld.LogWriter = ts.logWriter
 		ts.cfg.AddOnNLBHelloWorld.Client = ts.cli
 		ts.testers = append(ts.testers, nlb_hello_world.New(ts.cfg.AddOnNLBHelloWorld))
+	}
+	if ts.cfg.AddOnWordpress != nil && ts.cfg.AddOnWordpress.Enable {
+		ts.cfg.AddOnWordpress.Stopc = ts.stopCreationCh
+		ts.cfg.AddOnWordpress.Logger = ts.logger
+		ts.cfg.AddOnWordpress.LogWriter = ts.logWriter
+		ts.cfg.AddOnWordpress.Client = ts.cli
+		ts.testers = append(ts.testers, wordpress.New(ts.cfg.AddOnWordpress))
 	}
 	if ts.cfg.AddOnJobsPi != nil && ts.cfg.AddOnJobsPi.Enable {
 		ts.cfg.AddOnJobsPi.Stopc = ts.stopCreationCh

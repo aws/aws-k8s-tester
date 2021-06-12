@@ -30,6 +30,7 @@ import (
 	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
 	"github.com/aws/aws-k8s-tester/k8s-tester/stress"
 	stress_in_cluster "github.com/aws/aws-k8s-tester/k8s-tester/stress/in-cluster"
+	"github.com/aws/aws-k8s-tester/k8s-tester/wordpress"
 	aws_v1_ecr "github.com/aws/aws-k8s-tester/utils/aws/v1/ecr"
 	"github.com/olekukonko/tablewriter"
 )
@@ -108,6 +109,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+nlb_hello_world.Env()+"_", &nlb_hello_world.Config{}))
+	totalTestCases++
+
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+wordpress.Env()+"_", &wordpress.Config{}))
 	totalTestCases++
 
 	b.WriteByte('\n')
