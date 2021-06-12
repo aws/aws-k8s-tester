@@ -28,6 +28,7 @@ import (
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
 	kubernetes_dashboard "github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard"
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
+	nlb_guestbook "github.com/aws/aws-k8s-tester/k8s-tester/nlb-guestbook"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
@@ -132,6 +133,7 @@ type Config struct {
 	AddOnKubernetesDashboard *kubernetes_dashboard.Config `json:"add_on_kubernetes_dashboard"`
 	AddOnFalco               *falco.Config                `json:"add_on_falco"`
 	AddOnPHPApache           *php_apache.Config           `json:"add_on_php_apache"`
+	AddOnNLBGuestbook        *nlb_guestbook.Config        `json:"add_on_nlb_guestbook"`
 	AddOnNLBHelloWorld       *nlb_hello_world.Config      `json:"add_on_nlb_hello_world"`
 	AddOnJobsPi              *jobs_pi.Config              `json:"add_on_jobs_pi"`
 	AddOnJobsEcho            *jobs_echo.Config            `json:"add_on_jobs_echo"`
@@ -204,6 +206,7 @@ func NewDefault() *Config {
 		AddOnKubernetesDashboard: kubernetes_dashboard.NewDefault(),
 		AddOnFalco:               falco.NewDefault(),
 		AddOnPHPApache:           php_apache.NewDefault(),
+		AddOnNLBGuestbook:        nlb_guestbook.NewDefault(),
 		AddOnNLBHelloWorld:       nlb_hello_world.NewDefault(),
 		AddOnJobsPi:              jobs_pi.NewDefault(),
 		AddOnJobsEcho:            jobs_echo.NewDefault("Job"),
@@ -274,6 +277,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.AddOnPHPApache != nil && cfg.AddOnPHPApache.Enable {
 		if err := cfg.AddOnPHPApache.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnNLBGuestbook != nil && cfg.AddOnNLBGuestbook.Enable {
+		if err := cfg.AddOnNLBGuestbook.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}
@@ -561,6 +569,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		} else {
 			return fmt.Errorf("expected *aws_v1_ecr.Repository, got %T", vv)
 		}
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+nlb_guestbook.Env()+"_", cfg.AddOnNLBGuestbook)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*nlb_guestbook.Config); ok {
+		cfg.AddOnNLBGuestbook = av
+	} else {
+		return fmt.Errorf("expected *nlb_guestbook.Config, got %T", vv)
 	}
 
 	vv, err = parseEnvs(ENV_PREFIX+nlb_hello_world.Env()+"_", cfg.AddOnNLBHelloWorld)

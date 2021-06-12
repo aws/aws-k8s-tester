@@ -330,6 +330,41 @@ func TestEnvAddOnPHPApache(t *testing.T) {
 	}
 }
 
+func TestEnvAddOnNLBGuestbook(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("K8S_TESTER_CONFIG_PATH", "test.yaml")
+	defer os.Unsetenv("K8S_TESTER_CONFIG_PATH")
+	os.Setenv("K8S_TESTER_ADD_ON_NLB_GUESTBOOK_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_NLB_GUESTBOOK_ENABLE")
+	os.Setenv("K8S_TESTER_ADD_ON_NLB_GUESTBOOK_MINIMUM_NODES", "100")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_NLB_GUESTBOOK_MINIMUM_NODES")
+	os.Setenv("K8S_TESTER_ADD_ON_NLB_GUESTBOOK_NAMESPACE", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_NLB_GUESTBOOK_NAMESPACE")
+	os.Setenv("K8S_TESTER_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_NODE_SELECTOR", `{"a":"b","c":"d"}`)
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_NODE_SELECTOR")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if cfg.ConfigPath != "test.yaml" {
+		t.Fatalf("unexpected cfg.ConfigPath %v", cfg.ConfigPath)
+	}
+	if !cfg.AddOnNLBGuestbook.Enable {
+		t.Fatalf("unexpected cfg.AddOnNLBGuestbook.Enable %v", cfg.AddOnNLBGuestbook.Enable)
+	}
+	if cfg.AddOnNLBGuestbook.MinimumNodes != 100 {
+		t.Fatalf("unexpected cfg.AddOnNLBGuestbook.MinimumNodes %v", cfg.AddOnNLBGuestbook.MinimumNodes)
+	}
+	if cfg.AddOnNLBGuestbook.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnNLBGuestbook.Namespace %v", cfg.AddOnNLBGuestbook.Namespace)
+	}
+	if !reflect.DeepEqual(cfg.AddOnNLBGuestbook.DeploymentNodeSelector, map[string]string{"a": "b", "c": "d"}) {
+		t.Fatalf("unexpected cfg.AddOnNLBGuestbook.DeploymentNodeSelector %v", cfg.AddOnNLBGuestbook.DeploymentNodeSelector)
+	}
+}
+
 func TestEnvAddOnNLBHelloWorld(t *testing.T) {
 	cfg := NewDefault()
 

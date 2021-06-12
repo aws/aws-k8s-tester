@@ -27,6 +27,12 @@ gofmt -s -w ./conformance
 goimports -w ./csi-ebs
 gofmt -s -w ./csi-ebs
 
+goimports -w ./csrs
+gofmt -s -w ./csrs
+
+goimports -w ./falco
+gofmt -s -w ./falco
+
 goimports -w ./fluent-bit
 gofmt -s -w ./fluent-bit
 
@@ -44,6 +50,9 @@ gofmt -s -w ./kubernetes-dashboard
 
 goimports -w ./metrics-server
 gofmt -s -w ./metrics-server
+
+goimports -w ./nlb-guestbook
+gofmt -s -w ./nlb-guestbook
 
 goimports -w ./nlb-hello-world
 gofmt -s -w ./nlb-hello-world

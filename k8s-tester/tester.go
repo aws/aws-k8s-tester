@@ -28,6 +28,7 @@ import (
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
 	kubernetes_dashboard "github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard"
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
+	nlb_guestbook "github.com/aws/aws-k8s-tester/k8s-tester/nlb-guestbook"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
@@ -163,6 +164,13 @@ func (ts *tester) createTesters() {
 		ts.cfg.AddOnPHPApache.LogWriter = ts.logWriter
 		ts.cfg.AddOnPHPApache.Client = ts.cli
 		ts.testers = append(ts.testers, php_apache.New(ts.cfg.AddOnPHPApache))
+	}
+	if ts.cfg.AddOnNLBGuestbook != nil && ts.cfg.AddOnNLBGuestbook.Enable {
+		ts.cfg.AddOnNLBGuestbook.Stopc = ts.stopCreationCh
+		ts.cfg.AddOnNLBGuestbook.Logger = ts.logger
+		ts.cfg.AddOnNLBGuestbook.LogWriter = ts.logWriter
+		ts.cfg.AddOnNLBGuestbook.Client = ts.cli
+		ts.testers = append(ts.testers, nlb_guestbook.New(ts.cfg.AddOnNLBGuestbook))
 	}
 	if ts.cfg.AddOnNLBHelloWorld != nil && ts.cfg.AddOnNLBHelloWorld.Enable {
 		ts.cfg.AddOnNLBHelloWorld.Stopc = ts.stopCreationCh

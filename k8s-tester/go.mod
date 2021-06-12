@@ -16,6 +16,7 @@ require (
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/metrics-server v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/nlb-guestbook v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/php-apache v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/secrets v0.0.0-00010101000000-000000000000
@@ -34,7 +35,6 @@ require (
 
 replace (
 	github.com/aws/aws-k8s-tester/client => ../client
-
 	github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent => ./cloudwatch-agent
 	github.com/aws/aws-k8s-tester/k8s-tester/clusterloader => ./clusterloader
 	github.com/aws/aws-k8s-tester/k8s-tester/configmaps => ./configmaps
@@ -48,6 +48,7 @@ replace (
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi => ./jobs-pi
 	github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard => ./kubernetes-dashboard
 	github.com/aws/aws-k8s-tester/k8s-tester/metrics-server => ./metrics-server
+	github.com/aws/aws-k8s-tester/k8s-tester/nlb-guestbook => ./nlb-guestbook
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world => ./nlb-hello-world
 	github.com/aws/aws-k8s-tester/k8s-tester/php-apache => ./php-apache
 	github.com/aws/aws-k8s-tester/k8s-tester/secrets => ./secrets

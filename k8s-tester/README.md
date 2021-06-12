@@ -36,7 +36,7 @@ See example commits:
 
 ### Environmental variables
 
-Total 18 test cases!
+Total 19 test cases!
 
 ```
 *----------------------------------*----------------------*----------------------------------------*---------------*
@@ -155,6 +155,22 @@ Total 18 test cases!
 | K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_NAME       | SETTABLE VIA ENV VAR | *ecr.Repository.Name      | string  |
 | K8S_TESTER_ADD_ON_PHP_APACHE_REPOSITORY_IMAGE_TAG  | SETTABLE VIA ENV VAR | *ecr.Repository.ImageTag  | string  |
 *----------------------------------------------------*----------------------*---------------------------*---------*
+
+*----------------------------------------------------------*----------------------*----------------------------------------------*-------------------*
+|                  ENVIRONMENTAL VARIABLE                  |      FIELD TYPE      |                     TYPE                     |      GO TYPE      |
+*----------------------------------------------------------*----------------------*----------------------------------------------*-------------------*
+| K8S_TESTER_ADD_ON_NLB_GUESTBOOK_ENABLE                   | SETTABLE VIA ENV VAR | *nlb_guestbook.Config.Enable                 | bool              |
+| K8S_TESTER_ADD_ON_NLB_GUESTBOOK_ACCOUNT_ID               | READ-ONLY            | *nlb_guestbook.Config.AccountID              | string            |
+| K8S_TESTER_ADD_ON_NLB_GUESTBOOK_PARTITION                | SETTABLE VIA ENV VAR | *nlb_guestbook.Config.Partition              | string            |
+| K8S_TESTER_ADD_ON_NLB_GUESTBOOK_REGION                   | SETTABLE VIA ENV VAR | *nlb_guestbook.Config.Region                 | string            |
+| K8S_TESTER_ADD_ON_NLB_GUESTBOOK_MINIMUM_NODES            | SETTABLE VIA ENV VAR | *nlb_guestbook.Config.MinimumNodes           | int               |
+| K8S_TESTER_ADD_ON_NLB_GUESTBOOK_NAMESPACE                | SETTABLE VIA ENV VAR | *nlb_guestbook.Config.Namespace              | string            |
+| K8S_TESTER_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_NODE_SELECTOR | SETTABLE VIA ENV VAR | *nlb_guestbook.Config.DeploymentNodeSelector | map[string]string |
+| K8S_TESTER_ADD_ON_NLB_GUESTBOOK_DEPLOYMENT_REPLICAS      | SETTABLE VIA ENV VAR | *nlb_guestbook.Config.DeploymentReplicas     | int32             |
+| K8S_TESTER_ADD_ON_NLB_GUESTBOOK_ELB_ARN                  | READ-ONLY            | *nlb_guestbook.Config.ELBARN                 | string            |
+| K8S_TESTER_ADD_ON_NLB_GUESTBOOK_ELB_NAME                 | READ-ONLY            | *nlb_guestbook.Config.ELBName                | string            |
+| K8S_TESTER_ADD_ON_NLB_GUESTBOOK_ELB_URL                  | READ-ONLY            | *nlb_guestbook.Config.ELBURL                 | string            |
+*----------------------------------------------------------*----------------------*----------------------------------------------*-------------------*
 
 *------------------------------------------------------------*----------------------*------------------------------------------------*-------------------*
 |                   ENVIRONMENTAL VARIABLE                   |      FIELD TYPE      |                      TYPE                      |      GO TYPE      |
