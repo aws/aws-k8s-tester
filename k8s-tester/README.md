@@ -34,6 +34,16 @@ See example commits:
 - [`k8s-tester/falco`](https://github.com/aws/aws-k8s-tester/pull/221).
 - [`k8s-tester/nlb-guestbook`](https://github.com/aws/aws-k8s-tester/commit/6c985cfabff769c020d2f1f131c4106607fa5d95).
 - [`k8s-tester/wordpress`](https://github.com/aws/aws-k8s-tester/commit/b5a8f3e6533e199413269a27041aa70604318f57).
+- [`k8s-tester/prometheus-grafana`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- [`k8s-tester/jupyter-hub`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- [`k8s-tester/cni-vpc`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- [`k8s-tester/alb-2048`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- [`k8s-tester/fargate`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- [`k8s-tester/irsa`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- [`k8s-tester/irsa-fargate`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- [`k8s-tester/gpu`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- [`k8s-tester/cuda-vector-add`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- [`k8s-tester/app-mesh`](https://github.com/aws/aws-k8s-tester/commit/TODO).
 
 ### Environmental variables
 
