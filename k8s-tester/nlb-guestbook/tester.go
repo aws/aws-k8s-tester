@@ -131,8 +131,8 @@ const (
 	redisLeaderDeploymentName = "redis-leader"
 	redisLeaderAppName        = "redis-master"
 	// ref. https://hub.docker.com/_/redis/?tab=tags
-	// ref. https://gallery.ecr.aws/bitnami/redis
-	redisLeaderAppImageName = "public.ecr.aws/bitnami/redis:latest"
+	// ref. https://gallery.ecr.aws/ubuntu/redis
+	redisLeaderAppImageName = "public.ecr.aws/ubuntu/redis:latest"
 	redisLeaderServiceName  = "redis-master" // e..g "Connecting to MASTER redis-master:6379"
 	redisLeaderRoleName     = "master"       // TODO: change this to "leader"
 
