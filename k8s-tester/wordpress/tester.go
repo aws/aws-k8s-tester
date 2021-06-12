@@ -138,6 +138,10 @@ func (ts *tester) Apply() error {
 		}
 	}
 
+	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client.KubernetesClient(), ts.cfg.Namespace); err != nil {
+		return err
+	}
+
 	if err := helm.RepoAdd(ts.cfg.Logger, chartRepoName, chartRepoURL); err != nil {
 		return err
 	}
