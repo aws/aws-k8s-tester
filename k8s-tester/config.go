@@ -130,6 +130,7 @@ type Config struct {
 	AddOnConformance         *conformance.Config          `json:"add_on_conformance"`
 	AddOnCSIEBS              *csi_ebs.Config              `json:"add_on_csi_ebs"`
 	AddOnKubernetesDashboard *kubernetes_dashboard.Config `json:"add_on_kubernetes_dashboard"`
+	AddOnFalco               *falco.Config                `json:"add_on_falco"`
 	AddOnPHPApache           *php_apache.Config           `json:"add_on_php_apache"`
 	AddOnNLBHelloWorld       *nlb_hello_world.Config      `json:"add_on_nlb_hello_world"`
 	AddOnJobsPi              *jobs_pi.Config              `json:"add_on_jobs_pi"`
@@ -141,7 +142,6 @@ type Config struct {
 	AddOnClusterloader       *clusterloader.Config        `json:"add_on_clusterloader"`
 	AddOnStress              *stress.Config               `json:"add_on_stress"`
 	AddOnStressInCluster     *stress_in_cluster.Config    `json:"add_on_stress_in_cluster"`
-	AddOnFalco               *falco.Config                `json:"add_on_falco"`
 }
 
 const (
@@ -202,6 +202,7 @@ func NewDefault() *Config {
 		AddOnConformance:         conformance.NewDefault(),
 		AddOnCSIEBS:              csi_ebs.NewDefault(),
 		AddOnKubernetesDashboard: kubernetes_dashboard.NewDefault(),
+		AddOnFalco:               falco.NewDefault(),
 		AddOnPHPApache:           php_apache.NewDefault(),
 		AddOnNLBHelloWorld:       nlb_hello_world.NewDefault(),
 		AddOnJobsPi:              jobs_pi.NewDefault(),
@@ -213,7 +214,6 @@ func NewDefault() *Config {
 		AddOnClusterloader:       clusterloader.NewDefault(),
 		AddOnStress:              stress.NewDefault(),
 		AddOnStressInCluster:     stress_in_cluster.NewDefault(),
-		AddOnFalco:               falco.NewDefault(),
 	}
 }
 
@@ -264,6 +264,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.AddOnKubernetesDashboard != nil && cfg.AddOnKubernetesDashboard.Enable {
 		if err := cfg.AddOnKubernetesDashboard.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnFalco != nil && cfg.AddOnFalco.Enable {
+		if err := cfg.AddOnFalco.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}
@@ -319,11 +324,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.AddOnStressInCluster != nil && cfg.AddOnStressInCluster.Enable {
 		if err := cfg.AddOnStressInCluster.ValidateAndSetDefaults(); err != nil {
-			return err
-		}
-	}
-	if cfg.AddOnFalco != nil && cfg.AddOnFalco.Enable {
-		if err := cfg.AddOnFalco.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}

@@ -72,6 +72,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+falco.Env()+"_", &falco.Config{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+php_apache.Env()+"_", &php_apache.Config{}))
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+php_apache.EnvRepository()+"_", &aws_v1_ecr.Repository{}))
@@ -127,10 +131,6 @@ func createDoc() string {
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+stress_in_cluster.EnvK8sTesterStressCLI()+"_", &stress_in_cluster.K8sTesterStressCLI{}))
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+stress_in_cluster.EnvK8sTesterStressCLIBusyboxRepository()+"_", &aws_v1_ecr.Repository{}))
-
-	b.WriteByte('\n')
-	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+falco.Env()+"_", &falco.Config{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

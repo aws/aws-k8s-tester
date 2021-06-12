@@ -255,6 +255,26 @@ func TestEnvAddOnKubernetesDashboard(t *testing.T) {
 	}
 }
 
+func TestEnvAddOnFalco(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("K8S_TESTER_ADD_ON_FALCO_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_FALCO_ENABLE")
+	os.Setenv("K8S_TESTER_ADD_ON_FALCO_NAMESPACE", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_FALCO_NAMESPACE")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if !cfg.AddOnFalco.Enable {
+		t.Fatalf("unexpected cfg.AddOnFalco.Enable %v", cfg.AddOnFalco.Enable)
+	}
+	if cfg.AddOnFalco.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnFalco.Namespace %v", cfg.AddOnFalco.Namespace)
+	}
+}
+
 func TestEnvAddOnPHPApache(t *testing.T) {
 	cfg := NewDefault()
 
@@ -892,25 +912,5 @@ func TestEnvAddOnStressInCluster(t *testing.T) {
 	}
 	if cfg.AddOnStressInCluster.K8sTesterStressCLI.ListBatchLimit != 3000 {
 		t.Fatalf("unexpected cfg.AddOnStressInCluster.ListBatchLimit %v", cfg.AddOnStressInCluster.K8sTesterStressCLI.ListBatchLimit)
-	}
-}
-
-func TestEnvAddOnFalco(t *testing.T) {
-	cfg := NewDefault()
-
-	os.Setenv("K8S_TESTER_ADD_ON_FALCO_ENABLE", "true")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_FALCO_ENABLE")
-	os.Setenv("K8S_TESTER_ADD_ON_FALCO_NAMESPACE", "hello")
-	defer os.Unsetenv("K8S_TESTER_ADD_ON_FALCO_NAMESPACE")
-
-	if err := cfg.UpdateFromEnvs(); err != nil {
-		t.Fatal(err)
-	}
-
-	if !cfg.AddOnFalco.Enable {
-		t.Fatalf("unexpected cfg.AddOnFalco.Enable %v", cfg.AddOnFalco.Enable)
-	}
-	if cfg.AddOnFalco.Namespace != "hello" {
-		t.Fatalf("unexpected cfg.AddOnFalco.Namespace %v", cfg.AddOnFalco.Namespace)
 	}
 }

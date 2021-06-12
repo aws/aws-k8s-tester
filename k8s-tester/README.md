@@ -31,6 +31,8 @@ See example commits:
 - [`k8s-tester/stress`](https://github.com/aws/aws-k8s-tester/commit/310f44bc0da12ca093b02f74680b34131d6283a6).
 - [`k8s-tester/stress/in-cluster`](https://github.com/aws/aws-k8s-tester/commit/e0b5fa0b0fb97851d86d268d093f4754617c638b).
 - [`k8s-tester/csrs`](https://github.com/aws/aws-k8s-tester/commit/90ef22a2e6505189f998d1f6ed738fe05f73d56d).
+- [`k8s-tester/falco`](https://github.com/aws/aws-k8s-tester/pull/221).
+- [`k8s-tester/nlb-guestbook`](https://github.com/aws/aws-k8s-tester/commit/TODO).
 
 ### Examples
 

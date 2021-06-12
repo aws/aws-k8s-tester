@@ -26,7 +26,9 @@ require (
 	github.com/manifoldco/promptui v0.8.0
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
 	go.uber.org/zap v1.17.0
-	golang.org/x/tools v0.1.2 // indirect
+	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
+	golang.org/x/sys v0.0.0-20210510120138-977fb7262007 // indirect
 	sigs.k8s.io/yaml v1.2.0
 )
 
