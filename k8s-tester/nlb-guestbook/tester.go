@@ -277,12 +277,14 @@ func (ts *tester) Delete() error {
 	  kubernetes.io/cluster/leegyuho-test-prod
 	  owned
 	*/
-	if err := aws_v1_elb.DeleteELBv2(
-		ts.cfg.Logger,
-		ts.cfg.ELB2API,
-		ts.cfg.ELBARN,
-	); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete ELB (%v)", err))
+	if ts.cfg.ELBARN != "" {
+		if err := aws_v1_elb.DeleteELBv2(
+			ts.cfg.Logger,
+			ts.cfg.ELB2API,
+			ts.cfg.ELBARN,
+		); err != nil {
+			errs = append(errs, fmt.Sprintf("failed to delete ELB (%v)", err))
+		}
 	}
 
 	ts.cfg.Logger.Info("deleting service redis follower", zap.String("service-name", redisFollowerServiceName))
