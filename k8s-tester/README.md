@@ -12,7 +12,7 @@ Each test case:
 
 To add a new tester,
 - Create a new directory under `github.com/aws/aws-k8s-tester/k8s-tester`.
-- Implement `github.com/aws/aws-k8s-tester/k8s-tester/tester.Tester` interface within the new package `github.com/aws/aws-k8s-tester/k8s-tester/NEW-TESTER`.
+- Implement [`github.com/aws/aws-k8s-tester/k8s-tester/tester.Tester`](https://pkg.go.dev/github.com/aws/aws-k8s-tester/k8s-tester/tester#Tester) interface within the new package `github.com/aws/aws-k8s-tester/k8s-tester/NEW-TESTER`.
 - (Optional) Implement a stand-alone CLI for the test case under `github.com/aws/aws-k8s-tester/k8s-tester/NEW-TESTER/cmd/k8s-tester-NEW-TESTER`.
 - Import the new configuration struct to `k8s-tester/config.go` with test cases in `k8s-tester/config_test.go`.
 - Add the new tester to `github.com/aws/aws-k8s-tester/k8s-tester/tester.go`.
