@@ -131,8 +131,8 @@ const (
 	redisLeaderDeploymentName = "redis-leader"
 	redisLeaderAppName        = "redis-master"
 	// ref. https://hub.docker.com/_/redis/?tab=tags
-	// ref. https://gallery.ecr.aws/ubuntu/redis
-	redisLeaderAppImageName = "public.ecr.aws/ubuntu/redis:latest"
+	// ref. https://gallery.ecr.aws/bitnami/redis
+	redisLeaderAppImageName = "public.ecr.aws/bitnami/redis:latest"
 	redisLeaderServiceName  = "redis-master" // e..g "Connecting to MASTER redis-master:6379"
 	redisLeaderRoleName     = "master"       // TODO: change this to "leader"
 
@@ -429,6 +429,12 @@ func (ts *tester) createDeploymentRedisLeader() error {
 											ContainerPort: 6379,
 										},
 									},
+									Env: []core_v1.EnvVar{
+										{
+											Name:  "ALLOW_EMPTY_PASSWORD",
+											Value: "yes",
+										},
+									},
 								},
 							},
 							NodeSelector: nodeSelector,
@@ -612,6 +618,12 @@ func (ts *tester) createDeploymentRedisFollower() error {
 											Name:          "redis-server",
 											Protocol:      core_v1.ProtocolTCP,
 											ContainerPort: 6379,
+										},
+									},
+									Env: []core_v1.EnvVar{
+										{
+											Name:  "ALLOW_EMPTY_PASSWORD",
+											Value: "yes",
 										},
 									},
 								},
