@@ -2,9 +2,12 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"os"
 	"reflect"
 	"strings"
 
@@ -15,7 +18,7 @@ import (
 	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
 	"github.com/aws/aws-k8s-tester/k8s-tester/csrs"
-	falco "github.com/aws/aws-k8s-tester/k8s-tester/falco"
+	"github.com/aws/aws-k8s-tester/k8s-tester/falco"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
@@ -31,98 +34,117 @@ import (
 )
 
 func main() {
-	doc := createDoc()
-	if err := ioutil.WriteFile("../../README.config.md", []byte("\n```\n"+doc+"```\n"), 0666); err != nil {
+	if err := ioutil.WriteFile("../../README.md", []byte(preDoc()+"\n"+createDoc()), 0666); err != nil {
 		panic(err)
 	}
 	fmt.Println("generated")
+}
+
+func preDoc() string {
+	file, err := os.Open("../../README.md")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	lines := make([]string, 0)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == header {
+			break
+		}
+		lines = append(lines, line)
+	}
+	return strings.Join(lines, "\n")
 }
 
 func createDoc() string {
 	es := &enableEnvVars{}
 	b := strings.Builder{}
 
-	b.WriteByte('\n')
-	b.WriteByte('\n')
+	totalTestCases := 0
+
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX, &k8s_tester.Config{}))
 
 	b.WriteByte('\n')
-	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+cloudwatch_agent.Env()+"_", &cloudwatch_agent.Config{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+fluent_bit.Env()+"_", &fluent_bit.Config{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+metrics_server.Env()+"_", &metrics_server.Config{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+conformance.Env()+"_", &conformance.Config{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+csi_ebs.Env()+"_", &csi_ebs.Config{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+kubernetes_dashboard.Env()+"_", &kubernetes_dashboard.Config{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+falco.Env()+"_", &falco.Config{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+php_apache.Env()+"_", &php_apache.Config{}))
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+php_apache.EnvRepository()+"_", &aws_v1_ecr.Repository{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+nlb_hello_world.Env()+"_", &nlb_hello_world.Config{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+jobs_pi.Env()+"_", &jobs_pi.Config{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+jobs_echo.Env("Job")+"_", &jobs_echo.Config{}))
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+jobs_echo.EnvRepository("Job")+"_", &aws_v1_ecr.Repository{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+jobs_echo.Env("CronJob")+"_", &jobs_echo.Config{}))
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+jobs_echo.EnvRepository("CronJob")+"_", &aws_v1_ecr.Repository{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+csrs.Env()+"_", &csrs.Config{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+configmaps.Env()+"_", &configmaps.Config{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+secrets.Env()+"_", &secrets.Config{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+clusterloader.Env()+"_", &clusterloader.Config{}))
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+clusterloader.EnvTestOverride()+"_", &clusterloader.TestOverride{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+stress.Env()+"_", &stress.Config{}))
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+stress.EnvRepository()+"_", &aws_v1_ecr.Repository{}))
+	totalTestCases++
+
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+stress_in_cluster.Env()+"_", &stress_in_cluster.Config{}))
 	b.WriteByte('\n')
@@ -131,14 +153,12 @@ func createDoc() string {
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+stress_in_cluster.EnvK8sTesterStressCLI()+"_", &stress_in_cluster.K8sTesterStressCLI{}))
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+stress_in_cluster.EnvK8sTesterStressCLIBusyboxRepository()+"_", &aws_v1_ecr.Repository{}))
+	totalTestCases++
 
-	b.WriteByte('\n')
-	b.WriteByte('\n')
-
-	txt := b.String()
-
-	return txt
+	return header + fmt.Sprintf("\n\nTotal %d test cases!\n\n", totalTestCases) + "```\n" + b.String() + "```\n"
 }
+
+const header = "### Environmental variables"
 
 type enableEnvVars struct {
 }

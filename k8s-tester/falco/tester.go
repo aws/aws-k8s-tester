@@ -1,4 +1,5 @@
-//package falco implements the tests for falco
+// package falco installs Falco tester.
+// ref. https://falco.org
 package falco
 
 import (

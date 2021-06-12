@@ -10,8 +10,8 @@ require (
 	github.com/aws/aws-k8s-tester/k8s-tester/conformance v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/csrs v0.0.0-00010101000000-000000000000
-	github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/falco v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard v0.0.0-00010101000000-000000000000
@@ -20,7 +20,7 @@ require (
 	github.com/aws/aws-k8s-tester/k8s-tester/php-apache v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/secrets v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/stress v0.0.0-00010101000000-000000000000
-	github.com/aws/aws-k8s-tester/utils v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/utils v0.0.0-20210610170531-2e5d31e5196c
 	github.com/olekukonko/tablewriter v0.0.5
 )
 
