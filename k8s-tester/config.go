@@ -22,6 +22,7 @@ import (
 	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
 	"github.com/aws/aws-k8s-tester/k8s-tester/csrs"
+	falco "github.com/aws/aws-k8s-tester/k8s-tester/falco"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
@@ -140,6 +141,7 @@ type Config struct {
 	AddOnClusterloader       *clusterloader.Config        `json:"add_on_clusterloader"`
 	AddOnStress              *stress.Config               `json:"add_on_stress"`
 	AddOnStressInCluster     *stress_in_cluster.Config    `json:"add_on_stress_in_cluster"`
+	AddOnFalco               *falco.Config                `json:"add_on_falco"`
 }
 
 const (
@@ -211,6 +213,7 @@ func NewDefault() *Config {
 		AddOnClusterloader:       clusterloader.NewDefault(),
 		AddOnStress:              stress.NewDefault(),
 		AddOnStressInCluster:     stress_in_cluster.NewDefault(),
+		AddOnFalco:               falco.NewDefault(),
 	}
 }
 
@@ -316,6 +319,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.AddOnStressInCluster != nil && cfg.AddOnStressInCluster.Enable {
 		if err := cfg.AddOnStressInCluster.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnFalco != nil && cfg.AddOnFalco.Enable {
+		if err := cfg.AddOnFalco.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}
@@ -728,6 +736,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		} else {
 			return fmt.Errorf("expected *aws_v1_ecr.Repository, got %T", vv)
 		}
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+falco.Env()+"_", cfg.AddOnFalco)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*falco.Config); ok {
+		cfg.AddOnFalco = av
+	} else {
+		return fmt.Errorf("expected *falco.Config, got %T", vv)
 	}
 
 	return err
