@@ -88,6 +88,7 @@ func WaitForDeploymentAvailables(
 			zap.Int32("available-replicas", dp.Status.AvailableReplicas),
 			zap.Int32("unavailable-replicas", dp.Status.UnavailableReplicas),
 			zap.Int32("ready-replicas", dp.Status.ReadyReplicas),
+			zap.Int32("target-available-replicas", targetAvailableReplicas),
 			zap.String("condition-last-updated", dpCond.LastUpdateTime.String()),
 			zap.String("condition-type", string(dpCond.Type)),
 			zap.String("condition-status", string(dpCond.Status)),
@@ -95,7 +96,7 @@ func WaitForDeploymentAvailables(
 			zap.String("condition-message", dpCond.Message),
 		)
 		if dpCond.Type == apps_v1.DeploymentReplicaFailure {
-			return true, fmt.Errorf("Deployment %q status %q", deploymentName, dpCond.Type)
+			return true, fmt.Errorf("deployment %q status %q", deploymentName, dpCond.Type)
 		}
 		if dp.Status.AvailableReplicas >= targetAvailableReplicas {
 			if dpCond.Type == apps_v1.DeploymentAvailable {

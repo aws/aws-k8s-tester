@@ -132,16 +132,18 @@ const (
 	redisLeaderAppName        = "redis-master"
 	// ref. https://hub.docker.com/_/redis/?tab=tags
 	// ref. https://gallery.ecr.aws/bitnami/redis
-	redisLeaderAppImageName = "public.ecr.aws/bitnami/redis:latest"
-	redisLeaderServiceName  = "redis-master" // e..g "Connecting to MASTER redis-master:6379"
-	redisLeaderRoleName     = "master"       // TODO: change this to "leader"
+	redisLeaderAppImageName         = "public.ecr.aws/bitnami/redis:latest"
+	redisLeaderServiceName          = "redis-master" // e..g "Connecting to MASTER redis-master:6379"
+	redisLeaderRoleName             = "master"       // TODO: change this to "leader"
+	redisLeaderTargetReplicas int32 = 1
 
 	redisFollowerDeploymentName = "redis-follower"
 	redisFollowerAppName        = "redis-slave"
 	// ref. https://hub.docker.com/_/redis/?tab=tags
-	redisFollowerAppImageName = "k8s.gcr.io/redis-slave:v2"
-	redisFollowerServiceName  = "redis-slave"
-	redisFollowerRoleName     = "slave" // TODO: change this to "follower"
+	redisFollowerAppImageName         = "k8s.gcr.io/redis-slave:v2"
+	redisFollowerServiceName          = "redis-slave"
+	redisFollowerRoleName             = "slave" // TODO: change this to "follower"
+	redisFollowerTargetReplicas int32 = 1
 
 	deploymentName = "guestbook"
 	appName        = "guestbook"
@@ -403,7 +405,7 @@ func (ts *tester) createDeploymentRedisLeader() error {
 					},
 				},
 				Spec: apps_v1.DeploymentSpec{
-					Replicas: int32Ref(1),
+					Replicas: int32Ref(redisLeaderTargetReplicas),
 					Selector: &meta_v1.LabelSelector{
 						MatchLabels: map[string]string{
 							"app.kubernetes.io/name": redisLabelName,
@@ -460,7 +462,7 @@ func (ts *tester) createDeploymentRedisLeader() error {
 }
 
 func (ts *tester) checkDeploymentRedisLeader() error {
-	timeout := 7*time.Minute + time.Duration(ts.cfg.DeploymentReplicas)*time.Minute
+	timeout := 7*time.Minute + time.Duration(redisLeaderTargetReplicas)*time.Minute
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	_, err := client.WaitForDeploymentAvailables(
 		ctx,
@@ -472,7 +474,7 @@ func (ts *tester) checkDeploymentRedisLeader() error {
 		20*time.Second,
 		ts.cfg.Namespace,
 		redisLeaderDeploymentName,
-		ts.cfg.DeploymentReplicas,
+		redisLeaderTargetReplicas,
 		client.WithQueryFunc(func() {
 			descArgs := []string{
 				ts.cfg.Client.Config().KubectlPath,
@@ -594,7 +596,7 @@ func (ts *tester) createDeploymentRedisFollower() error {
 					},
 				},
 				Spec: apps_v1.DeploymentSpec{
-					Replicas: int32Ref(2),
+					Replicas: int32Ref(redisFollowerTargetReplicas),
 					Selector: &meta_v1.LabelSelector{
 						MatchLabels: map[string]string{
 							"app.kubernetes.io/name": redisLabelName,
@@ -651,7 +653,7 @@ func (ts *tester) createDeploymentRedisFollower() error {
 }
 
 func (ts *tester) checkDeploymentRedisFollower() error {
-	timeout := 7*time.Minute + time.Duration(ts.cfg.DeploymentReplicas)*time.Minute
+	timeout := 7*time.Minute + time.Duration(redisFollowerTargetReplicas)*time.Minute
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	_, err := client.WaitForDeploymentAvailables(
 		ctx,
@@ -663,7 +665,7 @@ func (ts *tester) checkDeploymentRedisFollower() error {
 		20*time.Second,
 		ts.cfg.Namespace,
 		redisFollowerDeploymentName,
-		ts.cfg.DeploymentReplicas,
+		redisFollowerTargetReplicas,
 		client.WithQueryFunc(func() {
 			descArgs := []string{
 				ts.cfg.Client.Config().KubectlPath,
