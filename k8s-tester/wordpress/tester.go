@@ -145,7 +145,7 @@ func (ts *tester) Apply() error {
 	if err := helm.AddUpdate(ts.cfg.Logger, chartRepoName, chartRepoURL); err != nil {
 		return err
 	}
-	if err := ts.createHelm(); err != nil {
+	if err := ts.installChart(); err != nil {
 		return err
 	}
 	if err := ts.checkService(); err != nil {
@@ -226,7 +226,7 @@ func (ts *tester) runPrompt(action string) (ok bool) {
 	return true
 }
 
-func (ts *tester) createHelm() error {
+func (ts *tester) installChart() error {
 	// https://github.com/helm/charts/blob/master/stable/wordpress/values.yaml
 	values := map[string]interface{}{
 		"wordpressUsername": ts.cfg.UserName,

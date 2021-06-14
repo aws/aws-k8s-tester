@@ -93,7 +93,7 @@ func (ts *tester) Apply() error {
 		}
 	}
 
-	if err := ts.createHelmCSI(); err != nil {
+	if err := ts.installChart(); err != nil {
 		return err
 	}
 
@@ -141,7 +141,7 @@ func (ts *tester) runPrompt(action string) (ok bool) {
 }
 
 // https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/aws-ebs-csi-driver/values.yaml
-func (ts *tester) createHelmCSI() error {
+func (ts *tester) installChart() error {
 	values := map[string]interface{}{
 		"enableVolumeScheduling": true,
 		"enableVolumeResizing":   true,
