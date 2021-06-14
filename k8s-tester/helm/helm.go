@@ -51,8 +51,9 @@ func init() {
 	settings = cli.New()
 }
 
-// RepoAdd adds repo with given name and url
-func RepoAdd(lg *zap.Logger, name, url string) error {
+// AddUpdate adds repo with given name and url and updates.
+// Equals to "helm repo add foo bar" and "helm repo update".
+func AddUpdate(lg *zap.Logger, name, url string) error {
 	repoFile := settings.RepositoryConfig
 
 	err := os.MkdirAll(filepath.Dir(repoFile), os.ModePerm)
@@ -99,13 +100,14 @@ func RepoAdd(lg *zap.Logger, name, url string) error {
 		return err
 	}
 
+	lg.Info("updated repo", zap.String("name", name))
 	f.Update(&c)
 
 	if err := f.WriteFile(repoFile, 0644); err != nil {
 		return err
 	}
 
-	lg.Info("added repo", zap.String("name", name))
+	lg.Info("added and updated repo", zap.String("name", name))
 	return nil
 }
 

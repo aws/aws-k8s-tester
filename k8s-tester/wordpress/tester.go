@@ -142,7 +142,7 @@ func (ts *tester) Apply() error {
 		return err
 	}
 
-	if err := helm.RepoAdd(ts.cfg.Logger, chartRepoName, chartRepoURL); err != nil {
+	if err := helm.AddUpdate(ts.cfg.Logger, chartRepoName, chartRepoURL); err != nil {
 		return err
 	}
 	if err := ts.createHelm(); err != nil {
