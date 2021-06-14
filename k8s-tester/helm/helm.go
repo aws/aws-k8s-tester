@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/utils/file"
+	utils_http "github.com/aws/aws-k8s-tester/utils/http"
 	"github.com/gofrs/flock"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
@@ -171,30 +172,36 @@ func Install(cfg InstallConfig) (err error) {
 
 	var chart *chart.Chart
 	switch {
-	case strings.HasSuffix(cfg.ChartRepoURL, ".tgz"):
-		// https://github.com/kubernetes-sigs/aws-ebs-csi-driver#deploy-driver
-		var rd io.ReadCloser
+	case strings.HasSuffix(cfg.ChartRepoURL, ".tgz") || strings.HasSuffix(cfg.ChartRepoURL, ".tar.gz"):
+		// https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases
+		// https://github.com/kubernetes-sigs/aws-efs-csi-driver/releases
+		fpath := file.GetTempFilePath("ebs-csi-driver") + ".tgz"
 		retryStart, waitDur := time.Now(), 3*time.Minute
 		for time.Since(retryStart) < waitDur {
-			var resp *http.Response
-			resp, err = http.Get(cfg.ChartRepoURL)
+			err = utils_http.Download(cfg.Logger, os.Stderr, cfg.ChartRepoURL, fpath)
 			if err != nil {
-				cfg.Logger.Warn("failed to download tar", zap.Error(err))
+				cfg.Logger.Warn("failed to download", zap.String("url", cfg.ChartRepoURL), zap.Error(err))
 				time.Sleep(5 * time.Second)
 				continue
 			}
-			rd = resp.Body
 			break
 		}
 		if err != nil {
 			return err
 		}
+
+		rd, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
+		if err != nil {
+			return err
+		}
 		defer rd.Close()
-		cfg.Logger.Info("downloading chart .tgz", zap.String("url", cfg.ChartRepoURL))
+
+		cfg.Logger.Info("loading downloaded chart .tgz", zap.String("path", fpath))
 		chart, err = loader.LoadArchive(rd)
 		if err != nil {
 			return err
 		}
+
 		cfg.Logger.Info("loaded chart via .tgz",
 			zap.String("namespace", cfg.Namespace),
 			zap.String("chart-repo", cfg.ChartRepoURL),
