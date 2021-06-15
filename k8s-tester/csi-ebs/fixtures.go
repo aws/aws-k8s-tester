@@ -6,7 +6,6 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
-
 	"k8s.io/apimachinery/pkg/api/resource"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -42,10 +41,8 @@ func ExpandPVCSize(ts *tester, origPVC *v1.PersistentVolumeClaim, size resource.
 		}
 		updatedPVC.Spec.Resources.Requests[v1.ResourceStorage] = size
 		updatedPVC, err = ts.cfg.Client.KubernetesClient().CoreV1().PersistentVolumeClaims(origPVC.Namespace).Update(context.TODO(), updatedPVC, meta_v1.UpdateOptions{})
+		updatedPVC, err = ts.cfg.Client.CoreV1().PersistentVolumeClaims(origPVC.Namespace).Update(context.TODO(), updatedPVC, meta_v1.UpdateOptions{})
 		if err != nil {
-			return false, fmt.Errorf("Error updating pvc pvcName: %v (%v)", err)
-		}
-		return true, nil
 	})
 	if waitErr == wait.ErrWaitTimeout {
 		return nil, fmt.Errorf("timed out attempting to update PVC size. last update error: %v", lastUpdateError)
@@ -61,8 +58,8 @@ func WaitForControllerVolumeResize(ts *tester, pvc *v1.PersistentVolumeClaim, ti
 	pvName := pvc.Spec.VolumeName
 	waitErr := wait.PollImmediate(resizePollInterval, timeout, func() (bool, error) {
 		pvcSize := pvc.Spec.Resources.Requests[v1.ResourceStorage]
-
 		pv, err := ts.cfg.Client.KubernetesClient().CoreV1().PersistentVolumes().Get(context.TODO(), pvName, meta_v1.GetOptions{})
+		pv, err := ts.cfg.Client.CoreV1().PersistentVolumes().Get(context.TODO(), pvName, meta_v1.GetOptions{})
 		if err != nil {
 			return false, fmt.Errorf("error fetching pv %q for resizing %v", pvName, err)
 		}

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/client"
-	"github.com/aws/aws-k8s-tester/k8s-tester/helm"
+	helm "github.com/aws/aws-k8s-tester/k8s-tester/helm"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
 	"github.com/aws/aws-k8s-tester/utils/rand"
 	utils_time "github.com/aws/aws-k8s-tester/utils/time"
@@ -219,7 +219,7 @@ func (ts *tester) installEBSHelmChart() error {
 			}
 			fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
 		},
-		QueryInterval: 30 * time.Second,
+		QueryInterval: 15 * time.Second,
 	})
 	if err != nil {
 		if k8s_errors.IsAlreadyExists(err) {
@@ -332,7 +332,6 @@ func (ts *tester) createPersistentVolumeClaim(storageClass string) error {
 		},
 		meta_v1.CreateOptions{},
 	)
-
 	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to create PersistentVolumeClaims (%v)", err)
