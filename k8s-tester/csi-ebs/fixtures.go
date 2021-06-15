@@ -6,6 +6,7 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
+
 	"k8s.io/apimachinery/pkg/api/resource"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -15,12 +16,12 @@ import (
 func GetBoundPV(ts *tester, pvc *v1.PersistentVolumeClaim) (*v1.PersistentVolume, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	// Get new copy of the claim
-	claim, err := ts.cfg.Client.CoreV1().PersistentVolumeClaims(pvc.Namespace).Get(ctx, pvc.Name, meta_v1.GetOptions{})
+	claim, err := ts.cfg.Client.KubernetesClient().CoreV1().PersistentVolumeClaims(pvc.Namespace).Get(ctx, pvc.Name, meta_v1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 	// Get the bound PV
-	pv, err := ts.cfg.Client.CoreV1().PersistentVolumes().Get(ctx, claim.Spec.VolumeName, meta_v1.GetOptions{})
+	pv, err := ts.cfg.Client.KubernetesClient().CoreV1().PersistentVolumes().Get(ctx, claim.Spec.VolumeName, meta_v1.GetOptions{})
 	cancel()
 	return pv, err
 }
@@ -35,12 +36,12 @@ func ExpandPVCSize(ts *tester, origPVC *v1.PersistentVolumeClaim, size resource.
 	var lastUpdateError error
 	waitErr := wait.PollImmediate(resizePollInterval, 30*time.Second, func() (bool, error) {
 		var err error
-		updatedPVC, err = ts.cfg.Client.CoreV1().PersistentVolumeClaims(origPVC.Namespace).Get(context.TODO(), pvcName, meta_v1.GetOptions{})
+		updatedPVC, err = ts.cfg.Client.KubernetesClient().CoreV1().PersistentVolumeClaims(origPVC.Namespace).Get(context.TODO(), pvcName, meta_v1.GetOptions{})
 		if err != nil {
 			return false, fmt.Errorf("error fetching pvc %q for resizing: %v", pvcName, err)
 		}
 		updatedPVC.Spec.Resources.Requests[v1.ResourceStorage] = size
-		updatedPVC, err = ts.cfg.Client.CoreV1().PersistentVolumeClaims(origPVC.Namespace).Update(context.TODO(), updatedPVC, meta_v1.UpdateOptions{})
+		updatedPVC, err = ts.cfg.Client.KubernetesClient().CoreV1().PersistentVolumeClaims(origPVC.Namespace).Update(context.TODO(), updatedPVC, meta_v1.UpdateOptions{})
 		if err != nil {
 			return false, fmt.Errorf("Error updating pvc pvcName: %v (%v)", err)
 		}
@@ -61,7 +62,7 @@ func WaitForControllerVolumeResize(ts *tester, pvc *v1.PersistentVolumeClaim, ti
 	waitErr := wait.PollImmediate(resizePollInterval, timeout, func() (bool, error) {
 		pvcSize := pvc.Spec.Resources.Requests[v1.ResourceStorage]
 
-		pv, err := ts.cfg.Client.CoreV1().PersistentVolumes().Get(context.TODO(), pvName, meta_v1.GetOptions{})
+		pv, err := ts.cfg.Client.KubernetesClient().CoreV1().PersistentVolumes().Get(context.TODO(), pvName, meta_v1.GetOptions{})
 		if err != nil {
 			return false, fmt.Errorf("error fetching pv %q for resizing %v", pvName, err)
 		}
@@ -78,4 +79,13 @@ func WaitForControllerVolumeResize(ts *tester, pvc *v1.PersistentVolumeClaim, ti
 		return fmt.Errorf("error while waiting for controller resize to finish: %v", waitErr)
 	}
 	return nil
+}
+
+func GenerateScriptCmd(command string) []string {
+	var commands []string
+	if command == "" {
+		return commands
+	}
+	commands = []string{"/bin/sh", "-c", command}
+	return commands
 }

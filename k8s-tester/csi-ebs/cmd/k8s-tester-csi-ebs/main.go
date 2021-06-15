@@ -23,26 +23,24 @@ func init() {
 }
 
 var (
-	prompt         bool
-	logLevel       string
-	logOutputs     []string
-	namespace      string
-	kubectlPath    string
-	kubeconfigPath string
+	prompt             bool
+	logLevel           string
+	logOutputs         []string
+	minimumNodes       int
+	namespace          string
+	kubectlDownloadURL string
+	kubectlPath        string
+	kubeconfigPath     string
 )
 
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&prompt, "prompt", true, "'true' to enable prompt mode")
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", log.DefaultLogLevel, "Logging level")
 	rootCmd.PersistentFlags().StringSliceVar(&logOutputs, "log-outputs", []string{"stderr"}, "Additional logger outputs")
-<<<<<<< HEAD
 	rootCmd.PersistentFlags().IntVar(&minimumNodes, "minimum-nodes", csi_ebs.DefaultMinimumNodes, "minimum number of Kubernetes nodes required for installing this addon")
-	rootCmd.PersistentFlags().StringVar(&kubectlDownloadURL, "kubectl-download-url", client.DefaultKubectlDownloadURL(), "kubectl download URL")
-	rootCmd.PersistentFlags().StringVar(&kubectlPath, "kubectl-path", client.DefaultKubectlPath(), "kubectl path")
-=======
 	rootCmd.PersistentFlags().StringVar(&namespace, "namespace", "test-namespace", "'true' to auto-generate path for create config/cluster, overwrites existing --path value")
+	rootCmd.PersistentFlags().StringVar(&kubectlDownloadURL, "kubectl-download-url", client.DefaultKubectlDownloadURL(), "kubectl download URL")
 	rootCmd.PersistentFlags().StringVar(&kubectlPath, "kubectl-path", "/tmp/kubectl-test-v1.21.0", "kubectl path")
->>>>>>> 48beadc6 (adding functional tests for CSI functionality... Provision/Resize)
 	rootCmd.PersistentFlags().StringVar(&kubeconfigPath, "kubeconfig-path", "", "KUBECONFIG path")
 
 	rootCmd.AddCommand(
@@ -78,20 +76,22 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 	_ = zap.ReplaceGlobals(lg)
 
 	cli, err := client.New(&client.Config{
-		Logger:         lg,
-		KubectlPath:    kubectlPath,
-		KubeconfigPath: kubeconfigPath,
+		Logger:             lg,
+		KubectlDownloadURL: kubectlDownloadURL,
+		KubectlPath:        kubectlPath,
+		KubeconfigPath:     kubeconfigPath,
 	})
 	if err != nil {
 		lg.Panic("failed to create client", zap.Error(err))
 	}
 
 	cfg := &csi_ebs.Config{
-		Prompt:    prompt,
-		Logger:    lg,
-		LogWriter: logWriter,
-		Namespace: namespace,
-		Client:    cli,
+		Prompt:       prompt,
+		Logger:       lg,
+		LogWriter:    logWriter,
+		MinimumNodes: minimumNodes,
+		Namespace:    namespace,
+		Client:       cli,
 	}
 
 	ts := csi_ebs.New(cfg)
@@ -121,9 +121,10 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 	_ = zap.ReplaceGlobals(lg)
 
 	cli, err := client.New(&client.Config{
-		Logger:         lg,
-		KubectlPath:    kubectlPath,
-		KubeconfigPath: kubeconfigPath,
+		Logger:             lg,
+		KubectlDownloadURL: kubectlDownloadURL,
+		KubectlPath:        kubectlPath,
+		KubeconfigPath:     kubeconfigPath,
 	})
 	if err != nil {
 		lg.Panic("failed to create client", zap.Error(err))

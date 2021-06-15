@@ -1,9 +1,4 @@
-<<<<<<< HEAD
-// Package csi_ebs installs CSI EBS driver.
-// Replace https://github.com/aws/aws-k8s-tester/blob/v1.5.9/eks/csi-ebs/csi-ebs.go.
-=======
 // Package csi_ebs tests the CSI drivers storage capabilities
->>>>>>> 48beadc6 (adding functional tests for CSI functionality... Provision/Resize)
 package csi_ebs
 
 import (
@@ -17,17 +12,15 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/client"
-	helm "github.com/aws/aws-k8s-tester/k8s-tester/helm"
+	"github.com/aws/aws-k8s-tester/k8s-tester/helm"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
 	"github.com/aws/aws-k8s-tester/utils/rand"
 	utils_time "github.com/aws/aws-k8s-tester/utils/time"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
-
 	core_v1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	storage_v1 "k8s.io/api/storage/v1"
-	storagev1 "k8s.io/api/storage/v1"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	api_resource "k8s.io/apimachinery/pkg/api/resource"
@@ -45,51 +38,31 @@ type Config struct {
 	Client    client.Client `json:"-"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
-<<<<<<< HEAD
-	MinimumNodes int `json:"minimum_nodes"`
-	// HelmChartRepoURL is the helm chart repo URL.
-	HelmChartRepoURL string `json:"helm_chart_repo_url"`
-=======
 	MinimumNodes int `json:"minimum-nodes"`
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
->>>>>>> 48beadc6 (adding functional tests for CSI functionality... Provision/Resize)
 }
 
 func (cfg *Config) ValidateAndSetDefaults() error {
-
+	if cfg.MinimumNodes == 0 {
+		cfg.MinimumNodes = DefaultMinimumNodes
+	}
+	if cfg.Namespace == "" {
+		return errors.New("empty Namespace")
+	}
 	return nil
 }
 
-const chartName = "aws-ebs-csi-driver"
-
 const (
-<<<<<<< HEAD
-	DefaultMinimumNodes int = 1
-	// https://github.com/kubernetes-sigs/aws-ebs-csi-driver#deploy-driver
-	// https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases
-	//
-	// TODO: not working
-	// https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases/download/v0.5.0/helm-chart.tgz
-	// "gzip: invalid header"
-	DefaultHelmChartRepoURL = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
-=======
 	chartName           string = "aws-ebs-csi-driver"
 	chartRepoURL        string = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
 	storageClassName    string = "ebs-sc"
 	pvcProvisionName    string = "ebs-provision-pvc"
-	pvcSnapshotName     string = "ebs-snapshot-pvc"
 	provisioner         string = "ebs.csi.aws.com"
 	VolumeBindingMode   string = "WaitForFirstConsumer"
 	provisionPodName    string = "provisionpod"
-	snapshotPodName     string = "snapshotpod"
 	provisionVolumeName string = "provisionvolume"
-	snapshotVolumeName  string = "snapshotvolume"
-	snapshotName        string = "testsnapshot"
-	datapath            string = "/mnt/test/data"
-	volMode             string = "v1.PersistentVolumeBlock"
 	DefaultMinimumNodes int    = 1
->>>>>>> 48beadc6 (adding functional tests for CSI functionality... Provision/Resize)
 )
 
 var values = map[string]interface{}{
@@ -103,10 +76,6 @@ var foreground = meta_v1.DeletePropagationForeground
 var graceperiod = int64(0)
 
 var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
-
-func Env() string {
-	return "ADD_ON_" + strings.ToUpper(strings.Replace(pkgName, "-", "_", -1))
-}
 
 func NewDefault() *Config {
 	return &Config{
@@ -135,18 +104,10 @@ func (ts *tester) Apply() error {
 	if ok := ts.runPrompt("apply"); !ok {
 		return errors.New("cancelled")
 	}
-<<<<<<< HEAD
-
-	if ts.cfg.MinimumNodes > 0 {
-		if nodes, err := client.ListNodes(ts.cfg.Client.KubernetesClient()); len(nodes) < ts.cfg.MinimumNodes || err != nil {
-			return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
-		}
-=======
-	if nodes, err := client.ListNodes(ts.cfg.Client); len(nodes) < ts.cfg.MinimumNodes || err != nil {
+	if nodes, err := client.ListNodes(ts.cfg.Client.KubernetesClient()); len(nodes) < ts.cfg.MinimumNodes || err != nil {
 		return fmt.Errorf("failed to validate minimum nodes requirement %d (nodes %v, error %v)", ts.cfg.MinimumNodes, len(nodes), err)
->>>>>>> 48beadc6 (adding functional tests for CSI functionality... Provision/Resize)
 	}
-	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client, ts.cfg.Namespace); err != nil {
+	if err := client.CreateNamespace(ts.cfg.Logger, ts.cfg.Client.KubernetesClient(), ts.cfg.Namespace); err != nil {
 		return err
 	}
 	if err := ts.installEBSHelmChart(); err != nil {
@@ -186,7 +147,7 @@ func (ts *tester) Delete() error {
 	}
 	if err := client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
-		ts.cfg.Client,
+		ts.cfg.Client.KubernetesClient(),
 		ts.cfg.Namespace,
 		client.DefaultNamespaceDeletionInterval,
 		client.DefaultNamespaceDeletionTimeout,
@@ -222,35 +183,7 @@ func (ts *tester) runPrompt(action string) (ok bool) {
 	return true
 }
 
-<<<<<<< HEAD
-// https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/aws-ebs-csi-driver/values.yaml
-func (ts *tester) createHelmCSI() error {
-	values := map[string]interface{}{
-		"enableVolumeScheduling": true,
-		"enableVolumeResizing":   true,
-		"enableVolumeSnapshot":   true,
-	}
-
-	getAllArgs := []string{
-		ts.cfg.Client.Config().KubectlPath,
-		"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
-		"--namespace=kube-system",
-		"get",
-		"all",
-	}
-	getAllCmd := strings.Join(getAllArgs, " ")
-
-	descArgsDs := []string{
-		ts.cfg.Client.Config().KubectlPath,
-		"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
-		"--namespace=kube-system",
-		"describe",
-		"daemonset.apps/ebs-csi-node",
-	}
-	descCmdDs := strings.Join(descArgsDs, " ")
-=======
 var dirOrCreate = v1.HostPathDirectoryOrCreate
->>>>>>> 48beadc6 (adding functional tests for CSI functionality... Provision/Resize)
 
 func (ts *tester) installEBSHelmChart() error {
 	getAllArgs := []string{
@@ -258,7 +191,7 @@ func (ts *tester) installEBSHelmChart() error {
 		"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
 		"--namespace=kube-system",
 		"get",
-		"all",
+		"pods",
 	}
 	getAllCmd := strings.Join(getAllArgs, " ")
 	ts.cfg.Logger.Info("creating %s: %s", zap.String("Helm Chart", chartName))
@@ -286,7 +219,7 @@ func (ts *tester) installEBSHelmChart() error {
 			}
 			fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
 		},
-		QueryInterval: 15 * time.Second,
+		QueryInterval: 30 * time.Second,
 	})
 	if err != nil {
 		if k8s_errors.IsAlreadyExists(err) {
@@ -326,9 +259,9 @@ func (ts *tester) deleteEBSHelmChart() error {
 
 func (ts *tester) createEBSStorageClass() (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
-	firstConsumerBinding := storagev1.VolumeBindingWaitForFirstConsumer
+	firstConsumerBinding := storage_v1.VolumeBindingWaitForFirstConsumer
 	allowVolumeExpansion := true
-	_, err = ts.cfg.Client.StorageV1().StorageClasses().Create(
+	_, err = ts.cfg.Client.KubernetesClient().StorageV1().StorageClasses().Create(
 		ctx,
 		&storage_v1.StorageClass{
 			TypeMeta: meta_v1.TypeMeta{
@@ -358,7 +291,7 @@ func (ts *tester) createEBSStorageClass() (err error) {
 func (ts *tester) deleteEBSStorageClass() (err error) {
 	ts.cfg.Logger.Info("deleting storageClass for EBS")
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
-	err = ts.cfg.Client.StorageV1().StorageClasses().Delete(
+	err = ts.cfg.Client.KubernetesClient().StorageV1().StorageClasses().Delete(
 		ctx,
 		storageClassName,
 		meta_v1.DeleteOptions{
@@ -377,7 +310,7 @@ func (ts *tester) deleteEBSStorageClass() (err error) {
 func (ts *tester) createPersistentVolumeClaim(storageClass string) error {
 	ts.cfg.Logger.Info("creating PersistentVolumeClaim for EBS, Provisioning test")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cfg.Client.CoreV1().PersistentVolumeClaims(ts.cfg.Namespace).Create(
+	_, err := ts.cfg.Client.KubernetesClient().CoreV1().PersistentVolumeClaims(ts.cfg.Namespace).Create(
 		ctx,
 		&core_v1.PersistentVolumeClaim{
 			TypeMeta: meta_v1.TypeMeta{
@@ -399,6 +332,7 @@ func (ts *tester) createPersistentVolumeClaim(storageClass string) error {
 		},
 		meta_v1.CreateOptions{},
 	)
+
 	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to create PersistentVolumeClaims (%v)", err)
@@ -410,7 +344,7 @@ func (ts *tester) createPersistentVolumeClaim(storageClass string) error {
 func (ts *tester) deletePersistentVolumeClaim() error {
 	ts.cfg.Logger.Info("deleting PersistentVolumeClaim for EBS, Provisioning test")
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
-	err := ts.cfg.Client.CoreV1().PersistentVolumeClaims(ts.cfg.Namespace).Delete(
+	err := ts.cfg.Client.KubernetesClient().CoreV1().PersistentVolumeClaims(ts.cfg.Namespace).Delete(
 		ctx,
 		pvcProvisionName,
 		meta_v1.DeleteOptions{
@@ -430,7 +364,7 @@ func (ts *tester) volumeProvisionTest() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	var gracePeriod int64 = 1
 	ts.cfg.Logger.Info("Creating Pod to test Volume Provisioning", zap.String("Pod", provisionPodName))
-	_, err := ts.cfg.Client.
+	_, err := ts.cfg.Client.KubernetesClient().
 		CoreV1().Pods(ts.cfg.Namespace).Create(
 		ctx,
 		&v1.Pod{
@@ -480,7 +414,7 @@ func (ts *tester) volumeProvisionTest() error {
 	//Wait for Pod to spawn
 	time.Sleep(20 * time.Second)
 	ts.cfg.Logger.Info("Retrieving Dynamic Provisioed Claim on Pod", zap.String("Claim", pvcProvisionName))
-	claim, err := ts.cfg.Client.CoreV1().PersistentVolumeClaims(ts.cfg.Namespace).Get(
+	claim, err := ts.cfg.Client.KubernetesClient().CoreV1().PersistentVolumeClaims(ts.cfg.Namespace).Get(
 		ctx,
 		pvcProvisionName,
 		meta_v1.GetOptions{},
@@ -510,7 +444,7 @@ func (ts *tester) volumeResizeTests() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	//Resize testing
 	ts.cfg.Logger.Info("Starting PVC Resizing Tests")
-	pvc, err := ts.cfg.Client.CoreV1().PersistentVolumeClaims(ts.cfg.Namespace).Get(
+	pvc, err := ts.cfg.Client.KubernetesClient().CoreV1().PersistentVolumeClaims(ts.cfg.Namespace).Get(
 		ctx,
 		pvcProvisionName,
 		meta_v1.GetOptions{},
@@ -546,7 +480,7 @@ func (ts *tester) volumeResizeTests() error {
 func (ts *tester) deletevolumePods() error {
 	ts.cfg.Logger.Info("deleting Pods for EBS CSI tests")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	err := ts.cfg.Client.CoreV1().Pods(ts.cfg.Namespace).Delete(
+	err := ts.cfg.Client.KubernetesClient().CoreV1().Pods(ts.cfg.Namespace).Delete(
 		ctx,
 		provisionPodName,
 		meta_v1.DeleteOptions{

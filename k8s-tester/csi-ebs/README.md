@@ -43,3 +43,10 @@ go run cmd/k8s-tester-csi-ebs/main.go delete \
     --kubeconfig-path="/Users/jonahjo/.kube/config" \
     --log-outputs="/Users/jonahjo/go/src/code.amazon.com/aws-k8s-tester/k8s-tester/csi-ebs/csi-ebs.log"
 ```
+
+
+go run cmd/k8s-tester-csi-ebs/main.go apply \
+    --namespace csiebs \
+    --kubectl-path="/usr/local/bin/kubectl" \
+    --kubeconfig-path="/Users/jonahjo/.kube/config" \
+    --log-outputs="/Users/jonahjo/go/src/code.amazon.com/aws-k8s-tester/k8s-tester/csi-ebs/csi-ebs.log"
