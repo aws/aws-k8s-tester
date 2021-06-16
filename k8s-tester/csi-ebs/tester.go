@@ -41,6 +41,8 @@ type Config struct {
 	MinimumNodes int `json:"minimum-nodes"`
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
+	// HelmChartRepoURL is the helm chart repo URL.
+	HelmChartRepoURL string `json:"helm_chart_repo_url"`
 }
 
 func (cfg *Config) ValidateAndSetDefaults() error {
@@ -50,19 +52,22 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if cfg.Namespace == "" {
 		return errors.New("empty Namespace")
 	}
+	if cfg.HelmChartRepoURL == "" {
+		cfg.HelmChartRepoURL = DefaultHelmChartRepoURL
+	}
 	return nil
 }
 
 const (
-	chartName           string = "aws-ebs-csi-driver"
-	chartRepoURL        string = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
-	storageClassName    string = "ebs-sc"
-	pvcProvisionName    string = "ebs-provision-pvc"
-	provisioner         string = "ebs.csi.aws.com"
-	VolumeBindingMode   string = "WaitForFirstConsumer"
-	provisionPodName    string = "provisionpod"
-	provisionVolumeName string = "provisionvolume"
-	DefaultMinimumNodes int    = 1
+	chartName               string = "aws-ebs-csi-driver"
+	DefaultHelmChartRepoURL string = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
+	storageClassName        string = "ebs-sc"
+	pvcProvisionName        string = "ebs-provision-pvc"
+	provisioner             string = "ebs.csi.aws.com"
+	VolumeBindingMode       string = "WaitForFirstConsumer"
+	provisionPodName        string = "provisionpod"
+	provisionVolumeName     string = "provisionvolume"
+	DefaultMinimumNodes     int    = 1
 )
 
 var values = map[string]interface{}{
@@ -189,20 +194,50 @@ func (ts *tester) installEBSHelmChart() error {
 	getAllArgs := []string{
 		ts.cfg.Client.Config().KubectlPath,
 		"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
-		"--namespace=kube-system",
+		"--namespace=" + ts.cfg.Namespace,
 		"get",
-		"pods",
+		"all",
 	}
 	getAllCmd := strings.Join(getAllArgs, " ")
-	ts.cfg.Logger.Info("creating %s: %s", zap.String("Helm Chart", chartName))
-	err := helm.Install(helm.InstallConfig{
+
+	descArgsDs := []string{
+		ts.cfg.Client.Config().KubectlPath,
+		"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
+		"--namespace=" + ts.cfg.Namespace,
+		"describe",
+		"daemonset.apps/ebs-csi-node",
+	}
+	descCmdDs := strings.Join(descArgsDs, " ")
+
+	descArgsPods := []string{
+		ts.cfg.Client.Config().KubectlPath,
+		"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
+		"--namespace=" + ts.cfg.Namespace,
+		"describe",
+		"pods",
+		"--selector=app=ebs-csi-controller",
+	}
+	descCmdPods := strings.Join(descArgsPods, " ")
+
+	logArgs := []string{
+		ts.cfg.Client.Config().KubectlPath,
+		"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
+		"--namespace=" + ts.cfg.Namespace,
+		"logs",
+		"--selector=app=ebs-csi-controller",
+		"--all-containers=true",
+		"--timestamps",
+	}
+	logsCmd := strings.Join(logArgs, " ")
+
+	return helm.Install(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		LogWriter:      ts.cfg.LogWriter,
 		Stopc:          ts.cfg.Stopc,
-		Timeout:        5 * time.Minute,
+		Timeout:        10 * time.Minute,
 		KubeconfigPath: ts.cfg.Client.Config().KubeconfigPath,
-		Namespace:      "kube-system",
-		ChartRepoURL:   chartRepoURL,
+		Namespace:      ts.cfg.Namespace,
+		ChartRepoURL:   ts.cfg.HelmChartRepoURL,
 		ChartName:      chartName,
 		ReleaseName:    chartName,
 		Values:         values,
@@ -218,18 +253,36 @@ func (ts *tester) installEBSHelmChart() error {
 				ts.cfg.Logger.Warn("'kubectl get all' failed", zap.Error(err))
 			}
 			fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", getAllCmd, out)
+
+			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+			output, err = exec.New().CommandContext(ctx, descArgsDs[0], descArgsDs[1:]...).CombinedOutput()
+			cancel()
+			out = strings.TrimSpace(string(output))
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe daemonset' failed", zap.Error(err))
+			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descCmdDs, out)
+
+			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+			output, err = exec.New().CommandContext(ctx, descArgsPods[0], descArgsPods[1:]...).CombinedOutput()
+			cancel()
+			out = strings.TrimSpace(string(output))
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe pods' failed", zap.Error(err))
+			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descCmdPods, out)
+
+			ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+			output, err = exec.New().CommandContext(ctx, logArgs[0], logArgs[1:]...).CombinedOutput()
+			cancel()
+			out = strings.TrimSpace(string(output))
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl logs' failed", zap.Error(err))
+			}
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", logsCmd, out)
 		},
-		QueryInterval: 15 * time.Second,
+		QueryInterval: 30 * time.Second,
 	})
-	if err != nil {
-		if k8s_errors.IsAlreadyExists(err) {
-			ts.cfg.Logger.Info("resource already exists", zap.String("Helm Chart", chartName))
-			return nil
-		}
-		return fmt.Errorf("failed to create %s: %s (%v)", "Helm Chart", chartName, err)
-	}
-	ts.cfg.Logger.Info("Create resource", zap.String("Helm Chart", chartName))
-	return nil
 }
 
 func (ts *tester) deleteEBSHelmChart() error {
@@ -247,14 +300,14 @@ func (ts *tester) deleteEBSHelmChart() error {
 		ts.cfg.Logger.Info("deleted Helm Chart", zap.String("namespace", ts.cfg.Namespace), zap.String("name", chartName))
 		return nil
 	}
+	// requires "k8s_errors.IsNotFound"
+	// ref. https://github.com/aws/aws-k8s-tester/issues/79
 	if k8s_errors.IsNotFound(err) || k8s_errors.IsGone(err) {
 		ts.cfg.Logger.Info("Helm Chart already deleted", zap.String("namespace", ts.cfg.Namespace), zap.String("name", chartName), zap.Error(err))
 		return nil
 	}
 	ts.cfg.Logger.Warn("failed to delete Helm Chart", zap.String("namespace", ts.cfg.Namespace), zap.String("name", chartName), zap.Error(err))
 	return err
-	// requires "k8s_errors.IsNotFound"
-	// ref. https://github.com/aws/aws-k8s-tester/issues/79
 }
 
 func (ts *tester) createEBSStorageClass() (err error) {
