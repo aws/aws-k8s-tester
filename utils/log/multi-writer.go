@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"go.uber.org/zap"
 )
@@ -12,8 +13,21 @@ import (
 // NewWithStderrWriter creates a new logger and multi-writer with os.Stderr.
 // The returned file object is the log file.
 // The log file must be specified with extension ".log".
+// If the logOutputs is "stderr", it just returns the os.Stderr.
 func NewWithStderrWriter(logLevel string, logOutputs []string) (lg *zap.Logger, wr io.Writer, logFile *os.File, err error) {
 	lcfg := GetDefaultZapLoggerConfig()
+	if len(logOutputs) == 0 {
+		wr = os.Stderr
+	}
+	if len(logOutputs) == 1 {
+		o := strings.ToLower(logOutputs[0])
+		if o == "stderr" {
+			wr = os.Stderr
+		}
+		if o == "stdout" {
+			wr = os.Stdout
+		}
+	}
 	if len(logOutputs) > 1 {
 		logFilePath := ""
 		for _, fpath := range logOutputs {
@@ -30,13 +44,14 @@ func NewWithStderrWriter(logLevel string, logOutputs []string) (lg *zap.Logger, 
 			fmt.Fprintf(os.Stderr, "[WARN] failed to open log file %q (%v) -- ignoring log file\n", logFilePath, err)
 			wr = io.MultiWriter(os.Stderr)
 			lcfg = AddOutputPaths(lcfg, nil, nil)
-			// return nil, nil, nil, err
 		} else {
 			wr = io.MultiWriter(os.Stderr, logFile)
 			lcfg = AddOutputPaths(lcfg, logOutputs, logOutputs)
 		}
 	}
+
 	lcfg.Level = zap.NewAtomicLevelAt(ConvertToZapLevel(logLevel))
+
 	lg, err = lcfg.Build()
 	if err != nil {
 		return nil, nil, nil, err
