@@ -1,4 +1,4 @@
-package e2e
+package security
 
 import (
 	"math/rand"
@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
 	_ "github.com/aws/aws-k8s-tester/k8s-tester/falco"
 	_ "github.com/aws/aws-k8s-tester/k8s-tester/secrets"
 	. "github.com/onsi/ginkgo"
@@ -15,12 +14,13 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	//5 Minutes is slow test
 	config.DefaultReporterConfig.SlowSpecThreshold = 300
 	RegisterFailHandler(Fail)
 	rand.Seed(time.Now().UnixNano())
 	os.Exit(m.Run())
 }
 
-func TestSuites(t *testing.T) {
-	RunSpecs(t, "e2e Suite")
+func TestSecurity(t *testing.T) {
+	RunSpecs(t, "Security Suite")
 }

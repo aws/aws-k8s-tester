@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs v0.0.0-20210616043244-fdb062e48d4c // indirect
 	github.com/aws/aws-k8s-tester/k8s-tester/falco v0.0.0-20210616043244-fdb062e48d4c // indirect
 	github.com/aws/aws-k8s-tester/k8s-tester/helm v0.0.0-20210610170531-2e5d31e5196c
+	github.com/aws/aws-k8s-tester/k8s-tester/secrets v0.0.0-00010101000000-000000000000 // indirect
 	github.com/aws/aws-k8s-tester/utils v0.0.0-20210610170531-2e5d31e5196c
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0 // indirect

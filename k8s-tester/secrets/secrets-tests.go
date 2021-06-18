@@ -1,4 +1,4 @@
-package falco
+package secrets
 
 import (
 	"fmt"
@@ -16,13 +16,13 @@ var (
 	kubeconfigPath string
 )
 
-var _ = ginkgo.Describe("[security-falco]", func() {
+var _ = ginkgo.Describe("[security-secrets]", func() {
 	if home := os.Getenv("HOME"); home != "" {
 		kubeconfigPath = filepath.Join(home, ".kube", "config")
 	} else {
 		kubeconfigPath = client.DefaultKubectlPath()
 	}
-	lg, logWriter, _, _ := log.NewWithStderrWriter(log.DefaultLogLevel, []string{"stderr", "/Users/jonahjo/go/src/github.com/aws-k8s-tester/k8s-tester/e2e.k8s-tester.log"})
+	lg, logWriter, _, _ := log.NewWithStderrWriter(log.DefaultLogLevel, []string{"stderr"})
 	_ = zap.ReplaceGlobals(lg)
 	cli, _ := client.New(&client.Config{
 		Logger:         lg,
@@ -35,14 +35,14 @@ var _ = ginkgo.Describe("[security-falco]", func() {
 	cfg.Client = cli
 	ts := New(cfg)
 	ginkgo.BeforeEach(func() {
-		ginkgo.By(fmt.Sprintf("Creating Client for Kubenretes testing"))
+		ginkgo.By(fmt.Sprintf("Add any before functions here."))
 	})
 	ginkgo.AfterEach(func() {
 		ginkgo.By(fmt.Sprintf("Cleaning up K8s resources from tests"))
 		ts.Delete()
 	})
-	ginkgo.It("should Install Falco Helm Chart without Error", func() {
-		ginkgo.By("It should have at least 1 node for tests")
+	ginkgo.It("should Install Secrets Helm Chart without Error", func() {
+		ginkgo.By("It should run the Secrets test without error")
 		Expect(ts.Apply()).Should(Succeed())
 	})
 })

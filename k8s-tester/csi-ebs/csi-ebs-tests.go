@@ -16,13 +16,13 @@ var (
 	kubeconfigPath string
 )
 
-var _ = ginkgo.Describe("[CSI EBS]", func() {
+var _ = ginkgo.Describe("[storage-csi-ebs]", func() {
 	if home := os.Getenv("HOME"); home != "" {
 		kubeconfigPath = filepath.Join(home, ".kube", "config")
 	} else {
 		kubeconfigPath = client.DefaultKubectlPath()
 	}
-	lg, logWriter, _, _ := log.NewWithStderrWriter(log.DefaultLogLevel, []string{"stderr"})
+	lg, logWriter, _, _ := log.NewWithStderrWriter(log.DefaultLogLevel, []string{"stderr", "/Users/jonahjo/go/src/github.com/aws-k8s-tester/k8s-tester/e2e.k8s-tester.log"})
 	_ = zap.ReplaceGlobals(lg)
 	cli, _ := client.New(&client.Config{
 		Logger:         lg,
@@ -33,6 +33,8 @@ var _ = ginkgo.Describe("[CSI EBS]", func() {
 	cfg.Logger = lg
 	cfg.Enable = true
 	cfg.Client = cli
+	cfg.Prompt = false
+	cfg.HelmChartRepoURL = "https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases/download/helm-chart-aws-ebs-csi-driver-1.2.3/aws-ebs-csi-driver-1.2.3.tgz"
 	ts := New(cfg)
 	ginkgo.BeforeEach(func() {
 		ginkgo.By(fmt.Sprintf("Creating Client for Kubenretes testing"))
