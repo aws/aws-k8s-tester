@@ -12,7 +12,7 @@ import (
 )
 
 // getBoundPV returns a PV details.
-func GetBoundPV(ts *tester, pvc *v1.PersistentVolumeClaim) (*v1.PersistentVolume, error) {
+func (ts *tester) getBoundPV(pvc *v1.PersistentVolumeClaim) (*v1.PersistentVolume, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	// Get new copy of the claim
 	claim, err := ts.cfg.Client.KubernetesClient().CoreV1().PersistentVolumeClaims(pvc.Namespace).Get(ctx, pvc.Name, meta_v1.GetOptions{})
@@ -25,8 +25,8 @@ func GetBoundPV(ts *tester, pvc *v1.PersistentVolumeClaim) (*v1.PersistentVolume
 	return pv, err
 }
 
-// ExpandPVCSize expands PVC size
-func ExpandPVCSize(ts *tester, origPVC *v1.PersistentVolumeClaim, size resource.Quantity) (*v1.PersistentVolumeClaim, error) {
+// expandPVCSize expands PVC size
+func (ts *tester) expandPVCSize(origPVC *v1.PersistentVolumeClaim, size resource.Quantity) (*v1.PersistentVolumeClaim, error) {
 	pvcName := origPVC.Name
 	updatedPVC := origPVC.DeepCopy()
 	var resizePollInterval = 2 * time.Second
@@ -55,7 +55,7 @@ func ExpandPVCSize(ts *tester, origPVC *v1.PersistentVolumeClaim, size resource.
 	return updatedPVC, nil
 }
 
-func WaitForControllerVolumeResize(ts *tester, pvc *v1.PersistentVolumeClaim, timeout time.Duration) error {
+func (ts *tester) waitForControllerVolumeResize(pvc *v1.PersistentVolumeClaim, timeout time.Duration) error {
 	pvName := pvc.Spec.VolumeName
 	var resizePollInterval = 2 * time.Second
 	waitErr := wait.PollImmediate(resizePollInterval, timeout, func() (bool, error) {
@@ -77,13 +77,4 @@ func WaitForControllerVolumeResize(ts *tester, pvc *v1.PersistentVolumeClaim, ti
 		return fmt.Errorf("error while waiting for controller resize to finish: %v", waitErr)
 	}
 	return nil
-}
-
-func GenerateScriptCmd(command string) []string {
-	var commands []string
-	if command == "" {
-		return commands
-	}
-	commands = []string{"/bin/sh", "-c", command}
-	return commands
 }

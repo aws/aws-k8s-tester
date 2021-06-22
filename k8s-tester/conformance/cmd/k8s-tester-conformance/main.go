@@ -83,21 +83,21 @@ func newApply() *cobra.Command {
 		Run:   createApplyFunc,
 	}
 
-	rootCmd.PersistentFlags().StringVar(&sonobuoyPath, "sonobuoy-path", conformance.DefaultSonobuoyPath(), "sonobuoy path")
-	rootCmd.PersistentFlags().StringVar(&sonobuoyDownloadURL, "sonobuoy-download-url", conformance.DefaultSonobuoyDownloadURL(), "sonobuoy download URL")
-	rootCmd.PersistentFlags().DurationVar(&sonobuoyRunTimeout, "sonobuoy-run-timeout", conformance.DefaultSonobuoyRunTimeout, "sonobuoy run timeout")
-	rootCmd.PersistentFlags().DurationVar(&sonobuoyDeleteTimeout, "sonobuoy-delete timeout", conformance.DefaultSonobuoyDeleteTimeout, "sonobuoy delete timeout")
-	rootCmd.PersistentFlags().StringVar(&sonobuoyRunMode, "sonobuoy-run-mode", conformance.DefaultSonobuoyRunMode, "sonobuoy run mode")
-	rootCmd.PersistentFlags().StringVar(&sonobuoyRunE2EFocus, "sonobuoy-run-e2e-focus", "", "sonobuoy run e2e focus")
-	rootCmd.PersistentFlags().StringVar(&sonobuoyRunE2ESkip, "sonobuoy-run-e2e-skip", "", "sonobuoy run e2e skip")
-	rootCmd.PersistentFlags().StringVar(&sonobuoyRunKubeConformanceImage, "sonobuoy-run-kube-conformance-image", conformance.DefaultSonobuoyRunKubeConformanceImage, "sonobuoy run kube conformance image")
-	rootCmd.PersistentFlags().StringVar(&sonobuoyRunE2ERepoConfig, "sonobuoy-run-e2e-repo-config", "", "sonobuoy run e2e repo config")
-	rootCmd.PersistentFlags().StringVar(&sonobuoyRunImage, "sonobuoy-run-image", "", "sonobuoy run image")
-	rootCmd.PersistentFlags().StringVar(&sonobuoyRunSystemdLogsImage, "sonobuoy-run-systemd-logs-image", "", "sonobuoy run systemd logs image")
-	rootCmd.PersistentFlags().StringVar(&sonobuoyResultsTarGzPath, "sonobuoy-results-tar-gz-path", "", "sonobuoy results tar.gz path")
-	rootCmd.PersistentFlags().StringVar(&sonobuoyResultsE2ELogPath, "sonobuoy-results-e2e-log-path", "", "sonobuoy e2e log path")
-	rootCmd.PersistentFlags().StringVar(&sonobuoyResultsJunitXMLPath, "sonobuoy-results-junit-xml-path", "", "sonobuoy results Junit XML path")
-	rootCmd.PersistentFlags().StringVar(&sonobuoyResultsOutputDir, "sonobuoy-results-output-dir", "", "sonobuoy results output dir")
+	cmd.PersistentFlags().StringVar(&sonobuoyPath, "sonobuoy-path", conformance.DefaultSonobuoyPath(), "sonobuoy path")
+	cmd.PersistentFlags().StringVar(&sonobuoyDownloadURL, "sonobuoy-download-url", conformance.DefaultSonobuoyDownloadURL(), "sonobuoy download URL")
+	cmd.PersistentFlags().DurationVar(&sonobuoyRunTimeout, "sonobuoy-run-timeout", conformance.DefaultSonobuoyRunTimeout, "sonobuoy run timeout")
+	cmd.PersistentFlags().DurationVar(&sonobuoyDeleteTimeout, "sonobuoy-delete timeout", conformance.DefaultSonobuoyDeleteTimeout, "sonobuoy delete timeout")
+	cmd.PersistentFlags().StringVar(&sonobuoyRunMode, "sonobuoy-run-mode", conformance.DefaultSonobuoyRunMode, "sonobuoy run mode")
+	cmd.PersistentFlags().StringVar(&sonobuoyRunE2EFocus, "sonobuoy-run-e2e-focus", "", "sonobuoy run e2e focus")
+	cmd.PersistentFlags().StringVar(&sonobuoyRunE2ESkip, "sonobuoy-run-e2e-skip", "", "sonobuoy run e2e skip")
+	cmd.PersistentFlags().StringVar(&sonobuoyRunKubeConformanceImage, "sonobuoy-run-kube-conformance-image", conformance.DefaultSonobuoyRunKubeConformanceImage, "sonobuoy run kube conformance image")
+	cmd.PersistentFlags().StringVar(&sonobuoyRunE2ERepoConfig, "sonobuoy-run-e2e-repo-config", "", "sonobuoy run e2e repo config")
+	cmd.PersistentFlags().StringVar(&sonobuoyRunImage, "sonobuoy-run-image", "", "sonobuoy run image")
+	cmd.PersistentFlags().StringVar(&sonobuoyRunSystemdLogsImage, "sonobuoy-run-systemd-logs-image", "", "sonobuoy run systemd logs image")
+	cmd.PersistentFlags().StringVar(&sonobuoyResultsTarGzPath, "sonobuoy-results-tar-gz-path", "", "sonobuoy results tar.gz path")
+	cmd.PersistentFlags().StringVar(&sonobuoyResultsE2ELogPath, "sonobuoy-results-e2e-log-path", "", "sonobuoy e2e log path")
+	cmd.PersistentFlags().StringVar(&sonobuoyResultsJunitXMLPath, "sonobuoy-results-junit-xml-path", "", "sonobuoy results Junit XML path")
+	cmd.PersistentFlags().StringVar(&sonobuoyResultsOutputDir, "sonobuoy-results-output-dir", "", "sonobuoy results output dir")
 
 	return cmd
 }

@@ -65,7 +65,7 @@ func newApply() *cobra.Command {
 		Short: "Apply tests",
 		Run:   createApplyFunc,
 	}
-	rootCmd.PersistentFlags().StringVar(&helmChartRepoURL, "helm-chart-repo-url", falco.DefaultHelmChartRepoURL, "helm chart repo URL")
+	cmd.PersistentFlags().StringVar(&helmChartRepoURL, "helm-chart-repo-url", falco.DefaultHelmChartRepoURL, "helm chart repo URL")
 	return cmd
 }
 

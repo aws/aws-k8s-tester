@@ -32,15 +32,16 @@ type Config struct {
 	Enable bool `json:"enable"`
 	Prompt bool `json:"-"`
 
+	Stopc     chan struct{} `json:"-"`
 	Logger    *zap.Logger   `json:"-"`
 	LogWriter io.Writer     `json:"-"`
-	Stopc     chan struct{} `json:"-"`
 	Client    client.Client `json:"-"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
 	MinimumNodes int `json:"minimum-nodes"`
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
+
 	// HelmChartRepoURL is the helm chart repo URL.
 	HelmChartRepoURL string `json:"helm_chart_repo_url"`
 }
@@ -58,16 +59,17 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	return nil
 }
 
+const DefaultHelmChartRepoURL string = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
+
 const (
-	chartName               string = "aws-ebs-csi-driver"
-	DefaultHelmChartRepoURL string = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
-	storageClassName        string = "ebs-sc"
-	pvcProvisionName        string = "ebs-provision-pvc"
-	provisioner             string = "ebs.csi.aws.com"
-	VolumeBindingMode       string = "WaitForFirstConsumer"
-	provisionPodName        string = "provisionpod"
-	provisionVolumeName     string = "provisionvolume"
-	DefaultMinimumNodes     int    = 1
+	chartName           string = "aws-ebs-csi-driver"
+	storageClassName    string = "ebs-sc"
+	pvcProvisionName    string = "ebs-provision-pvc"
+	provisioner         string = "ebs.csi.aws.com"
+	VolumeBindingMode   string = "WaitForFirstConsumer"
+	provisionPodName    string = "provisionpod"
+	provisionVolumeName string = "provisionvolume"
+	DefaultMinimumNodes int    = 1
 )
 
 func NewDefault() *Config {
@@ -94,8 +96,6 @@ var values = map[string]interface{}{
 	"enableVolumeResizing":   true,
 	"enableVolumeSnapshot":   true,
 }
-
-var foreground = meta_v1.DeletePropagationForeground
 
 var graceperiod = int64(0)
 
@@ -128,10 +128,10 @@ func (ts *tester) Apply() error {
 	if err := ts.createPersistentVolumeClaim(storageClassName); err != nil {
 		return err
 	}
-	if err := ts.volumeProvisionTest(); err != nil {
+	if err := ts.provisionPVC(); err != nil {
 		return err
 	}
-	if err := ts.volumeResizeTests(); err != nil {
+	if err := ts.resizePVC(); err != nil {
 		return err
 	}
 	return nil
@@ -143,16 +143,16 @@ func (ts *tester) Delete() error {
 	}
 	var errs []string
 	if err := ts.deleteEBSHelmChart(); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete Helm Chart EBS (%v)", err))
+		errs = append(errs, fmt.Sprintf("failed to delete helm chart EBS (%v)", err))
 	}
 	if err := ts.deleteEBSStorageClass(); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete Helm Chart EBS (%v)", err))
+		errs = append(errs, fmt.Sprintf("failed to delete helm chart EBS (%v)", err))
 	}
 	if err := ts.deletePersistentVolumeClaim(); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete Helm Chart EBS (%v)", err))
+		errs = append(errs, fmt.Sprintf("failed to delete helm chart EBS (%v)", err))
 	}
 	if err := ts.deletevolumePods(); err != nil {
-		errs = append(errs, fmt.Sprintf("failed to delete Helm Chart EBS (%v)", err))
+		errs = append(errs, fmt.Sprintf("failed to delete helm chart EBS (%v)", err))
 	}
 	if err := client.DeleteNamespaceAndWait(
 		ts.cfg.Logger,
@@ -191,8 +191,6 @@ func (ts *tester) runPrompt(action string) (ok bool) {
 	}
 	return true
 }
-
-var dirOrCreate = v1.HostPathDirectoryOrCreate
 
 func (ts *tester) installEBSHelmChart() error {
 	getAllArgs := []string{
@@ -290,7 +288,7 @@ func (ts *tester) installEBSHelmChart() error {
 }
 
 func (ts *tester) deleteEBSHelmChart() error {
-	ts.cfg.Logger.Info("deleting %s: %s", zap.String("Helm Chart", chartName))
+	ts.cfg.Logger.Info("deleting %s: %s", zap.String("helm-chart-name", chartName))
 	err := helm.Uninstall(helm.InstallConfig{
 		Logger:         ts.cfg.Logger,
 		LogWriter:      ts.cfg.LogWriter,
@@ -301,16 +299,16 @@ func (ts *tester) deleteEBSHelmChart() error {
 		ReleaseName:    chartName,
 	})
 	if err == nil {
-		ts.cfg.Logger.Info("deleted Helm Chart", zap.String("namespace", ts.cfg.Namespace), zap.String("name", chartName))
+		ts.cfg.Logger.Info("deleted helm chart", zap.String("namespace", ts.cfg.Namespace), zap.String("name", chartName))
 		return nil
 	}
 	// requires "k8s_errors.IsNotFound"
 	// ref. https://github.com/aws/aws-k8s-tester/issues/79
 	if k8s_errors.IsNotFound(err) || k8s_errors.IsGone(err) {
-		ts.cfg.Logger.Info("Helm Chart already deleted", zap.String("namespace", ts.cfg.Namespace), zap.String("name", chartName), zap.Error(err))
+		ts.cfg.Logger.Info("helm chart already deleted", zap.String("namespace", ts.cfg.Namespace), zap.String("name", chartName), zap.Error(err))
 		return nil
 	}
-	ts.cfg.Logger.Warn("failed to delete Helm Chart", zap.String("namespace", ts.cfg.Namespace), zap.String("name", chartName), zap.Error(err))
+	ts.cfg.Logger.Warn("failed to delete helm chart", zap.String("namespace", ts.cfg.Namespace), zap.String("name", chartName), zap.Error(err))
 	return err
 }
 
@@ -397,6 +395,8 @@ func (ts *tester) createPersistentVolumeClaim(storageClass string) error {
 	return nil
 }
 
+var foreground = meta_v1.DeletePropagationForeground
+
 func (ts *tester) deletePersistentVolumeClaim() error {
 	ts.cfg.Logger.Info("deleting PersistentVolumeClaim for EBS, Provisioning test")
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
@@ -415,124 +415,142 @@ func (ts *tester) deletePersistentVolumeClaim() error {
 	return nil
 }
 
-//It should dynamically provision a volume from the PVC without pod mount/startup failure
-func (ts *tester) volumeProvisionTest() error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+// dynamically provision a volume from the PVC without pod mount/startup failure
+func (ts *tester) provisionPVC() error {
 	var gracePeriod int64 = 1
-	ts.cfg.Logger.Info("Creating Pod to test Volume Provisioning", zap.String("Pod", provisionPodName))
+	ts.cfg.Logger.Info("creating Pod to test volume provisioning", zap.String("Pod", provisionPodName))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	_, err := ts.cfg.Client.KubernetesClient().
-		CoreV1().Pods(ts.cfg.Namespace).Create(
-		ctx,
-		&v1.Pod{
-			TypeMeta: meta_v1.TypeMeta{
-				Kind:       "Pod",
-				APIVersion: "v1",
-			},
-			ObjectMeta: meta_v1.ObjectMeta{
-				Name: provisionPodName,
-			},
-			Spec: v1.PodSpec{
-				Containers: []v1.Container{
-					{
-						Name:       provisionPodName,
-						Image:      "public.ecr.aws/hudsonbay/busybox:latest",
-						WorkingDir: "/opt",
-						// An imperative and easily debuggable container which reads/writes vol contents for
-						// us to scan in the tests or by eye.
-						// We expect that /opt is empty in the minimal containers which we use in this test.
-						Command: []string{"/bin/sh", "-c", "while true ; do sleep 2; done "},
-						VolumeMounts: []v1.VolumeMount{
-							{
-								Name:      provisionVolumeName,
-								MountPath: "/opt/1",
+		CoreV1().
+		Pods(ts.cfg.Namespace).
+		Create(
+			ctx,
+			&core_v1.Pod{
+				TypeMeta: meta_v1.TypeMeta{
+					Kind:       "Pod",
+					APIVersion: "v1",
+				},
+				ObjectMeta: meta_v1.ObjectMeta{
+					Name: provisionPodName,
+				},
+				Spec: core_v1.PodSpec{
+					Containers: []v1.Container{
+						{
+							Name:       provisionPodName,
+							Image:      "public.ecr.aws/hudsonbay/busybox:latest",
+							WorkingDir: "/opt",
+							// An imperative and easily debuggable container which reads/writes vol contents for
+							// us to scan in the tests or by eye.
+							// We expect that /opt is empty in the minimal containers which we use in this test.
+							Command: []string{"/bin/sh", "-c", "while true ; do sleep 2; done "},
+							VolumeMounts: []core_v1.VolumeMount{
+								{
+									Name:      provisionVolumeName,
+									MountPath: "/opt/1",
+								},
+							},
+						},
+					},
+					TerminationGracePeriodSeconds: &gracePeriod,
+					Volumes: []core_v1.Volume{
+						{
+							Name: provisionVolumeName,
+							VolumeSource: core_v1.VolumeSource{
+								PersistentVolumeClaim: &core_v1.PersistentVolumeClaimVolumeSource{
+									ClaimName: pvcProvisionName,
+								},
 							},
 						},
 					},
 				},
-				TerminationGracePeriodSeconds: &gracePeriod,
-				Volumes: []v1.Volume{
-					{
-						Name: provisionVolumeName,
-						VolumeSource: v1.VolumeSource{
-							PersistentVolumeClaim: &v1.PersistentVolumeClaimVolumeSource{
-								ClaimName: pvcProvisionName,
-							},
-						},
-					},
-				},
 			},
-		},
-		meta_v1.CreateOptions{},
-	)
+			meta_v1.CreateOptions{},
+		)
+	cancel()
 	if err != nil {
-		return fmt.Errorf("failed to create VolumeProvision Pod for volumeProvisionTest test: (%v)", err)
+		return fmt.Errorf("failed to create VolumeProvision Pod for provisionPVC test: (%v)", err)
 	}
-	//Wait for Pod to spawn
+
+	// wait for Pod to spawn
 	time.Sleep(20 * time.Second)
-	ts.cfg.Logger.Info("Retrieving Dynamic Provisioed Claim on Pod", zap.String("Claim", pvcProvisionName))
-	claim, err := ts.cfg.Client.KubernetesClient().CoreV1().PersistentVolumeClaims(ts.cfg.Namespace).Get(
-		ctx,
-		pvcProvisionName,
-		meta_v1.GetOptions{},
-	)
+
+	ts.cfg.Logger.Info("retrieving Dynamic Provisioed Claim on Pod", zap.String("claim", pvcProvisionName))
+	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	claim, err := ts.cfg.Client.KubernetesClient().
+		CoreV1().
+		PersistentVolumeClaims(ts.cfg.Namespace).
+		Get(
+			ctx,
+			pvcProvisionName,
+			meta_v1.GetOptions{},
+		)
 	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to GET PersistentVolumeClaims pvcProvisionName (%v)", err)
 	}
-	pv, err := GetBoundPV(ts, claim)
-	ts.cfg.Logger.Info("Got PV from Pod", zap.String("PV", pv.ObjectMeta.Name))
+
+	pv, err := ts.getBoundPV(claim)
+	ts.cfg.Logger.Info("got PV from Pod", zap.String("pv", pv.ObjectMeta.Name))
 	if err != nil {
-		return fmt.Errorf("failed to GetBoundPV (%v)", err)
+		return fmt.Errorf("failed to getBoundPV (%v)", err)
 	}
+
 	expectedCapacity := resource.MustParse("4Gi")
-	pvCapacity := pv.Spec.Capacity[v1.ResourceName(v1.ResourceStorage)]
-	ts.cfg.Logger.Info("Checking Desired Capacity vs Actual PV Capacity")
-	if expectedCapacity.Value() == pvCapacity.Value() {
-		ts.cfg.Logger.Info("[PASSED] expectedCapacity did equal volume Capacity", zap.String(expectedCapacity.String(), pvCapacity.String()))
-	} else {
-		return fmt.Errorf("expectedCapacity did not equal volume Capacity (%v)", err)
+	pvCapacity := pv.Spec.Capacity[core_v1.ResourceName(core_v1.ResourceStorage)]
+	ts.cfg.Logger.Info("checking Desired Capacity vs actual PV Capacity")
+	if expectedCapacity.Value() != pvCapacity.Value() {
+		return fmt.Errorf("capacity did not equal volume Capacity (%v)", err)
 	}
+
+	ts.cfg.Logger.Info("[PASSED] expectedCapacity did equal volume Capacity", zap.String(expectedCapacity.String(), pvCapacity.String()))
 	return nil
 }
 
 //It should handle resizing on running, and stopped pods
-func (ts *tester) volumeResizeTests() error {
+func (ts *tester) resizePVC() error {
+	// resize testing
+	ts.cfg.Logger.Info("starting PVC Resizing Tests")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	//Resize testing
-	ts.cfg.Logger.Info("Starting PVC Resizing Tests")
-	pvc, err := ts.cfg.Client.KubernetesClient().CoreV1().PersistentVolumeClaims(ts.cfg.Namespace).Get(
-		ctx,
-		pvcProvisionName,
-		meta_v1.GetOptions{},
-	)
-	ts.cfg.Logger.Info("Found PVC for Resizing Tests", zap.String("PVC", pvcProvisionName))
+	pvc, err := ts.cfg.Client.KubernetesClient().
+		CoreV1().
+		PersistentVolumeClaims(ts.cfg.Namespace).
+		Get(
+			ctx,
+			pvcProvisionName,
+			meta_v1.GetOptions{},
+		)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to GET PersistentVolumeClaims pvcProvisionName (%v)", err)
 	}
-	//Make Deepcopy of PVC with new size, and apply to current PVC
-	ts.cfg.Logger.Info("Chaning PVC Size of running pod from 4GI to", zap.String("Size", "6Gi"))
+	ts.cfg.Logger.Info("found PVC for resizing tests", zap.String("pvc", pvcProvisionName))
+
+	// make Deepcopy of PVC with new size, and apply to current PVC
+	ts.cfg.Logger.Info("chaning PVC Size of running pod from 4GI to", zap.String("Size", "6Gi"))
 	newSize := resource.MustParse("6Gi")
-	newPVC, err := ExpandPVCSize(ts, pvc, newSize)
+	newPVC, err := ts.expandPVCSize(pvc, newSize)
 	if newPVC == nil {
 		return fmt.Errorf("failed to create Resize of PVC (%v)", err)
 	}
-	//Check if PVC is being updated
+
+	// check if PVC is being updated
 	pvcSize := newPVC.Spec.Resources.Requests[v1.ResourceStorage]
 	if pvcSize.Cmp(newSize) != 0 {
 		return fmt.Errorf("error updating pvc size %v", err)
 	}
-	cancel()
-	//Wait for PVC to come back healthy
-	ts.cfg.Logger.Info("Waiting on PVC ReSize for max timeout of 8 minutes...")
-	err = WaitForControllerVolumeResize(ts, newPVC, 8*time.Minute)
+
+	// wait for PVC to come back healthy
+	ts.cfg.Logger.Info("waiting on PVC ReSize for max timeout of 8 minutes...")
+	err = ts.waitForControllerVolumeResize(newPVC, 8*time.Minute)
 	if err != nil {
 		return fmt.Errorf("VolumeResize resize timeout occured due to error (%v)", err)
 	}
+
 	ts.cfg.Logger.Info("[PASSED] PVC ReSize on running Pod", zap.String("New Size", "6Gi"))
 	return nil
 }
 
-//Cleanup Testing Pods
+// cleanup testing Pods
 func (ts *tester) deletevolumePods() error {
 	ts.cfg.Logger.Info("deleting Pods for EBS CSI tests")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -548,6 +566,6 @@ func (ts *tester) deletevolumePods() error {
 	if err != nil {
 		return fmt.Errorf("failed to delete Pod (%v)", err)
 	}
-	ts.cfg.Logger.Info("Deleted a Pod for EBS Tests")
+	ts.cfg.Logger.Info("deleted a Pod for EBS Tests")
 	return nil
 }

@@ -28,7 +28,6 @@ var (
 	logOutputs         []string
 	minimumNodes       int
 	namespace          string
-	helmChartRepoURL   string
 	kubectlDownloadURL string
 	kubectlPath        string
 	kubeconfigPath     string
@@ -40,7 +39,6 @@ func init() {
 	rootCmd.PersistentFlags().StringSliceVar(&logOutputs, "log-outputs", []string{"stderr"}, "Additional logger outputs")
 	rootCmd.PersistentFlags().IntVar(&minimumNodes, "minimum-nodes", csi_ebs.DefaultMinimumNodes, "minimum number of Kubernetes nodes required for installing this addon")
 	rootCmd.PersistentFlags().StringVar(&namespace, "namespace", "test-namespace", "'true' to auto-generate path for create config/cluster, overwrites existing --path value")
-	rootCmd.PersistentFlags().StringVar(&helmChartRepoURL, "helm-chart-repo-url", csi_ebs.DefaultHelmChartRepoURL, "helm chart repo URL")
 	rootCmd.PersistentFlags().StringVar(&kubectlDownloadURL, "kubectl-download-url", client.DefaultKubectlDownloadURL(), "kubectl download URL")
 	rootCmd.PersistentFlags().StringVar(&kubectlPath, "kubectl-path", client.DefaultKubectlPath(), "kubectl path")
 	rootCmd.PersistentFlags().StringVar(&kubeconfigPath, "kubeconfig-path", "", "KUBECONFIG path")
@@ -59,12 +57,15 @@ func main() {
 	os.Exit(0)
 }
 
+var helmChartRepoURL string
+
 func newApply() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "apply",
 		Short: "Apply tests",
 		Run:   createApplyFunc,
 	}
+	cmd.PersistentFlags().StringVar(&helmChartRepoURL, "helm-chart-repo-url", csi_ebs.DefaultHelmChartRepoURL, "helm chart repo URL")
 	return cmd
 }
 
@@ -76,9 +77,10 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 	_ = zap.ReplaceGlobals(lg)
 
 	cli, err := client.New(&client.Config{
-		Logger:         lg,
-		KubectlPath:    kubectlPath,
-		KubeconfigPath: kubeconfigPath,
+		Logger:             lg,
+		KubectlDownloadURL: kubectlDownloadURL,
+		KubectlPath:        kubectlPath,
+		KubeconfigPath:     kubeconfigPath,
 	})
 	if err != nil {
 		lg.Panic("failed to create client", zap.Error(err))
@@ -121,9 +123,10 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 	_ = zap.ReplaceGlobals(lg)
 
 	cli, err := client.New(&client.Config{
-		Logger:         lg,
-		KubectlPath:    kubectlPath,
-		KubeconfigPath: kubeconfigPath,
+		Logger:             lg,
+		KubectlDownloadURL: kubectlDownloadURL,
+		KubectlPath:        kubectlPath,
+		KubeconfigPath:     kubeconfigPath,
 	})
 	if err != nil {
 		lg.Panic("failed to create client", zap.Error(err))
