@@ -70,18 +70,6 @@ const (
 	DefaultMinimumNodes     int    = 1
 )
 
-var values = map[string]interface{}{
-	"enableVolumeScheduling": true,
-	"enableVolumeResizing":   true,
-	"enableVolumeSnapshot":   true,
-}
-
-var foreground = meta_v1.DeletePropagationForeground
-
-var graceperiod = int64(0)
-
-var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
-
 func NewDefault() *Config {
 	return &Config{
 		Enable:       false,
@@ -99,6 +87,22 @@ func New(cfg *Config) k8s_tester.Tester {
 
 type tester struct {
 	cfg *Config
+}
+
+var values = map[string]interface{}{
+	"enableVolumeScheduling": true,
+	"enableVolumeResizing":   true,
+	"enableVolumeSnapshot":   true,
+}
+
+var foreground = meta_v1.DeletePropagationForeground
+
+var graceperiod = int64(0)
+
+var pkgName = path.Base(reflect.TypeOf(tester{}).PkgPath())
+
+func Env() string {
+	return "ADD_ON_" + strings.ToUpper(strings.Replace(pkgName, "-", "_", -1))
 }
 
 func (ts *tester) Name() string { return pkgName }
