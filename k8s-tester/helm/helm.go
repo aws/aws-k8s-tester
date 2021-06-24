@@ -177,7 +177,7 @@ func Install(cfg InstallConfig) (err error) {
 	case strings.HasSuffix(cfg.ChartRepoURL, ".tgz") || strings.HasSuffix(cfg.ChartRepoURL, ".tar.gz"):
 		// https://github.com/kubernetes-sigs/aws-ebs-csi-driver/releases
 		// https://github.com/kubernetes-sigs/aws-efs-csi-driver/releases
-		fpath := file.GetTempFilePath("ebs-csi-driver") + ".tgz"
+		fpath := file.GetTempFilePath(cfg.ChartName) + ".tgz"
 		retryStart, waitDur := time.Now(), 3*time.Minute
 		for time.Since(retryStart) < waitDur {
 			err = utils_http.Download(cfg.Logger, os.Stderr, cfg.ChartRepoURL, fpath)
@@ -282,9 +282,13 @@ func Install(cfg InstallConfig) (err error) {
 					return
 				case <-time.After(cfg.QueryInterval):
 				}
-				fmt.Fprintf(cfg.LogWriter, "\n")
-				cfg.QueryFunc()
-				fmt.Fprintf(cfg.LogWriter, "\n")
+				if cfg.LogWriter == nil {
+					println("warning no log writer")
+				} else {
+					fmt.Fprintf(cfg.LogWriter, "\n")
+					cfg.QueryFunc()
+					fmt.Fprintf(cfg.LogWriter, "\n")
+				}
 			}
 		}()
 	}
