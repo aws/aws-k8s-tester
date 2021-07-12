@@ -17,7 +17,7 @@ func (c *Client) DeleteLocalGatewayRouteTableVpcAssociation(ctx context.Context,
 		params = &DeleteLocalGatewayRouteTableVpcAssociationInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DeleteLocalGatewayRouteTableVpcAssociation", params, optFns, addOperationDeleteLocalGatewayRouteTableVpcAssociationMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DeleteLocalGatewayRouteTableVpcAssociation", params, optFns, c.addOperationDeleteLocalGatewayRouteTableVpcAssociationMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ type DeleteLocalGatewayRouteTableVpcAssociationInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type DeleteLocalGatewayRouteTableVpcAssociationOutput struct {
@@ -50,7 +50,7 @@ type DeleteLocalGatewayRouteTableVpcAssociationOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDeleteLocalGatewayRouteTableVpcAssociationMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDeleteLocalGatewayRouteTableVpcAssociationMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDeleteLocalGatewayRouteTableVpcAssociation{}, middleware.After)
 	if err != nil {
 		return err

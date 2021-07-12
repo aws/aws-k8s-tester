@@ -19,7 +19,7 @@ func (c *Client) DescribeVpcEndpointServicePermissions(ctx context.Context, para
 		params = &DescribeVpcEndpointServicePermissionsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeVpcEndpointServicePermissions", params, optFns, addOperationDescribeVpcEndpointServicePermissionsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeVpcEndpointServicePermissions", params, optFns, c.addOperationDescribeVpcEndpointServicePermissionsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ type DescribeVpcEndpointServicePermissionsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters.
 	//
@@ -54,7 +54,7 @@ type DescribeVpcEndpointServicePermissionsInput struct {
 	// remaining results of the initial request can be seen by sending another request
 	// with the returned NextToken value. This value can be between 5 and 1,000; if
 	// MaxResults is given a value larger than 1,000, only 1,000 results are returned.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token to retrieve the next page of results.
 	NextToken *string
@@ -73,7 +73,7 @@ type DescribeVpcEndpointServicePermissionsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeVpcEndpointServicePermissionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeVpcEndpointServicePermissionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeVpcEndpointServicePermissions{}, middleware.After)
 	if err != nil {
 		return err
@@ -171,17 +171,17 @@ type DescribeVpcEndpointServicePermissionsPaginator struct {
 // NewDescribeVpcEndpointServicePermissionsPaginator returns a new
 // DescribeVpcEndpointServicePermissionsPaginator
 func NewDescribeVpcEndpointServicePermissionsPaginator(client DescribeVpcEndpointServicePermissionsAPIClient, params *DescribeVpcEndpointServicePermissionsInput, optFns ...func(*DescribeVpcEndpointServicePermissionsPaginatorOptions)) *DescribeVpcEndpointServicePermissionsPaginator {
+	if params == nil {
+		params = &DescribeVpcEndpointServicePermissionsInput{}
+	}
+
 	options := DescribeVpcEndpointServicePermissionsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeVpcEndpointServicePermissionsInput{}
 	}
 
 	return &DescribeVpcEndpointServicePermissionsPaginator{
@@ -206,7 +206,11 @@ func (p *DescribeVpcEndpointServicePermissionsPaginator) NextPage(ctx context.Co
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeVpcEndpointServicePermissions(ctx, &params, optFns...)
 	if err != nil {

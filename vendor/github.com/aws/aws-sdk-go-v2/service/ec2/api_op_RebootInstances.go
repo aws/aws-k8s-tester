@@ -17,13 +17,13 @@ import (
 // minutes, Amazon EC2 performs a hard reboot. For more information about
 // troubleshooting, see Getting console output and rebooting instances
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-console.html) in
-// the Amazon Elastic Compute Cloud User Guide.
+// the Amazon EC2 User Guide.
 func (c *Client) RebootInstances(ctx context.Context, params *RebootInstancesInput, optFns ...func(*Options)) (*RebootInstancesOutput, error) {
 	if params == nil {
 		params = &RebootInstancesInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "RebootInstances", params, optFns, addOperationRebootInstancesMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "RebootInstances", params, optFns, c.addOperationRebootInstancesMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ type RebootInstancesInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type RebootInstancesOutput struct {
@@ -52,7 +52,7 @@ type RebootInstancesOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationRebootInstancesMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationRebootInstancesMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpRebootInstances{}, middleware.After)
 	if err != nil {
 		return err

@@ -23,7 +23,7 @@ func (c *Client) DescribeExportTasks(ctx context.Context, params *DescribeExport
 		params = &DescribeExportTasksInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeExportTasks", params, optFns, addOperationDescribeExportTasksMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeExportTasks", params, optFns, c.addOperationDescribeExportTasksMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ type DescribeExportTasksOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeExportTasksMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeExportTasksMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeExportTasks{}, middleware.After)
 	if err != nil {
 		return err
@@ -259,16 +259,21 @@ func exportTaskCancelledStateRetryable(ctx context.Context, input *DescribeExpor
 
 		expectedValue := "cancelled"
 		var match = true
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		if len(listOfValues) == 0 {
 			match = false
 		}
 		for _, v := range listOfValues {
-			if v != expectedValue {
+			value, ok := v.(types.ExportTaskState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.ExportTaskState value, got %T", pathValue)
+			}
+
+			if string(value) != expectedValue {
 				match = false
 			}
 		}
@@ -421,16 +426,21 @@ func exportTaskCompletedStateRetryable(ctx context.Context, input *DescribeExpor
 
 		expectedValue := "completed"
 		var match = true
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		if len(listOfValues) == 0 {
 			match = false
 		}
 		for _, v := range listOfValues {
-			if v != expectedValue {
+			value, ok := v.(types.ExportTaskState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.ExportTaskState value, got %T", pathValue)
+			}
+
+			if string(value) != expectedValue {
 				match = false
 			}
 		}

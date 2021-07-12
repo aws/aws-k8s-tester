@@ -25,7 +25,7 @@ func (c *Client) AssociateDhcpOptions(ctx context.Context, params *AssociateDhcp
 		params = &AssociateDhcpOptionsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "AssociateDhcpOptions", params, optFns, addOperationAssociateDhcpOptionsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "AssociateDhcpOptions", params, optFns, c.addOperationAssociateDhcpOptionsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ type AssociateDhcpOptionsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type AssociateDhcpOptionsOutput struct {
@@ -60,7 +60,7 @@ type AssociateDhcpOptionsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationAssociateDhcpOptionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationAssociateDhcpOptionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpAssociateDhcpOptions{}, middleware.After)
 	if err != nil {
 		return err

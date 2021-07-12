@@ -16,7 +16,7 @@ func (c *Client) DeleteNetworkInsightsPath(ctx context.Context, params *DeleteNe
 		params = &DeleteNetworkInsightsPathInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DeleteNetworkInsightsPath", params, optFns, addOperationDeleteNetworkInsightsPathMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DeleteNetworkInsightsPath", params, optFns, c.addOperationDeleteNetworkInsightsPathMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ type DeleteNetworkInsightsPathInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type DeleteNetworkInsightsPathOutput struct {
@@ -49,7 +49,7 @@ type DeleteNetworkInsightsPathOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDeleteNetworkInsightsPathMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDeleteNetworkInsightsPathMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDeleteNetworkInsightsPath{}, middleware.After)
 	if err != nil {
 		return err

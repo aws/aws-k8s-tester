@@ -4,10 +4,12 @@ package ec2
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	"github.com/aws/smithy-go/middleware"
 	smithytime "github.com/aws/smithy-go/time"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
@@ -27,26 +29,26 @@ import (
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/monitoring-system-instance-status-check.html)
 // and Troubleshooting instances with failed status checks
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/TroubleshootingInstances.html)
-// in the Amazon Elastic Compute Cloud User Guide.
+// in the Amazon EC2 User Guide.
 //
-// * Scheduled events - Amazon EC2
-// can schedule events (such as reboot, stop, or terminate) for your instances
-// related to hardware issues, software updates, or system maintenance. For more
-// information, see Scheduled events for your instances
+// * Scheduled events - Amazon EC2 can schedule
+// events (such as reboot, stop, or terminate) for your instances related to
+// hardware issues, software updates, or system maintenance. For more information,
+// see Scheduled events for your instances
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/monitoring-instances-status-check_sched.html)
-// in the Amazon Elastic Compute Cloud User Guide.
+// in the Amazon EC2 User Guide.
 //
-// * Instance state - You can
-// manage your instances from the moment you launch them through their termination.
-// For more information, see Instance lifecycle
+// * Instance state - You can manage your instances
+// from the moment you launch them through their termination. For more information,
+// see Instance lifecycle
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html)
-// in the Amazon Elastic Compute Cloud User Guide.
+// in the Amazon EC2 User Guide.
 func (c *Client) DescribeInstanceStatus(ctx context.Context, params *DescribeInstanceStatusInput, optFns ...func(*Options)) (*DescribeInstanceStatusOutput, error) {
 	if params == nil {
 		params = &DescribeInstanceStatusInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeInstanceStatus", params, optFns, addOperationDescribeInstanceStatusMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeInstanceStatus", params, optFns, c.addOperationDescribeInstanceStatusMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +64,7 @@ type DescribeInstanceStatusInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The filters.
 	//
@@ -117,7 +119,7 @@ type DescribeInstanceStatusInput struct {
 
 	// When true, includes the health status for all instances. When false, includes
 	// the health status for running instances only. Default: false
-	IncludeAllInstances bool
+	IncludeAllInstances *bool
 
 	// The instance IDs. Default: Describes all your instances. Constraints: Maximum
 	// 100 explicitly specified instance IDs.
@@ -127,7 +129,7 @@ type DescribeInstanceStatusInput struct {
 	// remaining results, make another call with the returned NextToken value. This
 	// value can be between 5 and 1000. You cannot specify this parameter and the
 	// instance IDs parameter in the same call.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token to retrieve the next page of results.
 	NextToken *string
@@ -146,7 +148,7 @@ type DescribeInstanceStatusOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeInstanceStatusMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeInstanceStatusMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeInstanceStatus{}, middleware.After)
 	if err != nil {
 		return err
@@ -239,17 +241,17 @@ type DescribeInstanceStatusPaginator struct {
 
 // NewDescribeInstanceStatusPaginator returns a new DescribeInstanceStatusPaginator
 func NewDescribeInstanceStatusPaginator(client DescribeInstanceStatusAPIClient, params *DescribeInstanceStatusInput, optFns ...func(*DescribeInstanceStatusPaginatorOptions)) *DescribeInstanceStatusPaginator {
+	if params == nil {
+		params = &DescribeInstanceStatusInput{}
+	}
+
 	options := DescribeInstanceStatusPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeInstanceStatusInput{}
 	}
 
 	return &DescribeInstanceStatusPaginator{
@@ -274,7 +276,11 @@ func (p *DescribeInstanceStatusPaginator) NextPage(ctx context.Context, optFns .
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeInstanceStatus(ctx, &params, optFns...)
 	if err != nil {
@@ -290,6 +296,184 @@ func (p *DescribeInstanceStatusPaginator) NextPage(ctx context.Context, optFns .
 	}
 
 	return result, nil
+}
+
+// InstanceStatusOkWaiterOptions are waiter options for InstanceStatusOkWaiter
+type InstanceStatusOkWaiterOptions struct {
+
+	// Set of options to modify how an operation is invoked. These apply to all
+	// operations invoked for this client. Use functional options on operation call to
+	// modify this list for per operation behavior.
+	APIOptions []func(*middleware.Stack) error
+
+	// MinDelay is the minimum amount of time to delay between retries. If unset,
+	// InstanceStatusOkWaiter will use default minimum delay of 15 seconds. Note that
+	// MinDelay must resolve to a value lesser than or equal to the MaxDelay.
+	MinDelay time.Duration
+
+	// MaxDelay is the maximum amount of time to delay between retries. If unset or set
+	// to zero, InstanceStatusOkWaiter will use default max delay of 120 seconds. Note
+	// that MaxDelay must resolve to value greater than or equal to the MinDelay.
+	MaxDelay time.Duration
+
+	// LogWaitAttempts is used to enable logging for waiter retry attempts
+	LogWaitAttempts bool
+
+	// Retryable is function that can be used to override the service defined
+	// waiter-behavior based on operation output, or returned error. This function is
+	// used by the waiter to decide if a state is retryable or a terminal state. By
+	// default service-modeled logic will populate this option. This option can thus be
+	// used to define a custom waiter state with fall-back to service-modeled waiter
+	// state mutators.The function returns an error in case of a failure state. In case
+	// of retry state, this function returns a bool value of true and nil error, while
+	// in case of success it returns a bool value of false and nil error.
+	Retryable func(context.Context, *DescribeInstanceStatusInput, *DescribeInstanceStatusOutput, error) (bool, error)
+}
+
+// InstanceStatusOkWaiter defines the waiters for InstanceStatusOk
+type InstanceStatusOkWaiter struct {
+	client DescribeInstanceStatusAPIClient
+
+	options InstanceStatusOkWaiterOptions
+}
+
+// NewInstanceStatusOkWaiter constructs a InstanceStatusOkWaiter.
+func NewInstanceStatusOkWaiter(client DescribeInstanceStatusAPIClient, optFns ...func(*InstanceStatusOkWaiterOptions)) *InstanceStatusOkWaiter {
+	options := InstanceStatusOkWaiterOptions{}
+	options.MinDelay = 15 * time.Second
+	options.MaxDelay = 120 * time.Second
+	options.Retryable = instanceStatusOkStateRetryable
+
+	for _, fn := range optFns {
+		fn(&options)
+	}
+	return &InstanceStatusOkWaiter{
+		client:  client,
+		options: options,
+	}
+}
+
+// Wait calls the waiter function for InstanceStatusOk waiter. The maxWaitDur is
+// the maximum wait duration the waiter will wait. The maxWaitDur is required and
+// must be greater than zero.
+func (w *InstanceStatusOkWaiter) Wait(ctx context.Context, params *DescribeInstanceStatusInput, maxWaitDur time.Duration, optFns ...func(*InstanceStatusOkWaiterOptions)) error {
+	if maxWaitDur <= 0 {
+		return fmt.Errorf("maximum wait time for waiter must be greater than zero")
+	}
+
+	options := w.options
+	for _, fn := range optFns {
+		fn(&options)
+	}
+
+	if options.MaxDelay <= 0 {
+		options.MaxDelay = 120 * time.Second
+	}
+
+	if options.MinDelay > options.MaxDelay {
+		return fmt.Errorf("minimum waiter delay %v must be lesser than or equal to maximum waiter delay of %v.", options.MinDelay, options.MaxDelay)
+	}
+
+	ctx, cancelFn := context.WithTimeout(ctx, maxWaitDur)
+	defer cancelFn()
+
+	logger := smithywaiter.Logger{}
+	remainingTime := maxWaitDur
+
+	var attempt int64
+	for {
+
+		attempt++
+		apiOptions := options.APIOptions
+		start := time.Now()
+
+		if options.LogWaitAttempts {
+			logger.Attempt = attempt
+			apiOptions = append([]func(*middleware.Stack) error{}, options.APIOptions...)
+			apiOptions = append(apiOptions, logger.AddLogger)
+		}
+
+		out, err := w.client.DescribeInstanceStatus(ctx, params, func(o *Options) {
+			o.APIOptions = append(o.APIOptions, apiOptions...)
+		})
+
+		retryable, err := options.Retryable(ctx, params, out, err)
+		if err != nil {
+			return err
+		}
+		if !retryable {
+			return nil
+		}
+
+		remainingTime -= time.Since(start)
+		if remainingTime < options.MinDelay || remainingTime <= 0 {
+			break
+		}
+
+		// compute exponential backoff between waiter retries
+		delay, err := smithywaiter.ComputeDelay(
+			attempt, options.MinDelay, options.MaxDelay, remainingTime,
+		)
+		if err != nil {
+			return fmt.Errorf("error computing waiter delay, %w", err)
+		}
+
+		remainingTime -= delay
+		// sleep for the delay amount before invoking a request
+		if err := smithytime.SleepWithContext(ctx, delay); err != nil {
+			return fmt.Errorf("request cancelled while waiting, %w", err)
+		}
+	}
+	return fmt.Errorf("exceeded max wait time for InstanceStatusOk waiter")
+}
+
+func instanceStatusOkStateRetryable(ctx context.Context, input *DescribeInstanceStatusInput, output *DescribeInstanceStatusOutput, err error) (bool, error) {
+
+	if err == nil {
+		pathValue, err := jmespath.Search("InstanceStatuses[].InstanceStatus.Status", output)
+		if err != nil {
+			return false, fmt.Errorf("error evaluating waiter state: %w", err)
+		}
+
+		expectedValue := "ok"
+		var match = true
+		listOfValues, ok := pathValue.([]interface{})
+		if !ok {
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
+		}
+
+		if len(listOfValues) == 0 {
+			match = false
+		}
+		for _, v := range listOfValues {
+			value, ok := v.(types.SummaryStatus)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.SummaryStatus value, got %T", pathValue)
+			}
+
+			if string(value) != expectedValue {
+				match = false
+			}
+		}
+
+		if match {
+			return false, nil
+		}
+	}
+
+	if err != nil {
+		var apiErr smithy.APIError
+		ok := errors.As(err, &apiErr)
+		if !ok {
+			return false, fmt.Errorf("expected err to be of type smithy.APIError, got %w", err)
+		}
+
+		if "InvalidInstanceID.NotFound" == apiErr.ErrorCode() {
+			return true, nil
+		}
+	}
+
+	return true, nil
 }
 
 // SystemStatusOkWaiterOptions are waiter options for SystemStatusOkWaiter
@@ -431,16 +615,21 @@ func systemStatusOkStateRetryable(ctx context.Context, input *DescribeInstanceSt
 
 		expectedValue := "ok"
 		var match = true
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		if len(listOfValues) == 0 {
 			match = false
 		}
 		for _, v := range listOfValues {
-			if v != expectedValue {
+			value, ok := v.(types.SummaryStatus)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.SummaryStatus value, got %T", pathValue)
+			}
+
+			if string(value) != expectedValue {
 				match = false
 			}
 		}

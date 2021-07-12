@@ -23,7 +23,7 @@ func (c *Client) StartVpcEndpointServicePrivateDnsVerification(ctx context.Conte
 		params = &StartVpcEndpointServicePrivateDnsVerificationInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "StartVpcEndpointServicePrivateDnsVerification", params, optFns, addOperationStartVpcEndpointServicePrivateDnsVerificationMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "StartVpcEndpointServicePrivateDnsVerification", params, optFns, c.addOperationStartVpcEndpointServicePrivateDnsVerificationMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -44,19 +44,19 @@ type StartVpcEndpointServicePrivateDnsVerificationInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type StartVpcEndpointServicePrivateDnsVerificationOutput struct {
 
 	// Returns true if the request succeeds; otherwise, it returns an error.
-	ReturnValue bool
+	ReturnValue *bool
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationStartVpcEndpointServicePrivateDnsVerificationMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationStartVpcEndpointServicePrivateDnsVerificationMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpStartVpcEndpointServicePrivateDnsVerification{}, middleware.After)
 	if err != nil {
 		return err

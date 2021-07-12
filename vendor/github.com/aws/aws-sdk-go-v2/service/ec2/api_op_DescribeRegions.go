@@ -22,7 +22,7 @@ func (c *Client) DescribeRegions(ctx context.Context, params *DescribeRegionsInp
 		params = &DescribeRegionsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeRegions", params, optFns, addOperationDescribeRegionsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeRegions", params, optFns, c.addOperationDescribeRegionsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -36,13 +36,13 @@ type DescribeRegionsInput struct {
 
 	// Indicates whether to display all Regions, including Regions that are disabled
 	// for your account.
-	AllRegions bool
+	AllRegions *bool
 
 	// Checks whether you have the required permissions for the action, without
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The filters.
 	//
@@ -70,7 +70,7 @@ type DescribeRegionsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeRegionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeRegionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeRegions{}, middleware.After)
 	if err != nil {
 		return err

@@ -18,13 +18,14 @@ import (
 // successfully applied to the instance, the state of the modifications changes
 // from “pending” to “applied” in subsequent describe-instances API calls. For more
 // information, see Instance metadata and user data
-// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html).
+// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html)
+// in the Amazon EC2 User Guide.
 func (c *Client) ModifyInstanceMetadataOptions(ctx context.Context, params *ModifyInstanceMetadataOptionsInput, optFns ...func(*Options)) (*ModifyInstanceMetadataOptionsOutput, error) {
 	if params == nil {
 		params = &ModifyInstanceMetadataOptionsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyInstanceMetadataOptions", params, optFns, addOperationModifyInstanceMetadataOptionsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyInstanceMetadataOptions", params, optFns, c.addOperationModifyInstanceMetadataOptionsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +46,7 @@ type ModifyInstanceMetadataOptionsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// This parameter enables or disables the HTTP metadata endpoint on your instances.
 	// If the parameter is not specified, the existing state is maintained. If you
@@ -57,7 +58,7 @@ type ModifyInstanceMetadataOptionsInput struct {
 	// larger the number, the further instance metadata requests can travel. If no
 	// parameter is specified, the existing state is maintained. Possible values:
 	// Integers from 1 to 64
-	HttpPutResponseHopLimit int32
+	HttpPutResponseHopLimit *int32
 
 	// The state of token usage for your instance metadata requests. If the parameter
 	// is not specified in the request, the default state is optional. If the state is
@@ -84,7 +85,7 @@ type ModifyInstanceMetadataOptionsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyInstanceMetadataOptionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyInstanceMetadataOptionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyInstanceMetadataOptions{}, middleware.After)
 	if err != nil {
 		return err

@@ -21,7 +21,7 @@ func (c *Client) DescribeSpotFleetRequestHistory(ctx context.Context, params *De
 		params = &DescribeSpotFleetRequestHistoryInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeSpotFleetRequestHistory", params, optFns, addOperationDescribeSpotFleetRequestHistoryMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeSpotFleetRequestHistory", params, optFns, c.addOperationDescribeSpotFleetRequestHistoryMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ type DescribeSpotFleetRequestHistoryInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The type of events to describe. By default, all events are described.
 	EventType types.EventType
@@ -57,7 +57,7 @@ type DescribeSpotFleetRequestHistoryInput struct {
 	// The maximum number of results to return in a single call. Specify a value
 	// between 1 and 1000. The default value is 1000. To retrieve the remaining
 	// results, make another call with the returned NextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token for the next set of results.
 	NextToken *string
@@ -89,7 +89,7 @@ type DescribeSpotFleetRequestHistoryOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeSpotFleetRequestHistoryMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeSpotFleetRequestHistoryMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeSpotFleetRequestHistory{}, middleware.After)
 	if err != nil {
 		return err

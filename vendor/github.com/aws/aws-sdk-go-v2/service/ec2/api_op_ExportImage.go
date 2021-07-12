@@ -13,7 +13,7 @@ import (
 )
 
 // Exports an Amazon Machine Image (AMI) to a VM file. For more information, see
-// Exporting a VM Directory from an Amazon Machine Image (AMI)
+// Exporting a VM directly from an Amazon Machine Image (AMI)
 // (https://docs.aws.amazon.com/vm-import/latest/userguide/vmexport_image.html) in
 // the VM Import/Export User Guide.
 func (c *Client) ExportImage(ctx context.Context, params *ExportImageInput, optFns ...func(*Options)) (*ExportImageOutput, error) {
@@ -21,7 +21,7 @@ func (c *Client) ExportImage(ctx context.Context, params *ExportImageInput, optF
 		params = &ExportImageInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ExportImage", params, optFns, addOperationExportImageMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ExportImage", params, optFns, c.addOperationExportImageMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -60,14 +60,14 @@ type ExportImageInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The name of the role that grants VM Import/Export permission to export images to
 	// your Amazon S3 bucket. If this parameter is not specified, the default role is
 	// named 'vmimport'.
 	RoleName *string
 
-	// The tags to apply to the image being exported.
+	// The tags to apply to the export image task during creation.
 	TagSpecifications []types.TagSpecification
 }
 
@@ -102,14 +102,14 @@ type ExportImageOutput struct {
 	// The status message for the export image task.
 	StatusMessage *string
 
-	// Any tags assigned to the image being exported.
+	// Any tags assigned to the export image task.
 	Tags []types.Tag
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationExportImageMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationExportImageMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpExportImage{}, middleware.After)
 	if err != nil {
 		return err

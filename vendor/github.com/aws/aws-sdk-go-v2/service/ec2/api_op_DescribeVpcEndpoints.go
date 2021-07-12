@@ -18,7 +18,7 @@ func (c *Client) DescribeVpcEndpoints(ctx context.Context, params *DescribeVpcEn
 		params = &DescribeVpcEndpointsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeVpcEndpoints", params, optFns, addOperationDescribeVpcEndpointsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeVpcEndpoints", params, optFns, c.addOperationDescribeVpcEndpointsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ type DescribeVpcEndpointsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters.
 	//
@@ -68,7 +68,7 @@ type DescribeVpcEndpointsInput struct {
 	// The maximum number of items to return for this request. The request returns a
 	// token that you can specify in a subsequent call to get the next set of results.
 	// Constraint: If the value is greater than 1,000, we return only 1,000 items.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token for the next set of items to return. (You received this token from a
 	// prior call.)
@@ -92,7 +92,7 @@ type DescribeVpcEndpointsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeVpcEndpointsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeVpcEndpointsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeVpcEndpoints{}, middleware.After)
 	if err != nil {
 		return err
@@ -184,17 +184,17 @@ type DescribeVpcEndpointsPaginator struct {
 
 // NewDescribeVpcEndpointsPaginator returns a new DescribeVpcEndpointsPaginator
 func NewDescribeVpcEndpointsPaginator(client DescribeVpcEndpointsAPIClient, params *DescribeVpcEndpointsInput, optFns ...func(*DescribeVpcEndpointsPaginatorOptions)) *DescribeVpcEndpointsPaginator {
+	if params == nil {
+		params = &DescribeVpcEndpointsInput{}
+	}
+
 	options := DescribeVpcEndpointsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeVpcEndpointsInput{}
 	}
 
 	return &DescribeVpcEndpointsPaginator{
@@ -219,7 +219,11 @@ func (p *DescribeVpcEndpointsPaginator) NextPage(ctx context.Context, optFns ...
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeVpcEndpoints(ctx, &params, optFns...)
 	if err != nil {

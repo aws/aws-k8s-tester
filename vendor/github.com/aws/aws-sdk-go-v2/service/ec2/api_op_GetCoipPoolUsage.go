@@ -17,7 +17,7 @@ func (c *Client) GetCoipPoolUsage(ctx context.Context, params *GetCoipPoolUsageI
 		params = &GetCoipPoolUsageInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "GetCoipPoolUsage", params, optFns, addOperationGetCoipPoolUsageMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "GetCoipPoolUsage", params, optFns, c.addOperationGetCoipPoolUsageMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ type GetCoipPoolUsageInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The filters. The following are the possible values:
 	//
@@ -55,7 +55,7 @@ type GetCoipPoolUsageInput struct {
 
 	// The maximum number of results to return with a single call. To retrieve the
 	// remaining results, make another call with the returned nextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token for the next page of results.
 	NextToken *string
@@ -76,7 +76,7 @@ type GetCoipPoolUsageOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationGetCoipPoolUsageMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationGetCoipPoolUsageMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpGetCoipPoolUsage{}, middleware.After)
 	if err != nil {
 		return err

@@ -11,17 +11,35 @@ import (
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Deletes one or more specified VPC endpoints. Deleting a gateway endpoint also
-// deletes the endpoint routes in the route tables that were associated with the
-// endpoint. Deleting an interface endpoint or a Gateway Load Balancer endpoint
-// deletes the endpoint network interfaces. Gateway Load Balancer endpoints can
-// only be deleted if the routes that are associated with the endpoint are deleted.
+// Deletes one or more specified VPC endpoints. You can delete any of the following
+// types of VPC endpoints.
+//
+// * Gateway endpoint,
+//
+// * Gateway Load Balancer
+// endpoint,
+//
+// * Interface endpoint
+//
+// The following rules apply when you delete a VPC
+// endpoint:
+//
+// * When you delete a gateway endpoint, we delete the endpoint routes
+// in the route tables that are associated with the endpoint.
+//
+// * When you delete a
+// Gateway Load Balancer endpoint, we delete the endpoint network interfaces. You
+// can only delete Gateway Load Balancer endpoints when the routes that are
+// associated with the endpoint are deleted.
+//
+// * When you delete an interface
+// endpoint, we delete the endpoint network interfaces.
 func (c *Client) DeleteVpcEndpoints(ctx context.Context, params *DeleteVpcEndpointsInput, optFns ...func(*Options)) (*DeleteVpcEndpointsOutput, error) {
 	if params == nil {
 		params = &DeleteVpcEndpointsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DeleteVpcEndpoints", params, optFns, addOperationDeleteVpcEndpointsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DeleteVpcEndpoints", params, optFns, c.addOperationDeleteVpcEndpointsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +61,7 @@ type DeleteVpcEndpointsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 // Contains the output of DeleteVpcEndpoints.
@@ -56,7 +74,7 @@ type DeleteVpcEndpointsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDeleteVpcEndpointsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDeleteVpcEndpointsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDeleteVpcEndpoints{}, middleware.After)
 	if err != nil {
 		return err

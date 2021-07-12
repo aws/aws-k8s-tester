@@ -31,13 +31,13 @@ import (
 //
 // For more information, see Deleting an EC2 Fleet
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/manage-ec2-fleet.html#delete-fleet)
-// in the Amazon Elastic Compute Cloud User Guide.
+// in the Amazon EC2 User Guide.
 func (c *Client) DeleteFleets(ctx context.Context, params *DeleteFleetsInput, optFns ...func(*Options)) (*DeleteFleetsOutput, error) {
 	if params == nil {
 		params = &DeleteFleetsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DeleteFleets", params, optFns, addOperationDeleteFleetsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DeleteFleets", params, optFns, c.addOperationDeleteFleetsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -62,13 +62,13 @@ type DeleteFleetsInput struct {
 	// supported.
 	//
 	// This member is required.
-	TerminateInstances bool
+	TerminateInstances *bool
 
 	// Checks whether you have the required permissions for the action, without
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type DeleteFleetsOutput struct {
@@ -83,7 +83,7 @@ type DeleteFleetsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDeleteFleetsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDeleteFleetsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDeleteFleets{}, middleware.After)
 	if err != nil {
 		return err

@@ -17,7 +17,7 @@ func (c *Client) CreateTransitGatewayRouteTable(ctx context.Context, params *Cre
 		params = &CreateTransitGatewayRouteTableInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateTransitGatewayRouteTable", params, optFns, addOperationCreateTransitGatewayRouteTableMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateTransitGatewayRouteTable", params, optFns, c.addOperationCreateTransitGatewayRouteTableMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ type CreateTransitGatewayRouteTableInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The tags to apply to the transit gateway route table.
 	TagSpecifications []types.TagSpecification
@@ -53,7 +53,7 @@ type CreateTransitGatewayRouteTableOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateTransitGatewayRouteTableMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateTransitGatewayRouteTableMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateTransitGatewayRouteTable{}, middleware.After)
 	if err != nil {
 		return err

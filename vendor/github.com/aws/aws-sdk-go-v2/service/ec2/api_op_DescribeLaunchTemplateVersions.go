@@ -21,7 +21,7 @@ func (c *Client) DescribeLaunchTemplateVersions(ctx context.Context, params *Des
 		params = &DescribeLaunchTemplateVersionsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeLaunchTemplateVersions", params, optFns, addOperationDescribeLaunchTemplateVersionsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeLaunchTemplateVersions", params, optFns, c.addOperationDescribeLaunchTemplateVersionsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ type DescribeLaunchTemplateVersionsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters.
 	//
@@ -79,7 +79,7 @@ type DescribeLaunchTemplateVersionsInput struct {
 	// The maximum number of results to return in a single call. To retrieve the
 	// remaining results, make another call with the returned NextToken value. This
 	// value can be between 1 and 200.
-	MaxResults int32
+	MaxResults *int32
 
 	// The version number up to which to describe launch template versions.
 	MaxVersion *string
@@ -114,7 +114,7 @@ type DescribeLaunchTemplateVersionsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeLaunchTemplateVersionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeLaunchTemplateVersionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeLaunchTemplateVersions{}, middleware.After)
 	if err != nil {
 		return err
@@ -208,17 +208,17 @@ type DescribeLaunchTemplateVersionsPaginator struct {
 // NewDescribeLaunchTemplateVersionsPaginator returns a new
 // DescribeLaunchTemplateVersionsPaginator
 func NewDescribeLaunchTemplateVersionsPaginator(client DescribeLaunchTemplateVersionsAPIClient, params *DescribeLaunchTemplateVersionsInput, optFns ...func(*DescribeLaunchTemplateVersionsPaginatorOptions)) *DescribeLaunchTemplateVersionsPaginator {
+	if params == nil {
+		params = &DescribeLaunchTemplateVersionsInput{}
+	}
+
 	options := DescribeLaunchTemplateVersionsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeLaunchTemplateVersionsInput{}
 	}
 
 	return &DescribeLaunchTemplateVersionsPaginator{
@@ -243,7 +243,11 @@ func (p *DescribeLaunchTemplateVersionsPaginator) NextPage(ctx context.Context, 
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeLaunchTemplateVersions(ctx, &params, optFns...)
 	if err != nil {

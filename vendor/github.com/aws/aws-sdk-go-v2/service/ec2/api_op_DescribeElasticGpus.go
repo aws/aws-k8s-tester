@@ -19,7 +19,7 @@ func (c *Client) DescribeElasticGpus(ctx context.Context, params *DescribeElasti
 		params = &DescribeElasticGpusInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeElasticGpus", params, optFns, addOperationDescribeElasticGpusMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeElasticGpus", params, optFns, c.addOperationDescribeElasticGpusMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ type DescribeElasticGpusInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The Elastic Graphics accelerator IDs.
 	ElasticGpuIds []string
@@ -61,7 +61,7 @@ type DescribeElasticGpusInput struct {
 	// The maximum number of results to return in a single call. To retrieve the
 	// remaining results, make another call with the returned NextToken value. This
 	// value can be between 5 and 1000.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token to request the next page of results.
 	NextToken *string
@@ -75,7 +75,7 @@ type DescribeElasticGpusOutput struct {
 	// The total number of items to return. If the total number of items available is
 	// more than the value specified in max-items then a Next-Token will be provided in
 	// the output that you can use to resume pagination.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token to use to retrieve the next page of results. This value is null when
 	// there are no more results to return.
@@ -85,7 +85,7 @@ type DescribeElasticGpusOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeElasticGpusMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeElasticGpusMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeElasticGpus{}, middleware.After)
 	if err != nil {
 		return err

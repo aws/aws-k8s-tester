@@ -18,7 +18,7 @@ func (c *Client) DisableTransitGatewayRouteTablePropagation(ctx context.Context,
 		params = &DisableTransitGatewayRouteTablePropagationInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DisableTransitGatewayRouteTablePropagation", params, optFns, addOperationDisableTransitGatewayRouteTablePropagationMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DisableTransitGatewayRouteTablePropagation", params, optFns, c.addOperationDisableTransitGatewayRouteTablePropagationMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ type DisableTransitGatewayRouteTablePropagationInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type DisableTransitGatewayRouteTablePropagationOutput struct {
@@ -56,7 +56,7 @@ type DisableTransitGatewayRouteTablePropagationOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDisableTransitGatewayRouteTablePropagationMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDisableTransitGatewayRouteTablePropagationMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDisableTransitGatewayRouteTablePropagation{}, middleware.After)
 	if err != nil {
 		return err

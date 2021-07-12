@@ -21,7 +21,7 @@ func (c *Client) CreateManagedPrefixList(ctx context.Context, params *CreateMana
 		params = &CreateManagedPrefixListInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateManagedPrefixList", params, optFns, addOperationCreateManagedPrefixListMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateManagedPrefixList", params, optFns, c.addOperationCreateManagedPrefixListMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ type CreateManagedPrefixListInput struct {
 	// The maximum number of entries for the prefix list.
 	//
 	// This member is required.
-	MaxEntries int32
+	MaxEntries *int32
 
 	// A name for the prefix list. Constraints: Up to 255 characters in length. The
 	// name cannot start with com.amazonaws.
@@ -59,7 +59,7 @@ type CreateManagedPrefixListInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more entries for the prefix list.
 	Entries []types.AddPrefixListEntry
@@ -77,7 +77,7 @@ type CreateManagedPrefixListOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateManagedPrefixListMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateManagedPrefixListMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateManagedPrefixList{}, middleware.After)
 	if err != nil {
 		return err

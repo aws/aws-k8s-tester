@@ -16,7 +16,7 @@ func (c *Client) CopyFpgaImage(ctx context.Context, params *CopyFpgaImageInput, 
 		params = &CopyFpgaImageInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CopyFpgaImage", params, optFns, addOperationCopyFpgaImageMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CopyFpgaImage", params, optFns, c.addOperationCopyFpgaImageMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ type CopyFpgaImageInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The name for the new AFI. The default is the name of the source AFI.
 	Name *string
@@ -65,7 +65,7 @@ type CopyFpgaImageOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCopyFpgaImageMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCopyFpgaImageMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCopyFpgaImage{}, middleware.After)
 	if err != nil {
 		return err

@@ -11,12 +11,15 @@ import (
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
+// Modifies an attribute of the specified Elastic IP address. For requirements, see
+// Using reverse DNS for email applications
+// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html#Using_Elastic_Addressing_Reverse_DNS).
 func (c *Client) ModifyAddressAttribute(ctx context.Context, params *ModifyAddressAttributeInput, optFns ...func(*Options)) (*ModifyAddressAttributeOutput, error) {
 	if params == nil {
 		params = &ModifyAddressAttributeInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyAddressAttribute", params, optFns, addOperationModifyAddressAttributeMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyAddressAttribute", params, optFns, c.addOperationModifyAddressAttributeMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -28,22 +31,31 @@ func (c *Client) ModifyAddressAttribute(ctx context.Context, params *ModifyAddre
 
 type ModifyAddressAttributeInput struct {
 
+	// [EC2-VPC] The allocation ID.
+	//
 	// This member is required.
 	AllocationId *string
 
+	// The domain name to modify for the IP address.
 	DomainName *string
 
-	DryRun bool
+	// Checks whether you have the required permissions for the action, without
+	// actually making the request, and provides an error response. If you have the
+	// required permissions, the error response is DryRunOperation. Otherwise, it is
+	// UnauthorizedOperation.
+	DryRun *bool
 }
 
 type ModifyAddressAttributeOutput struct {
+
+	// Information about the Elastic IP address.
 	Address *types.AddressAttribute
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyAddressAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyAddressAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyAddressAttribute{}, middleware.After)
 	if err != nil {
 		return err

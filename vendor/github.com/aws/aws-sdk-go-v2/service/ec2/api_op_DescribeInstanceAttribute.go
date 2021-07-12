@@ -21,7 +21,7 @@ func (c *Client) DescribeInstanceAttribute(ctx context.Context, params *Describe
 		params = &DescribeInstanceAttributeInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeInstanceAttribute", params, optFns, addOperationDescribeInstanceAttributeMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeInstanceAttribute", params, optFns, c.addOperationDescribeInstanceAttributeMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ type DescribeInstanceAttributeInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 // Describes an instance attribute.
@@ -67,8 +67,8 @@ type DescribeInstanceAttributeOutput struct {
 	// Indicates whether enhanced networking with ENA is enabled.
 	EnaSupport *types.AttributeBooleanValue
 
-	// To enable the instance for AWS Nitro Enclaves, set this parameter to true;
-	// otherwise, set it to false.
+	// To enable the instance for Amazon Web Services Nitro Enclaves, set this
+	// parameter to true; otherwise, set it to false.
 	EnclaveOptions *types.EnclaveOptions
 
 	// The security groups associated with the instance.
@@ -96,9 +96,12 @@ type DescribeInstanceAttributeOutput struct {
 	// The device name of the root device volume (for example, /dev/sda1).
 	RootDeviceName *types.AttributeValue
 
-	// Indicates whether source/destination checking is enabled. A value of true means
-	// that checking is enabled, and false means that checking is disabled. This value
-	// must be false for a NAT instance to perform NAT.
+	// Enable or disable source/destination checks, which ensure that the instance is
+	// either the source or the destination of any traffic that it receives. If the
+	// value is true, source/destination checks are enabled; otherwise, they are
+	// disabled. The default value is true. You must disable source/destination checks
+	// if the instance runs services such as network address translation, routing, or
+	// firewalls.
 	SourceDestCheck *types.AttributeBooleanValue
 
 	// Indicates whether enhanced networking with the Intel 82599 Virtual Function
@@ -112,7 +115,7 @@ type DescribeInstanceAttributeOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeInstanceAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeInstanceAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeInstanceAttribute{}, middleware.After)
 	if err != nil {
 		return err

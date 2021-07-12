@@ -20,7 +20,7 @@ func (c *Client) DescribeFpgaImages(ctx context.Context, params *DescribeFpgaIma
 		params = &DescribeFpgaImagesInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeFpgaImages", params, optFns, addOperationDescribeFpgaImagesMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeFpgaImages", params, optFns, c.addOperationDescribeFpgaImagesMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ type DescribeFpgaImagesInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The filters.
 	//
@@ -79,7 +79,7 @@ type DescribeFpgaImagesInput struct {
 	FpgaImageIds []string
 
 	// The maximum number of results to return in a single call.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token to retrieve the next page of results.
 	NextToken *string
@@ -103,7 +103,7 @@ type DescribeFpgaImagesOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeFpgaImagesMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeFpgaImagesMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeFpgaImages{}, middleware.After)
 	if err != nil {
 		return err
@@ -193,17 +193,17 @@ type DescribeFpgaImagesPaginator struct {
 
 // NewDescribeFpgaImagesPaginator returns a new DescribeFpgaImagesPaginator
 func NewDescribeFpgaImagesPaginator(client DescribeFpgaImagesAPIClient, params *DescribeFpgaImagesInput, optFns ...func(*DescribeFpgaImagesPaginatorOptions)) *DescribeFpgaImagesPaginator {
+	if params == nil {
+		params = &DescribeFpgaImagesInput{}
+	}
+
 	options := DescribeFpgaImagesPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeFpgaImagesInput{}
 	}
 
 	return &DescribeFpgaImagesPaginator{
@@ -228,7 +228,11 @@ func (p *DescribeFpgaImagesPaginator) NextPage(ctx context.Context, optFns ...fu
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeFpgaImages(ctx, &params, optFns...)
 	if err != nil {

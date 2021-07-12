@@ -19,7 +19,7 @@ func (c *Client) ModifyLaunchTemplate(ctx context.Context, params *ModifyLaunchT
 		params = &ModifyLaunchTemplateInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyLaunchTemplate", params, optFns, addOperationModifyLaunchTemplateMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyLaunchTemplate", params, optFns, c.addOperationModifyLaunchTemplateMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ type ModifyLaunchTemplateInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The ID of the launch template. You must specify either the launch template ID or
 	// launch template name in the request.
@@ -64,7 +64,7 @@ type ModifyLaunchTemplateOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyLaunchTemplateMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyLaunchTemplateMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyLaunchTemplate{}, middleware.After)
 	if err != nil {
 		return err

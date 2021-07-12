@@ -18,7 +18,7 @@ func (c *Client) AcceptReservedInstancesExchangeQuote(ctx context.Context, param
 		params = &AcceptReservedInstancesExchangeQuoteInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "AcceptReservedInstancesExchangeQuote", params, optFns, addOperationAcceptReservedInstancesExchangeQuoteMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "AcceptReservedInstancesExchangeQuote", params, optFns, c.addOperationAcceptReservedInstancesExchangeQuoteMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ type AcceptReservedInstancesExchangeQuoteInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The configuration of the target Convertible Reserved Instance to exchange for
 	// your current Convertible Reserved Instances.
@@ -58,7 +58,7 @@ type AcceptReservedInstancesExchangeQuoteOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationAcceptReservedInstancesExchangeQuoteMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationAcceptReservedInstancesExchangeQuoteMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpAcceptReservedInstancesExchangeQuote{}, middleware.After)
 	if err != nil {
 		return err

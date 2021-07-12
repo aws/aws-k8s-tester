@@ -23,7 +23,7 @@ func (c *Client) ReportInstanceStatus(ctx context.Context, params *ReportInstanc
 		params = &ReportInstanceStatusInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ReportInstanceStatus", params, optFns, addOperationReportInstanceStatusMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ReportInstanceStatus", params, optFns, c.addOperationReportInstanceStatusMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ type ReportInstanceStatusInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The time at which the reported instance health state ended.
 	EndTime *time.Time
@@ -99,7 +99,7 @@ type ReportInstanceStatusOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationReportInstanceStatusMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationReportInstanceStatusMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpReportInstanceStatus{}, middleware.After)
 	if err != nil {
 		return err

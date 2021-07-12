@@ -25,7 +25,7 @@ func (c *Client) DescribeCustomerGateways(ctx context.Context, params *DescribeC
 		params = &DescribeCustomerGatewaysInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeCustomerGateways", params, optFns, addOperationDescribeCustomerGatewaysMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeCustomerGateways", params, optFns, c.addOperationDescribeCustomerGatewaysMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ type DescribeCustomerGatewaysInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters.
 	//
@@ -86,7 +86,7 @@ type DescribeCustomerGatewaysOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeCustomerGatewaysMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeCustomerGatewaysMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeCustomerGateways{}, middleware.After)
 	if err != nil {
 		return err
@@ -295,16 +295,21 @@ func customerGatewayAvailableStateRetryable(ctx context.Context, input *Describe
 
 		expectedValue := "available"
 		var match = true
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		if len(listOfValues) == 0 {
 			match = false
 		}
 		for _, v := range listOfValues {
-			if v != expectedValue {
+			value, ok := v.(*string)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected *string value, got %T", pathValue)
+			}
+
+			if string(*value) != expectedValue {
 				match = false
 			}
 		}
@@ -321,13 +326,18 @@ func customerGatewayAvailableStateRetryable(ctx context.Context, input *Describe
 		}
 
 		expectedValue := "deleted"
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		for _, v := range listOfValues {
-			if v == expectedValue {
+			value, ok := v.(*string)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected *string value, got %T", pathValue)
+			}
+
+			if string(*value) == expectedValue {
 				return false, fmt.Errorf("waiter state transitioned to Failure")
 			}
 		}
@@ -340,13 +350,18 @@ func customerGatewayAvailableStateRetryable(ctx context.Context, input *Describe
 		}
 
 		expectedValue := "deleting"
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		for _, v := range listOfValues {
-			if v == expectedValue {
+			value, ok := v.(*string)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected *string value, got %T", pathValue)
+			}
+
+			if string(*value) == expectedValue {
 				return false, fmt.Errorf("waiter state transitioned to Failure")
 			}
 		}

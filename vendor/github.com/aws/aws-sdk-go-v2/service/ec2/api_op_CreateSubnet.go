@@ -31,7 +31,7 @@ func (c *Client) CreateSubnet(ctx context.Context, params *CreateSubnetInput, op
 		params = &CreateSubnetInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateSubnet", params, optFns, addOperationCreateSubnetMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateSubnet", params, optFns, c.addOperationCreateSubnetMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ type CreateSubnetInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The IPv6 network range for the subnet, in CIDR notation. The subnet size must
 	// use a /64 prefix length.
@@ -96,7 +96,7 @@ type CreateSubnetOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateSubnetMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateSubnetMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateSubnet{}, middleware.After)
 	if err != nil {
 		return err

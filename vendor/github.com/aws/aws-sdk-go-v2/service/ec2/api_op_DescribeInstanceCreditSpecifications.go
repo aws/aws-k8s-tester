@@ -29,13 +29,13 @@ import (
 // zone, the call works normally. For more information, see Burstable performance
 // instances
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances.html)
-// in the Amazon Elastic Compute Cloud User Guide.
+// in the Amazon EC2 User Guide.
 func (c *Client) DescribeInstanceCreditSpecifications(ctx context.Context, params *DescribeInstanceCreditSpecificationsInput, optFns ...func(*Options)) (*DescribeInstanceCreditSpecificationsOutput, error) {
 	if params == nil {
 		params = &DescribeInstanceCreditSpecificationsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeInstanceCreditSpecifications", params, optFns, addOperationDescribeInstanceCreditSpecificationsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeInstanceCreditSpecifications", params, optFns, c.addOperationDescribeInstanceCreditSpecificationsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ type DescribeInstanceCreditSpecificationsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The filters.
 	//
@@ -66,7 +66,7 @@ type DescribeInstanceCreditSpecificationsInput struct {
 	// remaining results, make another call with the returned NextToken value. This
 	// value can be between 5 and 1000. You cannot specify this parameter and the
 	// instance IDs parameter in the same call.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token to retrieve the next page of results.
 	NextToken *string
@@ -85,7 +85,7 @@ type DescribeInstanceCreditSpecificationsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeInstanceCreditSpecificationsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeInstanceCreditSpecificationsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeInstanceCreditSpecifications{}, middleware.After)
 	if err != nil {
 		return err
@@ -180,17 +180,17 @@ type DescribeInstanceCreditSpecificationsPaginator struct {
 // NewDescribeInstanceCreditSpecificationsPaginator returns a new
 // DescribeInstanceCreditSpecificationsPaginator
 func NewDescribeInstanceCreditSpecificationsPaginator(client DescribeInstanceCreditSpecificationsAPIClient, params *DescribeInstanceCreditSpecificationsInput, optFns ...func(*DescribeInstanceCreditSpecificationsPaginatorOptions)) *DescribeInstanceCreditSpecificationsPaginator {
+	if params == nil {
+		params = &DescribeInstanceCreditSpecificationsInput{}
+	}
+
 	options := DescribeInstanceCreditSpecificationsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeInstanceCreditSpecificationsInput{}
 	}
 
 	return &DescribeInstanceCreditSpecificationsPaginator{
@@ -215,7 +215,11 @@ func (p *DescribeInstanceCreditSpecificationsPaginator) NextPage(ctx context.Con
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeInstanceCreditSpecifications(ctx, &params, optFns...)
 	if err != nil {

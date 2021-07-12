@@ -21,15 +21,15 @@ import (
 // the most recent 64 KB of console output is available. You can optionally
 // retrieve the latest serial console output at any time during the instance
 // lifecycle. This option is supported on instance types that use the Nitro
-// hypervisor. For more information, see Instance Console Output
+// hypervisor. For more information, see Instance console output
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-console.html#instance-console-console-output)
-// in the Amazon Elastic Compute Cloud User Guide.
+// in the Amazon EC2 User Guide.
 func (c *Client) GetConsoleOutput(ctx context.Context, params *GetConsoleOutputInput, optFns ...func(*Options)) (*GetConsoleOutputOutput, error) {
 	if params == nil {
 		params = &GetConsoleOutputInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "GetConsoleOutput", params, optFns, addOperationGetConsoleOutputMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "GetConsoleOutput", params, optFns, c.addOperationGetConsoleOutputMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -50,11 +50,11 @@ type GetConsoleOutputInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// When enabled, retrieves the latest console output for the instance. Default:
 	// disabled (false)
-	Latest bool
+	Latest *bool
 }
 
 type GetConsoleOutputOutput struct {
@@ -73,7 +73,7 @@ type GetConsoleOutputOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationGetConsoleOutputMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationGetConsoleOutputMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpGetConsoleOutput{}, middleware.After)
 	if err != nil {
 		return err

@@ -14,13 +14,13 @@ import (
 // Cancels the specified Reserved Instance listing in the Reserved Instance
 // Marketplace. For more information, see Reserved Instance Marketplace
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-market-general.html) in
-// the Amazon Elastic Compute Cloud User Guide.
+// the Amazon EC2 User Guide.
 func (c *Client) CancelReservedInstancesListing(ctx context.Context, params *CancelReservedInstancesListingInput, optFns ...func(*Options)) (*CancelReservedInstancesListingOutput, error) {
 	if params == nil {
 		params = &CancelReservedInstancesListingInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CancelReservedInstancesListing", params, optFns, addOperationCancelReservedInstancesListingMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CancelReservedInstancesListing", params, optFns, c.addOperationCancelReservedInstancesListingMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ type CancelReservedInstancesListingOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCancelReservedInstancesListingMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCancelReservedInstancesListingMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCancelReservedInstancesListing{}, middleware.After)
 	if err != nil {
 		return err

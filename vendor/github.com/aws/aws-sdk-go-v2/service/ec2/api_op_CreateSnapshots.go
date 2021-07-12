@@ -14,13 +14,18 @@ import (
 // Creates crash-consistent snapshots of multiple EBS volumes and stores the data
 // in S3. Volumes are chosen by specifying an instance. Any attached volumes will
 // produce one snapshot each that is crash-consistent across the instance. Boot
-// volumes can be excluded by changing the parameters.
+// volumes can be excluded by changing the parameters. You can create multi-volume
+// snapshots of instances in a Region and instances on an Outpost. If you create
+// snapshots from an instance in a Region, the snapshots must be stored in the same
+// Region as the instance. If you create snapshots from an instance on an Outpost,
+// the snapshots can be stored on the same Outpost as the instance, or in the
+// Region for that Outpost.
 func (c *Client) CreateSnapshots(ctx context.Context, params *CreateSnapshotsInput, optFns ...func(*Options)) (*CreateSnapshotsOutput, error) {
 	if params == nil {
 		params = &CreateSnapshotsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateSnapshots", params, optFns, addOperationCreateSnapshotsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateSnapshots", params, optFns, c.addOperationCreateSnapshotsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +52,29 @@ type CreateSnapshotsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
+
+	// The Amazon Resource Name (ARN) of the AWS Outpost on which to create the local
+	// snapshots.
+	//
+	// * To create snapshots from an instance in a Region, omit this
+	// parameter. The snapshots are created in the same Region as the instance.
+	//
+	// * To
+	// create snapshots from an instance on an Outpost and store the snapshots in the
+	// Region, omit this parameter. The snapshots are created in the Region for the
+	// Outpost.
+	//
+	// * To create snapshots from an instance on an Outpost and store the
+	// snapshots on an Outpost, specify the ARN of the destination Outpost. The
+	// snapshots must be created on the same Outpost as the instance.
+	//
+	// For more
+	// information, see  Creating multi-volume local snapshots from instances on an
+	// Outpost
+	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshots-outposts.html#create-multivol-snapshot)
+	// in the Amazon Elastic Compute Cloud User Guide.
+	OutpostArn *string
 
 	// Tags to apply to every snapshot specified by the instance.
 	TagSpecifications []types.TagSpecification
@@ -62,7 +89,7 @@ type CreateSnapshotsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateSnapshotsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateSnapshotsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateSnapshots{}, middleware.After)
 	if err != nil {
 		return err

@@ -17,7 +17,7 @@ func (c *Client) DeleteNetworkAclEntry(ctx context.Context, params *DeleteNetwor
 		params = &DeleteNetworkAclEntryInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DeleteNetworkAclEntry", params, optFns, addOperationDeleteNetworkAclEntryMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DeleteNetworkAclEntry", params, optFns, c.addOperationDeleteNetworkAclEntryMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ type DeleteNetworkAclEntryInput struct {
 	// Indicates whether the rule is an egress rule.
 	//
 	// This member is required.
-	Egress bool
+	Egress *bool
 
 	// The ID of the network ACL.
 	//
@@ -42,13 +42,13 @@ type DeleteNetworkAclEntryInput struct {
 	// The rule number of the entry to delete.
 	//
 	// This member is required.
-	RuleNumber int32
+	RuleNumber *int32
 
 	// Checks whether you have the required permissions for the action, without
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type DeleteNetworkAclEntryOutput struct {
@@ -56,7 +56,7 @@ type DeleteNetworkAclEntryOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDeleteNetworkAclEntryMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDeleteNetworkAclEntryMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDeleteNetworkAclEntry{}, middleware.After)
 	if err != nil {
 		return err

@@ -12,24 +12,24 @@ import (
 )
 
 // Modifies the default credit option for CPU usage of burstable performance
-// instances. The default credit option is set at the account level per AWS Region,
-// and is specified per instance family. All new burstable performance instances in
-// the account launch using the default credit option.
-// ModifyDefaultCreditSpecification is an asynchronous operation, which works at an
-// AWS Region level and modifies the credit option for each Availability Zone. All
-// zones in a Region are updated within five minutes. But if instances are launched
-// during this operation, they might not get the new credit option until the zone
-// is updated. To verify whether the update has occurred, you can call
-// GetDefaultCreditSpecification and check DefaultCreditSpecification for updates.
-// For more information, see Burstable performance instances
+// instances. The default credit option is set at the account level per Region, and
+// is specified per instance family. All new burstable performance instances in the
+// account launch using the default credit option. ModifyDefaultCreditSpecification
+// is an asynchronous operation, which works at an Region level and modifies the
+// credit option for each Availability Zone. All zones in a Region are updated
+// within five minutes. But if instances are launched during this operation, they
+// might not get the new credit option until the zone is updated. To verify whether
+// the update has occurred, you can call GetDefaultCreditSpecification and check
+// DefaultCreditSpecification for updates. For more information, see Burstable
+// performance instances
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances.html)
-// in the Amazon Elastic Compute Cloud User Guide.
+// in the Amazon EC2 User Guide.
 func (c *Client) ModifyDefaultCreditSpecification(ctx context.Context, params *ModifyDefaultCreditSpecificationInput, optFns ...func(*Options)) (*ModifyDefaultCreditSpecificationOutput, error) {
 	if params == nil {
 		params = &ModifyDefaultCreditSpecificationInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyDefaultCreditSpecification", params, optFns, addOperationModifyDefaultCreditSpecificationMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyDefaultCreditSpecification", params, optFns, c.addOperationModifyDefaultCreditSpecificationMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ type ModifyDefaultCreditSpecificationInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type ModifyDefaultCreditSpecificationOutput struct {
@@ -68,7 +68,7 @@ type ModifyDefaultCreditSpecificationOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyDefaultCreditSpecificationMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyDefaultCreditSpecificationMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyDefaultCreditSpecification{}, middleware.After)
 	if err != nil {
 		return err

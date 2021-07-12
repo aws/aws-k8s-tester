@@ -25,7 +25,7 @@ func (c *Client) ModifyTrafficMirrorFilterNetworkServices(ctx context.Context, p
 		params = &ModifyTrafficMirrorFilterNetworkServicesInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyTrafficMirrorFilterNetworkServices", params, optFns, addOperationModifyTrafficMirrorFilterNetworkServicesMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyTrafficMirrorFilterNetworkServices", params, optFns, c.addOperationModifyTrafficMirrorFilterNetworkServicesMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ type ModifyTrafficMirrorFilterNetworkServicesInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The network service, for example Amazon DNS, that you no longer want to mirror.
 	RemoveNetworkServices []types.TrafficMirrorNetworkService
@@ -64,7 +64,7 @@ type ModifyTrafficMirrorFilterNetworkServicesOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyTrafficMirrorFilterNetworkServicesMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyTrafficMirrorFilterNetworkServicesMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyTrafficMirrorFilterNetworkServices{}, middleware.After)
 	if err != nil {
 		return err

@@ -18,7 +18,7 @@ func (c *Client) ModifyClientVpnEndpoint(ctx context.Context, params *ModifyClie
 		params = &ModifyClientVpnEndpointInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyClientVpnEndpoint", params, optFns, addOperationModifyClientVpnEndpointMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyClientVpnEndpoint", params, optFns, c.addOperationModifyClientVpnEndpointMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ type ModifyClientVpnEndpointInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The IDs of one or more security groups to apply to the target network.
 	SecurityGroupIds []string
@@ -81,26 +81,26 @@ type ModifyClientVpnEndpointInput struct {
 	// VPN endpoints, see Split-Tunnel AWS Client VPN Endpoint
 	// (https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/split-tunnel-vpn.html)
 	// in the AWS Client VPN Administrator Guide.
-	SplitTunnel bool
+	SplitTunnel *bool
 
 	// The ID of the VPC to associate with the Client VPN endpoint.
 	VpcId *string
 
 	// The port number to assign to the Client VPN endpoint for TCP and UDP traffic.
 	// Valid Values: 443 | 1194 Default Value: 443
-	VpnPort int32
+	VpnPort *int32
 }
 
 type ModifyClientVpnEndpointOutput struct {
 
 	// Returns true if the request succeeds; otherwise, it returns an error.
-	Return bool
+	Return *bool
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyClientVpnEndpointMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyClientVpnEndpointMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyClientVpnEndpoint{}, middleware.After)
 	if err != nil {
 		return err

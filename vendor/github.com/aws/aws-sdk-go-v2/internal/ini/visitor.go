@@ -63,7 +63,10 @@ func (v *DefaultVisitor) VisitExpr(expr AST) error {
 
 			rhs := children[1]
 
-			if rhs.Root.Type() != TokenLit {
+			// The right-hand value side the equality expression is allowed to contain '[', ']', ':', '=' in the values.
+			// If the token is not either a literal or one of the token types that identifies those four additional
+			// tokens then error.
+			if !(rhs.Root.Type() == TokenLit || rhs.Root.Type() == TokenOp || rhs.Root.Type() == TokenSep) {
 				return NewParseError("unexpected token type")
 			}
 
@@ -120,8 +123,6 @@ func (v *DefaultVisitor) VisitStatement(stmt AST) error {
 			name = names[0] + " " + strings.TrimLeft(names[1], " ")
 		}
 
-		// lower casing name to handle duplicates correctly.
-		name = strings.ToLower(name)
 		// attach profile name on section
 		if !v.Sections.HasSection(name) {
 			v.Sections.container[name] = NewSection(name)

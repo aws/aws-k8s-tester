@@ -26,7 +26,7 @@ func (c *Client) DescribeBundleTasks(ctx context.Context, params *DescribeBundle
 		params = &DescribeBundleTasksInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeBundleTasks", params, optFns, addOperationDescribeBundleTasksMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeBundleTasks", params, optFns, c.addOperationDescribeBundleTasksMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ type DescribeBundleTasksInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The filters.
 	//
@@ -88,7 +88,7 @@ type DescribeBundleTasksOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeBundleTasksMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeBundleTasksMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeBundleTasks{}, middleware.After)
 	if err != nil {
 		return err
@@ -295,16 +295,21 @@ func bundleTaskCompleteStateRetryable(ctx context.Context, input *DescribeBundle
 
 		expectedValue := "complete"
 		var match = true
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		if len(listOfValues) == 0 {
 			match = false
 		}
 		for _, v := range listOfValues {
-			if v != expectedValue {
+			value, ok := v.(types.BundleTaskState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.BundleTaskState value, got %T", pathValue)
+			}
+
+			if string(value) != expectedValue {
 				match = false
 			}
 		}
@@ -321,13 +326,18 @@ func bundleTaskCompleteStateRetryable(ctx context.Context, input *DescribeBundle
 		}
 
 		expectedValue := "failed"
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		for _, v := range listOfValues {
-			if v == expectedValue {
+			value, ok := v.(types.BundleTaskState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.BundleTaskState value, got %T", pathValue)
+			}
+
+			if string(value) == expectedValue {
 				return false, fmt.Errorf("waiter state transitioned to Failure")
 			}
 		}

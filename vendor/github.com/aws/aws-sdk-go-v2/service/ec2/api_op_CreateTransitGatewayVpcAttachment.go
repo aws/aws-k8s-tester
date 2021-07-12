@@ -21,7 +21,7 @@ func (c *Client) CreateTransitGatewayVpcAttachment(ctx context.Context, params *
 		params = &CreateTransitGatewayVpcAttachmentInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateTransitGatewayVpcAttachment", params, optFns, addOperationCreateTransitGatewayVpcAttachmentMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateTransitGatewayVpcAttachment", params, optFns, c.addOperationCreateTransitGatewayVpcAttachmentMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ type CreateTransitGatewayVpcAttachmentInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The VPC attachment options.
 	Options *types.CreateTransitGatewayVpcAttachmentRequestOptions
@@ -73,7 +73,7 @@ type CreateTransitGatewayVpcAttachmentOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateTransitGatewayVpcAttachmentMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateTransitGatewayVpcAttachmentMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateTransitGatewayVpcAttachment{}, middleware.After)
 	if err != nil {
 		return err

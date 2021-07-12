@@ -12,7 +12,7 @@ import (
 )
 
 // Import single or multi-volume disk images or EBS snapshots into an Amazon
-// Machine Image (AMI). For more information, see Importing a VM as an Image Using
+// Machine Image (AMI). For more information, see Importing a VM as an image using
 // VM Import/Export
 // (https://docs.aws.amazon.com/vm-import/latest/userguide/vmimport-image-import.html)
 // in the VM Import/Export User Guide.
@@ -21,7 +21,7 @@ func (c *Client) ImportImage(ctx context.Context, params *ImportImageInput, optF
 		params = &ImportImageInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ImportImage", params, optFns, addOperationImportImageMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ImportImage", params, optFns, c.addOperationImportImageMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ type ImportImageInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// Specifies whether the destination AMI of the imported image should be encrypted.
 	// The default CMK for EBS is used unless you specify a non-default AWS Key
@@ -60,7 +60,7 @@ type ImportImageInput struct {
 	// Amazon EBS Encryption
 	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html) in the
 	// Amazon Elastic Compute Cloud User Guide.
-	Encrypted bool
+	Encrypted *bool
 
 	// The target hypervisor platform. Valid values: xen
 	Hypervisor *string
@@ -118,7 +118,7 @@ type ImportImageInput struct {
 	// The name of the role to use when not using the default role, 'vmimport'.
 	RoleName *string
 
-	// The tags to apply to the image being imported.
+	// The tags to apply to the import image task during creation.
 	TagSpecifications []types.TagSpecification
 }
 
@@ -131,7 +131,7 @@ type ImportImageOutput struct {
 	Description *string
 
 	// Indicates whether the AMI is encrypted.
-	Encrypted bool
+	Encrypted *bool
 
 	// The target hypervisor of the import task.
 	Hypervisor *string
@@ -167,14 +167,14 @@ type ImportImageOutput struct {
 	// A detailed status message of the import task.
 	StatusMessage *string
 
-	// Any tags assigned to the image being imported.
+	// Any tags assigned to the import image task.
 	Tags []types.Tag
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationImportImageMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationImportImageMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpImportImage{}, middleware.After)
 	if err != nil {
 		return err

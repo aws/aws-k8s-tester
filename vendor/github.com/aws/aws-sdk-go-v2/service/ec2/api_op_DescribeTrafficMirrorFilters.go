@@ -18,7 +18,7 @@ func (c *Client) DescribeTrafficMirrorFilters(ctx context.Context, params *Descr
 		params = &DescribeTrafficMirrorFiltersInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeTrafficMirrorFilters", params, optFns, addOperationDescribeTrafficMirrorFiltersMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeTrafficMirrorFilters", params, optFns, c.addOperationDescribeTrafficMirrorFiltersMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ type DescribeTrafficMirrorFiltersInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters. The possible values are:
 	//
@@ -47,7 +47,7 @@ type DescribeTrafficMirrorFiltersInput struct {
 
 	// The maximum number of results to return with a single call. To retrieve the
 	// remaining results, make another call with the returned nextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token for the next page of results.
 	NextToken *string
@@ -69,7 +69,7 @@ type DescribeTrafficMirrorFiltersOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeTrafficMirrorFiltersMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeTrafficMirrorFiltersMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeTrafficMirrorFilters{}, middleware.After)
 	if err != nil {
 		return err
@@ -162,17 +162,17 @@ type DescribeTrafficMirrorFiltersPaginator struct {
 // NewDescribeTrafficMirrorFiltersPaginator returns a new
 // DescribeTrafficMirrorFiltersPaginator
 func NewDescribeTrafficMirrorFiltersPaginator(client DescribeTrafficMirrorFiltersAPIClient, params *DescribeTrafficMirrorFiltersInput, optFns ...func(*DescribeTrafficMirrorFiltersPaginatorOptions)) *DescribeTrafficMirrorFiltersPaginator {
+	if params == nil {
+		params = &DescribeTrafficMirrorFiltersInput{}
+	}
+
 	options := DescribeTrafficMirrorFiltersPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeTrafficMirrorFiltersInput{}
 	}
 
 	return &DescribeTrafficMirrorFiltersPaginator{
@@ -197,7 +197,11 @@ func (p *DescribeTrafficMirrorFiltersPaginator) NextPage(ctx context.Context, op
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeTrafficMirrorFilters(ctx, &params, optFns...)
 	if err != nil {

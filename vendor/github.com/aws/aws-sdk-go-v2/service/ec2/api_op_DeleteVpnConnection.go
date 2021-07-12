@@ -26,7 +26,7 @@ func (c *Client) DeleteVpnConnection(ctx context.Context, params *DeleteVpnConne
 		params = &DeleteVpnConnectionInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DeleteVpnConnection", params, optFns, addOperationDeleteVpnConnectionMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DeleteVpnConnection", params, optFns, c.addOperationDeleteVpnConnectionMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ type DeleteVpnConnectionInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type DeleteVpnConnectionOutput struct {
@@ -56,7 +56,7 @@ type DeleteVpnConnectionOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDeleteVpnConnectionMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDeleteVpnConnectionMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDeleteVpnConnection{}, middleware.After)
 	if err != nil {
 		return err

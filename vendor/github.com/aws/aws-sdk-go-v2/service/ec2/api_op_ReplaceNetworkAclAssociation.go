@@ -20,7 +20,7 @@ func (c *Client) ReplaceNetworkAclAssociation(ctx context.Context, params *Repla
 		params = &ReplaceNetworkAclAssociationInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ReplaceNetworkAclAssociation", params, optFns, addOperationReplaceNetworkAclAssociationMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ReplaceNetworkAclAssociation", params, optFns, c.addOperationReplaceNetworkAclAssociationMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ type ReplaceNetworkAclAssociationInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type ReplaceNetworkAclAssociationOutput struct {
@@ -59,7 +59,7 @@ type ReplaceNetworkAclAssociationOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationReplaceNetworkAclAssociationMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationReplaceNetworkAclAssociationMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpReplaceNetworkAclAssociation{}, middleware.After)
 	if err != nil {
 		return err

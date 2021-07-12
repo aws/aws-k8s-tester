@@ -28,7 +28,7 @@ func (c *Client) CreateDefaultVpc(ctx context.Context, params *CreateDefaultVpcI
 		params = &CreateDefaultVpcInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateDefaultVpc", params, optFns, addOperationCreateDefaultVpcMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateDefaultVpc", params, optFns, c.addOperationCreateDefaultVpcMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ type CreateDefaultVpcInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type CreateDefaultVpcOutput struct {
@@ -56,7 +56,7 @@ type CreateDefaultVpcOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateDefaultVpcMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateDefaultVpcMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateDefaultVpc{}, middleware.After)
 	if err != nil {
 		return err

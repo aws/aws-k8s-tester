@@ -17,7 +17,7 @@ func (c *Client) ModifyFpgaImageAttribute(ctx context.Context, params *ModifyFpg
 		params = &ModifyFpgaImageAttributeInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyFpgaImageAttribute", params, optFns, addOperationModifyFpgaImageAttributeMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyFpgaImageAttribute", params, optFns, c.addOperationModifyFpgaImageAttributeMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ type ModifyFpgaImageAttributeInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The load permission for the AFI.
 	LoadPermission *types.LoadPermissionModifications
@@ -77,7 +77,7 @@ type ModifyFpgaImageAttributeOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyFpgaImageAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyFpgaImageAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyFpgaImageAttribute{}, middleware.After)
 	if err != nil {
 		return err

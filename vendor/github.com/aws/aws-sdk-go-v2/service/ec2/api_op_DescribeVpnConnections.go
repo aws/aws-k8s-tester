@@ -24,7 +24,7 @@ func (c *Client) DescribeVpnConnections(ctx context.Context, params *DescribeVpn
 		params = &DescribeVpnConnectionsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeVpnConnections", params, optFns, addOperationDescribeVpnConnectionsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeVpnConnections", params, optFns, c.addOperationDescribeVpnConnectionsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ type DescribeVpnConnectionsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters.
 	//
@@ -102,7 +102,7 @@ type DescribeVpnConnectionsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeVpnConnectionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeVpnConnectionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeVpnConnections{}, middleware.After)
 	if err != nil {
 		return err
@@ -310,16 +310,21 @@ func vpnConnectionAvailableStateRetryable(ctx context.Context, input *DescribeVp
 
 		expectedValue := "available"
 		var match = true
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		if len(listOfValues) == 0 {
 			match = false
 		}
 		for _, v := range listOfValues {
-			if v != expectedValue {
+			value, ok := v.(types.VpnState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.VpnState value, got %T", pathValue)
+			}
+
+			if string(value) != expectedValue {
 				match = false
 			}
 		}
@@ -336,13 +341,18 @@ func vpnConnectionAvailableStateRetryable(ctx context.Context, input *DescribeVp
 		}
 
 		expectedValue := "deleting"
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		for _, v := range listOfValues {
-			if v == expectedValue {
+			value, ok := v.(types.VpnState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.VpnState value, got %T", pathValue)
+			}
+
+			if string(value) == expectedValue {
 				return false, fmt.Errorf("waiter state transitioned to Failure")
 			}
 		}
@@ -355,13 +365,18 @@ func vpnConnectionAvailableStateRetryable(ctx context.Context, input *DescribeVp
 		}
 
 		expectedValue := "deleted"
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		for _, v := range listOfValues {
-			if v == expectedValue {
+			value, ok := v.(types.VpnState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.VpnState value, got %T", pathValue)
+			}
+
+			if string(value) == expectedValue {
 				return false, fmt.Errorf("waiter state transitioned to Failure")
 			}
 		}
@@ -510,16 +525,21 @@ func vpnConnectionDeletedStateRetryable(ctx context.Context, input *DescribeVpnC
 
 		expectedValue := "deleted"
 		var match = true
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		if len(listOfValues) == 0 {
 			match = false
 		}
 		for _, v := range listOfValues {
-			if v != expectedValue {
+			value, ok := v.(types.VpnState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.VpnState value, got %T", pathValue)
+			}
+
+			if string(value) != expectedValue {
 				match = false
 			}
 		}
@@ -536,13 +556,18 @@ func vpnConnectionDeletedStateRetryable(ctx context.Context, input *DescribeVpnC
 		}
 
 		expectedValue := "pending"
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		for _, v := range listOfValues {
-			if v == expectedValue {
+			value, ok := v.(types.VpnState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.VpnState value, got %T", pathValue)
+			}
+
+			if string(value) == expectedValue {
 				return false, fmt.Errorf("waiter state transitioned to Failure")
 			}
 		}

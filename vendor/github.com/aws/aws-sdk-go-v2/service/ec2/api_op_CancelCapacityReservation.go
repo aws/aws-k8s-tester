@@ -22,7 +22,7 @@ func (c *Client) CancelCapacityReservation(ctx context.Context, params *CancelCa
 		params = &CancelCapacityReservationInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CancelCapacityReservation", params, optFns, addOperationCancelCapacityReservationMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CancelCapacityReservation", params, optFns, c.addOperationCancelCapacityReservationMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -43,19 +43,19 @@ type CancelCapacityReservationInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type CancelCapacityReservationOutput struct {
 
 	// Returns true if the request succeeds; otherwise, it returns an error.
-	Return bool
+	Return *bool
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCancelCapacityReservationMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCancelCapacityReservationMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCancelCapacityReservation{}, middleware.After)
 	if err != nil {
 		return err

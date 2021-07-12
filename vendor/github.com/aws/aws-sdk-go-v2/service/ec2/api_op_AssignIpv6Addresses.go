@@ -24,7 +24,7 @@ func (c *Client) AssignIpv6Addresses(ctx context.Context, params *AssignIpv6Addr
 		params = &AssignIpv6AddressesInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "AssignIpv6Addresses", params, optFns, addOperationAssignIpv6AddressesMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "AssignIpv6Addresses", params, optFns, c.addOperationAssignIpv6AddressesMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -41,10 +41,12 @@ type AssignIpv6AddressesInput struct {
 	// This member is required.
 	NetworkInterfaceId *string
 
-	// The number of IPv6 addresses to assign to the network interface. Amazon EC2
+	// The number of additional IPv6 addresses to assign to the network interface. The
+	// specified number of IPv6 addresses are assigned in addition to the existing IPv6
+	// addresses that are already assigned to the network interface. Amazon EC2
 	// automatically selects the IPv6 addresses from the subnet range. You can't use
 	// this option if specifying specific IPv6 addresses.
-	Ipv6AddressCount int32
+	Ipv6AddressCount *int32
 
 	// One or more specific IPv6 addresses to be assigned to the network interface. You
 	// can't use this option if you're specifying a number of IPv6 addresses.
@@ -53,7 +55,9 @@ type AssignIpv6AddressesInput struct {
 
 type AssignIpv6AddressesOutput struct {
 
-	// The IPv6 addresses assigned to the network interface.
+	// The new IPv6 addresses assigned to the network interface. Existing IPv6
+	// addresses that were assigned to the network interface before the request are not
+	// included.
 	AssignedIpv6Addresses []string
 
 	// The ID of the network interface.
@@ -63,7 +67,7 @@ type AssignIpv6AddressesOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationAssignIpv6AddressesMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationAssignIpv6AddressesMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpAssignIpv6Addresses{}, middleware.After)
 	if err != nil {
 		return err

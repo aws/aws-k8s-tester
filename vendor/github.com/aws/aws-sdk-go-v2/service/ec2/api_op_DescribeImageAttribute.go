@@ -18,7 +18,7 @@ func (c *Client) DescribeImageAttribute(ctx context.Context, params *DescribeIma
 		params = &DescribeImageAttributeInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeImageAttribute", params, optFns, addOperationDescribeImageAttributeMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeImageAttribute", params, optFns, c.addOperationDescribeImageAttributeMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -31,10 +31,9 @@ func (c *Client) DescribeImageAttribute(ctx context.Context, params *DescribeIma
 // Contains the parameters for DescribeImageAttribute.
 type DescribeImageAttributeInput struct {
 
-	// The AMI attribute. Note: Depending on your account privileges, the
-	// blockDeviceMapping attribute may return a Client.AuthFailure error. If this
-	// happens, use DescribeImages to get information about the block device mapping
-	// for the AMI.
+	// The AMI attribute. Note: The blockDeviceMapping attribute is deprecated. Using
+	// this attribute returns the Client.AuthFailure error. To get information about
+	// the block device mappings for an AMI, use the DescribeImages action.
 	//
 	// This member is required.
 	Attribute types.ImageAttributeName
@@ -48,7 +47,7 @@ type DescribeImageAttributeInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 // Describes an image attribute.
@@ -86,7 +85,7 @@ type DescribeImageAttributeOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeImageAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeImageAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeImageAttribute{}, middleware.After)
 	if err != nil {
 		return err

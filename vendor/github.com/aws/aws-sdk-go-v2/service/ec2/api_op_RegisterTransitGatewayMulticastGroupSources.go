@@ -25,7 +25,7 @@ func (c *Client) RegisterTransitGatewayMulticastGroupSources(ctx context.Context
 		params = &RegisterTransitGatewayMulticastGroupSourcesInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "RegisterTransitGatewayMulticastGroupSources", params, optFns, addOperationRegisterTransitGatewayMulticastGroupSourcesMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "RegisterTransitGatewayMulticastGroupSources", params, optFns, c.addOperationRegisterTransitGatewayMulticastGroupSourcesMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ type RegisterTransitGatewayMulticastGroupSourcesInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The IP address assigned to the transit gateway multicast group.
 	GroupIpAddress *string
@@ -63,7 +63,7 @@ type RegisterTransitGatewayMulticastGroupSourcesOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationRegisterTransitGatewayMulticastGroupSourcesMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationRegisterTransitGatewayMulticastGroupSourcesMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpRegisterTransitGatewayMulticastGroupSources{}, middleware.After)
 	if err != nil {
 		return err

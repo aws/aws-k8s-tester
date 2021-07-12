@@ -23,7 +23,7 @@ func (c *Client) GetLaunchTemplateData(ctx context.Context, params *GetLaunchTem
 		params = &GetLaunchTemplateDataInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "GetLaunchTemplateData", params, optFns, addOperationGetLaunchTemplateDataMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "GetLaunchTemplateData", params, optFns, c.addOperationGetLaunchTemplateDataMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ type GetLaunchTemplateDataInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type GetLaunchTemplateDataOutput struct {
@@ -56,7 +56,7 @@ type GetLaunchTemplateDataOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationGetLaunchTemplateDataMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationGetLaunchTemplateDataMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpGetLaunchTemplateData{}, middleware.After)
 	if err != nil {
 		return err

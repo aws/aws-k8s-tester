@@ -24,7 +24,7 @@ func (c *Client) DescribeSubnets(ctx context.Context, params *DescribeSubnetsInp
 		params = &DescribeSubnetsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeSubnets", params, optFns, addOperationDescribeSubnetsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeSubnets", params, optFns, c.addOperationDescribeSubnetsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ type DescribeSubnetsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters.
 	//
@@ -73,34 +73,36 @@ type DescribeSubnetsInput struct {
 	// * ipv6-cidr-block-association.state - The
 	// state of an IPv6 CIDR block associated with the subnet.
 	//
-	// * owner-id - The ID of
-	// the AWS account that owns the subnet.
+	// * outpost-arn - The
+	// Amazon Resource Name (ARN) of the Outpost.
 	//
-	// * state - The state of the subnet
-	// (pending | available).
+	// * owner-id - The ID of the AWS
+	// account that owns the subnet.
 	//
-	// * subnet-arn - The Amazon Resource Name (ARN) of the
-	// subnet.
+	// * state - The state of the subnet (pending |
+	// available).
 	//
-	// * subnet-id - The ID of the subnet.
+	// * subnet-arn - The Amazon Resource Name (ARN) of the subnet.
 	//
-	// * tag: - The key/value combination
-	// of a tag assigned to the resource. Use the tag key in the filter name and the
-	// tag value as the filter value. For example, to find all resources that have a
-	// tag with the key Owner and the value TeamA, specify tag:Owner for the filter
-	// name and TeamA for the filter value.
+	// *
+	// subnet-id - The ID of the subnet.
 	//
-	// * tag-key - The key of a tag assigned to
-	// the resource. Use this filter to find all resources assigned a tag with a
-	// specific key, regardless of the tag value.
+	// * tag: - The key/value combination of a tag
+	// assigned to the resource. Use the tag key in the filter name and the tag value
+	// as the filter value. For example, to find all resources that have a tag with the
+	// key Owner and the value TeamA, specify tag:Owner for the filter name and TeamA
+	// for the filter value.
 	//
-	// * vpc-id - The ID of the VPC for the
-	// subnet.
+	// * tag-key - The key of a tag assigned to the resource.
+	// Use this filter to find all resources assigned a tag with a specific key,
+	// regardless of the tag value.
+	//
+	// * vpc-id - The ID of the VPC for the subnet.
 	Filters []types.Filter
 
 	// The maximum number of results to return with a single call. To retrieve the
 	// remaining results, make another call with the returned nextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token for the next page of results.
 	NextToken *string
@@ -122,7 +124,7 @@ type DescribeSubnetsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeSubnetsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeSubnetsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeSubnets{}, middleware.After)
 	if err != nil {
 		return err
@@ -212,17 +214,17 @@ type DescribeSubnetsPaginator struct {
 
 // NewDescribeSubnetsPaginator returns a new DescribeSubnetsPaginator
 func NewDescribeSubnetsPaginator(client DescribeSubnetsAPIClient, params *DescribeSubnetsInput, optFns ...func(*DescribeSubnetsPaginatorOptions)) *DescribeSubnetsPaginator {
+	if params == nil {
+		params = &DescribeSubnetsInput{}
+	}
+
 	options := DescribeSubnetsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeSubnetsInput{}
 	}
 
 	return &DescribeSubnetsPaginator{
@@ -247,7 +249,11 @@ func (p *DescribeSubnetsPaginator) NextPage(ctx context.Context, optFns ...func(
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeSubnets(ctx, &params, optFns...)
 	if err != nil {
@@ -404,16 +410,21 @@ func subnetAvailableStateRetryable(ctx context.Context, input *DescribeSubnetsIn
 
 		expectedValue := "available"
 		var match = true
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		if len(listOfValues) == 0 {
 			match = false
 		}
 		for _, v := range listOfValues {
-			if v != expectedValue {
+			value, ok := v.(types.SubnetState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.SubnetState value, got %T", pathValue)
+			}
+
+			if string(value) != expectedValue {
 				match = false
 			}
 		}

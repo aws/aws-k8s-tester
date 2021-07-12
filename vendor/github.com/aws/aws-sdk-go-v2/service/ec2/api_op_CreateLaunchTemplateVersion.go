@@ -23,7 +23,7 @@ func (c *Client) CreateLaunchTemplateVersion(ctx context.Context, params *Create
 		params = &CreateLaunchTemplateVersionInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateLaunchTemplateVersion", params, optFns, addOperationCreateLaunchTemplateVersionMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateLaunchTemplateVersion", params, optFns, c.addOperationCreateLaunchTemplateVersionMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ type CreateLaunchTemplateVersionInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The ID of the launch template. You must specify either the launch template ID or
 	// launch template name in the request.
@@ -85,7 +85,7 @@ type CreateLaunchTemplateVersionOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateLaunchTemplateVersionMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateLaunchTemplateVersionMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateLaunchTemplateVersion{}, middleware.After)
 	if err != nil {
 		return err

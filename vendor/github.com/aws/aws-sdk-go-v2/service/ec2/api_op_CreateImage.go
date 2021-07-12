@@ -25,7 +25,7 @@ func (c *Client) CreateImage(ctx context.Context, params *CreateImageInput, optF
 		params = &CreateImageInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateImage", params, optFns, addOperationCreateImageMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateImage", params, optFns, c.addOperationCreateImageMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -61,15 +61,13 @@ type CreateImageInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// By default, Amazon EC2 attempts to shut down and reboot the instance before
 	// creating the image. If the No Reboot option is set, Amazon EC2 doesn't shut down
 	// the instance before creating the image. When this option is used, file system
 	// integrity on the created image can't be guaranteed.
-	NoReboot bool
-
-	OutpostArn *string
+	NoReboot *bool
 
 	// The tags to apply to the AMI and snapshots on creation. You can tag the AMI, the
 	// snapshots, or both.
@@ -97,7 +95,7 @@ type CreateImageOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateImageMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateImageMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateImage{}, middleware.After)
 	if err != nil {
 		return err

@@ -20,7 +20,7 @@ func (c *Client) DeleteVolume(ctx context.Context, params *DeleteVolumeInput, op
 		params = &DeleteVolumeInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DeleteVolume", params, optFns, addOperationDeleteVolumeMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DeleteVolume", params, optFns, c.addOperationDeleteVolumeMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ type DeleteVolumeInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type DeleteVolumeOutput struct {
@@ -49,7 +49,7 @@ type DeleteVolumeOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDeleteVolumeMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDeleteVolumeMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDeleteVolume{}, middleware.After)
 	if err != nil {
 		return err

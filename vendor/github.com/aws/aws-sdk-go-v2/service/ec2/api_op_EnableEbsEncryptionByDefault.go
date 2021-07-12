@@ -11,7 +11,7 @@ import (
 )
 
 // Enables EBS encryption by default for your account in the current Region. After
-// you enable encryption by default, the EBS volumes that you create are are always
+// you enable encryption by default, the EBS volumes that you create are always
 // encrypted, either using the default CMK or the CMK that you specified when you
 // created each volume. For more information, see Amazon EBS encryption
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html) in the
@@ -27,7 +27,7 @@ func (c *Client) EnableEbsEncryptionByDefault(ctx context.Context, params *Enabl
 		params = &EnableEbsEncryptionByDefaultInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "EnableEbsEncryptionByDefault", params, optFns, addOperationEnableEbsEncryptionByDefaultMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "EnableEbsEncryptionByDefault", params, optFns, c.addOperationEnableEbsEncryptionByDefaultMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -43,19 +43,19 @@ type EnableEbsEncryptionByDefaultInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type EnableEbsEncryptionByDefaultOutput struct {
 
 	// The updated status of encryption by default.
-	EbsEncryptionByDefault bool
+	EbsEncryptionByDefault *bool
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationEnableEbsEncryptionByDefaultMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationEnableEbsEncryptionByDefaultMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpEnableEbsEncryptionByDefault{}, middleware.After)
 	if err != nil {
 		return err

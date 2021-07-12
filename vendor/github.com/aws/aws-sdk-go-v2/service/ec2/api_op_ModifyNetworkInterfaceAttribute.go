@@ -19,7 +19,7 @@ func (c *Client) ModifyNetworkInterfaceAttribute(ctx context.Context, params *Mo
 		params = &ModifyNetworkInterfaceAttributeInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyNetworkInterfaceAttribute", params, optFns, addOperationModifyNetworkInterfaceAttributeMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyNetworkInterfaceAttribute", params, optFns, c.addOperationModifyNetworkInterfaceAttributeMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ type ModifyNetworkInterfaceAttributeInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// Changes the security groups for the network interface. The new set of groups you
 	// specify replaces the current set. You must specify at least one group, even if
@@ -56,11 +56,12 @@ type ModifyNetworkInterfaceAttributeInput struct {
 	// security group, not the name.
 	Groups []string
 
-	// Indicates whether source/destination checking is enabled. A value of true means
-	// checking is enabled, and false means checking is disabled. This value must be
-	// false for a NAT instance to perform NAT. For more information, see NAT Instances
-	// (https://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_NAT_Instance.html)
-	// in the Amazon Virtual Private Cloud User Guide.
+	// Enable or disable source/destination checks, which ensure that the instance is
+	// either the source or the destination of any traffic that it receives. If the
+	// value is true, source/destination checks are enabled; otherwise, they are
+	// disabled. The default value is true. You must disable source/destination checks
+	// if the instance runs services such as network address translation, routing, or
+	// firewalls.
 	SourceDestCheck *types.AttributeBooleanValue
 }
 
@@ -69,7 +70,7 @@ type ModifyNetworkInterfaceAttributeOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyNetworkInterfaceAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyNetworkInterfaceAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyNetworkInterfaceAttribute{}, middleware.After)
 	if err != nil {
 		return err

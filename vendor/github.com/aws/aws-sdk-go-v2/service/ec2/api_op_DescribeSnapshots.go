@@ -63,7 +63,7 @@ func (c *Client) DescribeSnapshots(ctx context.Context, params *DescribeSnapshot
 		params = &DescribeSnapshotsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeSnapshots", params, optFns, addOperationDescribeSnapshotsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeSnapshots", params, optFns, c.addOperationDescribeSnapshotsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ type DescribeSnapshotsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The filters.
 	//
@@ -133,7 +133,7 @@ type DescribeSnapshotsInput struct {
 	// 1,000 results are returned. If this parameter is not used, then
 	// DescribeSnapshots returns all results. You cannot specify this parameter and the
 	// snapshot IDs parameter in the same request.
-	MaxResults int32
+	MaxResults *int32
 
 	// The NextToken value returned from a previous paginated DescribeSnapshots request
 	// where MaxResults was used and the results exceeded the value of that parameter.
@@ -168,7 +168,7 @@ type DescribeSnapshotsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeSnapshotsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeSnapshotsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeSnapshots{}, middleware.After)
 	if err != nil {
 		return err
@@ -265,17 +265,17 @@ type DescribeSnapshotsPaginator struct {
 
 // NewDescribeSnapshotsPaginator returns a new DescribeSnapshotsPaginator
 func NewDescribeSnapshotsPaginator(client DescribeSnapshotsAPIClient, params *DescribeSnapshotsInput, optFns ...func(*DescribeSnapshotsPaginatorOptions)) *DescribeSnapshotsPaginator {
+	if params == nil {
+		params = &DescribeSnapshotsInput{}
+	}
+
 	options := DescribeSnapshotsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeSnapshotsInput{}
 	}
 
 	return &DescribeSnapshotsPaginator{
@@ -300,7 +300,11 @@ func (p *DescribeSnapshotsPaginator) NextPage(ctx context.Context, optFns ...fun
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeSnapshots(ctx, &params, optFns...)
 	if err != nil {
@@ -457,16 +461,21 @@ func snapshotCompletedStateRetryable(ctx context.Context, input *DescribeSnapsho
 
 		expectedValue := "completed"
 		var match = true
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		if len(listOfValues) == 0 {
 			match = false
 		}
 		for _, v := range listOfValues {
-			if v != expectedValue {
+			value, ok := v.(types.SnapshotState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.SnapshotState value, got %T", pathValue)
+			}
+
+			if string(value) != expectedValue {
 				match = false
 			}
 		}

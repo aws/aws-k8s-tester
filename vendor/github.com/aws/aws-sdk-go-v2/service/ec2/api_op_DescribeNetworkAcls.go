@@ -20,7 +20,7 @@ func (c *Client) DescribeNetworkAcls(ctx context.Context, params *DescribeNetwor
 		params = &DescribeNetworkAclsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeNetworkAcls", params, optFns, addOperationDescribeNetworkAclsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeNetworkAcls", params, optFns, c.addOperationDescribeNetworkAclsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ type DescribeNetworkAclsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters.
 	//
@@ -100,7 +100,7 @@ type DescribeNetworkAclsInput struct {
 
 	// The maximum number of results to return with a single call. To retrieve the
 	// remaining results, make another call with the returned nextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// One or more network ACL IDs. Default: Describes all your network ACLs.
 	NetworkAclIds []string
@@ -122,7 +122,7 @@ type DescribeNetworkAclsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeNetworkAclsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeNetworkAclsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeNetworkAcls{}, middleware.After)
 	if err != nil {
 		return err
@@ -213,17 +213,17 @@ type DescribeNetworkAclsPaginator struct {
 
 // NewDescribeNetworkAclsPaginator returns a new DescribeNetworkAclsPaginator
 func NewDescribeNetworkAclsPaginator(client DescribeNetworkAclsAPIClient, params *DescribeNetworkAclsInput, optFns ...func(*DescribeNetworkAclsPaginatorOptions)) *DescribeNetworkAclsPaginator {
+	if params == nil {
+		params = &DescribeNetworkAclsInput{}
+	}
+
 	options := DescribeNetworkAclsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeNetworkAclsInput{}
 	}
 
 	return &DescribeNetworkAclsPaginator{
@@ -248,7 +248,11 @@ func (p *DescribeNetworkAclsPaginator) NextPage(ctx context.Context, optFns ...f
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeNetworkAcls(ctx, &params, optFns...)
 	if err != nil {

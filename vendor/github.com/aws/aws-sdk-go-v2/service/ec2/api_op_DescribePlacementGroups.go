@@ -14,13 +14,13 @@ import (
 // Describes the specified placement groups or all of your placement groups. For
 // more information, see Placement groups
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html) in
-// the Amazon Elastic Compute Cloud User Guide.
+// the Amazon EC2 User Guide.
 func (c *Client) DescribePlacementGroups(ctx context.Context, params *DescribePlacementGroupsInput, optFns ...func(*Options)) (*DescribePlacementGroupsOutput, error) {
 	if params == nil {
 		params = &DescribePlacementGroupsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribePlacementGroups", params, optFns, addOperationDescribePlacementGroupsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribePlacementGroups", params, optFns, c.addOperationDescribePlacementGroupsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ type DescribePlacementGroupsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The filters.
 	//
@@ -77,7 +77,7 @@ type DescribePlacementGroupsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribePlacementGroupsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribePlacementGroupsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribePlacementGroups{}, middleware.After)
 	if err != nil {
 		return err

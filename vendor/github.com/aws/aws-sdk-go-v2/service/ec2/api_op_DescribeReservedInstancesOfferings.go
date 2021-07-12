@@ -21,13 +21,13 @@ import (
 // This is to ensure that you do not purchase your own Reserved Instances. For more
 // information, see Reserved Instance Marketplace
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-market-general.html) in
-// the Amazon Elastic Compute Cloud User Guide.
+// the Amazon EC2 User Guide.
 func (c *Client) DescribeReservedInstancesOfferings(ctx context.Context, params *DescribeReservedInstancesOfferingsInput, optFns ...func(*Options)) (*DescribeReservedInstancesOfferingsOutput, error) {
 	if params == nil {
 		params = &DescribeReservedInstancesOfferingsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeReservedInstancesOfferings", params, optFns, addOperationDescribeReservedInstancesOfferingsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeReservedInstancesOfferings", params, optFns, c.addOperationDescribeReservedInstancesOfferingsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ type DescribeReservedInstancesOfferingsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters.
 	//
@@ -66,31 +66,32 @@ type DescribeReservedInstancesOfferingsInput struct {
 	//
 	// * marketplace - Set to true to show only Reserved Instance
 	// Marketplace offerings. When this filter is not used, which is the default
-	// behavior, all offerings from both AWS and the Reserved Instance Marketplace are
-	// listed.
+	// behavior, all offerings from both Amazon Web Services and the Reserved Instance
+	// Marketplace are listed.
 	//
-	// * product-description - The Reserved Instance product platform
-	// description. Instances that include (Amazon VPC) in the product platform
-	// description will only be displayed to EC2-Classic account holders and are for
-	// use with Amazon VPC. (Linux/UNIX | Linux/UNIX (Amazon VPC) | SUSE Linux | SUSE
-	// Linux (Amazon VPC) | Red Hat Enterprise Linux | Red Hat Enterprise Linux (Amazon
-	// VPC) | Windows | Windows (Amazon VPC) | Windows with SQL Server Standard |
-	// Windows with SQL Server Standard (Amazon VPC) | Windows with SQL Server Web |
-	// Windows with SQL Server Web (Amazon VPC) | Windows with SQL Server Enterprise |
-	// Windows with SQL Server Enterprise (Amazon VPC))
+	// * product-description - The Reserved Instance product
+	// platform description. Instances that include (Amazon VPC) in the product
+	// platform description will only be displayed to EC2-Classic account holders and
+	// are for use with Amazon VPC. (Linux/UNIX | Linux/UNIX (Amazon VPC) | SUSE Linux
+	// | SUSE Linux (Amazon VPC) | Red Hat Enterprise Linux | Red Hat Enterprise Linux
+	// (Amazon VPC) | Red Hat Enterprise Linux with HA (Amazon VPC) | Windows | Windows
+	// (Amazon VPC) | Windows with SQL Server Standard | Windows with SQL Server
+	// Standard (Amazon VPC) | Windows with SQL Server Web |  Windows with SQL Server
+	// Web (Amazon VPC) | Windows with SQL Server Enterprise | Windows with SQL Server
+	// Enterprise (Amazon VPC))
 	//
-	// *
-	// reserved-instances-offering-id - The Reserved Instances offering ID.
+	// * reserved-instances-offering-id - The Reserved
+	// Instances offering ID.
 	//
-	// * scope -
-	// The scope of the Reserved Instance (Availability Zone or Region).
+	// * scope - The scope of the Reserved Instance
+	// (Availability Zone or Region).
 	//
-	// * usage-price
-	// - The usage price of the Reserved Instance, per hour (for example, 0.84).
+	// * usage-price - The usage price of the Reserved
+	// Instance, per hour (for example, 0.84).
 	Filters []types.Filter
 
 	// Include Reserved Instance Marketplace offerings in the response.
-	IncludeMarketplace bool
+	IncludeMarketplace *bool
 
 	// The tenancy of the instances covered by the reservation. A Reserved Instance
 	// with a tenancy of dedicated is applied to instances that run in a VPC on
@@ -100,27 +101,27 @@ type DescribeReservedInstancesOfferingsInput struct {
 	InstanceTenancy types.Tenancy
 
 	// The instance type that the reservation will cover (for example, m1.small). For
-	// more information, see Instance Types
+	// more information, see Instance types
 	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html) in the
-	// Amazon Elastic Compute Cloud User Guide.
+	// Amazon EC2 User Guide.
 	InstanceType types.InstanceType
 
 	// The maximum duration (in seconds) to filter when searching for offerings.
 	// Default: 94608000 (3 years)
-	MaxDuration int64
+	MaxDuration *int64
 
 	// The maximum number of instances to filter when searching for offerings. Default:
 	// 20
-	MaxInstanceCount int32
+	MaxInstanceCount *int32
 
 	// The maximum number of results to return for the request in a single page. The
 	// remaining results of the initial request can be seen by sending another request
 	// with the returned NextToken value. The maximum is 100. Default: 100
-	MaxResults int32
+	MaxResults *int32
 
 	// The minimum duration (in seconds) to filter when searching for offerings.
 	// Default: 2592000 (1 month)
-	MinDuration int64
+	MinDuration *int64
 
 	// The token to retrieve the next page of results.
 	NextToken *string
@@ -155,7 +156,7 @@ type DescribeReservedInstancesOfferingsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeReservedInstancesOfferingsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeReservedInstancesOfferingsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeReservedInstancesOfferings{}, middleware.After)
 	if err != nil {
 		return err
@@ -249,17 +250,17 @@ type DescribeReservedInstancesOfferingsPaginator struct {
 // NewDescribeReservedInstancesOfferingsPaginator returns a new
 // DescribeReservedInstancesOfferingsPaginator
 func NewDescribeReservedInstancesOfferingsPaginator(client DescribeReservedInstancesOfferingsAPIClient, params *DescribeReservedInstancesOfferingsInput, optFns ...func(*DescribeReservedInstancesOfferingsPaginatorOptions)) *DescribeReservedInstancesOfferingsPaginator {
+	if params == nil {
+		params = &DescribeReservedInstancesOfferingsInput{}
+	}
+
 	options := DescribeReservedInstancesOfferingsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeReservedInstancesOfferingsInput{}
 	}
 
 	return &DescribeReservedInstancesOfferingsPaginator{
@@ -284,7 +285,11 @@ func (p *DescribeReservedInstancesOfferingsPaginator) NextPage(ctx context.Conte
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeReservedInstancesOfferings(ctx, &params, optFns...)
 	if err != nil {

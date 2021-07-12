@@ -20,7 +20,7 @@ func (c *Client) RestoreAddressToClassic(ctx context.Context, params *RestoreAdd
 		params = &RestoreAddressToClassicInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "RestoreAddressToClassic", params, optFns, addOperationRestoreAddressToClassicMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "RestoreAddressToClassic", params, optFns, c.addOperationRestoreAddressToClassicMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ type RestoreAddressToClassicInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type RestoreAddressToClassicOutput struct {
@@ -56,7 +56,7 @@ type RestoreAddressToClassicOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationRestoreAddressToClassicMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationRestoreAddressToClassicMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpRestoreAddressToClassic{}, middleware.After)
 	if err != nil {
 		return err

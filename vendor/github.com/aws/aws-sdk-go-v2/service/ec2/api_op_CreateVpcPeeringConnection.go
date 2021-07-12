@@ -28,7 +28,7 @@ func (c *Client) CreateVpcPeeringConnection(ctx context.Context, params *CreateV
 		params = &CreateVpcPeeringConnectionInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateVpcPeeringConnection", params, optFns, addOperationCreateVpcPeeringConnectionMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateVpcPeeringConnection", params, optFns, c.addOperationCreateVpcPeeringConnectionMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ type CreateVpcPeeringConnectionInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The AWS account ID of the owner of the accepter VPC. Default: Your AWS account
 	// ID
@@ -75,7 +75,7 @@ type CreateVpcPeeringConnectionOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateVpcPeeringConnectionMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateVpcPeeringConnectionMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateVpcPeeringConnection{}, middleware.After)
 	if err != nil {
 		return err

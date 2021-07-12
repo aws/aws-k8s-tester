@@ -19,7 +19,7 @@ func (c *Client) GetTransitGatewayAttachmentPropagations(ctx context.Context, pa
 		params = &GetTransitGatewayAttachmentPropagationsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "GetTransitGatewayAttachmentPropagations", params, optFns, addOperationGetTransitGatewayAttachmentPropagationsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "GetTransitGatewayAttachmentPropagations", params, optFns, c.addOperationGetTransitGatewayAttachmentPropagationsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ type GetTransitGatewayAttachmentPropagationsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters. The possible values are:
 	//
@@ -50,7 +50,7 @@ type GetTransitGatewayAttachmentPropagationsInput struct {
 
 	// The maximum number of results to return with a single call. To retrieve the
 	// remaining results, make another call with the returned nextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token for the next page of results.
 	NextToken *string
@@ -69,7 +69,7 @@ type GetTransitGatewayAttachmentPropagationsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationGetTransitGatewayAttachmentPropagationsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationGetTransitGatewayAttachmentPropagationsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpGetTransitGatewayAttachmentPropagations{}, middleware.After)
 	if err != nil {
 		return err
@@ -165,17 +165,17 @@ type GetTransitGatewayAttachmentPropagationsPaginator struct {
 // NewGetTransitGatewayAttachmentPropagationsPaginator returns a new
 // GetTransitGatewayAttachmentPropagationsPaginator
 func NewGetTransitGatewayAttachmentPropagationsPaginator(client GetTransitGatewayAttachmentPropagationsAPIClient, params *GetTransitGatewayAttachmentPropagationsInput, optFns ...func(*GetTransitGatewayAttachmentPropagationsPaginatorOptions)) *GetTransitGatewayAttachmentPropagationsPaginator {
+	if params == nil {
+		params = &GetTransitGatewayAttachmentPropagationsInput{}
+	}
+
 	options := GetTransitGatewayAttachmentPropagationsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &GetTransitGatewayAttachmentPropagationsInput{}
 	}
 
 	return &GetTransitGatewayAttachmentPropagationsPaginator{
@@ -200,7 +200,11 @@ func (p *GetTransitGatewayAttachmentPropagationsPaginator) NextPage(ctx context.
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.GetTransitGatewayAttachmentPropagations(ctx, &params, optFns...)
 	if err != nil {

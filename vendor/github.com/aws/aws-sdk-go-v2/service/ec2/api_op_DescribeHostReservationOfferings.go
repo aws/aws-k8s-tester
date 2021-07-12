@@ -18,15 +18,15 @@ import (
 // Hosts. When purchasing an offering, ensure that the instance family and Region
 // of the offering matches that of the Dedicated Hosts with which it is to be
 // associated. For more information about supported instance types, see Dedicated
-// Hosts Overview
+// Hosts
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/dedicated-hosts-overview.html)
-// in the Amazon Elastic Compute Cloud User Guide.
+// in the Amazon EC2 User Guide.
 func (c *Client) DescribeHostReservationOfferings(ctx context.Context, params *DescribeHostReservationOfferingsInput, optFns ...func(*Options)) (*DescribeHostReservationOfferingsOutput, error) {
 	if params == nil {
 		params = &DescribeHostReservationOfferingsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeHostReservationOfferings", params, optFns, addOperationDescribeHostReservationOfferingsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeHostReservationOfferings", params, optFns, c.addOperationDescribeHostReservationOfferingsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -52,20 +52,20 @@ type DescribeHostReservationOfferingsInput struct {
 	// of seconds specified must be the number of seconds in a year (365x24x60x60)
 	// times one of the supported durations (1 or 3). For example, specify 94608000 for
 	// three years.
-	MaxDuration int32
+	MaxDuration *int32
 
 	// The maximum number of results to return for the request in a single page. The
 	// remaining results can be seen by sending another request with the returned
 	// nextToken value. This value can be between 5 and 500. If maxResults is given a
 	// larger value than 500, you receive an error.
-	MaxResults int32
+	MaxResults *int32
 
 	// This is the minimum duration of the reservation you'd like to purchase,
 	// specified in seconds. Reservations are available in one-year and three-year
 	// terms. The number of seconds specified must be the number of seconds in a year
 	// (365x24x60x60) times one of the supported durations (1 or 3). For example,
 	// specify 31536000 for one year.
-	MinDuration int32
+	MinDuration *int32
 
 	// The token to use to retrieve the next page of results.
 	NextToken *string
@@ -87,7 +87,7 @@ type DescribeHostReservationOfferingsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeHostReservationOfferingsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeHostReservationOfferingsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeHostReservationOfferings{}, middleware.After)
 	if err != nil {
 		return err
@@ -182,17 +182,17 @@ type DescribeHostReservationOfferingsPaginator struct {
 // NewDescribeHostReservationOfferingsPaginator returns a new
 // DescribeHostReservationOfferingsPaginator
 func NewDescribeHostReservationOfferingsPaginator(client DescribeHostReservationOfferingsAPIClient, params *DescribeHostReservationOfferingsInput, optFns ...func(*DescribeHostReservationOfferingsPaginatorOptions)) *DescribeHostReservationOfferingsPaginator {
+	if params == nil {
+		params = &DescribeHostReservationOfferingsInput{}
+	}
+
 	options := DescribeHostReservationOfferingsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeHostReservationOfferingsInput{}
 	}
 
 	return &DescribeHostReservationOfferingsPaginator{
@@ -217,7 +217,11 @@ func (p *DescribeHostReservationOfferingsPaginator) NextPage(ctx context.Context
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeHostReservationOfferings(ctx, &params, optFns...)
 	if err != nil {

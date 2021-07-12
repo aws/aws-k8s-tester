@@ -19,7 +19,7 @@ func (c *Client) StartNetworkInsightsAnalysis(ctx context.Context, params *Start
 		params = &StartNetworkInsightsAnalysisInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "StartNetworkInsightsAnalysis", params, optFns, addOperationStartNetworkInsightsAnalysisMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "StartNetworkInsightsAnalysis", params, optFns, c.addOperationStartNetworkInsightsAnalysisMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ type StartNetworkInsightsAnalysisInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The Amazon Resource Names (ARN) of the resources that the path must traverse.
 	FilterInArns []string
@@ -65,7 +65,7 @@ type StartNetworkInsightsAnalysisOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationStartNetworkInsightsAnalysisMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationStartNetworkInsightsAnalysisMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpStartNetworkInsightsAnalysis{}, middleware.After)
 	if err != nil {
 		return err

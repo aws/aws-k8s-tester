@@ -18,7 +18,7 @@ func (c *Client) GetGroupsForCapacityReservation(ctx context.Context, params *Ge
 		params = &GetGroupsForCapacityReservationInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "GetGroupsForCapacityReservation", params, optFns, addOperationGetGroupsForCapacityReservationMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "GetGroupsForCapacityReservation", params, optFns, c.addOperationGetGroupsForCapacityReservationMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -39,13 +39,13 @@ type GetGroupsForCapacityReservationInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The maximum number of results to return for the request in a single page. The
 	// remaining results can be seen by sending another request with the returned
 	// nextToken value. This value can be between 5 and 500. If maxResults is given a
 	// larger value than 500, you receive an error.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token to use to retrieve the next page of results.
 	NextToken *string
@@ -65,7 +65,7 @@ type GetGroupsForCapacityReservationOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationGetGroupsForCapacityReservationMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationGetGroupsForCapacityReservationMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpGetGroupsForCapacityReservation{}, middleware.After)
 	if err != nil {
 		return err
@@ -163,17 +163,17 @@ type GetGroupsForCapacityReservationPaginator struct {
 // NewGetGroupsForCapacityReservationPaginator returns a new
 // GetGroupsForCapacityReservationPaginator
 func NewGetGroupsForCapacityReservationPaginator(client GetGroupsForCapacityReservationAPIClient, params *GetGroupsForCapacityReservationInput, optFns ...func(*GetGroupsForCapacityReservationPaginatorOptions)) *GetGroupsForCapacityReservationPaginator {
+	if params == nil {
+		params = &GetGroupsForCapacityReservationInput{}
+	}
+
 	options := GetGroupsForCapacityReservationPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &GetGroupsForCapacityReservationInput{}
 	}
 
 	return &GetGroupsForCapacityReservationPaginator{
@@ -198,7 +198,11 @@ func (p *GetGroupsForCapacityReservationPaginator) NextPage(ctx context.Context,
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.GetGroupsForCapacityReservation(ctx, &params, optFns...)
 	if err != nil {

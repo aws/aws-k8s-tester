@@ -38,7 +38,7 @@ func (c *Client) CreateVpcEndpointServiceConfiguration(ctx context.Context, para
 		params = &CreateVpcEndpointServiceConfigurationInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateVpcEndpointServiceConfiguration", params, optFns, addOperationCreateVpcEndpointServiceConfigurationMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateVpcEndpointServiceConfiguration", params, optFns, c.addOperationCreateVpcEndpointServiceConfigurationMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ type CreateVpcEndpointServiceConfigurationInput struct {
 
 	// Indicates whether requests from service consumers to create an endpoint to your
 	// service must be accepted. To accept a request, use AcceptVpcEndpointConnections.
-	AcceptanceRequired bool
+	AcceptanceRequired *bool
 
 	// Unique, case-sensitive identifier that you provide to ensure the idempotency of
 	// the request. For more information, see How to Ensure Idempotency
@@ -63,7 +63,7 @@ type CreateVpcEndpointServiceConfigurationInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The Amazon Resource Names (ARNs) of one or more Gateway Load Balancers.
 	GatewayLoadBalancerArns []string
@@ -93,7 +93,7 @@ type CreateVpcEndpointServiceConfigurationOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateVpcEndpointServiceConfigurationMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateVpcEndpointServiceConfigurationMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateVpcEndpointServiceConfiguration{}, middleware.After)
 	if err != nil {
 		return err

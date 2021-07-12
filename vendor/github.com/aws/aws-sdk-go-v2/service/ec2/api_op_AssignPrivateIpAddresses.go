@@ -33,7 +33,7 @@ func (c *Client) AssignPrivateIpAddresses(ctx context.Context, params *AssignPri
 		params = &AssignPrivateIpAddressesInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "AssignPrivateIpAddresses", params, optFns, addOperationAssignPrivateIpAddressesMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "AssignPrivateIpAddresses", params, optFns, c.addOperationAssignPrivateIpAddressesMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ type AssignPrivateIpAddressesInput struct {
 	// Indicates whether to allow an IP address that is already assigned to another
 	// network interface or instance to be reassigned to the specified network
 	// interface.
-	AllowReassignment bool
+	AllowReassignment *bool
 
 	// One or more IP addresses to be assigned as a secondary private IP address to the
 	// network interface. You can't specify this parameter when also specifying a
@@ -64,7 +64,7 @@ type AssignPrivateIpAddressesInput struct {
 
 	// The number of secondary IP addresses to assign to the network interface. You
 	// can't specify this parameter when also specifying private IP addresses.
-	SecondaryPrivateIpAddressCount int32
+	SecondaryPrivateIpAddressCount *int32
 }
 
 type AssignPrivateIpAddressesOutput struct {
@@ -79,7 +79,7 @@ type AssignPrivateIpAddressesOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationAssignPrivateIpAddressesMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationAssignPrivateIpAddressesMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpAssignPrivateIpAddresses{}, middleware.After)
 	if err != nil {
 		return err

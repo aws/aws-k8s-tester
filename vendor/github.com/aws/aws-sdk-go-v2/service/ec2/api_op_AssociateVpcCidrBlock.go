@@ -26,7 +26,7 @@ func (c *Client) AssociateVpcCidrBlock(ctx context.Context, params *AssociateVpc
 		params = &AssociateVpcCidrBlockInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "AssociateVpcCidrBlock", params, optFns, addOperationAssociateVpcCidrBlockMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "AssociateVpcCidrBlock", params, optFns, c.addOperationAssociateVpcCidrBlockMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ type AssociateVpcCidrBlockInput struct {
 	// Requests an Amazon-provided IPv6 CIDR block with a /56 prefix length for the
 	// VPC. You cannot specify the range of IPv6 addresses, or the size of the CIDR
 	// block.
-	AmazonProvidedIpv6CidrBlock bool
+	AmazonProvidedIpv6CidrBlock *bool
 
 	// An IPv4 CIDR block to associate with the VPC.
 	CidrBlock *string
@@ -81,7 +81,7 @@ type AssociateVpcCidrBlockOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationAssociateVpcCidrBlockMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationAssociateVpcCidrBlockMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpAssociateVpcCidrBlock{}, middleware.After)
 	if err != nil {
 		return err

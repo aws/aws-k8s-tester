@@ -22,7 +22,7 @@ func (c *Client) ResetEbsDefaultKmsKeyId(ctx context.Context, params *ResetEbsDe
 		params = &ResetEbsDefaultKmsKeyIdInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ResetEbsDefaultKmsKeyId", params, optFns, addOperationResetEbsDefaultKmsKeyIdMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ResetEbsDefaultKmsKeyId", params, optFns, c.addOperationResetEbsDefaultKmsKeyIdMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ type ResetEbsDefaultKmsKeyIdInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type ResetEbsDefaultKmsKeyIdOutput struct {
@@ -50,7 +50,7 @@ type ResetEbsDefaultKmsKeyIdOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationResetEbsDefaultKmsKeyIdMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationResetEbsDefaultKmsKeyIdMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpResetEbsDefaultKmsKeyId{}, middleware.After)
 	if err != nil {
 		return err

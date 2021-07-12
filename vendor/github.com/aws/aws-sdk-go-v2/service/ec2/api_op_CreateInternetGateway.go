@@ -20,7 +20,7 @@ func (c *Client) CreateInternetGateway(ctx context.Context, params *CreateIntern
 		params = &CreateInternetGatewayInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateInternetGateway", params, optFns, addOperationCreateInternetGatewayMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateInternetGateway", params, optFns, c.addOperationCreateInternetGatewayMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ type CreateInternetGatewayInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The tags to assign to the internet gateway.
 	TagSpecifications []types.TagSpecification
@@ -51,7 +51,7 @@ type CreateInternetGatewayOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateInternetGatewayMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateInternetGatewayMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateInternetGateway{}, middleware.After)
 	if err != nil {
 		return err

@@ -11,12 +11,15 @@ import (
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
+// Resets the attribute of the specified IP address. For requirements, see Using
+// reverse DNS for email applications
+// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html#Using_Elastic_Addressing_Reverse_DNS).
 func (c *Client) ResetAddressAttribute(ctx context.Context, params *ResetAddressAttributeInput, optFns ...func(*Options)) (*ResetAddressAttributeOutput, error) {
 	if params == nil {
 		params = &ResetAddressAttributeInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ResetAddressAttribute", params, optFns, addOperationResetAddressAttributeMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ResetAddressAttribute", params, optFns, c.addOperationResetAddressAttributeMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -28,23 +31,33 @@ func (c *Client) ResetAddressAttribute(ctx context.Context, params *ResetAddress
 
 type ResetAddressAttributeInput struct {
 
+	// [EC2-VPC] The allocation ID.
+	//
 	// This member is required.
 	AllocationId *string
 
+	// The attribute of the IP address.
+	//
 	// This member is required.
 	Attribute types.AddressAttributeName
 
-	DryRun bool
+	// Checks whether you have the required permissions for the action, without
+	// actually making the request, and provides an error response. If you have the
+	// required permissions, the error response is DryRunOperation. Otherwise, it is
+	// UnauthorizedOperation.
+	DryRun *bool
 }
 
 type ResetAddressAttributeOutput struct {
+
+	// Information about the IP address.
 	Address *types.AddressAttribute
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationResetAddressAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationResetAddressAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpResetAddressAttribute{}, middleware.After)
 	if err != nil {
 		return err

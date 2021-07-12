@@ -24,7 +24,7 @@ func (c *Client) AssociateRouteTable(ctx context.Context, params *AssociateRoute
 		params = &AssociateRouteTableInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "AssociateRouteTable", params, optFns, addOperationAssociateRouteTableMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "AssociateRouteTable", params, optFns, c.addOperationAssociateRouteTableMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ type AssociateRouteTableInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The ID of the internet gateway or virtual private gateway.
 	GatewayId *string
@@ -67,7 +67,7 @@ type AssociateRouteTableOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationAssociateRouteTableMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationAssociateRouteTableMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpAssociateRouteTable{}, middleware.After)
 	if err != nil {
 		return err

@@ -17,7 +17,7 @@ func (c *Client) RejectTransitGatewayPeeringAttachment(ctx context.Context, para
 		params = &RejectTransitGatewayPeeringAttachmentInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "RejectTransitGatewayPeeringAttachment", params, optFns, addOperationRejectTransitGatewayPeeringAttachmentMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "RejectTransitGatewayPeeringAttachment", params, optFns, c.addOperationRejectTransitGatewayPeeringAttachmentMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ type RejectTransitGatewayPeeringAttachmentInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type RejectTransitGatewayPeeringAttachmentOutput struct {
@@ -50,7 +50,7 @@ type RejectTransitGatewayPeeringAttachmentOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationRejectTransitGatewayPeeringAttachmentMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationRejectTransitGatewayPeeringAttachmentMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpRejectTransitGatewayPeeringAttachment{}, middleware.After)
 	if err != nil {
 		return err

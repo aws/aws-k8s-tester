@@ -17,7 +17,7 @@ func (c *Client) AcceptTransitGatewayMulticastDomainAssociations(ctx context.Con
 		params = &AcceptTransitGatewayMulticastDomainAssociationsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "AcceptTransitGatewayMulticastDomainAssociations", params, optFns, addOperationAcceptTransitGatewayMulticastDomainAssociationsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "AcceptTransitGatewayMulticastDomainAssociations", params, optFns, c.addOperationAcceptTransitGatewayMulticastDomainAssociationsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ type AcceptTransitGatewayMulticastDomainAssociationsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The IDs of the subnets to associate with the transit gateway multicast domain.
 	SubnetIds []string
@@ -54,7 +54,7 @@ type AcceptTransitGatewayMulticastDomainAssociationsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationAcceptTransitGatewayMulticastDomainAssociationsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationAcceptTransitGatewayMulticastDomainAssociationsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpAcceptTransitGatewayMulticastDomainAssociations{}, middleware.After)
 	if err != nil {
 		return err

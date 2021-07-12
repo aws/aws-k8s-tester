@@ -14,13 +14,13 @@ import (
 // Describes one or more of the Reserved Instances that you purchased. For more
 // information about Reserved Instances, see Reserved Instances
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts-on-demand-reserved-instances.html)
-// in the Amazon Elastic Compute Cloud User Guide.
+// in the Amazon EC2 User Guide.
 func (c *Client) DescribeReservedInstances(ctx context.Context, params *DescribeReservedInstancesInput, optFns ...func(*Options)) (*DescribeReservedInstancesOutput, error) {
 	if params == nil {
 		params = &DescribeReservedInstancesInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeReservedInstances", params, optFns, addOperationDescribeReservedInstancesMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeReservedInstances", params, optFns, c.addOperationDescribeReservedInstancesMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ type DescribeReservedInstancesInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters.
 	//
@@ -65,33 +65,33 @@ type DescribeReservedInstancesInput struct {
 	// platform description will only be displayed to EC2-Classic account holders and
 	// are for use with Amazon VPC (Linux/UNIX | Linux/UNIX (Amazon VPC) | SUSE Linux |
 	// SUSE Linux (Amazon VPC) | Red Hat Enterprise Linux | Red Hat Enterprise Linux
-	// (Amazon VPC) | Windows | Windows (Amazon VPC) | Windows with SQL Server Standard
-	// | Windows with SQL Server Standard (Amazon VPC) | Windows with SQL Server Web |
-	// Windows with SQL Server Web (Amazon VPC) | Windows with SQL Server Enterprise |
-	// Windows with SQL Server Enterprise (Amazon VPC)).
+	// (Amazon VPC) | Red Hat Enterprise Linux with HA (Amazon VPC) | Windows | Windows
+	// (Amazon VPC) | Windows with SQL Server Standard | Windows with SQL Server
+	// Standard (Amazon VPC) | Windows with SQL Server Web | Windows with SQL Server
+	// Web (Amazon VPC) | Windows with SQL Server Enterprise | Windows with SQL Server
+	// Enterprise (Amazon VPC)).
 	//
-	// * reserved-instances-id - The
-	// ID of the Reserved Instance.
+	// * reserved-instances-id - The ID of the Reserved
+	// Instance.
 	//
-	// * start - The time at which the Reserved Instance
-	// purchase request was placed (for example, 2014-08-07T11:54:42.000Z).
+	// * start - The time at which the Reserved Instance purchase request
+	// was placed (for example, 2014-08-07T11:54:42.000Z).
 	//
-	// * state -
-	// The state of the Reserved Instance (payment-pending | active | payment-failed |
-	// retired).
+	// * state - The state of the
+	// Reserved Instance (payment-pending | active | payment-failed | retired).
 	//
-	// * tag: - The key/value combination of a tag assigned to the resource.
-	// Use the tag key in the filter name and the tag value as the filter value. For
-	// example, to find all resources that have a tag with the key Owner and the value
-	// TeamA, specify tag:Owner for the filter name and TeamA for the filter value.
+	// * tag:
+	// - The key/value combination of a tag assigned to the resource. Use the tag key
+	// in the filter name and the tag value as the filter value. For example, to find
+	// all resources that have a tag with the key Owner and the value TeamA, specify
+	// tag:Owner for the filter name and TeamA for the filter value.
 	//
-	// *
-	// tag-key - The key of a tag assigned to the resource. Use this filter to find all
-	// resources assigned a tag with a specific key, regardless of the tag value.
+	// * tag-key - The
+	// key of a tag assigned to the resource. Use this filter to find all resources
+	// assigned a tag with a specific key, regardless of the tag value.
 	//
-	// *
-	// usage-price - The usage price of the Reserved Instance, per hour (for example,
-	// 0.84).
+	// * usage-price
+	// - The usage price of the Reserved Instance, per hour (for example, 0.84).
 	Filters []types.Filter
 
 	// Describes whether the Reserved Instance is Standard or Convertible.
@@ -117,7 +117,7 @@ type DescribeReservedInstancesOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeReservedInstancesMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeReservedInstancesMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeReservedInstances{}, middleware.After)
 	if err != nil {
 		return err

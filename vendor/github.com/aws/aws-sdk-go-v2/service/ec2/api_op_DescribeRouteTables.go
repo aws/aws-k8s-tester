@@ -24,7 +24,7 @@ func (c *Client) DescribeRouteTables(ctx context.Context, params *DescribeRouteT
 		params = &DescribeRouteTablesInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeRouteTables", params, optFns, addOperationDescribeRouteTablesMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeRouteTables", params, optFns, c.addOperationDescribeRouteTablesMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ type DescribeRouteTablesInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters.
 	//
@@ -119,7 +119,7 @@ type DescribeRouteTablesInput struct {
 
 	// The maximum number of results to return with a single call. To retrieve the
 	// remaining results, make another call with the returned nextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token for the next page of results.
 	NextToken *string
@@ -142,7 +142,7 @@ type DescribeRouteTablesOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeRouteTablesMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeRouteTablesMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeRouteTables{}, middleware.After)
 	if err != nil {
 		return err
@@ -233,17 +233,17 @@ type DescribeRouteTablesPaginator struct {
 
 // NewDescribeRouteTablesPaginator returns a new DescribeRouteTablesPaginator
 func NewDescribeRouteTablesPaginator(client DescribeRouteTablesAPIClient, params *DescribeRouteTablesInput, optFns ...func(*DescribeRouteTablesPaginatorOptions)) *DescribeRouteTablesPaginator {
+	if params == nil {
+		params = &DescribeRouteTablesInput{}
+	}
+
 	options := DescribeRouteTablesPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeRouteTablesInput{}
 	}
 
 	return &DescribeRouteTablesPaginator{
@@ -268,7 +268,11 @@ func (p *DescribeRouteTablesPaginator) NextPage(ctx context.Context, optFns ...f
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeRouteTables(ctx, &params, optFns...)
 	if err != nil {

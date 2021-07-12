@@ -18,7 +18,7 @@ func (c *Client) DescribeHostReservations(ctx context.Context, params *DescribeH
 		params = &DescribeHostReservationsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeHostReservations", params, optFns, addOperationDescribeHostReservationsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeHostReservations", params, optFns, c.addOperationDescribeHostReservationsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ type DescribeHostReservationsInput struct {
 	// remaining results can be seen by sending another request with the returned
 	// nextToken value. This value can be between 5 and 500. If maxResults is given a
 	// larger value than 500, you receive an error.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token to use to retrieve the next page of results.
 	NextToken *string
@@ -78,7 +78,7 @@ type DescribeHostReservationsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeHostReservationsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeHostReservationsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeHostReservations{}, middleware.After)
 	if err != nil {
 		return err
@@ -172,17 +172,17 @@ type DescribeHostReservationsPaginator struct {
 // NewDescribeHostReservationsPaginator returns a new
 // DescribeHostReservationsPaginator
 func NewDescribeHostReservationsPaginator(client DescribeHostReservationsAPIClient, params *DescribeHostReservationsInput, optFns ...func(*DescribeHostReservationsPaginatorOptions)) *DescribeHostReservationsPaginator {
+	if params == nil {
+		params = &DescribeHostReservationsInput{}
+	}
+
 	options := DescribeHostReservationsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeHostReservationsInput{}
 	}
 
 	return &DescribeHostReservationsPaginator{
@@ -207,7 +207,11 @@ func (p *DescribeHostReservationsPaginator) NextPage(ctx context.Context, optFns
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeHostReservations(ctx, &params, optFns...)
 	if err != nil {

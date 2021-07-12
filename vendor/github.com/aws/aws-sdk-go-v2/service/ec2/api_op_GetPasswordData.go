@@ -23,20 +23,20 @@ import (
 // (https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/UsingConfig_WinAMI.html)
 // and EC2Launch
 // (https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ec2launch.html) in the
-// Amazon Elastic Compute Cloud User Guide. For the EC2Config service, the password
-// is not generated for rebundled AMIs unless Ec2SetPassword is enabled before
-// bundling. The password is encrypted using the key pair that you specified when
-// you launched the instance. You must provide the corresponding key pair file.
-// When you launch an instance, password generation and encryption may take a few
-// minutes. If you try to retrieve the password before it's available, the output
-// returns an empty string. We recommend that you wait up to 15 minutes after
-// launching an instance before trying to retrieve the generated password.
+// Amazon EC2 User Guide. For the EC2Config service, the password is not generated
+// for rebundled AMIs unless Ec2SetPassword is enabled before bundling. The
+// password is encrypted using the key pair that you specified when you launched
+// the instance. You must provide the corresponding key pair file. When you launch
+// an instance, password generation and encryption may take a few minutes. If you
+// try to retrieve the password before it's available, the output returns an empty
+// string. We recommend that you wait up to 15 minutes after launching an instance
+// before trying to retrieve the generated password.
 func (c *Client) GetPasswordData(ctx context.Context, params *GetPasswordDataInput, optFns ...func(*Options)) (*GetPasswordDataOutput, error) {
 	if params == nil {
 		params = &GetPasswordDataInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "GetPasswordData", params, optFns, addOperationGetPasswordDataMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "GetPasswordData", params, optFns, c.addOperationGetPasswordDataMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ type GetPasswordDataInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type GetPasswordDataOutput struct {
@@ -76,7 +76,7 @@ type GetPasswordDataOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationGetPasswordDataMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationGetPasswordDataMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpGetPasswordData{}, middleware.After)
 	if err != nil {
 		return err

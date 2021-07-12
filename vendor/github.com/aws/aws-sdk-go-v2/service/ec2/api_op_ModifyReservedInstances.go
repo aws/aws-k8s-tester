@@ -17,13 +17,13 @@ import (
 // network platform, and instance type. For more information, see Modifying
 // Reserved Instances
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-modifying.html) in the
-// Amazon Elastic Compute Cloud User Guide.
+// Amazon EC2 User Guide.
 func (c *Client) ModifyReservedInstances(ctx context.Context, params *ModifyReservedInstancesInput, optFns ...func(*Options)) (*ModifyReservedInstancesOutput, error) {
 	if params == nil {
 		params = &ModifyReservedInstancesInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyReservedInstances", params, optFns, addOperationModifyReservedInstancesMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyReservedInstances", params, optFns, c.addOperationModifyReservedInstancesMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ type ModifyReservedInstancesOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyReservedInstancesMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyReservedInstancesMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyReservedInstances{}, middleware.After)
 	if err != nil {
 		return err

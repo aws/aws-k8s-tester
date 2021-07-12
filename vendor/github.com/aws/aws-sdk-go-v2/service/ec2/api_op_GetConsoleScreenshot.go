@@ -17,7 +17,7 @@ func (c *Client) GetConsoleScreenshot(ctx context.Context, params *GetConsoleScr
 		params = &GetConsoleScreenshotInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "GetConsoleScreenshot", params, optFns, addOperationGetConsoleScreenshotMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "GetConsoleScreenshot", params, optFns, c.addOperationGetConsoleScreenshotMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -38,11 +38,11 @@ type GetConsoleScreenshotInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// When set to true, acts as keystroke input and wakes up an instance that's in
 	// standby or "sleep" mode.
-	WakeUp bool
+	WakeUp *bool
 }
 
 type GetConsoleScreenshotOutput struct {
@@ -57,7 +57,7 @@ type GetConsoleScreenshotOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationGetConsoleScreenshotMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationGetConsoleScreenshotMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpGetConsoleScreenshot{}, middleware.After)
 	if err != nil {
 		return err

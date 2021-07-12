@@ -18,7 +18,7 @@ func (c *Client) ApplySecurityGroupsToClientVpnTargetNetwork(ctx context.Context
 		params = &ApplySecurityGroupsToClientVpnTargetNetworkInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ApplySecurityGroupsToClientVpnTargetNetwork", params, optFns, addOperationApplySecurityGroupsToClientVpnTargetNetworkMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ApplySecurityGroupsToClientVpnTargetNetwork", params, optFns, c.addOperationApplySecurityGroupsToClientVpnTargetNetworkMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ type ApplySecurityGroupsToClientVpnTargetNetworkInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type ApplySecurityGroupsToClientVpnTargetNetworkOutput struct {
@@ -62,7 +62,7 @@ type ApplySecurityGroupsToClientVpnTargetNetworkOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationApplySecurityGroupsToClientVpnTargetNetworkMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationApplySecurityGroupsToClientVpnTargetNetworkMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpApplySecurityGroupsToClientVpnTargetNetwork{}, middleware.After)
 	if err != nil {
 		return err

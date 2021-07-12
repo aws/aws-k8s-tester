@@ -21,7 +21,7 @@ func (c *Client) AuthorizeClientVpnIngress(ctx context.Context, params *Authoriz
 		params = &AuthorizeClientVpnIngressInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "AuthorizeClientVpnIngress", params, optFns, addOperationAuthorizeClientVpnIngressMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "AuthorizeClientVpnIngress", params, optFns, c.addOperationAuthorizeClientVpnIngressMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ type AuthorizeClientVpnIngressInput struct {
 	// Indicates whether to grant access to all clients. Specify true to grant all
 	// clients who successfully establish a VPN connection access to the network. Must
 	// be set to true if AccessGroupId is not specified.
-	AuthorizeAllGroups bool
+	AuthorizeAllGroups *bool
 
 	// Unique, case-sensitive identifier that you provide to ensure the idempotency of
 	// the request. For more information, see How to Ensure Idempotency
@@ -66,7 +66,7 @@ type AuthorizeClientVpnIngressInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type AuthorizeClientVpnIngressOutput struct {
@@ -78,7 +78,7 @@ type AuthorizeClientVpnIngressOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationAuthorizeClientVpnIngressMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationAuthorizeClientVpnIngressMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpAuthorizeClientVpnIngress{}, middleware.After)
 	if err != nil {
 		return err

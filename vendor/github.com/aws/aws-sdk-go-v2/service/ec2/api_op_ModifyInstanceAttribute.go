@@ -20,13 +20,13 @@ import (
 // modify some attributes, the instance must be stopped. For more information, see
 // Modifying attributes of a stopped instance
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_ChangingAttributesWhileInstanceStopped.html)
-// in the Amazon Elastic Compute Cloud User Guide.
+// in the Amazon EC2 User Guide.
 func (c *Client) ModifyInstanceAttribute(ctx context.Context, params *ModifyInstanceAttributeInput, optFns ...func(*Options)) (*ModifyInstanceAttributeOutput, error) {
 	if params == nil {
 		params = &ModifyInstanceAttributeInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyInstanceAttribute", params, optFns, addOperationModifyInstanceAttributeMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyInstanceAttribute", params, optFns, c.addOperationModifyInstanceAttributeMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ type ModifyInstanceAttributeInput struct {
 	// instance, you must add them when you launch the instance. For more information,
 	// see Updating the block device mapping when launching an instance
 	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/block-device-mapping-concepts.html#Using_OverridingAMIBDM)
-	// in the Amazon Elastic Compute Cloud User Guide.
+	// in the Amazon EC2 User Guide.
 	BlockDeviceMappings []types.InstanceBlockDeviceMappingSpecification
 
 	// If the value is true, you can't terminate the instance using the Amazon EC2
@@ -65,7 +65,7 @@ type ModifyInstanceAttributeInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// Specifies whether the instance is optimized for Amazon EBS I/O. This
 	// optimization provides dedicated throughput to Amazon EBS and an optimized
@@ -79,9 +79,10 @@ type ModifyInstanceAttributeInput struct {
 	// can make it unreachable.
 	EnaSupport *types.AttributeBooleanValue
 
-	// [EC2-VPC] Changes the security groups of the instance. You must specify at least
-	// one security group, even if it's just the default security group for the VPC.
-	// You must specify the security group ID, not the security group name.
+	// [EC2-VPC] Replaces the security groups of the instance with the specified
+	// security groups. You must specify at least one security group, even if it's just
+	// the default security group for the VPC. You must specify the security group ID,
+	// not the security group name.
 	Groups []string
 
 	// Specifies whether an instance stops or terminates when you initiate shutdown
@@ -90,8 +91,8 @@ type ModifyInstanceAttributeInput struct {
 
 	// Changes the instance type to the specified value. For more information, see
 	// Instance types
-	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html). If
-	// the instance type is not valid, the error returned is
+	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html) in the
+	// Amazon EC2 User Guide. If the instance type is not valid, the error returned is
 	// InvalidInstanceAttributeValue.
 	InstanceType *types.AttributeValue
 
@@ -105,9 +106,12 @@ type ModifyInstanceAttributeInput struct {
 	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/UserProvidedKernels.html).
 	Ramdisk *types.AttributeValue
 
-	// Specifies whether source/destination checking is enabled. A value of true means
-	// that checking is enabled, and false means that checking is disabled. This value
-	// must be false for a NAT instance to perform NAT.
+	// Enable or disable source/destination checks, which ensure that the instance is
+	// either the source or the destination of any traffic that it receives. If the
+	// value is true, source/destination checks are enabled; otherwise, they are
+	// disabled. The default value is true. You must disable source/destination checks
+	// if the instance runs services such as network address translation, routing, or
+	// firewalls.
 	SourceDestCheck *types.AttributeBooleanValue
 
 	// Set to simple to enable enhanced networking with the Intel 82599 Virtual
@@ -117,9 +121,10 @@ type ModifyInstanceAttributeInput struct {
 	// instance can make it unreachable.
 	SriovNetSupport *types.AttributeValue
 
-	// Changes the instance's user data to the specified value. If you are using an AWS
-	// SDK or command line tool, base64-encoding is performed for you, and you can load
-	// the text from a file. Otherwise, you must provide base64-encoded text.
+	// Changes the instance's user data to the specified value. If you are using an
+	// Amazon Web Services SDK or command line tool, base64-encoding is performed for
+	// you, and you can load the text from a file. Otherwise, you must provide
+	// base64-encoded text.
 	UserData *types.BlobAttributeValue
 
 	// A new value for the attribute. Use only with the kernel, ramdisk, userData,
@@ -132,7 +137,7 @@ type ModifyInstanceAttributeOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyInstanceAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyInstanceAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyInstanceAttribute{}, middleware.After)
 	if err != nil {
 		return err

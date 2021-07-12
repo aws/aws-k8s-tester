@@ -34,7 +34,7 @@ func (c *Client) CreateRoute(ctx context.Context, params *CreateRouteInput, optF
 		params = &CreateRouteInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateRoute", params, optFns, addOperationCreateRouteMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateRoute", params, optFns, c.addOperationCreateRouteMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ type CreateRouteInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// [IPv6 traffic only] The ID of an egress-only internet gateway.
 	EgressOnlyInternetGatewayId *string
@@ -106,13 +106,13 @@ type CreateRouteInput struct {
 type CreateRouteOutput struct {
 
 	// Returns true if the request succeeds; otherwise, it returns an error.
-	Return bool
+	Return *bool
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateRouteMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateRouteMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateRoute{}, middleware.After)
 	if err != nil {
 		return err

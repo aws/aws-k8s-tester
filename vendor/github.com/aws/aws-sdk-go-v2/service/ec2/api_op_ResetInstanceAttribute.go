@@ -18,13 +18,13 @@ import (
 // true, which means checking is enabled. This value must be false for a NAT
 // instance to perform NAT. For more information, see NAT Instances
 // (https://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_NAT_Instance.html)
-// in the Amazon Virtual Private Cloud User Guide.
+// in the Amazon VPC User Guide.
 func (c *Client) ResetInstanceAttribute(ctx context.Context, params *ResetInstanceAttributeInput, optFns ...func(*Options)) (*ResetInstanceAttributeOutput, error) {
 	if params == nil {
 		params = &ResetInstanceAttributeInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ResetInstanceAttribute", params, optFns, addOperationResetInstanceAttributeMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ResetInstanceAttribute", params, optFns, c.addOperationResetInstanceAttributeMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ type ResetInstanceAttributeInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type ResetInstanceAttributeOutput struct {
@@ -60,7 +60,7 @@ type ResetInstanceAttributeOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationResetInstanceAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationResetInstanceAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpResetInstanceAttribute{}, middleware.After)
 	if err != nil {
 		return err

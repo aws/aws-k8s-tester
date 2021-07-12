@@ -23,7 +23,7 @@ func (c *Client) ModifyImageAttribute(ctx context.Context, params *ModifyImageAt
 		params = &ModifyImageAttributeInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyImageAttribute", params, optFns, addOperationModifyImageAttributeMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyImageAttribute", params, optFns, c.addOperationModifyImageAttributeMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ type ModifyImageAttributeInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// A new launch permission for the AMI.
 	LaunchPermission *types.LaunchPermissionModifications
@@ -83,7 +83,7 @@ type ModifyImageAttributeOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyImageAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyImageAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyImageAttribute{}, middleware.After)
 	if err != nil {
 		return err

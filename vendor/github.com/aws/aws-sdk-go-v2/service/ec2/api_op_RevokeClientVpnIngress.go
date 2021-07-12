@@ -17,7 +17,7 @@ func (c *Client) RevokeClientVpnIngress(ctx context.Context, params *RevokeClien
 		params = &RevokeClientVpnIngressInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "RevokeClientVpnIngress", params, optFns, addOperationRevokeClientVpnIngressMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "RevokeClientVpnIngress", params, optFns, c.addOperationRevokeClientVpnIngressMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -48,10 +48,10 @@ type RevokeClientVpnIngressInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// Indicates whether access should be revoked for all clients.
-	RevokeAllGroups bool
+	RevokeAllGroups *bool
 }
 
 type RevokeClientVpnIngressOutput struct {
@@ -63,7 +63,7 @@ type RevokeClientVpnIngressOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationRevokeClientVpnIngressMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationRevokeClientVpnIngressMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpRevokeClientVpnIngress{}, middleware.After)
 	if err != nil {
 		return err

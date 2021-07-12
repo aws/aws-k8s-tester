@@ -19,7 +19,7 @@ func (c *Client) TerminateClientVpnConnections(ctx context.Context, params *Term
 		params = &TerminateClientVpnConnectionsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "TerminateClientVpnConnections", params, optFns, addOperationTerminateClientVpnConnectionsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "TerminateClientVpnConnections", params, optFns, c.addOperationTerminateClientVpnConnectionsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ type TerminateClientVpnConnectionsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The name of the user who initiated the connection. Use this option to terminate
 	// all active connections for the specified user. This option can only be used if
@@ -66,7 +66,7 @@ type TerminateClientVpnConnectionsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationTerminateClientVpnConnectionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationTerminateClientVpnConnectionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpTerminateClientVpnConnections{}, middleware.After)
 	if err != nil {
 		return err

@@ -26,13 +26,13 @@ import (
 // is met. You are charged based on the total price of all of the listings that you
 // purchase. For more information, see Reserved Instance Marketplace
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-market-general.html) in
-// the Amazon Elastic Compute Cloud User Guide.
+// the Amazon EC2 User Guide.
 func (c *Client) DescribeReservedInstancesListings(ctx context.Context, params *DescribeReservedInstancesListingsInput, optFns ...func(*Options)) (*DescribeReservedInstancesListingsOutput, error) {
 	if params == nil {
 		params = &DescribeReservedInstancesListingsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeReservedInstancesListings", params, optFns, addOperationDescribeReservedInstancesListingsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeReservedInstancesListings", params, optFns, c.addOperationDescribeReservedInstancesListingsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ type DescribeReservedInstancesListingsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeReservedInstancesListingsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeReservedInstancesListingsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeReservedInstancesListings{}, middleware.After)
 	if err != nil {
 		return err

@@ -30,7 +30,7 @@ func (c *Client) DescribePrincipalIdFormat(ctx context.Context, params *Describe
 		params = &DescribePrincipalIdFormatInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribePrincipalIdFormat", params, optFns, addOperationDescribePrincipalIdFormatMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribePrincipalIdFormat", params, optFns, c.addOperationDescribePrincipalIdFormatMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -46,11 +46,11 @@ type DescribePrincipalIdFormatInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The maximum number of results to return in a single call. To retrieve the
 	// remaining results, make another call with the returned NextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token to request the next page of results.
 	NextToken *string
@@ -79,7 +79,7 @@ type DescribePrincipalIdFormatOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribePrincipalIdFormatMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribePrincipalIdFormatMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribePrincipalIdFormat{}, middleware.After)
 	if err != nil {
 		return err
@@ -171,17 +171,17 @@ type DescribePrincipalIdFormatPaginator struct {
 // NewDescribePrincipalIdFormatPaginator returns a new
 // DescribePrincipalIdFormatPaginator
 func NewDescribePrincipalIdFormatPaginator(client DescribePrincipalIdFormatAPIClient, params *DescribePrincipalIdFormatInput, optFns ...func(*DescribePrincipalIdFormatPaginatorOptions)) *DescribePrincipalIdFormatPaginator {
+	if params == nil {
+		params = &DescribePrincipalIdFormatInput{}
+	}
+
 	options := DescribePrincipalIdFormatPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribePrincipalIdFormatInput{}
 	}
 
 	return &DescribePrincipalIdFormatPaginator{
@@ -206,7 +206,11 @@ func (p *DescribePrincipalIdFormatPaginator) NextPage(ctx context.Context, optFn
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribePrincipalIdFormat(ctx, &params, optFns...)
 	if err != nil {

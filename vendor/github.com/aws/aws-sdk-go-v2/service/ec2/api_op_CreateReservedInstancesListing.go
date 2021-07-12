@@ -29,13 +29,13 @@ import (
 // can use the DescribeReservedInstancesListings operation. For more information,
 // see Reserved Instance Marketplace
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-market-general.html) in
-// the Amazon Elastic Compute Cloud User Guide.
+// the Amazon EC2 User Guide.
 func (c *Client) CreateReservedInstancesListing(ctx context.Context, params *CreateReservedInstancesListingInput, optFns ...func(*Options)) (*CreateReservedInstancesListingOutput, error) {
 	if params == nil {
 		params = &CreateReservedInstancesListingInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateReservedInstancesListing", params, optFns, addOperationCreateReservedInstancesListingMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateReservedInstancesListing", params, optFns, c.addOperationCreateReservedInstancesListingMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ type CreateReservedInstancesListingInput struct {
 	// in this call.
 	//
 	// This member is required.
-	InstanceCount int32
+	InstanceCount *int32
 
 	// A list specifying the price of the Standard Reserved Instance for each month
 	// remaining in the Reserved Instance term.
@@ -86,7 +86,7 @@ type CreateReservedInstancesListingOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateReservedInstancesListingMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateReservedInstancesListingMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateReservedInstancesListing{}, middleware.After)
 	if err != nil {
 		return err

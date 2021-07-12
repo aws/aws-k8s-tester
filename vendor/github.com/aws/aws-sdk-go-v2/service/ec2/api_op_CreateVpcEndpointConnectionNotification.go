@@ -22,7 +22,7 @@ func (c *Client) CreateVpcEndpointConnectionNotification(ctx context.Context, pa
 		params = &CreateVpcEndpointConnectionNotificationInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateVpcEndpointConnectionNotification", params, optFns, addOperationCreateVpcEndpointConnectionNotificationMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateVpcEndpointConnectionNotification", params, optFns, c.addOperationCreateVpcEndpointConnectionNotificationMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ type CreateVpcEndpointConnectionNotificationInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The ID of the endpoint service.
 	ServiceId *string
@@ -76,7 +76,7 @@ type CreateVpcEndpointConnectionNotificationOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateVpcEndpointConnectionNotificationMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateVpcEndpointConnectionNotificationMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateVpcEndpointConnectionNotification{}, middleware.After)
 	if err != nil {
 		return err

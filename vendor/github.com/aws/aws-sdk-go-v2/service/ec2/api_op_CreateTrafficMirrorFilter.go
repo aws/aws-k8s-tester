@@ -25,7 +25,7 @@ func (c *Client) CreateTrafficMirrorFilter(ctx context.Context, params *CreateTr
 		params = &CreateTrafficMirrorFilterInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateTrafficMirrorFilter", params, optFns, addOperationCreateTrafficMirrorFilterMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateTrafficMirrorFilter", params, optFns, c.addOperationCreateTrafficMirrorFilterMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ type CreateTrafficMirrorFilterInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The tags to assign to a Traffic Mirror filter.
 	TagSpecifications []types.TagSpecification
@@ -69,7 +69,7 @@ type CreateTrafficMirrorFilterOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateTrafficMirrorFilterMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateTrafficMirrorFilterMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateTrafficMirrorFilter{}, middleware.After)
 	if err != nil {
 		return err

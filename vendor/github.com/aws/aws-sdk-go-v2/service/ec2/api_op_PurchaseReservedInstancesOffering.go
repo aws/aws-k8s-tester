@@ -23,13 +23,13 @@ import (
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts-on-demand-reserved-instances.html)
 // and Reserved Instance Marketplace
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-market-general.html) in
-// the Amazon Elastic Compute Cloud User Guide.
+// the Amazon EC2 User Guide.
 func (c *Client) PurchaseReservedInstancesOffering(ctx context.Context, params *PurchaseReservedInstancesOfferingInput, optFns ...func(*Options)) (*PurchaseReservedInstancesOfferingOutput, error) {
 	if params == nil {
 		params = &PurchaseReservedInstancesOfferingInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "PurchaseReservedInstancesOffering", params, optFns, addOperationPurchaseReservedInstancesOfferingMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "PurchaseReservedInstancesOffering", params, optFns, c.addOperationPurchaseReservedInstancesOfferingMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ type PurchaseReservedInstancesOfferingInput struct {
 	// The number of Reserved Instances to purchase.
 	//
 	// This member is required.
-	InstanceCount int32
+	InstanceCount *int32
 
 	// The ID of the Reserved Instance offering to purchase.
 	//
@@ -56,7 +56,7 @@ type PurchaseReservedInstancesOfferingInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// Specified for Reserved Instance Marketplace offerings to limit the total order
 	// and ensure that the Reserved Instances are not purchased at unexpected prices.
@@ -70,14 +70,18 @@ type PurchaseReservedInstancesOfferingInput struct {
 // Contains the output of PurchaseReservedInstancesOffering.
 type PurchaseReservedInstancesOfferingOutput struct {
 
-	// The IDs of the purchased Reserved Instances.
+	// The IDs of the purchased Reserved Instances. If your purchase crosses into a
+	// discounted pricing tier, the final Reserved Instances IDs might change. For more
+	// information, see Crossing pricing tiers
+	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts-reserved-instances-application.html#crossing-pricing-tiers)
+	// in the Amazon Elastic Compute Cloud User Guide.
 	ReservedInstancesId *string
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationPurchaseReservedInstancesOfferingMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationPurchaseReservedInstancesOfferingMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpPurchaseReservedInstancesOffering{}, middleware.After)
 	if err != nil {
 		return err

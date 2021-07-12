@@ -37,6 +37,21 @@ func New() *Resolver {
 	}
 }
 
+var partitionRegexp = struct {
+	Aws      *regexp.Regexp
+	AwsCn    *regexp.Regexp
+	AwsIso   *regexp.Regexp
+	AwsIsoB  *regexp.Regexp
+	AwsUsGov *regexp.Regexp
+}{
+
+	Aws:      regexp.MustCompile("^(us|eu|ap|sa|ca|me|af)\\-\\w+\\-\\d+$"),
+	AwsCn:    regexp.MustCompile("^cn\\-\\w+\\-\\d+$"),
+	AwsIso:   regexp.MustCompile("^us\\-iso\\-\\w+\\-\\d+$"),
+	AwsIsoB:  regexp.MustCompile("^us\\-isob\\-\\w+\\-\\d+$"),
+	AwsUsGov: regexp.MustCompile("^us\\-gov\\-\\w+\\-\\d+$"),
+}
+
 var defaultPartitions = endpoints.Partitions{
 	{
 		ID: "aws",
@@ -45,23 +60,60 @@ var defaultPartitions = endpoints.Partitions{
 			Protocols:         []string{"http", "https"},
 			SignatureVersions: []string{"v4"},
 		},
-		RegionRegex:    regexp.MustCompile("^(us|eu|ap|sa|ca|me|af)\\-\\w+\\-\\d+$"),
+		RegionRegex:    partitionRegexp.Aws,
 		IsRegionalized: true,
 		Endpoints: endpoints.Endpoints{
 			"af-south-1":     endpoints.Endpoint{},
 			"ap-east-1":      endpoints.Endpoint{},
 			"ap-northeast-1": endpoints.Endpoint{},
 			"ap-northeast-2": endpoints.Endpoint{},
+			"ap-northeast-3": endpoints.Endpoint{},
 			"ap-south-1":     endpoints.Endpoint{},
 			"ap-southeast-1": endpoints.Endpoint{},
 			"ap-southeast-2": endpoints.Endpoint{},
 			"ca-central-1":   endpoints.Endpoint{},
-			"eu-central-1":   endpoints.Endpoint{},
-			"eu-north-1":     endpoints.Endpoint{},
-			"eu-south-1":     endpoints.Endpoint{},
-			"eu-west-1":      endpoints.Endpoint{},
-			"eu-west-2":      endpoints.Endpoint{},
-			"eu-west-3":      endpoints.Endpoint{},
+			"dualstack-ap-south-1": endpoints.Endpoint{
+				Hostname: "api.ec2.ap-south-1.aws",
+				CredentialScope: endpoints.CredentialScope{
+					Region: "ap-south-1",
+				},
+			},
+			"dualstack-eu-west-1": endpoints.Endpoint{
+				Hostname: "api.ec2.eu-west-1.aws",
+				CredentialScope: endpoints.CredentialScope{
+					Region: "eu-west-1",
+				},
+			},
+			"dualstack-sa-east-1": endpoints.Endpoint{
+				Hostname: "api.ec2.sa-east-1.aws",
+				CredentialScope: endpoints.CredentialScope{
+					Region: "sa-east-1",
+				},
+			},
+			"dualstack-us-east-1": endpoints.Endpoint{
+				Hostname: "api.ec2.us-east-1.aws",
+				CredentialScope: endpoints.CredentialScope{
+					Region: "us-east-1",
+				},
+			},
+			"dualstack-us-east-2": endpoints.Endpoint{
+				Hostname: "api.ec2.us-east-2.aws",
+				CredentialScope: endpoints.CredentialScope{
+					Region: "us-east-2",
+				},
+			},
+			"dualstack-us-west-2": endpoints.Endpoint{
+				Hostname: "api.ec2.us-west-2.aws",
+				CredentialScope: endpoints.CredentialScope{
+					Region: "us-west-2",
+				},
+			},
+			"eu-central-1": endpoints.Endpoint{},
+			"eu-north-1":   endpoints.Endpoint{},
+			"eu-south-1":   endpoints.Endpoint{},
+			"eu-west-1":    endpoints.Endpoint{},
+			"eu-west-2":    endpoints.Endpoint{},
+			"eu-west-3":    endpoints.Endpoint{},
 			"fips-ca-central-1": endpoints.Endpoint{
 				Hostname: "ec2-fips.ca-central-1.amazonaws.com",
 				CredentialScope: endpoints.CredentialScope{
@@ -107,7 +159,7 @@ var defaultPartitions = endpoints.Partitions{
 			Protocols:         []string{"http", "https"},
 			SignatureVersions: []string{"v4"},
 		},
-		RegionRegex:    regexp.MustCompile("^cn\\-\\w+\\-\\d+$"),
+		RegionRegex:    partitionRegexp.AwsCn,
 		IsRegionalized: true,
 		Endpoints: endpoints.Endpoints{
 			"cn-north-1":     endpoints.Endpoint{},
@@ -121,7 +173,7 @@ var defaultPartitions = endpoints.Partitions{
 			Protocols:         []string{"https"},
 			SignatureVersions: []string{"v4"},
 		},
-		RegionRegex:    regexp.MustCompile("^us\\-iso\\-\\w+\\-\\d+$"),
+		RegionRegex:    partitionRegexp.AwsIso,
 		IsRegionalized: true,
 		Endpoints: endpoints.Endpoints{
 			"us-iso-east-1": endpoints.Endpoint{},
@@ -134,7 +186,7 @@ var defaultPartitions = endpoints.Partitions{
 			Protocols:         []string{"http", "https"},
 			SignatureVersions: []string{"v4"},
 		},
-		RegionRegex:    regexp.MustCompile("^us\\-isob\\-\\w+\\-\\d+$"),
+		RegionRegex:    partitionRegexp.AwsIsoB,
 		IsRegionalized: true,
 		Endpoints: endpoints.Endpoints{
 			"us-isob-east-1": endpoints.Endpoint{},
@@ -147,7 +199,7 @@ var defaultPartitions = endpoints.Partitions{
 			Protocols:         []string{"https"},
 			SignatureVersions: []string{"v4"},
 		},
-		RegionRegex:    regexp.MustCompile("^us\\-gov\\-\\w+\\-\\d+$"),
+		RegionRegex:    partitionRegexp.AwsUsGov,
 		IsRegionalized: true,
 		Endpoints: endpoints.Endpoints{
 			"us-gov-east-1": endpoints.Endpoint{

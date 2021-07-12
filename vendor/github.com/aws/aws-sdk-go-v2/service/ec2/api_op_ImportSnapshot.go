@@ -11,13 +11,16 @@ import (
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Imports a disk into an EBS snapshot.
+// Imports a disk into an EBS snapshot. For more information, see Importing a disk
+// as a snapshot using VM Import/Export
+// (https://docs.aws.amazon.com/vm-import/latest/userguide/vmimport-import-snapshot.html)
+// in the VM Import/Export User Guide.
 func (c *Client) ImportSnapshot(ctx context.Context, params *ImportSnapshotInput, optFns ...func(*Options)) (*ImportSnapshotOutput, error) {
 	if params == nil {
 		params = &ImportSnapshotInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ImportSnapshot", params, optFns, addOperationImportSnapshotMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ImportSnapshot", params, optFns, c.addOperationImportSnapshotMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +48,7 @@ type ImportSnapshotInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// Specifies whether the destination snapshot of the imported image should be
 	// encrypted. The default CMK for EBS is used unless you specify a non-default AWS
@@ -53,7 +56,7 @@ type ImportSnapshotInput struct {
 	// Amazon EBS Encryption
 	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html) in the
 	// Amazon Elastic Compute Cloud User Guide.
-	Encrypted bool
+	Encrypted *bool
 
 	// An identifier for the symmetric AWS Key Management Service (AWS KMS) customer
 	// master key (CMK) to use when creating the encrypted snapshot. This parameter is
@@ -91,7 +94,7 @@ type ImportSnapshotInput struct {
 	// The name of the role to use when not using the default role, 'vmimport'.
 	RoleName *string
 
-	// The tags to apply to the snapshot being imported.
+	// The tags to apply to the import snapshot task during creation.
 	TagSpecifications []types.TagSpecification
 }
 
@@ -106,14 +109,14 @@ type ImportSnapshotOutput struct {
 	// Information about the import snapshot task.
 	SnapshotTaskDetail *types.SnapshotTaskDetail
 
-	// Any tags assigned to the snapshot being imported.
+	// Any tags assigned to the import snapshot task.
 	Tags []types.Tag
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationImportSnapshotMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationImportSnapshotMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpImportSnapshot{}, middleware.After)
 	if err != nil {
 		return err

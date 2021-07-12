@@ -24,7 +24,7 @@ func (c *Client) ImportKeyPair(ctx context.Context, params *ImportKeyPairInput, 
 		params = &ImportKeyPairInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ImportKeyPair", params, optFns, addOperationImportKeyPairMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ImportKeyPair", params, optFns, c.addOperationImportKeyPairMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ type ImportKeyPairInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The tags to apply to the imported key pair.
 	TagSpecifications []types.TagSpecification
@@ -75,7 +75,7 @@ type ImportKeyPairOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationImportKeyPairMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationImportKeyPairMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpImportKeyPair{}, middleware.After)
 	if err != nil {
 		return err

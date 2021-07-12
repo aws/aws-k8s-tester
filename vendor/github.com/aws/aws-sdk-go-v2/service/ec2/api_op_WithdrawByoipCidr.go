@@ -14,13 +14,14 @@ import (
 // Stops advertising an address range that is provisioned as an address pool. You
 // can perform this operation at most once every 10 seconds, even if you specify
 // different address ranges each time. It can take a few minutes before traffic to
-// the specified addresses stops routing to AWS because of BGP propagation delays.
+// the specified addresses stops routing to Amazon Web Services because of BGP
+// propagation delays.
 func (c *Client) WithdrawByoipCidr(ctx context.Context, params *WithdrawByoipCidrInput, optFns ...func(*Options)) (*WithdrawByoipCidrOutput, error) {
 	if params == nil {
 		params = &WithdrawByoipCidrInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "WithdrawByoipCidr", params, optFns, addOperationWithdrawByoipCidrMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "WithdrawByoipCidr", params, optFns, c.addOperationWithdrawByoipCidrMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +42,7 @@ type WithdrawByoipCidrInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type WithdrawByoipCidrOutput struct {
@@ -53,7 +54,7 @@ type WithdrawByoipCidrOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationWithdrawByoipCidrMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationWithdrawByoipCidrMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpWithdrawByoipCidr{}, middleware.After)
 	if err != nil {
 		return err

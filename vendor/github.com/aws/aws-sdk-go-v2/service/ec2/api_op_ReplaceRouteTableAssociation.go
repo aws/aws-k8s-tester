@@ -24,7 +24,7 @@ func (c *Client) ReplaceRouteTableAssociation(ctx context.Context, params *Repla
 		params = &ReplaceRouteTableAssociationInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ReplaceRouteTableAssociation", params, optFns, addOperationReplaceRouteTableAssociationMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ReplaceRouteTableAssociation", params, optFns, c.addOperationReplaceRouteTableAssociationMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ type ReplaceRouteTableAssociationInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type ReplaceRouteTableAssociationOutput struct {
@@ -65,7 +65,7 @@ type ReplaceRouteTableAssociationOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationReplaceRouteTableAssociationMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationReplaceRouteTableAssociationMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpReplaceRouteTableAssociation{}, middleware.After)
 	if err != nil {
 		return err

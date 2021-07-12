@@ -18,7 +18,7 @@ func (c *Client) RejectVpcEndpointConnections(ctx context.Context, params *Rejec
 		params = &RejectVpcEndpointConnectionsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "RejectVpcEndpointConnections", params, optFns, addOperationRejectVpcEndpointConnectionsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "RejectVpcEndpointConnections", params, optFns, c.addOperationRejectVpcEndpointConnectionsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ type RejectVpcEndpointConnectionsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type RejectVpcEndpointConnectionsOutput struct {
@@ -56,7 +56,7 @@ type RejectVpcEndpointConnectionsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationRejectVpcEndpointConnectionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationRejectVpcEndpointConnectionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpRejectVpcEndpointConnections{}, middleware.After)
 	if err != nil {
 		return err

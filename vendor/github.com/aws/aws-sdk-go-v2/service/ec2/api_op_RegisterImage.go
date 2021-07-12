@@ -17,19 +17,27 @@ import (
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/creating-an-ami.html) in
 // the Amazon Elastic Compute Cloud User Guide. For Amazon EBS-backed instances,
 // CreateImage creates and registers the AMI in a single request, so you don't have
-// to register the AMI yourself. You can also use RegisterImage to create an Amazon
-// EBS-backed Linux AMI from a snapshot of a root device volume. You specify the
-// snapshot using the block device mapping. For more information, see Launching a
-// Linux instance from a backup
-// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-launch-snapshot.html)
-// in the Amazon Elastic Compute Cloud User Guide. If any snapshots have AWS
-// Marketplace product codes, they are copied to the new AMI. Windows and some
-// Linux distributions, such as Red Hat Enterprise Linux (RHEL) and SUSE Linux
-// Enterprise Server (SLES), use the EC2 billing product code associated with an
-// AMI to verify the subscription status for package updates. To create a new AMI
-// for operating systems that require a billing product code, instead of
-// registering the AMI, do the following to preserve the billing product code
-// association:
+// to register the AMI yourself. If needed, you can deregister an AMI at any time.
+// Any modifications you make to an AMI backed by an instance store volume
+// invalidates its registration. If you make changes to an image, deregister the
+// previous image and register the new image. Register a snapshot of a root device
+// volume You can use RegisterImage to create an Amazon EBS-backed Linux AMI from a
+// snapshot of a root device volume. You specify the snapshot using a block device
+// mapping. You can't set the encryption state of the volume using the block device
+// mapping. If the snapshot is encrypted, or encryption by default is enabled, the
+// root volume of an instance launched from the AMI is encrypted. For more
+// information, see Create a Linux AMI from a snapshot
+// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/creating-an-ami-ebs.html#creating-launching-ami-from-snapshot)
+// and Use encryption with EBS-backed AMIs
+// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIEncryption.html) in the
+// Amazon Elastic Compute Cloud User Guide. AWS Marketplace product codes If any
+// snapshots have AWS Marketplace product codes, they are copied to the new AMI.
+// Windows and some Linux distributions, such as Red Hat Enterprise Linux (RHEL)
+// and SUSE Linux Enterprise Server (SLES), use the EC2 billing product code
+// associated with an AMI to verify the subscription status for package updates. To
+// create a new AMI for operating systems that require a billing product code,
+// instead of registering the AMI, do the following to preserve the billing product
+// code association:
 //
 // * Launch an instance from an existing AMI with that billing
 // product code.
@@ -48,17 +56,12 @@ import (
 // Obtaining billing information
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ami-billing-info.html) in
 // the Amazon Elastic Compute Cloud User Guide.
-//
-// If needed, you can deregister an
-// AMI at any time. Any modifications you make to an AMI backed by an instance
-// store volume invalidates its registration. If you make changes to an image,
-// deregister the previous image and register the new image.
 func (c *Client) RegisterImage(ctx context.Context, params *RegisterImageInput, optFns ...func(*Options)) (*RegisterImageOutput, error) {
 	if params == nil {
 		params = &RegisterImageInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "RegisterImage", params, optFns, addOperationRegisterImageMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "RegisterImage", params, optFns, c.addOperationRegisterImageMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -87,9 +90,19 @@ type RegisterImageInput struct {
 	// an AMI.
 	BillingProducts []string
 
-	// The block device mapping entries.
+	// The block device mapping entries. If you specify an EBS volume using the ID of
+	// an EBS snapshot, you can't specify the encryption state of the volume. If you
+	// create an AMI on an Outpost, then all backing snapshots must be on the same
+	// Outpost or in the Region of that Outpost. AMIs on an Outpost that include local
+	// snapshots can be used to launch instances on the same Outpost only. For more
+	// information,  Amazon EBS local snapshots on Outposts
+	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshots-outposts.html#ami)
+	// in the Amazon Elastic Compute Cloud User Guide.
 	BlockDeviceMappings []types.BlockDeviceMapping
 
+	// The boot mode of the AMI. For more information, see Boot modes
+	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ami-boot.html) in the
+	// Amazon Elastic Compute Cloud User Guide.
 	BootMode types.BootModeValues
 
 	// A description for your AMI.
@@ -99,13 +112,13 @@ type RegisterImageInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// Set to true to enable enhanced networking with ENA for the AMI and any instances
 	// that you launch from the AMI. This option is supported only for HVM AMIs.
 	// Specifying this option with a PV AMI can make instances launched from the AMI
 	// unreachable.
-	EnaSupport bool
+	EnaSupport *bool
 
 	// The full path to your AMI manifest in Amazon S3 storage. The specified bucket
 	// must have the aws-exec-read canned access control list (ACL) to ensure that it
@@ -144,7 +157,7 @@ type RegisterImageOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationRegisterImageMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationRegisterImageMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpRegisterImage{}, middleware.After)
 	if err != nil {
 		return err

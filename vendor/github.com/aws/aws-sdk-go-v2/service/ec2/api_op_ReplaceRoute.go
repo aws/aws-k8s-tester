@@ -21,7 +21,7 @@ func (c *Client) ReplaceRoute(ctx context.Context, params *ReplaceRouteInput, op
 		params = &ReplaceRouteInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ReplaceRoute", params, optFns, addOperationReplaceRouteMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ReplaceRoute", params, optFns, c.addOperationReplaceRouteMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ type ReplaceRouteInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// [IPv6 traffic only] The ID of an egress-only internet gateway.
 	EgressOnlyInternetGatewayId *string
@@ -71,7 +71,7 @@ type ReplaceRouteInput struct {
 	LocalGatewayId *string
 
 	// Specifies whether to reset the local route to its default target (local).
-	LocalTarget bool
+	LocalTarget *bool
 
 	// [IPv4 traffic only] The ID of a NAT gateway.
 	NatGatewayId *string
@@ -94,7 +94,7 @@ type ReplaceRouteOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationReplaceRouteMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationReplaceRouteMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpReplaceRoute{}, middleware.After)
 	if err != nil {
 		return err

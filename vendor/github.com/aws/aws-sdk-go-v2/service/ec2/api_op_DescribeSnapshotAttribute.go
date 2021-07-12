@@ -21,7 +21,7 @@ func (c *Client) DescribeSnapshotAttribute(ctx context.Context, params *Describe
 		params = &DescribeSnapshotAttributeInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeSnapshotAttribute", params, optFns, addOperationDescribeSnapshotAttributeMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeSnapshotAttribute", params, optFns, c.addOperationDescribeSnapshotAttributeMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ type DescribeSnapshotAttributeInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type DescribeSnapshotAttributeOutput struct {
@@ -66,7 +66,7 @@ type DescribeSnapshotAttributeOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeSnapshotAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeSnapshotAttributeMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeSnapshotAttribute{}, middleware.After)
 	if err != nil {
 		return err

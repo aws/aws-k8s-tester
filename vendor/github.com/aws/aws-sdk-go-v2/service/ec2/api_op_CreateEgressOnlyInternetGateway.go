@@ -20,7 +20,7 @@ func (c *Client) CreateEgressOnlyInternetGateway(ctx context.Context, params *Cr
 		params = &CreateEgressOnlyInternetGatewayInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateEgressOnlyInternetGateway", params, optFns, addOperationCreateEgressOnlyInternetGatewayMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateEgressOnlyInternetGateway", params, optFns, c.addOperationCreateEgressOnlyInternetGatewayMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ type CreateEgressOnlyInternetGatewayInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The tags to assign to the egress-only internet gateway.
 	TagSpecifications []types.TagSpecification
@@ -65,7 +65,7 @@ type CreateEgressOnlyInternetGatewayOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateEgressOnlyInternetGatewayMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateEgressOnlyInternetGatewayMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateEgressOnlyInternetGateway{}, middleware.After)
 	if err != nil {
 		return err

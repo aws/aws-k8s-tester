@@ -34,7 +34,7 @@ func (c *Client) ModifyIdentityIdFormat(ctx context.Context, params *ModifyIdent
 		params = &ModifyIdentityIdFormatInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyIdentityIdFormat", params, optFns, addOperationModifyIdentityIdFormatMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyIdentityIdFormat", params, optFns, c.addOperationModifyIdentityIdFormatMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ type ModifyIdentityIdFormatInput struct {
 	// Indicates whether the resource should use longer IDs (17-character IDs)
 	//
 	// This member is required.
-	UseLongIds bool
+	UseLongIds *bool
 }
 
 type ModifyIdentityIdFormatOutput struct {
@@ -77,7 +77,7 @@ type ModifyIdentityIdFormatOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyIdentityIdFormatMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyIdentityIdFormatMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyIdentityIdFormat{}, middleware.After)
 	if err != nil {
 		return err

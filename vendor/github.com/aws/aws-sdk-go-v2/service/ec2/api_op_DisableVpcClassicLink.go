@@ -17,7 +17,7 @@ func (c *Client) DisableVpcClassicLink(ctx context.Context, params *DisableVpcCl
 		params = &DisableVpcClassicLinkInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DisableVpcClassicLink", params, optFns, addOperationDisableVpcClassicLinkMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DisableVpcClassicLink", params, optFns, c.addOperationDisableVpcClassicLinkMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -38,19 +38,19 @@ type DisableVpcClassicLinkInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type DisableVpcClassicLinkOutput struct {
 
 	// Returns true if the request succeeds; otherwise, it returns an error.
-	Return bool
+	Return *bool
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDisableVpcClassicLinkMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDisableVpcClassicLinkMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDisableVpcClassicLink{}, middleware.After)
 	if err != nil {
 		return err

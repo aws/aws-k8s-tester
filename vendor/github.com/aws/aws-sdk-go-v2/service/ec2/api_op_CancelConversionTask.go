@@ -22,7 +22,7 @@ func (c *Client) CancelConversionTask(ctx context.Context, params *CancelConvers
 		params = &CancelConversionTaskInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CancelConversionTask", params, optFns, addOperationCancelConversionTaskMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CancelConversionTask", params, optFns, c.addOperationCancelConversionTaskMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ type CancelConversionTaskInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The reason for canceling the conversion task.
 	ReasonMessage *string
@@ -54,7 +54,7 @@ type CancelConversionTaskOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCancelConversionTaskMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCancelConversionTaskMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCancelConversionTask{}, middleware.After)
 	if err != nil {
 		return err

@@ -17,7 +17,7 @@ func (c *Client) DeleteTransitGatewayVpcAttachment(ctx context.Context, params *
 		params = &DeleteTransitGatewayVpcAttachmentInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DeleteTransitGatewayVpcAttachment", params, optFns, addOperationDeleteTransitGatewayVpcAttachmentMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DeleteTransitGatewayVpcAttachment", params, optFns, c.addOperationDeleteTransitGatewayVpcAttachmentMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ type DeleteTransitGatewayVpcAttachmentInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type DeleteTransitGatewayVpcAttachmentOutput struct {
@@ -50,7 +50,7 @@ type DeleteTransitGatewayVpcAttachmentOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDeleteTransitGatewayVpcAttachmentMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDeleteTransitGatewayVpcAttachmentMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDeleteTransitGatewayVpcAttachment{}, middleware.After)
 	if err != nil {
 		return err

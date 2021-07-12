@@ -21,7 +21,7 @@ func (c *Client) AcceptVpcPeeringConnection(ctx context.Context, params *AcceptV
 		params = &AcceptVpcPeeringConnectionInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "AcceptVpcPeeringConnection", params, optFns, addOperationAcceptVpcPeeringConnectionMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "AcceptVpcPeeringConnection", params, optFns, c.addOperationAcceptVpcPeeringConnectionMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ type AcceptVpcPeeringConnectionInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The ID of the VPC peering connection. You must specify this parameter in the
 	// request.
@@ -53,7 +53,7 @@ type AcceptVpcPeeringConnectionOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationAcceptVpcPeeringConnectionMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationAcceptVpcPeeringConnectionMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpAcceptVpcPeeringConnection{}, middleware.After)
 	if err != nil {
 		return err

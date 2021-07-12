@@ -44,7 +44,7 @@ func (c *Client) AttachVolume(ctx context.Context, params *AttachVolumeInput, op
 		params = &AttachVolumeInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "AttachVolume", params, optFns, addOperationAttachVolumeMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "AttachVolume", params, optFns, c.addOperationAttachVolumeMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ type AttachVolumeInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 // Describes volume attachment details.
@@ -86,7 +86,7 @@ type AttachVolumeOutput struct {
 	AttachTime *time.Time
 
 	// Indicates whether the EBS volume is deleted on instance termination.
-	DeleteOnTermination bool
+	DeleteOnTermination *bool
 
 	// The device name.
 	Device *string
@@ -104,7 +104,7 @@ type AttachVolumeOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationAttachVolumeMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationAttachVolumeMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpAttachVolume{}, middleware.After)
 	if err != nil {
 		return err

@@ -21,7 +21,7 @@ func (c *Client) UpdateSecurityGroupRuleDescriptionsIngress(ctx context.Context,
 		params = &UpdateSecurityGroupRuleDescriptionsIngressInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "UpdateSecurityGroupRuleDescriptionsIngress", params, optFns, addOperationUpdateSecurityGroupRuleDescriptionsIngressMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "UpdateSecurityGroupRuleDescriptionsIngress", params, optFns, c.addOperationUpdateSecurityGroupRuleDescriptionsIngressMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ type UpdateSecurityGroupRuleDescriptionsIngressInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The ID of the security group. You must specify either the security group ID or
 	// the security group name in the request. For security groups in a nondefault VPC,
@@ -57,13 +57,13 @@ type UpdateSecurityGroupRuleDescriptionsIngressInput struct {
 type UpdateSecurityGroupRuleDescriptionsIngressOutput struct {
 
 	// Returns true if the request succeeds; otherwise, returns an error.
-	Return bool
+	Return *bool
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationUpdateSecurityGroupRuleDescriptionsIngressMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationUpdateSecurityGroupRuleDescriptionsIngressMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpUpdateSecurityGroupRuleDescriptionsIngress{}, middleware.After)
 	if err != nil {
 		return err

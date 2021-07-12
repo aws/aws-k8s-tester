@@ -21,7 +21,7 @@ func (c *Client) CreateNetworkAcl(ctx context.Context, params *CreateNetworkAclI
 		params = &CreateNetworkAclInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateNetworkAcl", params, optFns, addOperationCreateNetworkAclMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateNetworkAcl", params, optFns, c.addOperationCreateNetworkAclMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ type CreateNetworkAclInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The tags to assign to the network ACL.
 	TagSpecifications []types.TagSpecification
@@ -57,7 +57,7 @@ type CreateNetworkAclOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateNetworkAclMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateNetworkAclMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateNetworkAcl{}, middleware.After)
 	if err != nil {
 		return err

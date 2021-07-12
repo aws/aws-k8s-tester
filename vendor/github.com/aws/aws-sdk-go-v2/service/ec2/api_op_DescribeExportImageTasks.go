@@ -18,7 +18,7 @@ func (c *Client) DescribeExportImageTasks(ctx context.Context, params *DescribeE
 		params = &DescribeExportImageTasksInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeExportImageTasks", params, optFns, addOperationDescribeExportImageTasksMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeExportImageTasks", params, optFns, c.addOperationDescribeExportImageTasksMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ type DescribeExportImageTasksInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The IDs of the export image tasks.
 	ExportImageTaskIds []string
@@ -44,7 +44,7 @@ type DescribeExportImageTasksInput struct {
 	Filters []types.Filter
 
 	// The maximum number of results to return in a single call.
-	MaxResults int32
+	MaxResults *int32
 
 	// A token that indicates the next page of results.
 	NextToken *string
@@ -63,7 +63,7 @@ type DescribeExportImageTasksOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeExportImageTasksMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeExportImageTasksMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeExportImageTasks{}, middleware.After)
 	if err != nil {
 		return err
@@ -154,17 +154,17 @@ type DescribeExportImageTasksPaginator struct {
 // NewDescribeExportImageTasksPaginator returns a new
 // DescribeExportImageTasksPaginator
 func NewDescribeExportImageTasksPaginator(client DescribeExportImageTasksAPIClient, params *DescribeExportImageTasksInput, optFns ...func(*DescribeExportImageTasksPaginatorOptions)) *DescribeExportImageTasksPaginator {
+	if params == nil {
+		params = &DescribeExportImageTasksInput{}
+	}
+
 	options := DescribeExportImageTasksPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeExportImageTasksInput{}
 	}
 
 	return &DescribeExportImageTasksPaginator{
@@ -189,7 +189,11 @@ func (p *DescribeExportImageTasksPaginator) NextPage(ctx context.Context, optFns
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeExportImageTasks(ctx, &params, optFns...)
 	if err != nil {

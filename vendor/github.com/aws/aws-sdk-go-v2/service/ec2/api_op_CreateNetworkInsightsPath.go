@@ -21,7 +21,7 @@ func (c *Client) CreateNetworkInsightsPath(ctx context.Context, params *CreateNe
 		params = &CreateNetworkInsightsPathInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateNetworkInsightsPath", params, optFns, addOperationCreateNetworkInsightsPathMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateNetworkInsightsPath", params, optFns, c.addOperationCreateNetworkInsightsPathMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -59,13 +59,13 @@ type CreateNetworkInsightsPathInput struct {
 	DestinationIp *string
 
 	// The destination port.
-	DestinationPort int32
+	DestinationPort *int32
 
 	// Checks whether you have the required permissions for the action, without
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The IP address of the AWS resource that is the source of the path.
 	SourceIp *string
@@ -83,7 +83,7 @@ type CreateNetworkInsightsPathOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateNetworkInsightsPathMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateNetworkInsightsPathMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateNetworkInsightsPath{}, middleware.After)
 	if err != nil {
 		return err

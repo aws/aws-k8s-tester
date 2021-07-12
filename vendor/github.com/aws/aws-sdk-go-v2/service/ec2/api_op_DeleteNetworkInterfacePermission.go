@@ -19,7 +19,7 @@ func (c *Client) DeleteNetworkInterfacePermission(ctx context.Context, params *D
 		params = &DeleteNetworkInterfacePermissionInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DeleteNetworkInterfacePermission", params, optFns, addOperationDeleteNetworkInterfacePermissionMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DeleteNetworkInterfacePermission", params, optFns, c.addOperationDeleteNetworkInterfacePermissionMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -41,24 +41,24 @@ type DeleteNetworkInterfacePermissionInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// Specify true to remove the permission even if the network interface is attached
 	// to an instance.
-	Force bool
+	Force *bool
 }
 
 // Contains the output for DeleteNetworkInterfacePermission.
 type DeleteNetworkInterfacePermissionOutput struct {
 
 	// Returns true if the request succeeds, otherwise returns an error.
-	Return bool
+	Return *bool
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDeleteNetworkInterfacePermissionMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDeleteNetworkInterfacePermissionMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDeleteNetworkInterfacePermission{}, middleware.After)
 	if err != nil {
 		return err

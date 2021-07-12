@@ -18,7 +18,7 @@ func (c *Client) DescribeInternetGateways(ctx context.Context, params *DescribeI
 		params = &DescribeInternetGatewaysInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeInternetGateways", params, optFns, addOperationDescribeInternetGatewaysMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeInternetGateways", params, optFns, c.addOperationDescribeInternetGatewaysMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ type DescribeInternetGatewaysInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters.
 	//
@@ -66,7 +66,7 @@ type DescribeInternetGatewaysInput struct {
 
 	// The maximum number of results to return with a single call. To retrieve the
 	// remaining results, make another call with the returned nextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token for the next page of results.
 	NextToken *string
@@ -85,7 +85,7 @@ type DescribeInternetGatewaysOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeInternetGatewaysMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeInternetGatewaysMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeInternetGateways{}, middleware.After)
 	if err != nil {
 		return err
@@ -177,17 +177,17 @@ type DescribeInternetGatewaysPaginator struct {
 // NewDescribeInternetGatewaysPaginator returns a new
 // DescribeInternetGatewaysPaginator
 func NewDescribeInternetGatewaysPaginator(client DescribeInternetGatewaysAPIClient, params *DescribeInternetGatewaysInput, optFns ...func(*DescribeInternetGatewaysPaginatorOptions)) *DescribeInternetGatewaysPaginator {
+	if params == nil {
+		params = &DescribeInternetGatewaysInput{}
+	}
+
 	options := DescribeInternetGatewaysPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeInternetGatewaysInput{}
 	}
 
 	return &DescribeInternetGatewaysPaginator{
@@ -212,7 +212,11 @@ func (p *DescribeInternetGatewaysPaginator) NextPage(ctx context.Context, optFns
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeInternetGateways(ctx, &params, optFns...)
 	if err != nil {

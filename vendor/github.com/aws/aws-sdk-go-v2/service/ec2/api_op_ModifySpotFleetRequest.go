@@ -39,7 +39,7 @@ func (c *Client) ModifySpotFleetRequest(ctx context.Context, params *ModifySpotF
 		params = &ModifySpotFleetRequestInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifySpotFleetRequest", params, optFns, addOperationModifySpotFleetRequestMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifySpotFleetRequest", params, optFns, c.addOperationModifySpotFleetRequestMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +57,9 @@ type ModifySpotFleetRequestInput struct {
 	// This member is required.
 	SpotFleetRequestId *string
 
+	// Reserved.
+	Context *string
+
 	// Indicates whether running Spot Instances should be terminated if the target
 	// capacity of the Spot Fleet request is decreased below the current size of the
 	// Spot Fleet.
@@ -69,23 +72,23 @@ type ModifySpotFleetRequestInput struct {
 	LaunchTemplateConfigs []types.LaunchTemplateConfig
 
 	// The number of On-Demand Instances in the fleet.
-	OnDemandTargetCapacity int32
+	OnDemandTargetCapacity *int32
 
 	// The size of the fleet.
-	TargetCapacity int32
+	TargetCapacity *int32
 }
 
 // Contains the output of ModifySpotFleetRequest.
 type ModifySpotFleetRequestOutput struct {
 
 	// Is true if the request succeeds, and an error otherwise.
-	Return bool
+	Return *bool
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifySpotFleetRequestMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifySpotFleetRequestMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifySpotFleetRequest{}, middleware.After)
 	if err != nil {
 		return err

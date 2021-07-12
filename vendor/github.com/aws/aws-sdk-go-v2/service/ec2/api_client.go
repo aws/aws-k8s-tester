@@ -107,6 +107,14 @@ func WithAPIOptions(optFns ...func(*middleware.Stack) error) func(*Options) {
 	}
 }
 
+// WithEndpointResolver returns a functional option for setting the Client's
+// EndpointResolver option.
+func WithEndpointResolver(v EndpointResolver) func(*Options) {
+	return func(o *Options) {
+		o.EndpointResolver = v
+	}
+}
+
 type HTTPClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
@@ -205,7 +213,7 @@ func resolveAWSEndpointResolver(cfg aws.Config, o *Options) {
 }
 
 func addClientUserAgent(stack *middleware.Stack) error {
-	return awsmiddleware.AddRequestUserAgentMiddleware(stack)
+	return awsmiddleware.AddSDKAgentKeyValue(awsmiddleware.APIMetadata, "ec2", goModuleVersion)(stack)
 }
 
 func addHTTPSignerV4Middleware(stack *middleware.Stack, o Options) error {
@@ -339,6 +347,7 @@ func (c presignConverter) convertToPresignMiddleware(stack *middleware.Stack, op
 	stack.Finalize.Clear()
 	stack.Deserialize.Clear()
 	stack.Build.Remove((*awsmiddleware.ClientRequestID)(nil).ID())
+	stack.Build.Remove("UserAgent")
 	pmw := v4.NewPresignHTTPRequestMiddleware(v4.PresignHTTPRequestMiddlewareOptions{
 		CredentialsProvider: options.Credentials,
 		Presigner:           c.Presigner,

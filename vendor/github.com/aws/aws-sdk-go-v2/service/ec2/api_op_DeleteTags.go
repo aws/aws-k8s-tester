@@ -21,7 +21,7 @@ func (c *Client) DeleteTags(ctx context.Context, params *DeleteTagsInput, optFns
 		params = &DeleteTagsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DeleteTags", params, optFns, addOperationDeleteTagsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DeleteTags", params, optFns, c.addOperationDeleteTagsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ type DeleteTagsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The tags to delete. Specify a tag key and an optional tag value to delete
 	// specific tags. If you specify a tag key without a tag value, we delete any tag
@@ -59,7 +59,7 @@ type DeleteTagsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDeleteTagsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDeleteTagsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDeleteTags{}, middleware.After)
 	if err != nil {
 		return err

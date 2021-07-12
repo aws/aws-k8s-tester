@@ -20,13 +20,13 @@ import (
 // where instances in one partition do not share the same hardware with instances
 // in another partition. For more information, see Placement groups
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html) in
-// the Amazon Elastic Compute Cloud User Guide.
+// the Amazon EC2 User Guide.
 func (c *Client) CreatePlacementGroup(ctx context.Context, params *CreatePlacementGroupInput, optFns ...func(*Options)) (*CreatePlacementGroupOutput, error) {
 	if params == nil {
 		params = &CreatePlacementGroupInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreatePlacementGroup", params, optFns, addOperationCreatePlacementGroupMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreatePlacementGroup", params, optFns, c.addOperationCreatePlacementGroupMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -42,14 +42,14 @@ type CreatePlacementGroupInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// A name for the placement group. Must be unique within the scope of your account
 	// for the Region. Constraints: Up to 255 ASCII characters
 	GroupName *string
 
 	// The number of partitions. Valid only when Strategy is set to partition.
-	PartitionCount int32
+	PartitionCount *int32
 
 	// The placement strategy.
 	Strategy types.PlacementStrategy
@@ -67,7 +67,7 @@ type CreatePlacementGroupOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreatePlacementGroupMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreatePlacementGroupMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreatePlacementGroup{}, middleware.After)
 	if err != nil {
 		return err

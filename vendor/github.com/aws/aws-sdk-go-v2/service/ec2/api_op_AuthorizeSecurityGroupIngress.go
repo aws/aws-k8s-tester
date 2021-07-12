@@ -26,7 +26,7 @@ func (c *Client) AuthorizeSecurityGroupIngress(ctx context.Context, params *Auth
 		params = &AuthorizeSecurityGroupIngressInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "AuthorizeSecurityGroupIngress", params, optFns, addOperationAuthorizeSecurityGroupIngressMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "AuthorizeSecurityGroupIngress", params, optFns, c.addOperationAuthorizeSecurityGroupIngressMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -48,13 +48,13 @@ type AuthorizeSecurityGroupIngressInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The start of port range for the TCP and UDP protocols, or an ICMP type number.
 	// For the ICMP type number, use -1 to specify all types. If you specify all ICMP
 	// types, you must specify all codes. Alternatively, use a set of IP permissions to
 	// specify multiple rules and a description for the rule.
-	FromPort int32
+	FromPort *int32
 
 	// The ID of the security group. You must specify either the security group ID or
 	// the security group name in the request. For security groups in a nondefault VPC,
@@ -97,7 +97,7 @@ type AuthorizeSecurityGroupIngressInput struct {
 	// the ICMP code number, use -1 to specify all codes. If you specify all ICMP
 	// types, you must specify all codes. Alternatively, use a set of IP permissions to
 	// specify multiple rules and a description for the rule.
-	ToPort int32
+	ToPort *int32
 }
 
 type AuthorizeSecurityGroupIngressOutput struct {
@@ -105,7 +105,7 @@ type AuthorizeSecurityGroupIngressOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationAuthorizeSecurityGroupIngressMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationAuthorizeSecurityGroupIngressMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpAuthorizeSecurityGroupIngress{}, middleware.After)
 	if err != nil {
 		return err

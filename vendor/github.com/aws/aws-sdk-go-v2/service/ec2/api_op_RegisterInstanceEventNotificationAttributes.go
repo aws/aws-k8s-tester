@@ -18,7 +18,7 @@ func (c *Client) RegisterInstanceEventNotificationAttributes(ctx context.Context
 		params = &RegisterInstanceEventNotificationAttributesInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "RegisterInstanceEventNotificationAttributes", params, optFns, addOperationRegisterInstanceEventNotificationAttributesMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "RegisterInstanceEventNotificationAttributes", params, optFns, c.addOperationRegisterInstanceEventNotificationAttributesMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ type RegisterInstanceEventNotificationAttributesInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// Information about the tag keys to register.
 	InstanceTagAttribute *types.RegisterInstanceTagAttributeRequest
@@ -49,7 +49,7 @@ type RegisterInstanceEventNotificationAttributesOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationRegisterInstanceEventNotificationAttributesMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationRegisterInstanceEventNotificationAttributesMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpRegisterInstanceEventNotificationAttributes{}, middleware.After)
 	if err != nil {
 		return err

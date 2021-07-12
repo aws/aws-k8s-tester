@@ -20,7 +20,7 @@ func (c *Client) ModifyInstanceCapacityReservationAttributes(ctx context.Context
 		params = &ModifyInstanceCapacityReservationAttributesInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyInstanceCapacityReservationAttributes", params, optFns, addOperationModifyInstanceCapacityReservationAttributesMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyInstanceCapacityReservationAttributes", params, optFns, c.addOperationModifyInstanceCapacityReservationAttributesMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -46,19 +46,19 @@ type ModifyInstanceCapacityReservationAttributesInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type ModifyInstanceCapacityReservationAttributesOutput struct {
 
 	// Returns true if the request succeeds; otherwise, it returns an error.
-	Return bool
+	Return *bool
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyInstanceCapacityReservationAttributesMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyInstanceCapacityReservationAttributesMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyInstanceCapacityReservationAttributes{}, middleware.After)
 	if err != nil {
 		return err

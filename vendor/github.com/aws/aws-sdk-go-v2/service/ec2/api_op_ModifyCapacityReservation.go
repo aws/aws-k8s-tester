@@ -23,7 +23,7 @@ func (c *Client) ModifyCapacityReservation(ctx context.Context, params *ModifyCa
 		params = &ModifyCapacityReservationInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyCapacityReservation", params, optFns, addOperationModifyCapacityReservationMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyCapacityReservation", params, optFns, c.addOperationModifyCapacityReservationMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -40,11 +40,14 @@ type ModifyCapacityReservationInput struct {
 	// This member is required.
 	CapacityReservationId *string
 
+	// Reserved. Capacity Reservations you have created are accepted by default.
+	Accept *bool
+
 	// Checks whether you have the required permissions for the action, without
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The date and time at which the Capacity Reservation expires. When a Capacity
 	// Reservation expires, the reserved capacity is released and you can no longer
@@ -69,19 +72,19 @@ type ModifyCapacityReservationInput struct {
 	EndDateType types.EndDateType
 
 	// The number of instances for which to reserve capacity.
-	InstanceCount int32
+	InstanceCount *int32
 }
 
 type ModifyCapacityReservationOutput struct {
 
 	// Returns true if the request succeeds; otherwise, it returns an error.
-	Return bool
+	Return *bool
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyCapacityReservationMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyCapacityReservationMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyCapacityReservation{}, middleware.After)
 	if err != nil {
 		return err

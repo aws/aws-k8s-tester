@@ -10,15 +10,16 @@ import (
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Deletes the specified NAT gateway. Deleting a NAT gateway disassociates its
-// Elastic IP address, but does not release the address from your account. Deleting
-// a NAT gateway does not delete any NAT gateway routes in your route tables.
+// Deletes the specified NAT gateway. Deleting a public NAT gateway disassociates
+// its Elastic IP address, but does not release the address from your account.
+// Deleting a NAT gateway does not delete any NAT gateway routes in your route
+// tables.
 func (c *Client) DeleteNatGateway(ctx context.Context, params *DeleteNatGatewayInput, optFns ...func(*Options)) (*DeleteNatGatewayOutput, error) {
 	if params == nil {
 		params = &DeleteNatGatewayInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DeleteNatGateway", params, optFns, addOperationDeleteNatGatewayMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DeleteNatGateway", params, optFns, c.addOperationDeleteNatGatewayMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +40,7 @@ type DeleteNatGatewayInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type DeleteNatGatewayOutput struct {
@@ -51,7 +52,7 @@ type DeleteNatGatewayOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDeleteNatGatewayMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDeleteNatGatewayMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDeleteNatGateway{}, middleware.After)
 	if err != nil {
 		return err

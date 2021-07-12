@@ -27,7 +27,7 @@ func (c *Client) AuthorizeSecurityGroupEgress(ctx context.Context, params *Autho
 		params = &AuthorizeSecurityGroupEgressInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "AuthorizeSecurityGroupEgress", params, optFns, addOperationAuthorizeSecurityGroupEgressMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "AuthorizeSecurityGroupEgress", params, optFns, c.addOperationAuthorizeSecurityGroupEgressMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -51,10 +51,10 @@ type AuthorizeSecurityGroupEgressInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// Not supported. Use a set of IP permissions to specify the port.
-	FromPort int32
+	FromPort *int32
 
 	// The sets of IP permissions. You can't specify a destination security group and a
 	// CIDR IP address range in the same set of permissions.
@@ -73,7 +73,7 @@ type AuthorizeSecurityGroupEgressInput struct {
 	SourceSecurityGroupOwnerId *string
 
 	// Not supported. Use a set of IP permissions to specify the port.
-	ToPort int32
+	ToPort *int32
 }
 
 type AuthorizeSecurityGroupEgressOutput struct {
@@ -81,7 +81,7 @@ type AuthorizeSecurityGroupEgressOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationAuthorizeSecurityGroupEgressMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationAuthorizeSecurityGroupEgressMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpAuthorizeSecurityGroupEgress{}, middleware.After)
 	if err != nil {
 		return err

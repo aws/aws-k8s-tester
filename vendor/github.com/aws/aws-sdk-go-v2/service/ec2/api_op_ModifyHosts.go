@@ -25,7 +25,7 @@ func (c *Client) ModifyHosts(ctx context.Context, params *ModifyHostsInput, optF
 		params = &ModifyHostsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyHosts", params, optFns, addOperationModifyHostsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyHosts", params, optFns, c.addOperationModifyHostsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -46,9 +46,9 @@ type ModifyHostsInput struct {
 	AutoPlacement types.AutoPlacement
 
 	// Indicates whether to enable or disable host recovery for the Dedicated Host. For
-	// more information, see  Host Recovery
+	// more information, see  Host recovery
 	// (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/dedicated-hosts-recovery.html)
-	// in the Amazon Elastic Compute Cloud User Guide.
+	// in the Amazon EC2 User Guide.
 	HostRecovery types.HostRecovery
 
 	// Specifies the instance family to be supported by the Dedicated Host. Specify
@@ -80,7 +80,7 @@ type ModifyHostsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyHostsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyHostsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyHosts{}, middleware.After)
 	if err != nil {
 		return err

@@ -26,7 +26,7 @@ func (c *Client) DescribeConversionTasks(ctx context.Context, params *DescribeCo
 		params = &DescribeConversionTasksInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeConversionTasks", params, optFns, addOperationDescribeConversionTasksMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeConversionTasks", params, optFns, c.addOperationDescribeConversionTasksMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ type DescribeConversionTasksInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type DescribeConversionTasksOutput struct {
@@ -57,7 +57,7 @@ type DescribeConversionTasksOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeConversionTasksMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeConversionTasksMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeConversionTasks{}, middleware.After)
 	if err != nil {
 		return err
@@ -266,16 +266,21 @@ func conversionTaskCancelledStateRetryable(ctx context.Context, input *DescribeC
 
 		expectedValue := "cancelled"
 		var match = true
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		if len(listOfValues) == 0 {
 			match = false
 		}
 		for _, v := range listOfValues {
-			if v != expectedValue {
+			value, ok := v.(types.ConversionTaskState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.ConversionTaskState value, got %T", pathValue)
+			}
+
+			if string(value) != expectedValue {
 				match = false
 			}
 		}
@@ -429,16 +434,21 @@ func conversionTaskCompletedStateRetryable(ctx context.Context, input *DescribeC
 
 		expectedValue := "completed"
 		var match = true
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		if len(listOfValues) == 0 {
 			match = false
 		}
 		for _, v := range listOfValues {
-			if v != expectedValue {
+			value, ok := v.(types.ConversionTaskState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.ConversionTaskState value, got %T", pathValue)
+			}
+
+			if string(value) != expectedValue {
 				match = false
 			}
 		}
@@ -455,13 +465,18 @@ func conversionTaskCompletedStateRetryable(ctx context.Context, input *DescribeC
 		}
 
 		expectedValue := "cancelled"
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		for _, v := range listOfValues {
-			if v == expectedValue {
+			value, ok := v.(types.ConversionTaskState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.ConversionTaskState value, got %T", pathValue)
+			}
+
+			if string(value) == expectedValue {
 				return false, fmt.Errorf("waiter state transitioned to Failure")
 			}
 		}
@@ -474,13 +489,18 @@ func conversionTaskCompletedStateRetryable(ctx context.Context, input *DescribeC
 		}
 
 		expectedValue := "cancelling"
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		for _, v := range listOfValues {
-			if v == expectedValue {
+			value, ok := v.(types.ConversionTaskState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.ConversionTaskState value, got %T", pathValue)
+			}
+
+			if string(value) == expectedValue {
 				return false, fmt.Errorf("waiter state transitioned to Failure")
 			}
 		}
@@ -629,16 +649,21 @@ func conversionTaskDeletedStateRetryable(ctx context.Context, input *DescribeCon
 
 		expectedValue := "deleted"
 		var match = true
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		if len(listOfValues) == 0 {
 			match = false
 		}
 		for _, v := range listOfValues {
-			if v != expectedValue {
+			value, ok := v.(types.ConversionTaskState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.ConversionTaskState value, got %T", pathValue)
+			}
+
+			if string(value) != expectedValue {
 				match = false
 			}
 		}

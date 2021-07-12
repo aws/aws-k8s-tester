@@ -12,19 +12,24 @@ import (
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Creates a NAT gateway in the specified public subnet. This action creates a
-// network interface in the specified subnet with a private IP address from the IP
-// address range of the subnet. Internet-bound traffic from a private subnet can be
-// routed to the NAT gateway, therefore enabling instances in the private subnet to
-// connect to the internet. For more information, see NAT Gateways
-// (https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html) in the
-// Amazon Virtual Private Cloud User Guide.
+// Creates a NAT gateway in the specified subnet. This action creates a network
+// interface in the specified subnet with a private IP address from the IP address
+// range of the subnet. You can create either a public NAT gateway or a private NAT
+// gateway. With a public NAT gateway, internet-bound traffic from a private subnet
+// can be routed to the NAT gateway, so that instances in a private subnet can
+// connect to the internet. With a private NAT gateway, private communication is
+// routed across VPCs and on-premises networks through a transit gateway or virtual
+// private gateway. Common use cases include running large workloads behind a small
+// pool of allowlisted IPv4 addresses, preserving private IPv4 addresses, and
+// communicating between overlapping networks. For more information, see NAT
+// Gateways (https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-gateway.html)
+// in the Amazon Virtual Private Cloud User Guide.
 func (c *Client) CreateNatGateway(ctx context.Context, params *CreateNatGatewayInput, optFns ...func(*Options)) (*CreateNatGatewayOutput, error) {
 	if params == nil {
 		params = &CreateNatGatewayInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateNatGateway", params, optFns, addOperationCreateNatGatewayMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateNatGateway", params, optFns, c.addOperationCreateNatGatewayMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -36,17 +41,16 @@ func (c *Client) CreateNatGateway(ctx context.Context, params *CreateNatGatewayI
 
 type CreateNatGatewayInput struct {
 
-	// The allocation ID of an Elastic IP address to associate with the NAT gateway. If
-	// the Elastic IP address is associated with another resource, you must first
-	// disassociate it.
-	//
-	// This member is required.
-	AllocationId *string
-
 	// The subnet in which to create the NAT gateway.
 	//
 	// This member is required.
 	SubnetId *string
+
+	// [Public NAT gateways only] The allocation ID of an Elastic IP address to
+	// associate with the NAT gateway. You cannot specify an Elastic IP address with a
+	// private NAT gateway. If the Elastic IP address is associated with another
+	// resource, you must first disassociate it.
+	AllocationId *string
 
 	// Unique, case-sensitive identifier that you provide to ensure the idempotency of
 	// the request. For more information, see How to Ensure Idempotency
@@ -54,11 +58,15 @@ type CreateNatGatewayInput struct {
 	// Constraint: Maximum 64 ASCII characters.
 	ClientToken *string
 
+	// Indicates whether the NAT gateway supports public or private connectivity. The
+	// default is public connectivity.
+	ConnectivityType types.ConnectivityType
+
 	// Checks whether you have the required permissions for the action, without
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The tags to assign to the NAT gateway.
 	TagSpecifications []types.TagSpecification
@@ -77,7 +85,7 @@ type CreateNatGatewayOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateNatGatewayMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateNatGatewayMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateNatGateway{}, middleware.After)
 	if err != nil {
 		return err

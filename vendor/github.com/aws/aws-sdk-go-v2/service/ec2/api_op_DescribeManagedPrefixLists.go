@@ -12,14 +12,15 @@ import (
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Describes your managed prefix lists and any AWS-managed prefix lists. To view
-// the entries for your prefix list, use GetManagedPrefixListEntries.
+// Describes your managed prefix lists and any Amazon Web Services-managed prefix
+// lists. To view the entries for your prefix list, use
+// GetManagedPrefixListEntries.
 func (c *Client) DescribeManagedPrefixLists(ctx context.Context, params *DescribeManagedPrefixListsInput, optFns ...func(*Options)) (*DescribeManagedPrefixListsOutput, error) {
 	if params == nil {
 		params = &DescribeManagedPrefixListsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeManagedPrefixLists", params, optFns, addOperationDescribeManagedPrefixListsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeManagedPrefixLists", params, optFns, c.addOperationDescribeManagedPrefixListsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +36,7 @@ type DescribeManagedPrefixListsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters.
 	//
@@ -50,7 +51,7 @@ type DescribeManagedPrefixListsInput struct {
 
 	// The maximum number of results to return with a single call. To retrieve the
 	// remaining results, make another call with the returned nextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token for the next page of results.
 	NextToken *string
@@ -72,7 +73,7 @@ type DescribeManagedPrefixListsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeManagedPrefixListsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeManagedPrefixListsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeManagedPrefixLists{}, middleware.After)
 	if err != nil {
 		return err
@@ -165,17 +166,17 @@ type DescribeManagedPrefixListsPaginator struct {
 // NewDescribeManagedPrefixListsPaginator returns a new
 // DescribeManagedPrefixListsPaginator
 func NewDescribeManagedPrefixListsPaginator(client DescribeManagedPrefixListsAPIClient, params *DescribeManagedPrefixListsInput, optFns ...func(*DescribeManagedPrefixListsPaginatorOptions)) *DescribeManagedPrefixListsPaginator {
+	if params == nil {
+		params = &DescribeManagedPrefixListsInput{}
+	}
+
 	options := DescribeManagedPrefixListsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeManagedPrefixListsInput{}
 	}
 
 	return &DescribeManagedPrefixListsPaginator{
@@ -200,7 +201,11 @@ func (p *DescribeManagedPrefixListsPaginator) NextPage(ctx context.Context, optF
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeManagedPrefixLists(ctx, &params, optFns...)
 	if err != nil {

@@ -18,7 +18,7 @@ func (c *Client) DetachInternetGateway(ctx context.Context, params *DetachIntern
 		params = &DetachInternetGatewayInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DetachInternetGateway", params, optFns, addOperationDetachInternetGatewayMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DetachInternetGateway", params, optFns, c.addOperationDetachInternetGatewayMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ type DetachInternetGatewayInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type DetachInternetGatewayOutput struct {
@@ -52,7 +52,7 @@ type DetachInternetGatewayOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDetachInternetGatewayMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDetachInternetGatewayMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDetachInternetGateway{}, middleware.After)
 	if err != nil {
 		return err

@@ -2,18 +2,6 @@ module github.com/aws/aws-k8s-tester
 
 go 1.16
 
-// https://github.com/kubernetes/kubernetes/releases
-// https://github.com/kubernetes/client-go/releases
-// https://github.com/kubernetes/apiextensions-apiserver/releases
-
-// https://github.com/aws/aws-sdk-go/releases
-// https://github.com/google/cadvisor/releases
-// https://github.com/containerd/containerd/releases
-// https://github.com/uber-go/zap/releases
-// https://github.com/helm/helm/releases
-// https://github.com/kubernetes-sigs/yaml/releases
-// https://github.com/manifoldco/promptui/releases
-
 replace (
 	github.com/Azure/go-autorest => github.com/Azure/go-autorest v12.2.0+incompatible
 	github.com/containerd/containerd => github.com/containerd/containerd v1.3.4
@@ -44,12 +32,13 @@ replace (
 
 require (
 	github.com/aws/aws-sdk-go v1.35.30
-	github.com/aws/aws-sdk-go-v2 v1.0.0
+	github.com/aws/aws-sdk-go-v2 v1.7.0
 	github.com/aws/aws-sdk-go-v2/config v1.0.0
+	github.com/aws/aws-sdk-go-v2/internal/ini v1.1.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/autoscaling v1.0.0
 	github.com/aws/aws-sdk-go-v2/service/cloudformation v1.0.0
 	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.0.0
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.0.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.11.0
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.0.0
 	github.com/aws/aws-sdk-go-v2/service/eks v1.0.0
 	github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2 v1.0.0
@@ -58,7 +47,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.0.0
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.0.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.0.0
-	github.com/aws/smithy-go v1.0.0
+	github.com/aws/smithy-go v1.5.0
 	github.com/briandowns/spinner v1.11.1
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/davecgh/go-spew v1.1.1

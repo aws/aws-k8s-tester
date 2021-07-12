@@ -17,16 +17,15 @@ import (
 // pricing history
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-spot-instances-history.html)
 // in the Amazon EC2 User Guide for Linux Instances. When you specify a start and
-// end time, this operation returns the prices of the instance types within the
-// time range that you specified and the time when the price changed. The price is
-// valid within the time period that you specified; the response merely indicates
-// the last time that the price changed.
+// end time, the operation returns the prices of the instance types within that
+// time range. It also returns the last price change before the start time, which
+// is the effective price as of the start time.
 func (c *Client) DescribeSpotPriceHistory(ctx context.Context, params *DescribeSpotPriceHistoryInput, optFns ...func(*Options)) (*DescribeSpotPriceHistoryOutput, error) {
 	if params == nil {
 		params = &DescribeSpotPriceHistoryInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeSpotPriceHistory", params, optFns, addOperationDescribeSpotPriceHistoryMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeSpotPriceHistory", params, optFns, c.addOperationDescribeSpotPriceHistoryMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +45,7 @@ type DescribeSpotPriceHistoryInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The date and time, up to the current date, from which to stop retrieving the
 	// price history data, in UTC format (for example, YYYY-MM-DDTHH:MM:SSZ).
@@ -80,7 +79,7 @@ type DescribeSpotPriceHistoryInput struct {
 	// The maximum number of results to return in a single call. Specify a value
 	// between 1 and 1000. The default value is 1000. To retrieve the remaining
 	// results, make another call with the returned NextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token for the next set of results.
 	NextToken *string
@@ -107,7 +106,7 @@ type DescribeSpotPriceHistoryOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeSpotPriceHistoryMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeSpotPriceHistoryMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeSpotPriceHistory{}, middleware.After)
 	if err != nil {
 		return err
@@ -200,17 +199,17 @@ type DescribeSpotPriceHistoryPaginator struct {
 // NewDescribeSpotPriceHistoryPaginator returns a new
 // DescribeSpotPriceHistoryPaginator
 func NewDescribeSpotPriceHistoryPaginator(client DescribeSpotPriceHistoryAPIClient, params *DescribeSpotPriceHistoryInput, optFns ...func(*DescribeSpotPriceHistoryPaginatorOptions)) *DescribeSpotPriceHistoryPaginator {
+	if params == nil {
+		params = &DescribeSpotPriceHistoryInput{}
+	}
+
 	options := DescribeSpotPriceHistoryPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeSpotPriceHistoryInput{}
 	}
 
 	return &DescribeSpotPriceHistoryPaginator{
@@ -235,7 +234,11 @@ func (p *DescribeSpotPriceHistoryPaginator) NextPage(ctx context.Context, optFns
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeSpotPriceHistory(ctx, &params, optFns...)
 	if err != nil {

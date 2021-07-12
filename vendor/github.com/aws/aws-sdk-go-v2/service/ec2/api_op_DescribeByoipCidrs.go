@@ -21,7 +21,7 @@ func (c *Client) DescribeByoipCidrs(ctx context.Context, params *DescribeByoipCi
 		params = &DescribeByoipCidrsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeByoipCidrs", params, optFns, addOperationDescribeByoipCidrsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeByoipCidrs", params, optFns, c.addOperationDescribeByoipCidrsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -37,13 +37,13 @@ type DescribeByoipCidrsInput struct {
 	// remaining results, make another call with the returned nextToken value.
 	//
 	// This member is required.
-	MaxResults int32
+	MaxResults *int32
 
 	// Checks whether you have the required permissions for the action, without
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The token for the next page of results.
 	NextToken *string
@@ -62,7 +62,7 @@ type DescribeByoipCidrsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeByoipCidrsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeByoipCidrsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeByoipCidrs{}, middleware.After)
 	if err != nil {
 		return err
@@ -156,17 +156,17 @@ type DescribeByoipCidrsPaginator struct {
 
 // NewDescribeByoipCidrsPaginator returns a new DescribeByoipCidrsPaginator
 func NewDescribeByoipCidrsPaginator(client DescribeByoipCidrsAPIClient, params *DescribeByoipCidrsInput, optFns ...func(*DescribeByoipCidrsPaginatorOptions)) *DescribeByoipCidrsPaginator {
+	if params == nil {
+		params = &DescribeByoipCidrsInput{}
+	}
+
 	options := DescribeByoipCidrsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeByoipCidrsInput{}
 	}
 
 	return &DescribeByoipCidrsPaginator{
@@ -191,7 +191,11 @@ func (p *DescribeByoipCidrsPaginator) NextPage(ctx context.Context, optFns ...fu
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeByoipCidrs(ctx, &params, optFns...)
 	if err != nil {

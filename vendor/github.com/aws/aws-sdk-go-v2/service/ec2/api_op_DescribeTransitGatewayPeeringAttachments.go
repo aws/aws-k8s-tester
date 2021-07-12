@@ -18,7 +18,7 @@ func (c *Client) DescribeTransitGatewayPeeringAttachments(ctx context.Context, p
 		params = &DescribeTransitGatewayPeeringAttachmentsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeTransitGatewayPeeringAttachments", params, optFns, addOperationDescribeTransitGatewayPeeringAttachmentsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeTransitGatewayPeeringAttachments", params, optFns, c.addOperationDescribeTransitGatewayPeeringAttachmentsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ type DescribeTransitGatewayPeeringAttachmentsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters. The possible values are:
 	//
@@ -67,7 +67,7 @@ type DescribeTransitGatewayPeeringAttachmentsInput struct {
 
 	// The maximum number of results to return with a single call. To retrieve the
 	// remaining results, make another call with the returned nextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token for the next page of results.
 	NextToken *string
@@ -89,7 +89,7 @@ type DescribeTransitGatewayPeeringAttachmentsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeTransitGatewayPeeringAttachmentsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeTransitGatewayPeeringAttachmentsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeTransitGatewayPeeringAttachments{}, middleware.After)
 	if err != nil {
 		return err
@@ -182,17 +182,17 @@ type DescribeTransitGatewayPeeringAttachmentsPaginator struct {
 // NewDescribeTransitGatewayPeeringAttachmentsPaginator returns a new
 // DescribeTransitGatewayPeeringAttachmentsPaginator
 func NewDescribeTransitGatewayPeeringAttachmentsPaginator(client DescribeTransitGatewayPeeringAttachmentsAPIClient, params *DescribeTransitGatewayPeeringAttachmentsInput, optFns ...func(*DescribeTransitGatewayPeeringAttachmentsPaginatorOptions)) *DescribeTransitGatewayPeeringAttachmentsPaginator {
+	if params == nil {
+		params = &DescribeTransitGatewayPeeringAttachmentsInput{}
+	}
+
 	options := DescribeTransitGatewayPeeringAttachmentsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeTransitGatewayPeeringAttachmentsInput{}
 	}
 
 	return &DescribeTransitGatewayPeeringAttachmentsPaginator{
@@ -217,7 +217,11 @@ func (p *DescribeTransitGatewayPeeringAttachmentsPaginator) NextPage(ctx context
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeTransitGatewayPeeringAttachments(ctx, &params, optFns...)
 	if err != nil {

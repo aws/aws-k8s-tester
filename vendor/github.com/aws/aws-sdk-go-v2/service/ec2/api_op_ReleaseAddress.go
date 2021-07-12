@@ -19,7 +19,7 @@ import (
 // address, it is released to the IP address pool. Be sure to update your DNS
 // records and any servers or devices that communicate with the address. If you
 // attempt to release an Elastic IP address that you already released, you'll get
-// an AuthFailure error if the address is already allocated to another AWS account.
+// an AuthFailure error if the address is already allocated to another account.
 // [EC2-VPC] After you release an Elastic IP address for use in a VPC, you might be
 // able to recover it. For more information, see AllocateAddress.
 func (c *Client) ReleaseAddress(ctx context.Context, params *ReleaseAddressInput, optFns ...func(*Options)) (*ReleaseAddressOutput, error) {
@@ -27,7 +27,7 @@ func (c *Client) ReleaseAddress(ctx context.Context, params *ReleaseAddressInput
 		params = &ReleaseAddressInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ReleaseAddress", params, optFns, addOperationReleaseAddressMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ReleaseAddress", params, optFns, c.addOperationReleaseAddressMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ type ReleaseAddressInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The set of Availability Zones, Local Zones, or Wavelength Zones from which AWS
 	// advertises IP addresses. If you provide an incorrect network border group, you
@@ -68,7 +68,7 @@ type ReleaseAddressOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationReleaseAddressMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationReleaseAddressMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpReleaseAddress{}, middleware.After)
 	if err != nil {
 		return err

@@ -20,7 +20,7 @@ func (c *Client) DescribeInstanceTypeOfferings(ctx context.Context, params *Desc
 		params = &DescribeInstanceTypeOfferingsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeInstanceTypeOfferings", params, optFns, addOperationDescribeInstanceTypeOfferingsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeInstanceTypeOfferings", params, optFns, c.addOperationDescribeInstanceTypeOfferingsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ type DescribeInstanceTypeOfferingsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters. Filter names and values are case-sensitive.
 	//
@@ -73,7 +73,7 @@ type DescribeInstanceTypeOfferingsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeInstanceTypeOfferingsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeInstanceTypeOfferingsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeInstanceTypeOfferings{}, middleware.After)
 	if err != nil {
 		return err
@@ -167,6 +167,10 @@ type DescribeInstanceTypeOfferingsPaginator struct {
 // NewDescribeInstanceTypeOfferingsPaginator returns a new
 // DescribeInstanceTypeOfferingsPaginator
 func NewDescribeInstanceTypeOfferingsPaginator(client DescribeInstanceTypeOfferingsAPIClient, params *DescribeInstanceTypeOfferingsInput, optFns ...func(*DescribeInstanceTypeOfferingsPaginatorOptions)) *DescribeInstanceTypeOfferingsPaginator {
+	if params == nil {
+		params = &DescribeInstanceTypeOfferingsInput{}
+	}
+
 	options := DescribeInstanceTypeOfferingsPaginatorOptions{}
 	if params.MaxResults != nil {
 		options.Limit = *params.MaxResults
@@ -174,10 +178,6 @@ func NewDescribeInstanceTypeOfferingsPaginator(client DescribeInstanceTypeOfferi
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeInstanceTypeOfferingsInput{}
 	}
 
 	return &DescribeInstanceTypeOfferingsPaginator{

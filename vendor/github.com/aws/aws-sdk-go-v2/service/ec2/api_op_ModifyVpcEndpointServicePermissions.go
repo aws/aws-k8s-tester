@@ -22,7 +22,7 @@ func (c *Client) ModifyVpcEndpointServicePermissions(ctx context.Context, params
 		params = &ModifyVpcEndpointServicePermissionsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyVpcEndpointServicePermissions", params, optFns, addOperationModifyVpcEndpointServicePermissionsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyVpcEndpointServicePermissions", params, optFns, c.addOperationModifyVpcEndpointServicePermissionsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ type ModifyVpcEndpointServicePermissionsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The Amazon Resource Names (ARN) of one or more principals. Permissions are
 	// revoked for principals in this list.
@@ -58,13 +58,13 @@ type ModifyVpcEndpointServicePermissionsInput struct {
 type ModifyVpcEndpointServicePermissionsOutput struct {
 
 	// Returns true if the request succeeds; otherwise, it returns an error.
-	ReturnValue bool
+	ReturnValue *bool
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyVpcEndpointServicePermissionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyVpcEndpointServicePermissionsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyVpcEndpointServicePermissions{}, middleware.After)
 	if err != nil {
 		return err

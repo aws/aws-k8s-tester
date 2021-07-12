@@ -19,7 +19,7 @@ func (c *Client) DescribeSpotFleetRequests(ctx context.Context, params *Describe
 		params = &DescribeSpotFleetRequestsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeSpotFleetRequests", params, optFns, addOperationDescribeSpotFleetRequestsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeSpotFleetRequests", params, optFns, c.addOperationDescribeSpotFleetRequestsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -36,12 +36,12 @@ type DescribeSpotFleetRequestsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The maximum number of results to return in a single call. Specify a value
 	// between 1 and 1000. The default value is 1000. To retrieve the remaining
 	// results, make another call with the returned NextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token for the next set of results.
 	NextToken *string
@@ -64,7 +64,7 @@ type DescribeSpotFleetRequestsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeSpotFleetRequestsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeSpotFleetRequestsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeSpotFleetRequests{}, middleware.After)
 	if err != nil {
 		return err
@@ -157,17 +157,17 @@ type DescribeSpotFleetRequestsPaginator struct {
 // NewDescribeSpotFleetRequestsPaginator returns a new
 // DescribeSpotFleetRequestsPaginator
 func NewDescribeSpotFleetRequestsPaginator(client DescribeSpotFleetRequestsAPIClient, params *DescribeSpotFleetRequestsInput, optFns ...func(*DescribeSpotFleetRequestsPaginatorOptions)) *DescribeSpotFleetRequestsPaginator {
+	if params == nil {
+		params = &DescribeSpotFleetRequestsInput{}
+	}
+
 	options := DescribeSpotFleetRequestsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeSpotFleetRequestsInput{}
 	}
 
 	return &DescribeSpotFleetRequestsPaginator{
@@ -192,7 +192,11 @@ func (p *DescribeSpotFleetRequestsPaginator) NextPage(ctx context.Context, optFn
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeSpotFleetRequests(ctx, &params, optFns...)
 	if err != nil {

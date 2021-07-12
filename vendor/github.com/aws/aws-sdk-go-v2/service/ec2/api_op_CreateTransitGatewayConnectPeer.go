@@ -22,7 +22,7 @@ func (c *Client) CreateTransitGatewayConnectPeer(ctx context.Context, params *Cr
 		params = &CreateTransitGatewayConnectPeerInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateTransitGatewayConnectPeer", params, optFns, addOperationCreateTransitGatewayConnectPeerMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateTransitGatewayConnectPeer", params, optFns, c.addOperationCreateTransitGatewayConnectPeerMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ type CreateTransitGatewayConnectPeerInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The tags to apply to the Connect peer.
 	TagSpecifications []types.TagSpecification
@@ -81,7 +81,7 @@ type CreateTransitGatewayConnectPeerOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateTransitGatewayConnectPeerMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateTransitGatewayConnectPeerMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateTransitGatewayConnectPeer{}, middleware.After)
 	if err != nil {
 		return err

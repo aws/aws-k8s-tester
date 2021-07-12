@@ -40,7 +40,7 @@ func (c *Client) AssociateAddress(ctx context.Context, params *AssociateAddressI
 		params = &AssociateAddressInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "AssociateAddress", params, optFns, addOperationAssociateAddressMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "AssociateAddress", params, optFns, c.addOperationAssociateAddressMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -61,18 +61,18 @@ type AssociateAddressInput struct {
 	// operation fails. In a VPC in an EC2-VPC-only account, reassociation is
 	// automatic, therefore you can specify false to ensure the operation fails if the
 	// Elastic IP address is already associated with another resource.
-	AllowReassociation bool
+	AllowReassociation *bool
 
 	// Checks whether you have the required permissions for the action, without
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
-	// The ID of the instance. This is required for EC2-Classic. For EC2-VPC, you can
-	// specify either the instance ID or the network interface ID, but not both. The
-	// operation fails if you specify an instance ID unless exactly one network
-	// interface is attached.
+	// The ID of the instance. The instance must have exactly one attached network
+	// interface. For EC2-VPC, you can specify either the instance ID or the network
+	// interface ID, but not both. For EC2-Classic, you must specify an instance ID and
+	// the instance must be in the running state.
 	InstanceId *string
 
 	// [EC2-VPC] The ID of the network interface. If the instance has more than one
@@ -85,8 +85,8 @@ type AssociateAddressInput struct {
 	// address is associated with the primary private IP address.
 	PrivateIpAddress *string
 
-	// The Elastic IP address to associate with the instance. This is required for
-	// EC2-Classic.
+	// [EC2-Classic] The Elastic IP address to associate with the instance. This is
+	// required for EC2-Classic.
 	PublicIp *string
 }
 
@@ -100,7 +100,7 @@ type AssociateAddressOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationAssociateAddressMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationAssociateAddressMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpAssociateAddress{}, middleware.After)
 	if err != nil {
 		return err

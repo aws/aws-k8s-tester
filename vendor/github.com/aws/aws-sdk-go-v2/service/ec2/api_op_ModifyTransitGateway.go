@@ -19,7 +19,7 @@ func (c *Client) ModifyTransitGateway(ctx context.Context, params *ModifyTransit
 		params = &ModifyTransitGatewayInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyTransitGateway", params, optFns, addOperationModifyTransitGatewayMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyTransitGateway", params, optFns, c.addOperationModifyTransitGatewayMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ type ModifyTransitGatewayInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The options to modify.
 	Options *types.ModifyTransitGatewayOptions
@@ -58,7 +58,7 @@ type ModifyTransitGatewayOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyTransitGatewayMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyTransitGatewayMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyTransitGateway{}, middleware.After)
 	if err != nil {
 		return err

@@ -18,7 +18,7 @@ func (c *Client) ModifyTransitGatewayPrefixListReference(ctx context.Context, pa
 		params = &ModifyTransitGatewayPrefixListReferenceInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyTransitGatewayPrefixListReference", params, optFns, addOperationModifyTransitGatewayPrefixListReferenceMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyTransitGatewayPrefixListReference", params, optFns, c.addOperationModifyTransitGatewayPrefixListReferenceMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -41,13 +41,13 @@ type ModifyTransitGatewayPrefixListReferenceInput struct {
 	TransitGatewayRouteTableId *string
 
 	// Indicates whether to drop traffic that matches this route.
-	Blackhole bool
+	Blackhole *bool
 
 	// Checks whether you have the required permissions for the action, without
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The ID of the attachment to which traffic is routed.
 	TransitGatewayAttachmentId *string
@@ -62,7 +62,7 @@ type ModifyTransitGatewayPrefixListReferenceOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyTransitGatewayPrefixListReferenceMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyTransitGatewayPrefixListReferenceMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyTransitGatewayPrefixListReference{}, middleware.After)
 	if err != nil {
 		return err

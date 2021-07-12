@@ -11,14 +11,14 @@ import (
 	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
-// Provisions an IPv4 or IPv6 address range for use with your AWS resources through
-// bring your own IP addresses (BYOIP) and creates a corresponding address pool.
-// After the address range is provisioned, it is ready to be advertised using
-// AdvertiseByoipCidr. AWS verifies that you own the address range and are
-// authorized to advertise it. You must ensure that the address range is registered
-// to you and that you created an RPKI ROA to authorize Amazon ASNs 16509 and 14618
-// to advertise the address range. For more information, see Bring Your Own IP
-// Addresses (BYOIP)
+// Provisions an IPv4 or IPv6 address range for use with your Amazon Web Services
+// resources through bring your own IP addresses (BYOIP) and creates a
+// corresponding address pool. After the address range is provisioned, it is ready
+// to be advertised using AdvertiseByoipCidr. Amazon Web Services verifies that you
+// own the address range and are authorized to advertise it. You must ensure that
+// the address range is registered to you and that you created an RPKI ROA to
+// authorize Amazon ASNs 16509 and 14618 to advertise the address range. For more
+// information, see Bring your own IP addresses (BYOIP)
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-byoip.html) in the
 // Amazon Elastic Compute Cloud User Guide. Provisioning an address range is an
 // asynchronous operation, so the call returns immediately, but the address range
@@ -32,7 +32,7 @@ func (c *Client) ProvisionByoipCidr(ctx context.Context, params *ProvisionByoipC
 		params = &ProvisionByoipCidrInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ProvisionByoipCidr", params, optFns, addOperationProvisionByoipCidrMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ProvisionByoipCidr", params, optFns, c.addOperationProvisionByoipCidrMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -63,14 +63,17 @@ type ProvisionByoipCidrInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
+
+	// Reserved.
+	MultiRegion *bool
 
 	// The tags to apply to the address pool.
 	PoolTagSpecifications []types.TagSpecification
 
 	// (IPv6 only) Indicate whether the address range will be publicly advertised to
 	// the internet. Default: true
-	PubliclyAdvertisable bool
+	PubliclyAdvertisable *bool
 }
 
 type ProvisionByoipCidrOutput struct {
@@ -82,7 +85,7 @@ type ProvisionByoipCidrOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationProvisionByoipCidrMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationProvisionByoipCidrMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpProvisionByoipCidr{}, middleware.After)
 	if err != nil {
 		return err

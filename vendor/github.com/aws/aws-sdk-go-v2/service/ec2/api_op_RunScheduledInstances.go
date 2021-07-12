@@ -20,13 +20,13 @@ import (
 // current scheduled time period ends, you can launch it again after a few minutes.
 // For more information, see Scheduled Instances
 // (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-scheduled-instances.html)
-// in the Amazon Elastic Compute Cloud User Guide.
+// in the Amazon EC2 User Guide.
 func (c *Client) RunScheduledInstances(ctx context.Context, params *RunScheduledInstancesInput, optFns ...func(*Options)) (*RunScheduledInstancesOutput, error) {
 	if params == nil {
 		params = &RunScheduledInstancesInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "RunScheduledInstances", params, optFns, addOperationRunScheduledInstancesMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "RunScheduledInstances", params, optFns, c.addOperationRunScheduledInstancesMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -59,10 +59,10 @@ type RunScheduledInstancesInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The number of instances. Default: 1
-	InstanceCount int32
+	InstanceCount *int32
 }
 
 // Contains the output of RunScheduledInstances.
@@ -75,7 +75,7 @@ type RunScheduledInstancesOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationRunScheduledInstancesMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationRunScheduledInstancesMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpRunScheduledInstances{}, middleware.After)
 	if err != nil {
 		return err

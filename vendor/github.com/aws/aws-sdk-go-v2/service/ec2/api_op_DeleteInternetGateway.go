@@ -17,7 +17,7 @@ func (c *Client) DeleteInternetGateway(ctx context.Context, params *DeleteIntern
 		params = &DeleteInternetGatewayInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DeleteInternetGateway", params, optFns, addOperationDeleteInternetGatewayMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DeleteInternetGateway", params, optFns, c.addOperationDeleteInternetGatewayMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ type DeleteInternetGatewayInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type DeleteInternetGatewayOutput struct {
@@ -46,7 +46,7 @@ type DeleteInternetGatewayOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDeleteInternetGatewayMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDeleteInternetGatewayMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDeleteInternetGateway{}, middleware.After)
 	if err != nil {
 		return err

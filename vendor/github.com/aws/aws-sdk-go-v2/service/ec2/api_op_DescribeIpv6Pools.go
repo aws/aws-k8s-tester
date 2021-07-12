@@ -18,7 +18,7 @@ func (c *Client) DescribeIpv6Pools(ctx context.Context, params *DescribeIpv6Pool
 		params = &DescribeIpv6PoolsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeIpv6Pools", params, optFns, addOperationDescribeIpv6PoolsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeIpv6Pools", params, optFns, c.addOperationDescribeIpv6PoolsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ type DescribeIpv6PoolsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters.
 	//
@@ -51,7 +51,7 @@ type DescribeIpv6PoolsInput struct {
 
 	// The maximum number of results to return with a single call. To retrieve the
 	// remaining results, make another call with the returned nextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token for the next page of results.
 	NextToken *string
@@ -73,7 +73,7 @@ type DescribeIpv6PoolsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeIpv6PoolsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeIpv6PoolsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeIpv6Pools{}, middleware.After)
 	if err != nil {
 		return err
@@ -163,17 +163,17 @@ type DescribeIpv6PoolsPaginator struct {
 
 // NewDescribeIpv6PoolsPaginator returns a new DescribeIpv6PoolsPaginator
 func NewDescribeIpv6PoolsPaginator(client DescribeIpv6PoolsAPIClient, params *DescribeIpv6PoolsInput, optFns ...func(*DescribeIpv6PoolsPaginatorOptions)) *DescribeIpv6PoolsPaginator {
+	if params == nil {
+		params = &DescribeIpv6PoolsInput{}
+	}
+
 	options := DescribeIpv6PoolsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeIpv6PoolsInput{}
 	}
 
 	return &DescribeIpv6PoolsPaginator{
@@ -198,7 +198,11 @@ func (p *DescribeIpv6PoolsPaginator) NextPage(ctx context.Context, optFns ...fun
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeIpv6Pools(ctx, &params, optFns...)
 	if err != nil {

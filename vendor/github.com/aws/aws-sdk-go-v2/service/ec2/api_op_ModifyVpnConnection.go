@@ -51,7 +51,7 @@ func (c *Client) ModifyVpnConnection(ctx context.Context, params *ModifyVpnConne
 		params = &ModifyVpnConnectionInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyVpnConnection", params, optFns, addOperationModifyVpnConnectionMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyVpnConnection", params, optFns, c.addOperationModifyVpnConnectionMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ type ModifyVpnConnectionInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The ID of the transit gateway.
 	TransitGatewayId *string
@@ -93,7 +93,7 @@ type ModifyVpnConnectionOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyVpnConnectionMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyVpnConnectionMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyVpnConnection{}, middleware.After)
 	if err != nil {
 		return err

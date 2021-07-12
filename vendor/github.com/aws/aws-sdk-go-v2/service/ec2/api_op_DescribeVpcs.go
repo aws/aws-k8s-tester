@@ -4,10 +4,12 @@ package ec2
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	awsmiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	"github.com/aws/smithy-go/middleware"
 	smithytime "github.com/aws/smithy-go/time"
 	smithyhttp "github.com/aws/smithy-go/transport/http"
@@ -22,7 +24,7 @@ func (c *Client) DescribeVpcs(ctx context.Context, params *DescribeVpcsInput, op
 		params = &DescribeVpcsInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeVpcs", params, optFns, addOperationDescribeVpcsMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeVpcs", params, optFns, c.addOperationDescribeVpcsMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +40,7 @@ type DescribeVpcsInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// One or more filters.
 	//
@@ -97,7 +99,7 @@ type DescribeVpcsInput struct {
 
 	// The maximum number of results to return with a single call. To retrieve the
 	// remaining results, make another call with the returned nextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// The token for the next page of results.
 	NextToken *string
@@ -119,7 +121,7 @@ type DescribeVpcsOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeVpcsMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeVpcsMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeVpcs{}, middleware.After)
 	if err != nil {
 		return err
@@ -208,17 +210,17 @@ type DescribeVpcsPaginator struct {
 
 // NewDescribeVpcsPaginator returns a new DescribeVpcsPaginator
 func NewDescribeVpcsPaginator(client DescribeVpcsAPIClient, params *DescribeVpcsInput, optFns ...func(*DescribeVpcsPaginatorOptions)) *DescribeVpcsPaginator {
+	if params == nil {
+		params = &DescribeVpcsInput{}
+	}
+
 	options := DescribeVpcsPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeVpcsInput{}
 	}
 
 	return &DescribeVpcsPaginator{
@@ -243,7 +245,11 @@ func (p *DescribeVpcsPaginator) NextPage(ctx context.Context, optFns ...func(*Op
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeVpcs(ctx, &params, optFns...)
 	if err != nil {
@@ -400,22 +406,177 @@ func vpcAvailableStateRetryable(ctx context.Context, input *DescribeVpcsInput, o
 
 		expectedValue := "available"
 		var match = true
-		listOfValues, ok := pathValue.([]string)
+		listOfValues, ok := pathValue.([]interface{})
 		if !ok {
-			return false, fmt.Errorf("waiter comparator expected []string value got %T", pathValue)
+			return false, fmt.Errorf("waiter comparator expected list got %T", pathValue)
 		}
 
 		if len(listOfValues) == 0 {
 			match = false
 		}
 		for _, v := range listOfValues {
-			if v != expectedValue {
+			value, ok := v.(types.VpcState)
+			if !ok {
+				return false, fmt.Errorf("waiter comparator expected types.VpcState value, got %T", pathValue)
+			}
+
+			if string(value) != expectedValue {
 				match = false
 			}
 		}
 
 		if match {
 			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+// VpcExistsWaiterOptions are waiter options for VpcExistsWaiter
+type VpcExistsWaiterOptions struct {
+
+	// Set of options to modify how an operation is invoked. These apply to all
+	// operations invoked for this client. Use functional options on operation call to
+	// modify this list for per operation behavior.
+	APIOptions []func(*middleware.Stack) error
+
+	// MinDelay is the minimum amount of time to delay between retries. If unset,
+	// VpcExistsWaiter will use default minimum delay of 1 seconds. Note that MinDelay
+	// must resolve to a value lesser than or equal to the MaxDelay.
+	MinDelay time.Duration
+
+	// MaxDelay is the maximum amount of time to delay between retries. If unset or set
+	// to zero, VpcExistsWaiter will use default max delay of 120 seconds. Note that
+	// MaxDelay must resolve to value greater than or equal to the MinDelay.
+	MaxDelay time.Duration
+
+	// LogWaitAttempts is used to enable logging for waiter retry attempts
+	LogWaitAttempts bool
+
+	// Retryable is function that can be used to override the service defined
+	// waiter-behavior based on operation output, or returned error. This function is
+	// used by the waiter to decide if a state is retryable or a terminal state. By
+	// default service-modeled logic will populate this option. This option can thus be
+	// used to define a custom waiter state with fall-back to service-modeled waiter
+	// state mutators.The function returns an error in case of a failure state. In case
+	// of retry state, this function returns a bool value of true and nil error, while
+	// in case of success it returns a bool value of false and nil error.
+	Retryable func(context.Context, *DescribeVpcsInput, *DescribeVpcsOutput, error) (bool, error)
+}
+
+// VpcExistsWaiter defines the waiters for VpcExists
+type VpcExistsWaiter struct {
+	client DescribeVpcsAPIClient
+
+	options VpcExistsWaiterOptions
+}
+
+// NewVpcExistsWaiter constructs a VpcExistsWaiter.
+func NewVpcExistsWaiter(client DescribeVpcsAPIClient, optFns ...func(*VpcExistsWaiterOptions)) *VpcExistsWaiter {
+	options := VpcExistsWaiterOptions{}
+	options.MinDelay = 1 * time.Second
+	options.MaxDelay = 120 * time.Second
+	options.Retryable = vpcExistsStateRetryable
+
+	for _, fn := range optFns {
+		fn(&options)
+	}
+	return &VpcExistsWaiter{
+		client:  client,
+		options: options,
+	}
+}
+
+// Wait calls the waiter function for VpcExists waiter. The maxWaitDur is the
+// maximum wait duration the waiter will wait. The maxWaitDur is required and must
+// be greater than zero.
+func (w *VpcExistsWaiter) Wait(ctx context.Context, params *DescribeVpcsInput, maxWaitDur time.Duration, optFns ...func(*VpcExistsWaiterOptions)) error {
+	if maxWaitDur <= 0 {
+		return fmt.Errorf("maximum wait time for waiter must be greater than zero")
+	}
+
+	options := w.options
+	for _, fn := range optFns {
+		fn(&options)
+	}
+
+	if options.MaxDelay <= 0 {
+		options.MaxDelay = 120 * time.Second
+	}
+
+	if options.MinDelay > options.MaxDelay {
+		return fmt.Errorf("minimum waiter delay %v must be lesser than or equal to maximum waiter delay of %v.", options.MinDelay, options.MaxDelay)
+	}
+
+	ctx, cancelFn := context.WithTimeout(ctx, maxWaitDur)
+	defer cancelFn()
+
+	logger := smithywaiter.Logger{}
+	remainingTime := maxWaitDur
+
+	var attempt int64
+	for {
+
+		attempt++
+		apiOptions := options.APIOptions
+		start := time.Now()
+
+		if options.LogWaitAttempts {
+			logger.Attempt = attempt
+			apiOptions = append([]func(*middleware.Stack) error{}, options.APIOptions...)
+			apiOptions = append(apiOptions, logger.AddLogger)
+		}
+
+		out, err := w.client.DescribeVpcs(ctx, params, func(o *Options) {
+			o.APIOptions = append(o.APIOptions, apiOptions...)
+		})
+
+		retryable, err := options.Retryable(ctx, params, out, err)
+		if err != nil {
+			return err
+		}
+		if !retryable {
+			return nil
+		}
+
+		remainingTime -= time.Since(start)
+		if remainingTime < options.MinDelay || remainingTime <= 0 {
+			break
+		}
+
+		// compute exponential backoff between waiter retries
+		delay, err := smithywaiter.ComputeDelay(
+			attempt, options.MinDelay, options.MaxDelay, remainingTime,
+		)
+		if err != nil {
+			return fmt.Errorf("error computing waiter delay, %w", err)
+		}
+
+		remainingTime -= delay
+		// sleep for the delay amount before invoking a request
+		if err := smithytime.SleepWithContext(ctx, delay); err != nil {
+			return fmt.Errorf("request cancelled while waiting, %w", err)
+		}
+	}
+	return fmt.Errorf("exceeded max wait time for VpcExists waiter")
+}
+
+func vpcExistsStateRetryable(ctx context.Context, input *DescribeVpcsInput, output *DescribeVpcsOutput, err error) (bool, error) {
+
+	if err == nil {
+		return false, nil
+	}
+
+	if err != nil {
+		var apiErr smithy.APIError
+		ok := errors.As(err, &apiErr)
+		if !ok {
+			return false, fmt.Errorf("expected err to be of type smithy.APIError, got %w", err)
+		}
+
+		if "InvalidVpcID.NotFound" == apiErr.ErrorCode() {
+			return true, nil
 		}
 	}
 

@@ -20,7 +20,7 @@ func (c *Client) CreateClientVpnEndpoint(ctx context.Context, params *CreateClie
 		params = &CreateClientVpnEndpointInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "CreateClientVpnEndpoint", params, optFns, addOperationCreateClientVpnEndpointMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "CreateClientVpnEndpoint", params, optFns, c.addOperationCreateClientVpnEndpointMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ type CreateClientVpnEndpointInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The IDs of one or more security groups to apply to the target network. You must
 	// also specify the ID of the VPC that contains the security groups.
@@ -105,7 +105,7 @@ type CreateClientVpnEndpointInput struct {
 	// split-tunnel VPN endpoints, see Split-Tunnel AWS Client VPN Endpoint
 	// (https://docs.aws.amazon.com/vpn/latest/clientvpn-admin/split-tunnel-vpn.html)
 	// in the AWS Client VPN Administrator Guide.
-	SplitTunnel bool
+	SplitTunnel *bool
 
 	// The tags to apply to the Client VPN endpoint during creation.
 	TagSpecifications []types.TagSpecification
@@ -120,7 +120,7 @@ type CreateClientVpnEndpointInput struct {
 
 	// The port number to assign to the Client VPN endpoint for TCP and UDP traffic.
 	// Valid Values: 443 | 1194 Default Value: 443
-	VpnPort int32
+	VpnPort *int32
 }
 
 type CreateClientVpnEndpointOutput struct {
@@ -138,7 +138,7 @@ type CreateClientVpnEndpointOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationCreateClientVpnEndpointMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationCreateClientVpnEndpointMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpCreateClientVpnEndpoint{}, middleware.After)
 	if err != nil {
 		return err

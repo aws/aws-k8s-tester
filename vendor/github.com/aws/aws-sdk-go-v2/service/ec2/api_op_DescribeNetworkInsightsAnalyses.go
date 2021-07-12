@@ -19,7 +19,7 @@ func (c *Client) DescribeNetworkInsightsAnalyses(ctx context.Context, params *De
 		params = &DescribeNetworkInsightsAnalysesInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "DescribeNetworkInsightsAnalyses", params, optFns, addOperationDescribeNetworkInsightsAnalysesMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "DescribeNetworkInsightsAnalyses", params, optFns, c.addOperationDescribeNetworkInsightsAnalysesMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ type DescribeNetworkInsightsAnalysesInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 
 	// The filters. The following are possible values:
 	//
@@ -54,7 +54,7 @@ type DescribeNetworkInsightsAnalysesInput struct {
 
 	// The maximum number of results to return with a single call. To retrieve the
 	// remaining results, make another call with the returned nextToken value.
-	MaxResults int32
+	MaxResults *int32
 
 	// The ID of the network insights analyses. You must specify either analysis IDs or
 	// a path ID.
@@ -80,7 +80,7 @@ type DescribeNetworkInsightsAnalysesOutput struct {
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationDescribeNetworkInsightsAnalysesMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationDescribeNetworkInsightsAnalysesMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpDescribeNetworkInsightsAnalyses{}, middleware.After)
 	if err != nil {
 		return err
@@ -173,17 +173,17 @@ type DescribeNetworkInsightsAnalysesPaginator struct {
 // NewDescribeNetworkInsightsAnalysesPaginator returns a new
 // DescribeNetworkInsightsAnalysesPaginator
 func NewDescribeNetworkInsightsAnalysesPaginator(client DescribeNetworkInsightsAnalysesAPIClient, params *DescribeNetworkInsightsAnalysesInput, optFns ...func(*DescribeNetworkInsightsAnalysesPaginatorOptions)) *DescribeNetworkInsightsAnalysesPaginator {
+	if params == nil {
+		params = &DescribeNetworkInsightsAnalysesInput{}
+	}
+
 	options := DescribeNetworkInsightsAnalysesPaginatorOptions{}
-	if params.MaxResults != 0 {
-		options.Limit = params.MaxResults
+	if params.MaxResults != nil {
+		options.Limit = *params.MaxResults
 	}
 
 	for _, fn := range optFns {
 		fn(&options)
-	}
-
-	if params == nil {
-		params = &DescribeNetworkInsightsAnalysesInput{}
 	}
 
 	return &DescribeNetworkInsightsAnalysesPaginator{
@@ -208,7 +208,11 @@ func (p *DescribeNetworkInsightsAnalysesPaginator) NextPage(ctx context.Context,
 	params := *p.params
 	params.NextToken = p.nextToken
 
-	params.MaxResults = p.options.Limit
+	var limit *int32
+	if p.options.Limit > 0 {
+		limit = &p.options.Limit
+	}
+	params.MaxResults = limit
 
 	result, err := p.client.DescribeNetworkInsightsAnalyses(ctx, &params, optFns...)
 	if err != nil {

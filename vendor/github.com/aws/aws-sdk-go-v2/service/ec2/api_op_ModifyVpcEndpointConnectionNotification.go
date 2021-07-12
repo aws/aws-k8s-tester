@@ -18,7 +18,7 @@ func (c *Client) ModifyVpcEndpointConnectionNotification(ctx context.Context, pa
 		params = &ModifyVpcEndpointConnectionNotificationInput{}
 	}
 
-	result, metadata, err := c.invokeOperation(ctx, "ModifyVpcEndpointConnectionNotification", params, optFns, addOperationModifyVpcEndpointConnectionNotificationMiddlewares)
+	result, metadata, err := c.invokeOperation(ctx, "ModifyVpcEndpointConnectionNotification", params, optFns, c.addOperationModifyVpcEndpointConnectionNotificationMiddlewares)
 	if err != nil {
 		return nil, err
 	}
@@ -46,19 +46,19 @@ type ModifyVpcEndpointConnectionNotificationInput struct {
 	// actually making the request, and provides an error response. If you have the
 	// required permissions, the error response is DryRunOperation. Otherwise, it is
 	// UnauthorizedOperation.
-	DryRun bool
+	DryRun *bool
 }
 
 type ModifyVpcEndpointConnectionNotificationOutput struct {
 
 	// Returns true if the request succeeds; otherwise, it returns an error.
-	ReturnValue bool
+	ReturnValue *bool
 
 	// Metadata pertaining to the operation's result.
 	ResultMetadata middleware.Metadata
 }
 
-func addOperationModifyVpcEndpointConnectionNotificationMiddlewares(stack *middleware.Stack, options Options) (err error) {
+func (c *Client) addOperationModifyVpcEndpointConnectionNotificationMiddlewares(stack *middleware.Stack, options Options) (err error) {
 	err = stack.Serialize.Add(&awsEc2query_serializeOpModifyVpcEndpointConnectionNotification{}, middleware.After)
 	if err != nil {
 		return err
