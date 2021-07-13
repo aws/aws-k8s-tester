@@ -66,11 +66,11 @@ func (cfg *Config) validateAddOnClusterVersionUpgrade() error {
 	var err error
 	cfg.AddOnClusterVersionUpgrade.VersionValue, err = strconv.ParseFloat(cfg.AddOnClusterVersionUpgrade.Version, 64)
 	if err != nil {
-		return fmt.Errorf("cannot parse AddOnClusterVersionUpgrade.Version %q (%v)", cfg.Parameters.Version, err)
+		return fmt.Errorf("cannot parse AddOnClusterVersionUpgrade.Version %q (%v)", cfg.Version, err)
 	}
-	delta := cfg.AddOnClusterVersionUpgrade.VersionValue - cfg.Parameters.VersionValue
+	delta := cfg.AddOnClusterVersionUpgrade.VersionValue - cfg.VersionValue
 	if fmt.Sprintf("%.2f", delta) != "0.01" {
-		return fmt.Errorf("AddOnClusterVersionUpgrade only supports one minor version upgrade but got %.2f [invalid: %q -> %q]", delta, cfg.Parameters.Version, cfg.AddOnClusterVersionUpgrade.Version)
+		return fmt.Errorf("AddOnClusterVersionUpgrade only supports one minor version upgrade but got %.2f [invalid: %q -> %q]", delta, cfg.Version, cfg.AddOnClusterVersionUpgrade.Version)
 	}
 
 	return nil

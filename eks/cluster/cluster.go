@@ -30,17 +30,19 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/pkg/user"
 	"github.com/aws/aws-k8s-tester/version"
+	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
+	aws_eks_v2 "github.com/aws/aws-sdk-go-v2/service/eks"
+	aws_elbv2_v2 "github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2"
+	aws_iam_v2 "github.com/aws/aws-sdk-go-v2/service/iam"
+	aws_kms_v2 "github.com/aws/aws-sdk-go-v2/service/kms"
+	aws_s3_v2 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks"
 	aws_eks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
-	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
-	"github.com/aws/aws-sdk-go/service/iam/iamiface"
-	"github.com/aws/aws-sdk-go/service/kms/kmsiface"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
@@ -53,13 +55,22 @@ type Config struct {
 	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
-	S3API     s3iface.S3API
-	IAMAPI    iamiface.IAMAPI
-	KMSAPI    kmsiface.KMSAPI
-	CFNAPI    cloudformationiface.CloudFormationAPI
-	EC2API    ec2iface.EC2API
-	EKSAPI    eksiface.EKSAPI
-	ELBV2API  elbv2iface.ELBV2API
+
+	S3API   s3iface.S3API
+	S3APIV2 *aws_s3_v2.Client
+
+	IAMAPIV2 *aws_iam_v2.Client
+
+	KMSAPIV2 *aws_kms_v2.Client
+
+	EC2APIV2 *aws_ec2_v2.Client
+
+	EKSAPI   eksiface.EKSAPI
+	EKSAPIV2 *aws_eks_v2.Client
+
+	ELBV2APIV2 *aws_elbv2_v2.Client
+
+	CFNAPI cloudformationiface.CloudFormationAPI
 }
 
 type Tester interface {
@@ -140,7 +151,7 @@ func getCaller() string {
 }
 
 func (ts *tester) checkHealth(caller string) (err error) {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Print(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]checkHealth [default](%q, caller %q)\n"), ts.cfg.EKSConfig.ConfigPath, caller)
 
 	defer func() {
@@ -295,7 +306,7 @@ const (
 )
 
 func (ts *tester) createEKS() (err error) {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Print(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createEKS [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	if ts.cfg.EKSConfig.Status.ClusterCFNStackID != "" ||
@@ -326,29 +337,29 @@ func (ts *tester) createEKS() (err error) {
 
 	initialWait := 9 * time.Minute
 
-	subnets := make([]string, len(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs))
-	copy(subnets, ts.cfg.EKSConfig.Parameters.PublicSubnetIDs)
-	if len(ts.cfg.EKSConfig.Parameters.PrivateSubnetIDs) > 0 {
-		subnets = append(subnets, ts.cfg.EKSConfig.Parameters.PrivateSubnetIDs...)
+	subnets := make([]string, len(ts.cfg.EKSConfig.VPC.PublicSubnetIDs))
+	copy(subnets, ts.cfg.EKSConfig.VPC.PublicSubnetIDs)
+	if len(ts.cfg.EKSConfig.VPC.PrivateSubnetIDs) > 0 {
+		subnets = append(subnets, ts.cfg.EKSConfig.VPC.PrivateSubnetIDs...)
 	}
 
-	if ts.cfg.EKSConfig.Parameters.ResolverURL != "" ||
-		(ts.cfg.EKSConfig.Parameters.RequestHeaderKey != "" &&
-			ts.cfg.EKSConfig.Parameters.RequestHeaderValue != "") {
+	if ts.cfg.EKSConfig.ResolverURL != "" ||
+		(ts.cfg.EKSConfig.RequestHeaderKey != "" &&
+			ts.cfg.EKSConfig.RequestHeaderValue != "") {
 		ts.cfg.Logger.Info("creating a cluster using EKS API",
 			zap.String("name", ts.cfg.EKSConfig.Name),
-			zap.String("resolver-url", ts.cfg.EKSConfig.Parameters.ResolverURL),
-			zap.String("signing-name", ts.cfg.EKSConfig.Parameters.SigningName),
-			zap.String("request-header-key", ts.cfg.EKSConfig.Parameters.RequestHeaderKey),
-			zap.String("request-header-value", ts.cfg.EKSConfig.Parameters.RequestHeaderValue),
+			zap.String("resolver-url", ts.cfg.EKSConfig.ResolverURL),
+			zap.String("signing-name", ts.cfg.EKSConfig.SigningName),
+			zap.String("request-header-key", ts.cfg.EKSConfig.RequestHeaderKey),
+			zap.String("request-header-value", ts.cfg.EKSConfig.RequestHeaderValue),
 		)
 		createInput := aws_eks.CreateClusterInput{
 			Name:    aws.String(ts.cfg.EKSConfig.Name),
-			Version: aws.String(ts.cfg.EKSConfig.Parameters.Version),
-			RoleArn: aws.String(ts.cfg.EKSConfig.Parameters.RoleARN),
+			Version: aws.String(ts.cfg.EKSConfig.Version),
+			RoleArn: aws.String(ts.cfg.EKSConfig.Role.ARN),
 			ResourcesVpcConfig: &aws_eks.VpcConfigRequest{
 				SubnetIds:        aws.StringSlice(subnets),
-				SecurityGroupIds: aws.StringSlice([]string{ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID}),
+				SecurityGroupIds: aws.StringSlice([]string{ts.cfg.EKSConfig.VPC.SecurityGroupID}),
 			},
 			Tags: map[string]*string{
 				"Kind":                   aws.String("aws-k8s-tester"),
@@ -356,32 +367,32 @@ func (ts *tester) createEKS() (err error) {
 				"User":                   aws.String(user.Get()),
 			},
 		}
-		for k, v := range ts.cfg.EKSConfig.Parameters.Tags {
+		for k, v := range ts.cfg.EKSConfig.Tags {
 			createInput.Tags[k] = aws.String(v)
 			ts.cfg.Logger.Info("added EKS tag to EKS API request",
 				zap.String("key", k),
 				zap.String("value", v),
 			)
 		}
-		if ts.cfg.EKSConfig.Parameters.EncryptionCMKARN != "" {
+		if ts.cfg.EKSConfig.Encryption.CMKARN != "" {
 			ts.cfg.Logger.Info("added encryption to EKS API request",
-				zap.String("cmk-arn", ts.cfg.EKSConfig.Parameters.EncryptionCMKARN),
+				zap.String("cmk-arn", ts.cfg.EKSConfig.Encryption.CMKARN),
 			)
 			createInput.EncryptionConfig = []*aws_eks.EncryptionConfig{
 				{
 					Resources: aws.StringSlice([]string{"secrets"}),
 					Provider: &aws_eks.Provider{
-						KeyArn: aws.String(ts.cfg.EKSConfig.Parameters.EncryptionCMKARN),
+						KeyArn: aws.String(ts.cfg.EKSConfig.Encryption.CMKARN),
 					},
 				},
 			}
 		}
 		req, _ := ts.cfg.EKSAPI.CreateClusterRequest(&createInput)
-		if ts.cfg.EKSConfig.Parameters.RequestHeaderKey != "" && ts.cfg.EKSConfig.Parameters.RequestHeaderValue != "" {
-			req.HTTPRequest.Header[ts.cfg.EKSConfig.Parameters.RequestHeaderKey] = []string{ts.cfg.EKSConfig.Parameters.RequestHeaderValue}
+		if ts.cfg.EKSConfig.RequestHeaderKey != "" && ts.cfg.EKSConfig.RequestHeaderValue != "" {
+			req.HTTPRequest.Header[ts.cfg.EKSConfig.RequestHeaderKey] = []string{ts.cfg.EKSConfig.RequestHeaderValue}
 			ts.cfg.Logger.Info("set request header for EKS create request",
-				zap.String("key", ts.cfg.EKSConfig.Parameters.RequestHeaderKey),
-				zap.String("value", ts.cfg.EKSConfig.Parameters.RequestHeaderValue),
+				zap.String("key", ts.cfg.EKSConfig.RequestHeaderKey),
+				zap.String("value", ts.cfg.EKSConfig.RequestHeaderValue),
 			)
 		}
 		err = req.Send()
@@ -395,7 +406,7 @@ func (ts *tester) createEKS() (err error) {
 		tpl := template.Must(template.New("TemplateCluster").Parse(TemplateCluster))
 		buf := bytes.NewBuffer(nil)
 		if err := tpl.Execute(buf, templateEKSCluster{
-			AWSEncryptionProviderCMKARN: ts.cfg.EKSConfig.Parameters.EncryptionCMKARN,
+			AWSEncryptionProviderCMKARN: ts.cfg.EKSConfig.Encryption.CMKARN,
 		}); err != nil {
 			return err
 		}
@@ -436,11 +447,11 @@ func (ts *tester) createEKS() (err error) {
 				},
 				{
 					ParameterKey:   aws.String("Version"),
-					ParameterValue: aws.String(ts.cfg.EKSConfig.Parameters.Version),
+					ParameterValue: aws.String(ts.cfg.EKSConfig.Version),
 				},
 				{
 					ParameterKey:   aws.String("RoleARN"),
-					ParameterValue: aws.String(ts.cfg.EKSConfig.Parameters.RoleARN),
+					ParameterValue: aws.String(ts.cfg.EKSConfig.Role.ARN),
 				},
 				{
 					ParameterKey:   aws.String("SubnetIDs"),
@@ -448,17 +459,17 @@ func (ts *tester) createEKS() (err error) {
 				},
 				{
 					ParameterKey:   aws.String("ClusterControlPlaneSecurityGroupID"),
-					ParameterValue: aws.String(ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID),
+					ParameterValue: aws.String(ts.cfg.EKSConfig.VPC.SecurityGroupID),
 				},
 			},
 		}
-		if ts.cfg.EKSConfig.Parameters.EncryptionCMKARN != "" {
+		if ts.cfg.EKSConfig.Encryption.CMKARN != "" {
 			ts.cfg.Logger.Info("added encryption config to EKS CFN request",
-				zap.String("cmk-arn", ts.cfg.EKSConfig.Parameters.EncryptionCMKARN),
+				zap.String("cmk-arn", ts.cfg.EKSConfig.Encryption.CMKARN),
 			)
 			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
 				ParameterKey:   aws.String("AWSEncryptionProviderCMKARN"),
-				ParameterValue: aws.String(ts.cfg.EKSConfig.Parameters.EncryptionCMKARN),
+				ParameterValue: aws.String(ts.cfg.EKSConfig.Encryption.CMKARN),
 			})
 		}
 		stackOutput, err := ts.cfg.CFNAPI.CreateStack(stackInput)
@@ -834,7 +845,7 @@ users:
 // https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html
 // "aws eks update-kubeconfig --name --role-arn --kubeconfig"
 func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Print(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createClient [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	if ts.cfg.EKSConfig.AWSIAMAuthenticatorPath != "" && ts.cfg.EKSConfig.AWSIAMAuthenticatorDownloadURL != "" {
@@ -872,8 +883,8 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 			fmt.Sprintf("--kubeconfig=%s", ts.cfg.EKSConfig.KubeConfigPath),
 			"--verbose",
 		}
-		if ts.cfg.EKSConfig.Parameters.ResolverURL != "" {
-			args = append(args, fmt.Sprintf("--endpoint=%s", ts.cfg.EKSConfig.Parameters.ResolverURL))
+		if ts.cfg.EKSConfig.ResolverURL != "" {
+			args = append(args, fmt.Sprintf("--endpoint=%s", ts.cfg.EKSConfig.ResolverURL))
 		}
 		cmd := strings.Join(args, " ")
 		ts.cfg.Logger.Info("writing KUBECONFIG with 'aws eks update-kubeconfig'",
@@ -928,8 +939,8 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 		ClusterName:                        ts.cfg.EKSConfig.Name,
 		KubeConfigPath:                     ts.cfg.EKSConfig.KubeConfigPath,
 		KubectlPath:                        ts.cfg.EKSConfig.KubectlPath,
-		ServerVersion:                      ts.cfg.EKSConfig.Parameters.Version,
-		EncryptionEnabled:                  ts.cfg.EKSConfig.Parameters.EncryptionCMKARN != "",
+		ServerVersion:                      ts.cfg.EKSConfig.Version,
+		EncryptionEnabled:                  ts.cfg.EKSConfig.Encryption.CMKARN != "",
 		S3API:                              ts.cfg.S3API,
 		S3BucketName:                       ts.cfg.EKSConfig.S3BucketName,
 		S3MetricsRawOutputDirKubeAPIServer: path.Join(ts.cfg.EKSConfig.Name, "metrics-kube-apiserver"),

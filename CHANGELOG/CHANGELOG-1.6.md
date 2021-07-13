@@ -6,6 +6,14 @@
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.0...v1.6.1).
 
+### `eksconfig`
+
+- Rename all fields [`AWS_K8S_TESTER_EKS_PARAMETERS_*` to `AWS_K8S_TESTER_EKS_`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- Rename fields [`AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR_BLOCK*` to `AWS_K8S_TESTER_EKS_VPC_CIDRS`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- Rename fields [`AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_*` to `AWS_K8S_TESTER_EKS_VPC_PUBLIC_SUBNET_CIDRS`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- Rename fields [`AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_*` to `AWS_K8S_TESTER_EKS_VPC_PRIVATE_SUBNET_CIDRS`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- Rename fields [`AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME*` to `AWS_K8S_TESTER_EKS_VPC_DHCP_OPTIONS_*`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+
 ### `k8s-tester`
 
 - Add [`k8s-tester/csrs`](https://github.com/aws/aws-k8s-tester/commit/90ef22a2e6505189f998d1f6ed738fe05f73d56d).

@@ -444,7 +444,7 @@ func (ts *tester) createASGs() error {
 		case ec2config.AMITypeAL2X8664,
 			ec2config.AMITypeAL2X8664GPU:
 			// https://github.com/awslabs/amazon-eks-ami/blob/master/files/bootstrap.sh
-			clusterVPCIP := ts.cfg.EKSConfig.Parameters.VPCBlock1
+			clusterVPCIP := ts.cfg.EKSConfig.VPC.CIDRs[0]
 			dnsClusterIP := "10.100.0.10"
 			if clusterVPCIP[:strings.IndexByte(clusterVPCIP, '.')] == "10" {
 				dnsClusterIP = "172.20.0.10"
@@ -452,7 +452,7 @@ func (ts *tester) createASGs() error {
 			tg.Metadata = metadataAL2InstallSSM
 			tg.UserData = userDataAL2InstallSSM
 			tg.UserData += `              /etc/eks/bootstrap.sh ${ClusterName}`
-			if ts.cfg.EKSConfig.Parameters.ResolverURL != "" {
+			if ts.cfg.EKSConfig.ResolverURL != "" {
 				ts.cfg.Logger.Info("adding extra bootstrap arguments --b64-cluster-ca and --apiserver-endpoint to user data",
 					zap.String("b64-cluster-ca", ts.cfg.EKSConfig.Status.ClusterCA),
 					zap.String("apiserver-endpoint", ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint),
@@ -526,7 +526,7 @@ func (ts *tester) createASGs() error {
 				},
 				{
 					ParameterKey:   aws.String("PublicSubnetIDs"),
-					ParameterValue: aws.String(strings.Join(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs, ",")),
+					ParameterValue: aws.String(strings.Join(ts.cfg.EKSConfig.VPC.PublicSubnetIDs, ",")),
 				},
 				{
 					ParameterKey:   aws.String("NodeGroupSecurityGroupID"),

@@ -67,7 +67,7 @@ func (ts *tester) Scale(mngName string) (err error) {
 			ts.cfg.Logger.Info("scale update already created; skipping", zap.Int("index", idx))
 			continue
 		}
-		fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+		fmt.Print(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 		fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]MNGs[%q].Scale[%d]\n"), mngName, idx)
 		ts.cfg.Logger.Info("waiting before starting MNG update",
 			zap.String("cluster-name", ts.cfg.EKSConfig.Name),

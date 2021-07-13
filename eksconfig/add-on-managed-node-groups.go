@@ -253,8 +253,8 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		return fmt.Errorf("MNGs %d exceeds maximum number of MNGs which is %d", n, MNGsMaxLimit)
 	}
 
-	if cfg.Parameters.VersionValue < 1.14 {
-		return fmt.Errorf("Version %q not supported for AddOnManagedNodeGroups", cfg.Parameters.Version)
+	if cfg.VersionValue < 1.14 {
+		return fmt.Errorf("Version %q not supported for AddOnManagedNodeGroups", cfg.Version)
 	}
 
 	if cfg.AddOnManagedNodeGroups.S3Dir == "" {
@@ -410,7 +410,7 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			if err != nil {
 				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] invalid VersionUpgrade.Version %q (%v)", cur.Name, cur.VersionUpgrade.Version, err)
 			}
-			origVer := cfg.Parameters.VersionValue
+			origVer := cfg.VersionValue
 			if cur.ReleaseVersionValue > 0.0 {
 				// e.g. "1.16" in "1.16.8-20200609"
 				origVer = cur.ReleaseVersionValue
@@ -418,13 +418,13 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 
 			delta := cur.VersionUpgrade.VersionValue - origVer
 			if fmt.Sprintf("%.2f", delta) != "0.01" {
-				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] VersionUpgrade only supports one minor version upgrade but got %.2f [cluster version %q, mng release version %q, mng upgrade version %q]", cur.Name, delta, cfg.Parameters.Version, cur.ReleaseVersion, cur.VersionUpgrade.Version)
+				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] VersionUpgrade only supports one minor version upgrade but got %.2f [cluster version %q, mng release version %q, mng upgrade version %q]", cur.Name, delta, cfg.Version, cur.ReleaseVersion, cur.VersionUpgrade.Version)
 			}
 			// target version must match with the Kubernetes control plane version
 			// can't upgrade to 1.17 MNG when EKS is 1.16
 			// e.g. "Nodegroup Kubernetes version should be equal to Cluster kubernetes version 1.16 or NodeGroup kubernetes version 1.16"
 			if cur.ReleaseVersionValue == 0.0 && !cfg.IsEnabledAddOnClusterVersionUpgrade() {
-				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] VersionUpgrade %q would diverge from Parameters.Version %q (IsEnabledAddOnClusterVersionUpgrade %v)", cur.Name, cur.VersionUpgrade.Version, cfg.Parameters.Version, cfg.IsEnabledAddOnClusterVersionUpgrade())
+				return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q] VersionUpgrade %q would diverge from Parameters.Version %q (IsEnabledAddOnClusterVersionUpgrade %v)", cur.Name, cur.VersionUpgrade.Version, cfg.Version, cfg.IsEnabledAddOnClusterVersionUpgrade())
 			}
 		}
 

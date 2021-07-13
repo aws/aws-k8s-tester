@@ -257,7 +257,7 @@ func (ts *tester) createSG(name string) error {
 		Parameters: []*cloudformation.Parameter{
 			{
 				ParameterKey:   aws.String("ClusterControlPlaneSecurityGroupID"),
-				ParameterValue: aws.String(ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID),
+				ParameterValue: aws.String(ts.cfg.EKSConfig.VPC.SecurityGroupID),
 			},
 			{
 				ParameterKey:   aws.String("ManagedNodeGroupSecurityGroupID"),

@@ -30,7 +30,15 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixParameters, &eksconfig.Parameters{}))
+	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_ENCRYPTION_PREFIX, &eksconfig.Encryption{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_ROLE_PREFIX, &eksconfig.Role{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_VPC_PREFIX, &eksconfig.VPC{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

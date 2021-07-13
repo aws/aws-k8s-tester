@@ -108,8 +108,8 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.Logger.Info("node group is already created; skipping creation")
 		return nil
 	}
-	if len(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs) == 0 {
-		return errors.New("empty EKSConfig.Parameters.PublicSubnetIDs")
+	if len(ts.cfg.EKSConfig.VPC.PublicSubnetIDs) == 0 {
+		return errors.New("empty EKSConfig.VPC.PublicSubnetIDs")
 	}
 
 	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", pkgName))

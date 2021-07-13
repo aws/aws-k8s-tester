@@ -260,9 +260,9 @@ func (ts *tester) installCA() error {
 	ts.cfg.Logger.Info("creating CA using kubectl", zap.String("name", ts.cfg.EKSConfig.Name))
 	var ok bool
 	var caData = caSpecData{}
-	caData.ImageURI, ok = caImages[ts.cfg.EKSConfig.Parameters.Version]
+	caData.ImageURI, ok = caImages[ts.cfg.EKSConfig.Version]
 	if !ok {
-		return fmt.Errorf("no CA found for %q", ts.cfg.EKSConfig.Parameters.Version)
+		return fmt.Errorf("no CA found for %q", ts.cfg.EKSConfig.Version)
 	}
 	caData.NodeGroupAutoDiscovery = nodeGroupAuotDiscoveryData + ts.cfg.EKSConfig.Name
 	tpl := template.Must(template.New("TemplateCA").Parse(clusterAutoscalerYAML))

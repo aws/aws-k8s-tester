@@ -144,7 +144,7 @@ func (ts *tester) Delete() error {
 		ts.cfg.Logger,
 		ts.cfg.ELB2API,
 		ts.cfg.EKSConfig.AddOnNLBHelloWorld.NLBARN,
-		ts.cfg.EKSConfig.Parameters.VPCID,
+		ts.cfg.EKSConfig.VPC.ID,
 		map[string]string{
 			"kubernetes.io/cluster/" + ts.cfg.EKSConfig.Name: "owned",
 			"kubernetes.io/service-name":                     ts.cfg.EKSConfig.AddOnNLBHelloWorld.Namespace + "/" + nlbHelloWorldServiceName,

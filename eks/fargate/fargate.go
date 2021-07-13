@@ -468,8 +468,8 @@ func (ts *tester) createProfile() error {
 	if ts.cfg.EKSConfig.AddOnFargate.RoleARN == "" {
 		return errors.New("empty AddOnFargate.RoleARN")
 	}
-	if len(ts.cfg.EKSConfig.Parameters.PrivateSubnetIDs) == 0 {
-		return errors.New("empty Parameters.PrivateSubnetIDs")
+	if len(ts.cfg.EKSConfig.VPC.PrivateSubnetIDs) == 0 {
+		return errors.New("empty VPC.PrivateSubnetIDs")
 	}
 	ts.cfg.Logger.Info("creating fargate profile", zap.String("name", ts.cfg.EKSConfig.AddOnFargate.ProfileName))
 
@@ -477,7 +477,7 @@ func (ts *tester) createProfile() error {
 		ClusterName:         aws.String(ts.cfg.EKSConfig.Name),
 		FargateProfileName:  aws.String(ts.cfg.EKSConfig.AddOnFargate.ProfileName),
 		PodExecutionRoleArn: aws.String(ts.cfg.EKSConfig.AddOnFargate.RoleARN),
-		Subnets:             aws.StringSlice(ts.cfg.EKSConfig.Parameters.PrivateSubnetIDs),
+		Subnets:             aws.StringSlice(ts.cfg.EKSConfig.VPC.PrivateSubnetIDs),
 		Selectors: []*eks.FargateProfileSelector{
 			{
 				Namespace: aws.String(ts.cfg.EKSConfig.AddOnFargate.Namespace),

@@ -260,7 +260,7 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnSecretsRemote.RequestsRawWritesCompareS3Dir == "" {
-		cfg.AddOnSecretsRemote.RequestsRawWritesCompareS3Dir = path.Join("add-on-secrets-remote", "requests-raw-writes-compare", cfg.Parameters.Version)
+		cfg.AddOnSecretsRemote.RequestsRawWritesCompareS3Dir = path.Join("add-on-secrets-remote", "requests-raw-writes-compare", cfg.Version)
 	}
 	if cfg.AddOnSecretsRemote.RequestsRawWritesCompareAllJSONPath == "" {
 		cfg.AddOnSecretsRemote.RequestsRawWritesCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-raw-writes-compare-all.json"
@@ -309,7 +309,7 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnSecretsRemote.RequestsSummaryWritesCompareS3Dir == "" {
-		cfg.AddOnSecretsRemote.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-secrets-remote", "requests-summary-writes-compare", cfg.Parameters.Version)
+		cfg.AddOnSecretsRemote.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-secrets-remote", "requests-summary-writes-compare", cfg.Version)
 	}
 	if cfg.AddOnSecretsRemote.RequestsSummaryWritesCompareJSONPath == "" {
 		cfg.AddOnSecretsRemote.RequestsSummaryWritesCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-summary-writes-compare.json"
@@ -348,7 +348,7 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnSecretsRemote.RequestsRawReadsCompareS3Dir == "" {
-		cfg.AddOnSecretsRemote.RequestsRawReadsCompareS3Dir = path.Join("add-on-secrets-remote", "requests-raw-reads-compare", cfg.Parameters.Version)
+		cfg.AddOnSecretsRemote.RequestsRawReadsCompareS3Dir = path.Join("add-on-secrets-remote", "requests-raw-reads-compare", cfg.Version)
 	}
 	if cfg.AddOnSecretsRemote.RequestsRawReadsCompareAllJSONPath == "" {
 		cfg.AddOnSecretsRemote.RequestsRawReadsCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-raw-reads-compare-all.json"
@@ -397,7 +397,7 @@ func (cfg *Config) validateAddOnSecretsRemote() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnSecretsRemote.RequestsSummaryReadsCompareS3Dir == "" {
-		cfg.AddOnSecretsRemote.RequestsSummaryReadsCompareS3Dir = path.Join("add-on-secrets-remote", "requests-summary-reads-compare", cfg.Parameters.Version)
+		cfg.AddOnSecretsRemote.RequestsSummaryReadsCompareS3Dir = path.Join("add-on-secrets-remote", "requests-summary-reads-compare", cfg.Version)
 	}
 	if cfg.AddOnSecretsRemote.RequestsSummaryReadsCompareJSONPath == "" {
 		cfg.AddOnSecretsRemote.RequestsSummaryReadsCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-remote-requests-summary-reads-compare.json"

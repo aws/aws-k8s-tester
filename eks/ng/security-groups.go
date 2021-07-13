@@ -175,7 +175,7 @@ type templateSG struct {
 
 func (ts *tester) createSG() error {
 	if ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID != "" &&
-		ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID != "" {
+		ts.cfg.EKSConfig.VPC.SecurityGroupID != "" {
 		ts.cfg.Logger.Info("security group already created; no need to create a new one")
 		return nil
 	}
@@ -229,11 +229,11 @@ func (ts *tester) createSG() error {
 			},
 			{
 				ParameterKey:   aws.String("ClusterControlPlaneSecurityGroupID"),
-				ParameterValue: aws.String(ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID),
+				ParameterValue: aws.String(ts.cfg.EKSConfig.VPC.SecurityGroupID),
 			},
 			{
 				ParameterKey:   aws.String("VPCID"),
-				ParameterValue: aws.String(ts.cfg.EKSConfig.Parameters.VPCID),
+				ParameterValue: aws.String(ts.cfg.EKSConfig.VPC.ID),
 			},
 		},
 	}

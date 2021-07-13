@@ -6,62 +6,62 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/sts"
+	aws_v2 "github.com/aws/aws-sdk-go-v2/aws"
+	config_v2 "github.com/aws/aws-sdk-go-v2/config"
+	sts_v2 "github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/aws/smithy-go/logging"
 	"go.uber.org/zap"
 )
 
 // NewV2 creates a new AWS session.
 // Specify a custom endpoint for tests.
-func NewV2(cfg *Config) (awsCfg aws.Config, stsOutput *sts.GetCallerIdentityOutput, err error) {
+func NewV2(cfg *Config) (awsCfg aws_v2.Config, stsOutput *sts_v2.GetCallerIdentityOutput, err error) {
 	if cfg == nil {
-		return aws.Config{}, nil, errors.New("got empty config")
+		return aws_v2.Config{}, nil, errors.New("got empty config")
 	}
 	if cfg.Logger == nil {
-		return aws.Config{}, nil, fmt.Errorf("missing logger")
+		return aws_v2.Config{}, nil, fmt.Errorf("missing logger")
 	}
 	if cfg.Partition == "" {
-		return aws.Config{}, nil, fmt.Errorf("missing partition")
+		return aws_v2.Config{}, nil, fmt.Errorf("missing partition")
 	}
 	if cfg.Region == "" {
-		return aws.Config{}, nil, fmt.Errorf("missing region")
+		return aws_v2.Config{}, nil, fmt.Errorf("missing region")
 	}
 
-	optFns := []func(*config.LoadOptions) error{
-		(func(*config.LoadOptions) error)(config.WithRegion(cfg.Region)),
-		(func(*config.LoadOptions) error)(config.WithLogger(toLoggerV2(cfg.Logger))),
+	optFns := []func(*config_v2.LoadOptions) error{
+		(func(*config_v2.LoadOptions) error)(config_v2.WithRegion(cfg.Region)),
+		(func(*config_v2.LoadOptions) error)(config_v2.WithLogger(toLoggerV2(cfg.Logger))),
 	}
 	if cfg.DebugAPICalls {
-		lvl := aws.LogSigning |
-			aws.LogRetries |
-			aws.LogRequest |
-			aws.LogRequestWithBody |
-			aws.LogResponse |
-			aws.LogResponseWithBody
-		optFns = append(optFns, (func(*config.LoadOptions) error)(config.WithClientLogMode(lvl)))
+		lvl := aws_v2.LogSigning |
+			aws_v2.LogRetries |
+			aws_v2.LogRequest |
+			aws_v2.LogRequestWithBody |
+			aws_v2.LogResponse |
+			aws_v2.LogResponseWithBody
+		optFns = append(optFns, (func(*config_v2.LoadOptions) error)(config_v2.WithClientLogMode(lvl)))
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	awsCfg, err = config.LoadDefaultConfig(ctx, optFns...)
+	awsCfg, err = config_v2.LoadDefaultConfig(ctx, optFns...)
 	cancel()
 	if err != nil {
-		return aws.Config{}, nil, fmt.Errorf("failed to load config %v", err)
+		return aws_v2.Config{}, nil, fmt.Errorf("failed to load config %v", err)
 	}
 
-	stsCli := sts.NewFromConfig(awsCfg)
+	stsCliV2 := sts_v2.NewFromConfig(awsCfg)
 	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
-	stsOutput, err = stsCli.GetCallerIdentity(
+	stsOutput, err = stsCliV2.GetCallerIdentity(
 		ctx,
-		&sts.GetCallerIdentityInput{},
+		&sts_v2.GetCallerIdentityInput{},
 	)
 	cancel()
 	if err != nil {
-		return aws.Config{}, nil, fmt.Errorf("failed to GetCallerIdentity %v", err)
+		return aws_v2.Config{}, nil, fmt.Errorf("failed to GetCallerIdentity %v", err)
 	}
 
-	cfg.Logger.Info("successfully get sts caller identity",
+	cfg.Logger.Info("successfully get sts caller identity ",
 		zap.String("partition", cfg.Partition),
 		zap.String("region", cfg.Region),
 		zap.String("account-id", stringVal(stsOutput.Account)),

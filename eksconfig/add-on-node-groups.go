@@ -156,8 +156,8 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		return fmt.Errorf("NGs %d exceeds maximum number of NGs which is %d", n, NGsMaxLimit)
 	}
 
-	if cfg.Parameters.VersionValue < 1.14 {
-		return fmt.Errorf("Version %q not supported for AddOnNodeGroups", cfg.Parameters.Version)
+	if cfg.VersionValue < 1.14 {
+		return fmt.Errorf("Version %q not supported for AddOnNodeGroups", cfg.Version)
 	}
 
 	if cfg.AddOnNodeGroups.S3Dir == "" {

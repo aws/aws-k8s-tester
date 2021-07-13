@@ -31,36 +31,62 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.mu = mu
 	}
 
-	if cfg.Parameters == nil {
-		cfg.Parameters = &Parameters{}
-	}
 	var vv interface{}
 	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_PREFIX, cfg)
 	if err != nil {
 		return err
 	}
 	if av, ok := vv.(*Config); ok {
-		before := cfg.Parameters
+		a1, b1 := av.Role, av.VPC
 		cfg = av
-		after := cfg.Parameters
-		if !reflect.DeepEqual(before, after) {
-			return fmt.Errorf("Parameters overwritten [before %+v, after %+v]", before, after)
+		a2, b2 := cfg.Role, cfg.VPC
+		if !reflect.DeepEqual(a1, a2) {
+			return fmt.Errorf("Role overwritten [before %+v, after %+v]", a1, a2)
+		}
+		if !reflect.DeepEqual(b1, b2) {
+			return fmt.Errorf("VPC overwritten [before %+v, after %+v]", b1, b2)
 		}
 	} else {
 		return fmt.Errorf("expected *Config, got %T", vv)
 	}
 
-	if cfg.Parameters == nil {
-		cfg.Parameters = &Parameters{}
+	if cfg.Encryption == nil {
+		cfg.Encryption = &Encryption{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixParameters, cfg.Parameters)
+	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_ENCRYPTION_PREFIX, cfg.Encryption)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*Parameters); ok {
-		cfg.Parameters = av
+	if av, ok := vv.(*Encryption); ok {
+		cfg.Encryption = av
 	} else {
-		return fmt.Errorf("expected *Parameters, got %T", vv)
+		return fmt.Errorf("expected *Encryption, got %T", vv)
+	}
+
+	if cfg.Role == nil {
+		cfg.Role = &Role{}
+	}
+	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_ROLE_PREFIX, cfg.Role)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*Role); ok {
+		cfg.Role = av
+	} else {
+		return fmt.Errorf("expected *Role, got %T", vv)
+	}
+
+	if cfg.VPC == nil {
+		cfg.VPC = &VPC{}
+	}
+	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_VPC_PREFIX, cfg.VPC)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*VPC); ok {
+		cfg.VPC = av
+	} else {
+		return fmt.Errorf("expected *VPC, got %T", vv)
 	}
 
 	if cfg.AddOnCNIVPC == nil {

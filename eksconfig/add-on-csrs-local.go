@@ -154,7 +154,7 @@ func (cfg *Config) validateAddOnCSRsLocal() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnCSRsLocal.RequestsRawWritesCompareS3Dir == "" {
-		cfg.AddOnCSRsLocal.RequestsRawWritesCompareS3Dir = path.Join("add-on-csrs-local", "requests-raw-writes-compare", cfg.Parameters.Version)
+		cfg.AddOnCSRsLocal.RequestsRawWritesCompareS3Dir = path.Join("add-on-csrs-local", "requests-raw-writes-compare", cfg.Version)
 	}
 	if cfg.AddOnCSRsLocal.RequestsRawWritesCompareAllJSONPath == "" {
 		cfg.AddOnCSRsLocal.RequestsRawWritesCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-local-requests-raw-writes-compare-all.json"
@@ -203,7 +203,7 @@ func (cfg *Config) validateAddOnCSRsLocal() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnCSRsLocal.RequestsSummaryWritesCompareS3Dir == "" {
-		cfg.AddOnCSRsLocal.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-csrs-local", "requests-summary-writes-compare", cfg.Parameters.Version)
+		cfg.AddOnCSRsLocal.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-csrs-local", "requests-summary-writes-compare", cfg.Version)
 	}
 	if cfg.AddOnCSRsLocal.RequestsSummaryWritesCompareJSONPath == "" {
 		cfg.AddOnCSRsLocal.RequestsSummaryWritesCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-local-requests-summary-writes-compare.json"

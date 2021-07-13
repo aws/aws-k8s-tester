@@ -201,7 +201,7 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnSecretsLocal.RequestsRawWritesCompareS3Dir == "" {
-		cfg.AddOnSecretsLocal.RequestsRawWritesCompareS3Dir = path.Join("add-on-secrets-local", "requests-raw-writes-compare", cfg.Parameters.Version)
+		cfg.AddOnSecretsLocal.RequestsRawWritesCompareS3Dir = path.Join("add-on-secrets-local", "requests-raw-writes-compare", cfg.Version)
 	}
 	if cfg.AddOnSecretsLocal.RequestsRawWritesCompareAllJSONPath == "" {
 		cfg.AddOnSecretsLocal.RequestsRawWritesCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-raw-writes-compare-all.json"
@@ -250,7 +250,7 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareS3Dir == "" {
-		cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-secrets-local", "requests-summary-writes-compare", cfg.Parameters.Version)
+		cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-secrets-local", "requests-summary-writes-compare", cfg.Version)
 	}
 	if cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareJSONPath == "" {
 		cfg.AddOnSecretsLocal.RequestsSummaryWritesCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-summary-writes-compare.json"
@@ -289,7 +289,7 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnSecretsLocal.RequestsRawReadsCompareS3Dir == "" {
-		cfg.AddOnSecretsLocal.RequestsRawReadsCompareS3Dir = path.Join("add-on-secrets-local", "requests-raw-reads-compare", cfg.Parameters.Version)
+		cfg.AddOnSecretsLocal.RequestsRawReadsCompareS3Dir = path.Join("add-on-secrets-local", "requests-raw-reads-compare", cfg.Version)
 	}
 	if cfg.AddOnSecretsLocal.RequestsRawReadsCompareAllJSONPath == "" {
 		cfg.AddOnSecretsLocal.RequestsRawReadsCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-raw-reads-compare-all.json"
@@ -338,7 +338,7 @@ func (cfg *Config) validateAddOnSecretsLocal() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareS3Dir == "" {
-		cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareS3Dir = path.Join("add-on-secrets-local", "requests-summary-reads-compare", cfg.Parameters.Version)
+		cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareS3Dir = path.Join("add-on-secrets-local", "requests-summary-reads-compare", cfg.Version)
 	}
 	if cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareJSONPath == "" {
 		cfg.AddOnSecretsLocal.RequestsSummaryReadsCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-secrets-local-requests-summary-reads-compare.json"
