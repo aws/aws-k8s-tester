@@ -514,7 +514,7 @@ func (ts *tester) checkResults() (err error) {
 	if err = aws_s3.Upload(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultTarGzS3Key,
 		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultTarGzPath,
 	); err != nil {
@@ -523,7 +523,7 @@ func (ts *tester) checkResults() (err error) {
 	if err = aws_s3.Upload(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultE2eLogS3Key,
 		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultE2eLogPath,
 	); err != nil {
@@ -532,7 +532,7 @@ func (ts *tester) checkResults() (err error) {
 	if err = aws_s3.Upload(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultJunitXMLS3Key,
 		ts.cfg.EKSConfig.AddOnConformance.SonobuoyResultJunitXMLPath,
 	); err != nil {

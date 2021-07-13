@@ -1,327 +1,368 @@
 package ng
 
 import (
-	"bytes"
 	"context"
+	"errors"
 	"fmt"
-	"io/ioutil"
-	"text/template"
-	"time"
+	"strings"
 
-	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
-	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
-	"github.com/aws/aws-k8s-tester/pkg/user"
-	"github.com/aws/aws-k8s-tester/version"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/cloudformation"
+	aws_v2 "github.com/aws/aws-sdk-go-v2/aws"
+	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
+	aws_ec2_v2_types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	smithy "github.com/aws/smithy-go"
 	"go.uber.org/zap"
 )
 
-// TemplateSG is the CloudFormation template for EKS node group security group.
-// ref. https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html
-// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
-// ref. https://github.com/aws/aws-k8s-tester/pull/33
-// ref. https://github.com/kubernetes/kubernetes/blob/release-1.16/test/e2e/network/service.go#L544
-const TemplateSG = `
----
-AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Amazon EKS Node Group Security Group'
+// AWS::EC2::SecurityGroup
+func (ts *tester) createSecurityGroups() error {
+	ts.cfg.Logger.Info("creating security group")
 
-Parameters:
-
-  ClusterName:
-    Type: String
-    Description: The cluster name provided when the cluster was created. If it is incorrect, nodes will not be able to join the cluster.
-
-  ClusterControlPlaneSecurityGroupID:
-    Type: AWS::EC2::SecurityGroup::Id
-    Description: The security group of the cluster control plane.
-
-  VPCID:
-    Type: AWS::EC2::VPC::Id
-    Description: The VPC of the worker instances
-
-Resources:
-
-  NodeGroupSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Security group for all nodes in the cluster
-      Tags:
-      - Key: !Sub kubernetes.io/cluster/${ClusterName}
-        Value: owned
-      VpcId: !Ref VPCID
-
-  IngressWithinNodeGroupSecurityGroup:
-    Type: AWS::EC2::SecurityGroupIngress
-    DependsOn: NodeGroupSecurityGroup
-    Properties:
-      Description: Allow node to communicate with each other
-      GroupId: !Ref NodeGroupSecurityGroup
-      SourceSecurityGroupId: !Ref NodeGroupSecurityGroup
-      IpProtocol: "-1"
-      FromPort: 0
-      ToPort: 65535
-
-  Ingress443FromNGtoCP:
-    Type: AWS::EC2::SecurityGroupIngress
-    DependsOn: NodeGroupSecurityGroup
-    Properties:
-      Description: Allow pods to communicate with the cluster API Server
-      SourceSecurityGroupId: !Ref NodeGroupSecurityGroup
-      GroupId: !Ref ClusterControlPlaneSecurityGroupID
-      IpProtocol: tcp
-      FromPort: 443
-      ToPort: 443
-
-  Ingress443FromCPtoNG:
-    Type: AWS::EC2::SecurityGroupIngress
-    DependsOn: NodeGroupSecurityGroup
-    Properties:
-      Description: Allow pods running extension API servers on port 443 to receive communication from cluster control plane
-      SourceSecurityGroupId: !Ref ClusterControlPlaneSecurityGroupID
-      GroupId: !Ref NodeGroupSecurityGroup
-      IpProtocol: tcp
-      FromPort: 443
-      ToPort: 443
-
-  Egress443FromCPtoNG:
-    Type: AWS::EC2::SecurityGroupEgress
-    DependsOn: NodeGroupSecurityGroup
-    Properties:
-      Description: Allow the cluster control plane to communicate with pods running extension API servers on port 443
-      GroupId: !Ref ClusterControlPlaneSecurityGroupID
-      DestinationSecurityGroupId: !Ref NodeGroupSecurityGroup
-      IpProtocol: tcp
-      FromPort: 443
-      ToPort: 443
-
-  IngressAllFromCPtoNG:
-    Type: AWS::EC2::SecurityGroupIngress
-    DependsOn: NodeGroupSecurityGroup
-    Properties:
-      Description: Allow worker Kubelets and pods to receive communication from the cluster control plane
-      SourceSecurityGroupId: !Ref ClusterControlPlaneSecurityGroupID
-      GroupId: !Ref NodeGroupSecurityGroup
-      IpProtocol: tcp
-      FromPort: 0
-      ToPort: 65535
-
-  EgressAllFromCPtoNG:
-    Type: AWS::EC2::SecurityGroupEgress
-    DependsOn: NodeGroupSecurityGroup
-    Properties:
-      Description: Allow the cluster control plane to communicate with worker Kubelet and pods
-      GroupId: !Ref ClusterControlPlaneSecurityGroupID
-      DestinationSecurityGroupId: !Ref NodeGroupSecurityGroup
-      IpProtocol: tcp
-      FromPort: 0
-      ToPort: 65535
-
-  Ingress22ForSSH:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      GroupId: !Ref NodeGroupSecurityGroup
-      IpProtocol: 'tcp'
-      CidrIp: '0.0.0.0/0'
-      FromPort: 22
-      ToPort: 22
-
-  IngressForGuestBook:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      GroupId: !Ref NodeGroupSecurityGroup
-      IpProtocol: 'tcp'
-      CidrIp: '0.0.0.0/0'
-      FromPort: 1
-      ToPort: 10000
-
-  EgressForGuestBook:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      GroupId: !Ref ClusterControlPlaneSecurityGroupID
-      IpProtocol: 'tcp'
-      CidrIp: '0.0.0.0/0'
-      FromPort: 1
-      ToPort: 10000
-
-  IngressForNodePortConformance:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      Description: NodePort requires {{.InternetIngressFromPort}}-{{.InternetIngressToPort}} open from nodes to internet, request to node over public IP in those range https://github.com/kubernetes/kubernetes/blob/release-1.16/test/e2e/network/service.go#L544
-      GroupId: !Ref NodeGroupSecurityGroup
-      IpProtocol: 'tcp'
-      CidrIp: '0.0.0.0/0'
-      FromPort: {{.InternetIngressFromPort}}
-      ToPort: {{.InternetIngressToPort}}
-
-Outputs:
-
-  NodeGroupSecurityGroupID:
-    Value: !Ref NodeGroupSecurityGroup
-    Description: The security group ID for the node group
-
-`
-
-// "[sig-network] Networking Granular Checks" in "test/e2e/network/dns.go"
-// requires "e2enetwork.EndpointUDPPort/EndpointHTTPPort", 8081 and 8080
-// just open all for now...
-// TODO: restrict ports
-
-type templateSG struct {
-	InternetIngressFromPort int
-	InternetIngressToPort   int
-}
-
-func (ts *tester) createSG() error {
-	if ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID != "" &&
-		ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID != "" {
-		ts.cfg.Logger.Info("security group already created; no need to create a new one")
-		return nil
-	}
-
-	fromPort := 30000
-	if ts.cfg.EKSConfig.IsEnabledAddOnConformance() {
-		fromPort = 0
-	}
-	tpl := template.Must(template.New("TemplateSG").Parse(TemplateSG))
-	buf := bytes.NewBuffer(nil)
-	if err := tpl.Execute(buf, templateSG{
-		InternetIngressFromPort: fromPort,
-		InternetIngressToPort:   32767,
-	}); err != nil {
-		return err
-	}
-
-	// grant write permission in case of overwrites
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLPath, buf.Bytes(), 0600); err != nil {
-		return err
-	}
-	if err := aws_s3.Upload(
-		ts.cfg.Logger,
-		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
-		ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLS3Key,
-		ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLPath,
-	); err != nil {
-		return err
-	}
-	ts.cfg.Logger.Info("creating a new node group security group using CFN",
-		zap.String("name", ts.cfg.EKSConfig.AddOnNodeGroups.RoleName),
-		zap.String("sg-cfn-file-path", ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLPath),
-		zap.Int("internet-ingress-from-port", fromPort),
-		zap.Int("internet-ingress-to-port", 32767),
-	)
-	stackInput := &cloudformation.CreateStackInput{
-		StackName:    aws.String(ts.cfg.EKSConfig.Name + "-ng-sg"),
-		OnFailure:    aws.String(cloudformation.OnFailureDelete),
-		TemplateBody: aws.String(buf.String()),
-		Tags: cfn.NewTags(map[string]string{
-			"Kind":                   "aws-k8s-tester",
-			"Name":                   ts.cfg.EKSConfig.Name,
-			"aws-k8s-tester-version": version.ReleaseVersion,
-			"User":                   user.Get(),
-		}),
-		Parameters: []*cloudformation.Parameter{
-			{
-				ParameterKey:   aws.String("ClusterName"),
-				ParameterValue: aws.String(ts.cfg.EKSConfig.Name),
-			},
-			{
-				ParameterKey:   aws.String("ClusterControlPlaneSecurityGroupID"),
-				ParameterValue: aws.String(ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID),
-			},
-			{
-				ParameterKey:   aws.String("VPCID"),
-				ParameterValue: aws.String(ts.cfg.EKSConfig.Parameters.VPCID),
+	sout, err := ts.cfg.EC2APIV2.CreateSecurityGroup(
+		context.Background(),
+		&aws_ec2_v2.CreateSecurityGroupInput{
+			GroupName:   aws_v2.String(ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupName),
+			Description: aws_v2.String("Security group for all nodes in the cluster"),
+			VpcId:       aws_v2.String(ts.cfg.EKSConfig.VPC.ID),
+			TagSpecifications: []aws_ec2_v2_types.TagSpecification{
+				{
+					ResourceType: aws_ec2_v2_types.ResourceTypeSecurityGroup,
+					Tags: []aws_ec2_v2_types.Tag{
+						{
+							Key:   aws_v2.String(fmt.Sprintf("kubernetes.io/cluster/%s", ts.cfg.EKSConfig.Name)),
+							Value: aws_v2.String("owned"),
+						},
+					},
+				},
 			},
 		},
-	}
-
-	stackOutput, err := ts.cfg.CFNAPI.CreateStack(stackInput)
+	)
 	if err != nil {
+		ts.cfg.Logger.Warn("failed to create security group", zap.Error(err))
 		return err
 	}
-	ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID = aws.StringValue(stackOutput.StackId)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
-	ch := cfn.Poll(
-		ctx,
-		ts.cfg.Stopc,
-		ts.cfg.Logger,
-		ts.cfg.LogWriter,
-		ts.cfg.CFNAPI,
-		ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID,
-		cloudformation.ResourceStatusCreateComplete,
-		time.Minute,
-		10*time.Second,
-	)
-	var st cfn.StackStatus
-	for st = range ch {
-		if st.Error != nil {
-			cancel()
-			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to create node group security group (%v)", st.Error))
-			return st.Error
-		}
-	}
-	cancel()
-
-	for _, o := range st.Stack.Outputs {
-		switch k := aws.StringValue(o.OutputKey); k {
-		case "NodeGroupSecurityGroupID":
-			ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupID = aws.StringValue(o.OutputValue)
-		default:
-			return fmt.Errorf("unexpected OutputKey %q from %q", k, ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID)
-		}
-	}
-
-	ts.cfg.Logger.Info("created a node group security group",
-		zap.String("cfn-stack-id", ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID),
-		zap.String("role-arn", ts.cfg.EKSConfig.AddOnNodeGroups.RoleARN),
-	)
+	ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID = aws_v2.ToString(sout.GroupId)
 	ts.cfg.EKSConfig.Sync()
+	ts.cfg.Logger.Info("created security group", zap.String("security-group-id", ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID))
+
 	return nil
 }
 
-func (ts *tester) deleteSG() error {
-	if ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID == "" {
-		ts.cfg.Logger.Info("empty node group security group CFN stack ID; no need to delete node group")
+func (ts *tester) deleteSecurityGroups() (err error) {
+	ts.cfg.Logger.Info("deleting security group")
+	if ts.cfg.EKSConfig.VPC.ID == "" {
+		return nil
+	}
+	if _, ok := ts.cfg.EKSConfig.Status.DeletedResources[ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID]; ok {
 		return nil
 	}
 
-	ts.cfg.Logger.Info("deleting node group security group CFN stack",
-		zap.String("role-cfn-stack-id", ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID),
+	_, err = ts.cfg.EC2APIV2.DeleteSecurityGroup(
+		context.Background(),
+		&aws_ec2_v2.DeleteSecurityGroupInput{
+			GroupId: aws_v2.String(ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID),
+		},
 	)
-	_, err := ts.cfg.CFNAPI.DeleteStack(&cloudformation.DeleteStackInput{
-		StackName: aws.String(ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID),
-	})
 	if err != nil {
+		ts.cfg.Logger.Warn("failed to delete security group", zap.Error(err))
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+				ts.cfg.EKSConfig.Status.DeletedResources[ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID] = "VPC.NodeGroupSecurityGroupID"
+				ts.cfg.EKSConfig.Sync()
+				return nil
+			}
+		}
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
-	ch := cfn.Poll(
-		ctx,
-		make(chan struct{}), // do not exit on stop
-		ts.cfg.Logger,
-		ts.cfg.LogWriter,
-		ts.cfg.CFNAPI,
-		ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID,
-		cloudformation.ResourceStatusDeleteComplete,
-		time.Minute,
-		10*time.Second,
-	)
-	var st cfn.StackStatus
-	for st = range ch {
-		if st.Error != nil {
-			cancel()
-			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete node group security group (%v)", st.Error))
-			return st.Error
-		}
-	}
-	cancel()
-	ts.cfg.Logger.Info("deleted a node group security group",
-		zap.String("role-cfn-stack-id", ts.cfg.EKSConfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID),
-	)
+
+	ts.cfg.Logger.Info("deleted security group")
+	ts.cfg.EKSConfig.Status.DeletedResources[ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID] = "VPC.NodeGroupSecurityGroupID"
 	ts.cfg.EKSConfig.Sync()
+
+	return nil
+}
+
+func (ts *tester) authorizeSecurityGroup() error {
+	ts.cfg.Logger.Info("authorizing security group",
+		zap.String("api-server-node-security-group-id", ts.cfg.EKSConfig.VPC.SecurityGroupID),
+		zap.String("node-group-security-group-id", ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID),
+	)
+
+	// allow node to communicate with each other
+	ts.cfg.Logger.Info("authorizing IngressWithinNodeGroupSecurityGroup")
+	_, err := ts.cfg.EC2APIV2.AuthorizeSecurityGroupIngress(
+		context.Background(),
+		&aws_ec2_v2.AuthorizeSecurityGroupIngressInput{
+			// ingress target
+			GroupId: aws_v2.String(ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID),
+
+			IpPermissions: []aws_ec2_v2_types.IpPermission{
+				{
+					IpProtocol: aws_v2.String("-1"),
+					UserIdGroupPairs: []aws_ec2_v2_types.UserIdGroupPair{
+						{
+							GroupId:     aws_v2.String(ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID),
+							Description: aws_v2.String("allow node to communicate with each other"),
+							VpcId:       aws_v2.String(ts.cfg.EKSConfig.VPC.ID),
+						},
+					},
+				},
+			},
+		},
+	)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to authorize ingress", zap.Error(err))
+		return err
+	}
+	ts.cfg.Logger.Info("authorized IngressWithinNodeGroupSecurityGroup")
+
+	// allow pods to communicate with the cluster API Server
+	ts.cfg.Logger.Info("authorizing Ingress443FromNGtoCP")
+	_, err = ts.cfg.EC2APIV2.AuthorizeSecurityGroupIngress(
+		context.Background(),
+		&aws_ec2_v2.AuthorizeSecurityGroupIngressInput{
+			// ingress target
+			GroupId: aws_v2.String(ts.cfg.EKSConfig.VPC.SecurityGroupID),
+
+			IpPermissions: []aws_ec2_v2_types.IpPermission{
+				{
+					IpProtocol: aws_v2.String("tcp"),
+					FromPort:   aws_v2.Int32(443),
+					ToPort:     aws_v2.Int32(443),
+					UserIdGroupPairs: []aws_ec2_v2_types.UserIdGroupPair{
+						{
+							GroupId:     aws_v2.String(ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID),
+							Description: aws_v2.String("allow pods to communicate with the cluster API Server"),
+							VpcId:       aws_v2.String(ts.cfg.EKSConfig.VPC.ID),
+						},
+					},
+				},
+			},
+		},
+	)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to authorize ingress", zap.Error(err))
+		return err
+	}
+	ts.cfg.Logger.Info("authorized Ingress443FromNGtoCP")
+
+	// allow pods running extension API servers on port 443
+	// to receive communication from cluster control plane
+	ts.cfg.Logger.Info("authorizing Ingress443FromCPtoNG")
+	_, err = ts.cfg.EC2APIV2.AuthorizeSecurityGroupIngress(
+		context.Background(),
+		&aws_ec2_v2.AuthorizeSecurityGroupIngressInput{
+			// egress target
+			GroupId: aws_v2.String(ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID),
+			IpPermissions: []aws_ec2_v2_types.IpPermission{
+				{
+					IpProtocol: aws_v2.String("tcp"),
+					FromPort:   aws_v2.Int32(443),
+					ToPort:     aws_v2.Int32(443),
+					UserIdGroupPairs: []aws_ec2_v2_types.UserIdGroupPair{
+						{
+							GroupId:     aws_v2.String(ts.cfg.EKSConfig.VPC.SecurityGroupID),
+							Description: aws_v2.String("receive communication from cluster control plane"),
+							VpcId:       aws_v2.String(ts.cfg.EKSConfig.VPC.ID),
+						},
+					},
+				},
+			},
+		},
+	)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to authorize ingress", zap.Error(err))
+		return err
+	}
+	ts.cfg.Logger.Info("authorized Ingress443FromCPtoNG")
+
+	// allow the cluster control plane to communicate with pods running extension API servers on port 443
+	ts.cfg.Logger.Info("authorizing Egress443FromCPtoNG")
+	_, err = ts.cfg.EC2APIV2.AuthorizeSecurityGroupEgress(
+		context.Background(),
+		&aws_ec2_v2.AuthorizeSecurityGroupEgressInput{
+			// egress target
+			GroupId: aws_v2.String(ts.cfg.EKSConfig.VPC.SecurityGroupID),
+			IpPermissions: []aws_ec2_v2_types.IpPermission{
+				{
+					IpProtocol: aws_v2.String("tcp"),
+					FromPort:   aws_v2.Int32(443),
+					ToPort:     aws_v2.Int32(443),
+					UserIdGroupPairs: []aws_ec2_v2_types.UserIdGroupPair{
+						{
+							GroupId:     aws_v2.String(ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID),
+							Description: aws_v2.String("communicate with pods running extension API servers on port 443"),
+							VpcId:       aws_v2.String(ts.cfg.EKSConfig.VPC.ID),
+						},
+					},
+				},
+			},
+		},
+	)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to authorize egress", zap.Error(err))
+		return err
+	}
+	ts.cfg.Logger.Info("authorized Egress443FromCPtoNG")
+
+	// allow worker Kubelets and pods to receive communication from the cluster control plane
+	ts.cfg.Logger.Info("authorizing IngressAllFromCPtoNG")
+	_, err = ts.cfg.EC2APIV2.AuthorizeSecurityGroupIngress(
+		context.Background(),
+		&aws_ec2_v2.AuthorizeSecurityGroupIngressInput{
+			// ingress target
+			GroupId: aws_v2.String(ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID),
+			IpPermissions: []aws_ec2_v2_types.IpPermission{
+				{
+					IpProtocol: aws_v2.String("tcp"),
+					FromPort:   aws_v2.Int32(0),
+					ToPort:     aws_v2.Int32(65535),
+					UserIdGroupPairs: []aws_ec2_v2_types.UserIdGroupPair{
+						{
+							GroupId:     aws_v2.String(ts.cfg.EKSConfig.VPC.SecurityGroupID),
+							Description: aws_v2.String("receive communication from the cluster control plane"),
+							VpcId:       aws_v2.String(ts.cfg.EKSConfig.VPC.ID),
+						},
+					},
+				},
+			},
+		},
+	)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to authorize ingress", zap.Error(err))
+		return err
+	}
+	ts.cfg.Logger.Info("authorized IngressAllFromCPtoNG")
+
+	// allow the cluster control plane to communicate with worker Kubelet and pods
+	ts.cfg.Logger.Info("authorizing EgressAllFromCPtoNG")
+	_, err = ts.cfg.EC2APIV2.AuthorizeSecurityGroupEgress(
+		context.Background(),
+		&aws_ec2_v2.AuthorizeSecurityGroupEgressInput{
+			// egress target
+			GroupId: aws_v2.String(ts.cfg.EKSConfig.VPC.SecurityGroupID),
+			IpPermissions: []aws_ec2_v2_types.IpPermission{
+				{
+					IpProtocol: aws_v2.String("tcp"),
+					FromPort:   aws_v2.Int32(0),
+					ToPort:     aws_v2.Int32(65535),
+					UserIdGroupPairs: []aws_ec2_v2_types.UserIdGroupPair{
+						{
+							GroupId:     aws_v2.String(ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID),
+							Description: aws_v2.String("communicate with worker Kubelet and pods"),
+							VpcId:       aws_v2.String(ts.cfg.EKSConfig.VPC.ID),
+						},
+					},
+				},
+			},
+		},
+	)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to authorize egress", zap.Error(err))
+		return err
+	}
+	ts.cfg.Logger.Info("authorized EgressAllFromCPtoNG")
+
+	ts.cfg.Logger.Info("authorizing Ingress22ForSSH")
+	_, err = ts.cfg.EC2APIV2.AuthorizeSecurityGroupIngress(
+		context.Background(),
+		&aws_ec2_v2.AuthorizeSecurityGroupIngressInput{
+			// ingress target
+			GroupId: aws_v2.String(ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID),
+			IpPermissions: []aws_ec2_v2_types.IpPermission{
+				{
+					IpProtocol: aws_v2.String("tcp"),
+					IpRanges: []aws_ec2_v2_types.IpRange{
+						{
+							CidrIp: aws_v2.String("0.0.0.0/0"),
+						},
+					},
+					FromPort: aws_v2.Int32(22),
+					ToPort:   aws_v2.Int32(22),
+				},
+			},
+		},
+	)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to authorize ingress", zap.Error(err))
+		return err
+	}
+	ts.cfg.Logger.Info("authorized Ingress22ForSSH")
+
+	ts.cfg.Logger.Info("authorizing IngressForGuestBook")
+	_, err = ts.cfg.EC2APIV2.AuthorizeSecurityGroupIngress(
+		context.Background(),
+		&aws_ec2_v2.AuthorizeSecurityGroupIngressInput{
+			// ingress target
+			GroupId: aws_v2.String(ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID),
+			IpPermissions: []aws_ec2_v2_types.IpPermission{
+				{
+					IpProtocol: aws_v2.String("tcp"),
+					IpRanges: []aws_ec2_v2_types.IpRange{
+						{
+							CidrIp: aws_v2.String("0.0.0.0/0"),
+						},
+					},
+					FromPort: aws_v2.Int32(1),
+					ToPort:   aws_v2.Int32(10000),
+				},
+			},
+		},
+	)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to authorize ingress", zap.Error(err))
+		return err
+	}
+	ts.cfg.Logger.Info("authorized IngressForGuestBook")
+
+	ts.cfg.Logger.Info("authorizing EgressForGuestBook")
+	_, err = ts.cfg.EC2APIV2.AuthorizeSecurityGroupEgress(
+		context.Background(),
+		&aws_ec2_v2.AuthorizeSecurityGroupEgressInput{
+			// egress target
+			GroupId: aws_v2.String(ts.cfg.EKSConfig.VPC.SecurityGroupID),
+			IpPermissions: []aws_ec2_v2_types.IpPermission{
+				{
+					IpProtocol: aws_v2.String("tcp"),
+					FromPort:   aws_v2.Int32(1),
+					ToPort:     aws_v2.Int32(10000),
+				},
+			},
+		},
+	)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to authorize egress", zap.Error(err))
+		return err
+	}
+	ts.cfg.Logger.Info("authorized EgressForGuestBook")
+
+	ts.cfg.Logger.Info("authorizing IngressForNodePortConformance")
+	_, err = ts.cfg.EC2APIV2.AuthorizeSecurityGroupIngress(
+		context.Background(),
+		&aws_ec2_v2.AuthorizeSecurityGroupIngressInput{
+			// ingress target
+			GroupId: aws_v2.String(ts.cfg.EKSConfig.VPC.NodeGroupSecurityGroupID),
+			IpPermissions: []aws_ec2_v2_types.IpPermission{
+				{
+					IpProtocol: aws_v2.String("tcp"),
+					IpRanges: []aws_ec2_v2_types.IpRange{
+						{
+							CidrIp: aws_v2.String("0.0.0.0/0"),
+						},
+					},
+					FromPort: aws_v2.Int32(1),
+					ToPort:   aws_v2.Int32(32767),
+				},
+			},
+		},
+	)
+	if err != nil {
+		ts.cfg.Logger.Warn("failed to authorize ingress", zap.Error(err))
+		return err
+	}
+	ts.cfg.Logger.Info("authorized IngressForNodePortConformance")
+
+	ts.cfg.Logger.Info("authorized security group")
 	return nil
 }

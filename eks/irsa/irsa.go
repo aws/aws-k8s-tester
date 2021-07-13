@@ -214,7 +214,7 @@ func (ts *tester) Delete() error {
 }
 
 func (ts *tester) createS3Object() (err error) {
-	if ts.cfg.EKSConfig.S3BucketName == "" {
+	if ts.cfg.EKSConfig.S3.BucketName == "" {
 		return errors.New("empty S3 bucket name for IRSA add-on")
 	}
 	ts.testBody = randutil.String(256)
@@ -222,7 +222,7 @@ func (ts *tester) createS3Object() (err error) {
 	return aws_s3.UploadBody(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		ts.cfg.EKSConfig.AddOnIRSA.S3Key,
 		strings.NewReader(ts.testBody),
 	)
@@ -379,7 +379,7 @@ func (ts *tester) createRole() error {
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, irsaTemplate{
 		IRSAIssuerHostPath: ts.cfg.EKSConfig.Status.ClusterOIDCIssuerHostPath,
-		S3BucketName:       ts.cfg.EKSConfig.S3BucketName,
+		S3BucketName:       ts.cfg.EKSConfig.S3.BucketName,
 		ClusterName:        ts.cfg.EKSConfig.Name,
 	}); err != nil {
 		return err
@@ -392,7 +392,7 @@ func (ts *tester) createRole() error {
 	if err := aws_s3.Upload(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		ts.cfg.EKSConfig.AddOnIRSA.RoleCFNStackYAMLS3Key,
 		ts.cfg.EKSConfig.AddOnIRSA.RoleCFNStackYAMLPath,
 	); err != nil {
@@ -679,7 +679,7 @@ func (ts *tester) createConfigMap() error {
 		// sts caller role ARN: arn:aws:sts::607362164682:assumed-role/eks-2020071200-galaxyzejwho-add-on-irsa-role/botocore-session-1594541343
 		RoleName: ts.cfg.EKSConfig.AddOnIRSA.RoleName,
 
-		S3BucketName: ts.cfg.EKSConfig.S3BucketName,
+		S3BucketName: ts.cfg.EKSConfig.S3.BucketName,
 		S3Key:        ts.cfg.EKSConfig.AddOnIRSA.S3Key,
 		SleepMessage: ts.sleepMessage,
 	}); err != nil {

@@ -16,9 +16,9 @@ import (
 	aws_ec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	k8s_object "github.com/aws/aws-k8s-tester/pkg/k8s-object"
+	aws_asg_v2 "github.com/aws/aws-sdk-go-v2/service/autoscaling"
+	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"go.uber.org/zap"
@@ -39,9 +39,11 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
-	EC2API    ec2iface.EC2API
-	ASGAPI    autoscalingiface.AutoScalingAPI
-	EKSAPI    eksiface.EKSAPI
+
+	EC2APIV2 *aws_ec2_v2.Client
+	ASGAPIV2 *aws_asg_v2.Client
+
+	EKSAPI eksiface.EKSAPI
 }
 
 var pkgName = reflect.TypeOf(tester{}).PkgPath()
@@ -119,8 +121,8 @@ func (ts *tester) waitForNodes(mngName string, retriesLeft int) error {
 	ec2Instances, err := aws_ec2.WaitUntilRunning(
 		ctx,
 		ts.cfg.Stopc,
-		ts.cfg.ASGAPI,
-		ts.cfg.EC2API,
+		ts.cfg.EC2APIV2,
+		ts.cfg.ASGAPIV2,
 		cur.ASGName,
 	)
 	cancel()

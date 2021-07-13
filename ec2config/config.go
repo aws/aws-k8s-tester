@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	aws_v2 "github.com/aws/aws-sdk-go-v2/aws"
+	aws_ec2_v2_types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/mitchellh/colorstring"
 	"sigs.k8s.io/yaml" // must use "sigs.k8s.io/yaml"
 )
@@ -198,7 +198,7 @@ type Config struct {
 	ASGs map[string]ASG `json:"asgs"`
 
 	// TotalNodes is the total number of nodes from all ASGs.
-	TotalNodes int64 `json:"total-nodes" read-only:"true"`
+	TotalNodes int32 `json:"total-nodes" read-only:"true"`
 }
 
 func (c Config) Colorize(input string) string {
@@ -252,31 +252,14 @@ type ASG struct {
 	// Name is the ASG name.
 	Name string `json:"name"`
 
-	ASGCFNStackID        string `json:"asg-cfn-stack-id" read-only:"true"`
-	ASGCFNStackYAMLPath  string `json:"asg-cfn-stack-yaml-path" read-only:"true"`
-	ASGCFNStackYAMLS3Key string `json:"asg-cfn-stack-yaml-s3-key" read-only:"true"`
-
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
 	// RemoteAccessUserName is the user name used for running init scripts or SSH access.
 	RemoteAccessUserName string `json:"remote-access-user-name"`
 
-	// SSMDocumentCreate is true to auto-create and delete SSM document.
-	SSMDocumentCreate bool `json:"ssm-document-create"`
-	// SSMDocumentName is the name of SSM document.
-	SSMDocumentName string `json:"ssm-document-name"`
-	// SSMDocumentCFNStackName is the name of SSM document CFN stack.
-	SSMDocumentCFNStackName string `json:"ssm-document-cfn-stack-name"`
-	// SSMDocumentCommands is the commands for SSM document.
-	// Only used if SSM doc is created.
-	SSMDocumentCommands string `json:"ssm-document-commands"`
-	// SSMDocumentExecutionTimeoutSeconds is the SSM document execution timeout in seconds.
-	SSMDocumentExecutionTimeoutSeconds int      `json:"ssm-document-execution-timeout-in-seconds"`
-	SSMDocumentCFNStackID              string   `json:"ssm-document-cfn-stack-id" read-only:"true"`
-	SSMDocumentCFNStackYAMLPath        string   `json:"ssm-document-cfn-stack-yaml-path" read-only:"true"`
-	SSMDocumentCFNStackYAMLS3Key       string   `json:"ssm-document-cfn-stack-yaml-s3-key" read-only:"true"`
-	SSMDocumentCommandIDs              []string `json:"ssm-document-command-ids" read-only:"true"`
+	// SSM defines SSM command parameters.
+	SSM *SSM `json:"ssm"`
 
 	// TODO: support bootstrap arguments
 	// ref. https://github.com/awslabs/amazon-eks-ami/blob/master/amazon-eks-nodegroup.yaml
@@ -294,8 +277,9 @@ type ASG struct {
 	// parameter of the AMI ID.
 	ImageIDSSMParameter string `json:"image-id-ssm-parameter"`
 
-	// InstanceTypes is the list of EC2 instance types.
-	InstanceTypes []string `json:"instance-types"`
+	// InstanceType is the EC2 instance type.
+	InstanceType string `json:"instance-type"`
+
 	// VolumeSize is the size of the default volume, in GiB.
 	//
 	// Constraints: 1-16384 for General Purpose SSD (gp2), 4-16384 for Provisioned
@@ -306,19 +290,35 @@ type ASG struct {
 	//
 	// Default: If you're creating the volume from a snapshot and don't specify
 	// a volume size, the default is the snapshot size.
-	VolumeSize int64 `json:"volume-size"`
+	VolumeSize int32 `json:"volume-size"`
 
 	// ASGMinSize is the minimum size of ASG.
-	ASGMinSize int64 `json:"asg-min-size,omitempty"`
+	ASGMinSize int32 `json:"asg-min-size,omitempty"`
 	// ASGMaxSize is the maximum size of ASG.
-	ASGMaxSize int64 `json:"asg-max-size,omitempty"`
+	ASGMaxSize int32 `json:"asg-max-size,omitempty"`
 	// ASGDesiredCapacity is the desired capacity of ASG.
-	ASGDesiredCapacity int64 `json:"asg-desired-capacity,omitempty"`
+	ASGDesiredCapacity int32 `json:"asg-desired-capacity,omitempty"`
 
 	// Instances is a map from instance ID to instance.
 	Instances map[string]Instance `json:"instanaces" read-only:"true"`
 	// Logs maps each instance ID to a list of log file paths fetched via SSH access.
 	Logs map[string][]string `json:"logs" read-only:"true"`
+
+	// LaunchTemplateName is the name of the launch template.
+	LaunchTemplateName string `json:"launch-template-name" read-only:"true"`
+}
+
+type SSM struct {
+	// DocumentCreate is true to auto-create and delete SSM document.
+	DocumentCreate bool `json:"document-create"`
+	// DocumentName is the name of SSM document.
+	DocumentName string `json:"document-name"`
+	// DocumentCommands is the commands for SSM document.
+	// Only used if SSM doc is created.
+	DocumentCommands string `json:"document-commands"`
+	// DocumentExecutionTimeoutSeconds is the SSM document execution timeout in seconds.
+	DocumentExecutionTimeoutSeconds int      `json:"document-execution-timeout-in-seconds"`
+	DocumentCommandIDs              []string `json:"document-command-ids" read-only:"true"`
 }
 
 // Instance represents an EC2 instance.
@@ -362,9 +362,9 @@ type IAMInstanceProfile struct {
 // CPUOptions represents the CPU of an EC2 instance.
 type CPUOptions struct {
 	// CoreCount is the number of CPU cores for the instance.
-	CoreCount int64 `json:"core-count"`
+	CoreCount int32 `json:"core-count"`
 	// ThreadsPerCore is the number of threads per CPU core.
-	ThreadsPerCore int64 `json:"threads-per-core"`
+	ThreadsPerCore int32 `json:"threads-per-core"`
 }
 
 // Placement defines EC2 placement.
@@ -375,7 +375,7 @@ type Placement struct {
 
 // State defines an EC2 state.
 type State struct {
-	Code int64  `json:"code"`
+	Code int32  `json:"code"`
 	Name string `json:"name"`
 }
 
@@ -542,73 +542,73 @@ aws ssm --region %s start-session --target %s
 }
 
 // ConvertInstance converts "aws ec2 describe-instances" to "config.Instance".
-func ConvertInstance(iv *ec2.Instance) (instance Instance) {
+func ConvertInstance(iv aws_ec2_v2_types.Instance) (instance Instance) {
 	instance = Instance{
-		Architecture:          aws.StringValue(iv.Architecture),
-		ImageID:               aws.StringValue(iv.ImageId),
-		InstanceID:            aws.StringValue(iv.InstanceId),
-		InstanceType:          aws.StringValue(iv.InstanceType),
-		KeyName:               aws.StringValue(iv.KeyName),
-		PrivateDNSName:        aws.StringValue(iv.PrivateDnsName),
-		PrivateIP:             aws.StringValue(iv.PrivateIpAddress),
-		PublicDNSName:         aws.StringValue(iv.PublicDnsName),
-		PublicIP:              aws.StringValue(iv.PublicIpAddress),
-		StateTransitionReason: aws.StringValue(iv.StateTransitionReason),
-		SubnetID:              aws.StringValue(iv.SubnetId),
-		VPCID:                 aws.StringValue(iv.VpcId),
+		Architecture:          fmt.Sprint(iv.Architecture),
+		ImageID:               aws_v2.ToString(iv.ImageId),
+		InstanceID:            aws_v2.ToString(iv.InstanceId),
+		InstanceType:          fmt.Sprint(iv.InstanceType),
+		KeyName:               aws_v2.ToString(iv.KeyName),
+		PrivateDNSName:        aws_v2.ToString(iv.PrivateDnsName),
+		PrivateIP:             aws_v2.ToString(iv.PrivateIpAddress),
+		PublicDNSName:         aws_v2.ToString(iv.PublicDnsName),
+		PublicIP:              aws_v2.ToString(iv.PublicIpAddress),
+		StateTransitionReason: aws_v2.ToString(iv.StateTransitionReason),
+		SubnetID:              aws_v2.ToString(iv.SubnetId),
+		VPCID:                 aws_v2.ToString(iv.VpcId),
 		BlockDeviceMappings:   make([]BlockDeviceMapping, len(iv.BlockDeviceMappings)),
-		EBSOptimized:          aws.BoolValue(iv.EbsOptimized),
-		RootDeviceName:        aws.StringValue(iv.RootDeviceName),
-		RootDeviceType:        aws.StringValue(iv.RootDeviceType),
+		EBSOptimized:          aws_v2.ToBool(iv.EbsOptimized),
+		RootDeviceName:        aws_v2.ToString(iv.RootDeviceName),
+		RootDeviceType:        fmt.Sprint(iv.RootDeviceType),
 		SecurityGroups:        make([]SecurityGroup, len(iv.SecurityGroups)),
-		LaunchTime:            aws.TimeValue(iv.LaunchTime),
-		Hypervisor:            aws.StringValue(iv.Hypervisor),
-		VirtualizationType:    aws.StringValue(iv.VirtualizationType),
+		LaunchTime:            aws_v2.ToTime(iv.LaunchTime),
+		Hypervisor:            fmt.Sprint(iv.Hypervisor),
+		VirtualizationType:    fmt.Sprint(iv.VirtualizationType),
 	}
 	for j := range iv.BlockDeviceMappings {
 		instance.BlockDeviceMappings[j] = BlockDeviceMapping{
-			DeviceName: aws.StringValue(iv.BlockDeviceMappings[j].DeviceName),
+			DeviceName: aws_v2.ToString(iv.BlockDeviceMappings[j].DeviceName),
 			EBS: EBS{
-				DeleteOnTermination: aws.BoolValue(iv.BlockDeviceMappings[j].Ebs.DeleteOnTermination),
-				Status:              aws.StringValue(iv.BlockDeviceMappings[j].Ebs.Status),
-				VolumeID:            aws.StringValue(iv.BlockDeviceMappings[j].Ebs.VolumeId),
+				DeleteOnTermination: aws_v2.ToBool(iv.BlockDeviceMappings[j].Ebs.DeleteOnTermination),
+				Status:              fmt.Sprint(iv.BlockDeviceMappings[j].Ebs.Status),
+				VolumeID:            aws_v2.ToString(iv.BlockDeviceMappings[j].Ebs.VolumeId),
 			},
 		}
 	}
 	for j := range iv.SecurityGroups {
 		instance.SecurityGroups[j] = SecurityGroup{
-			GroupName: aws.StringValue(iv.SecurityGroups[j].GroupName),
-			GroupID:   aws.StringValue(iv.SecurityGroups[j].GroupId),
+			GroupName: aws_v2.ToString(iv.SecurityGroups[j].GroupName),
+			GroupID:   aws_v2.ToString(iv.SecurityGroups[j].GroupId),
 		}
 	}
 	if iv.IamInstanceProfile != nil {
 		instance.IAMInstanceProfile = IAMInstanceProfile{
-			ARN: aws.StringValue(iv.IamInstanceProfile.Arn),
-			ID:  aws.StringValue(iv.IamInstanceProfile.Id),
+			ARN: aws_v2.ToString(iv.IamInstanceProfile.Arn),
+			ID:  aws_v2.ToString(iv.IamInstanceProfile.Id),
 		}
 	}
 	if iv.Placement != nil {
 		instance.Placement = Placement{
-			AvailabilityZone: aws.StringValue(iv.Placement.AvailabilityZone),
-			Tenancy:          aws.StringValue(iv.Placement.Tenancy),
+			AvailabilityZone: aws_v2.ToString(iv.Placement.AvailabilityZone),
+			Tenancy:          fmt.Sprint(iv.Placement.Tenancy),
 		}
 	}
 	if iv.State != nil {
 		instance.State = State{
-			Code: aws.Int64Value(iv.State.Code),
-			Name: aws.StringValue(iv.State.Name),
+			Code: aws_v2.ToInt32(iv.State.Code),
+			Name: fmt.Sprint(iv.State.Name),
 		}
 	}
 	if iv.StateReason != nil {
 		instance.StateReason = StateReason{
-			Code:    aws.StringValue(iv.StateReason.Code),
-			Message: aws.StringValue(iv.StateReason.Message),
+			Code:    aws_v2.ToString(iv.StateReason.Code),
+			Message: aws_v2.ToString(iv.StateReason.Message),
 		}
 	}
 	if iv.CpuOptions != nil {
 		instance.CPUOptions = CPUOptions{
-			CoreCount:      aws.Int64Value(iv.CpuOptions.CoreCount),
-			ThreadsPerCore: aws.Int64Value(iv.CpuOptions.ThreadsPerCore),
+			CoreCount:      aws_v2.ToInt32(iv.CpuOptions.CoreCount),
+			ThreadsPerCore: aws_v2.ToInt32(iv.CpuOptions.ThreadsPerCore),
 		}
 	}
 	return instance

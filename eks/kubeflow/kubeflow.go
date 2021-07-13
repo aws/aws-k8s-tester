@@ -193,7 +193,7 @@ func (ts *tester) writeKfctlConfig() error {
 
 	nodeInstanceRoleName := ""
 	if ts.cfg.EKSConfig.IsEnabledAddOnNodeGroups() {
-		nodeInstanceRoleName = ts.cfg.EKSConfig.AddOnNodeGroups.RoleName
+		nodeInstanceRoleName = ts.cfg.EKSConfig.Role.Name
 	}
 	if ts.cfg.EKSConfig.IsEnabledAddOnManagedNodeGroups() {
 		nodeInstanceRoleName = ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName

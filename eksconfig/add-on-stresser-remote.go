@@ -244,7 +244,7 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnStresserRemote.RequestsRawWritesCompareS3Dir == "" {
-		cfg.AddOnStresserRemote.RequestsRawWritesCompareS3Dir = path.Join("add-on-stresser-remote", "requests-raw-writes-compare", cfg.Parameters.Version)
+		cfg.AddOnStresserRemote.RequestsRawWritesCompareS3Dir = path.Join("add-on-stresser-remote", "requests-raw-writes-compare", cfg.Version)
 	}
 	if cfg.AddOnStresserRemote.RequestsRawWritesCompareAllJSONPath == "" {
 		cfg.AddOnStresserRemote.RequestsRawWritesCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-raw-writes-compare-all.json"
@@ -293,7 +293,7 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnStresserRemote.RequestsSummaryWritesCompareS3Dir == "" {
-		cfg.AddOnStresserRemote.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-stresser-remote", "requests-summary-writes-compare", cfg.Parameters.Version)
+		cfg.AddOnStresserRemote.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-stresser-remote", "requests-summary-writes-compare", cfg.Version)
 	}
 	if cfg.AddOnStresserRemote.RequestsSummaryWritesCompareJSONPath == "" {
 		cfg.AddOnStresserRemote.RequestsSummaryWritesCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-summary-writes-compare.json"
@@ -332,7 +332,7 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnStresserRemote.RequestsRawReadsCompareS3Dir == "" {
-		cfg.AddOnStresserRemote.RequestsRawReadsCompareS3Dir = path.Join("add-on-stresser-remote", "requests-raw-reads-compare", cfg.Parameters.Version)
+		cfg.AddOnStresserRemote.RequestsRawReadsCompareS3Dir = path.Join("add-on-stresser-remote", "requests-raw-reads-compare", cfg.Version)
 	}
 	if cfg.AddOnStresserRemote.RequestsRawReadsCompareAllJSONPath == "" {
 		cfg.AddOnStresserRemote.RequestsRawReadsCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-raw-reads-compare-all.json"
@@ -381,7 +381,7 @@ func (cfg *Config) validateAddOnStresserRemote() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnStresserRemote.RequestsSummaryReadsCompareS3Dir == "" {
-		cfg.AddOnStresserRemote.RequestsSummaryReadsCompareS3Dir = path.Join("add-on-stresser-remote", "requests-summary-reads-compare", cfg.Parameters.Version)
+		cfg.AddOnStresserRemote.RequestsSummaryReadsCompareS3Dir = path.Join("add-on-stresser-remote", "requests-summary-reads-compare", cfg.Version)
 	}
 	if cfg.AddOnStresserRemote.RequestsSummaryReadsCompareJSONPath == "" {
 		cfg.AddOnStresserRemote.RequestsSummaryReadsCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-remote-requests-summary-reads-compare.json"

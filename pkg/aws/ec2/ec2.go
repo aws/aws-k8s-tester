@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/ctxutil"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/autoscaling"
-	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
+	aws_v2 "github.com/aws/aws-sdk-go-v2/aws"
+	aws_asg_v2 "github.com/aws/aws-sdk-go-v2/service/autoscaling"
+	aws_asg_v2_types "github.com/aws/aws-sdk-go-v2/service/autoscaling/types"
+	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
+	aws_ec2_v2_types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"go.uber.org/zap"
 )
 
@@ -22,9 +22,9 @@ import (
 func WaitUntilRunning(
 	ctx context.Context,
 	stopc chan struct{},
-	asgAPI autoscalingiface.AutoScalingAPI,
-	ec2API ec2iface.EC2API,
-	asgName string) (ec2Instances map[string]*ec2.Instance, err error) {
+	ec2APIV2 *aws_ec2_v2.Client,
+	asgAPIV2 *aws_asg_v2.Client,
+	asgName string) (ec2Instances map[string]aws_ec2_v2_types.Instance, err error) {
 	zap.L().Info("polling ASG until all EC2 instances are running",
 		zap.String("asg-name", asgName),
 		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
@@ -42,10 +42,12 @@ func WaitUntilRunning(
 		// When ASG has >500 nodes, some instances may shut down at any moments,
 		// making previous instance ID list stale
 		// thus, fetch latest instance IDs for every iteration
-		var aout *autoscaling.DescribeAutoScalingGroupsOutput
-		aout, err = asgAPI.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
-			AutoScalingGroupNames: aws.StringSlice([]string{asgName}),
-		})
+		aout, err := asgAPIV2.DescribeAutoScalingGroups(
+			context.Background(),
+			&aws_asg_v2.DescribeAutoScalingGroupsInput{
+				AutoScalingGroupNames: []string{asgName},
+			},
+		)
 		if err != nil {
 			return nil, fmt.Errorf("ASG[%q] not found (%v)", asgName, err)
 		}
@@ -55,17 +57,17 @@ func WaitUntilRunning(
 		av := aout.AutoScalingGroups[0]
 		instanceIDs := make([]string, 0, len(av.Instances))
 		for _, iv := range av.Instances {
-			lv := aws.StringValue(iv.LifecycleState)
+			lv := iv.LifecycleState
 			switch lv {
-			case autoscaling.LifecycleStatePending,
-				autoscaling.LifecycleStatePendingWait,
-				autoscaling.LifecycleStatePendingProceed,
-				autoscaling.LifecycleStateInService:
-				instanceIDs = append(instanceIDs, aws.StringValue(iv.InstanceId))
+			case aws_asg_v2_types.LifecycleStatePending,
+				aws_asg_v2_types.LifecycleStatePendingWait,
+				aws_asg_v2_types.LifecycleStatePendingProceed,
+				aws_asg_v2_types.LifecycleStateInService:
+				instanceIDs = append(instanceIDs, aws_v2.ToString(iv.InstanceId))
 			default:
 				zap.L().Warn("skipping instance due to lifecycle state",
-					zap.String("instance-id", aws.StringValue(iv.InstanceId)),
-					zap.String("lifecycle-state", lv),
+					zap.String("instance-id", aws_v2.ToString(iv.InstanceId)),
+					zap.String("lifecycle-state", fmt.Sprint(lv)),
 				)
 			}
 		}
@@ -74,7 +76,7 @@ func WaitUntilRunning(
 		// e.g. 5-minute + 25-minute for 500 nodes
 		waitDur := 5*time.Minute + 3*time.Second*time.Duration(len(instanceIDs))
 		ctx2, cancel := context.WithTimeout(ctx, waitDur)
-		ec2Instances, err = pollUntilRunning(ctx2, stopc, ec2API, instanceIDs...)
+		ec2Instances, err = pollUntilRunning(ctx2, stopc, ec2APIV2, instanceIDs...)
 		cancel()
 		if err == nil {
 			break
@@ -89,10 +91,10 @@ func WaitUntilRunning(
 func pollUntilRunning(
 	ctx context.Context,
 	stopc chan struct{},
-	ec2API ec2iface.EC2API,
-	instanceIDs ...string) (ec2Instances map[string]*ec2.Instance, err error) {
+	ec2APIV2 *aws_ec2_v2.Client,
+	instanceIDs ...string) (ec2Instances map[string]aws_ec2_v2_types.Instance, err error) {
 	targetN := len(instanceIDs)
-	ec2Instances = make(map[string]*ec2.Instance, targetN)
+	ec2Instances = make(map[string]aws_ec2_v2_types.Instance, targetN)
 
 	left := make(map[string]struct{}, targetN)
 	for _, id := range instanceIDs {
@@ -123,10 +125,11 @@ func pollUntilRunning(
 		}
 
 		zap.L().Info("describing batch", zap.Int("batch-total", len(batch)))
-		var dout *ec2.DescribeInstancesOutput
-		dout, err = ec2API.DescribeInstances(&ec2.DescribeInstancesInput{
-			InstanceIds: aws.StringSlice(batch),
-		})
+		dout, err := ec2APIV2.DescribeInstances(
+			context.Background(),
+			&aws_ec2_v2.DescribeInstancesInput{
+				InstanceIds: batch,
+			})
 		if err != nil {
 			zap.L().Warn("failed to describe instances", zap.Error(err))
 			time.Sleep(5 * time.Second)
@@ -135,11 +138,11 @@ func pollUntilRunning(
 
 		for _, rsrv := range dout.Reservations {
 			for _, iv := range rsrv.Instances {
-				state := aws.StringValue(iv.State.Name)
-				if state != ec2.InstanceStateNameRunning {
+				state := iv.State.Name
+				if state != aws_ec2_v2_types.InstanceStateNameRunning {
 					continue
 				}
-				instanceID := aws.StringValue(iv.InstanceId)
+				instanceID := aws_v2.ToString(iv.InstanceId)
 				ec2Instances[instanceID] = iv
 			}
 		}

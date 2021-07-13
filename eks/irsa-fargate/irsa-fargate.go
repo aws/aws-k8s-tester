@@ -220,7 +220,7 @@ func (ts *tester) Delete() error {
 }
 
 func (ts *tester) createS3Object() (err error) {
-	if ts.cfg.EKSConfig.S3BucketName == "" {
+	if ts.cfg.EKSConfig.S3.BucketName == "" {
 		return errors.New("empty S3 bucket name for IRSA add-on")
 	}
 	ts.testBody = randutil.String(256)
@@ -228,7 +228,7 @@ func (ts *tester) createS3Object() (err error) {
 	return aws_s3.UploadBody(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		ts.cfg.EKSConfig.AddOnIRSAFargate.S3Key,
 		strings.NewReader(ts.testBody),
 	)
@@ -402,7 +402,7 @@ func (ts *tester) createRole() error {
 	buf := bytes.NewBuffer(nil)
 	if err := tpl.Execute(buf, irsaTemplate{
 		IRSAIssuerHostPath: ts.cfg.EKSConfig.Status.ClusterOIDCIssuerHostPath,
-		S3BucketName:       ts.cfg.EKSConfig.S3BucketName,
+		S3BucketName:       ts.cfg.EKSConfig.S3.BucketName,
 		ClusterName:        ts.cfg.EKSConfig.Name,
 	}); err != nil {
 		return err
@@ -415,7 +415,7 @@ func (ts *tester) createRole() error {
 	if err := aws_s3.Upload(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		ts.cfg.EKSConfig.AddOnIRSAFargate.RoleCFNStackYAMLS3Key,
 		ts.cfg.EKSConfig.AddOnIRSAFargate.RoleCFNStackYAMLPath,
 	); err != nil {
@@ -718,7 +718,7 @@ func (ts *tester) createConfigMap() error {
 		// sts caller role ARN: arn:aws:sts::607362164682:assumed-role/eks-2020071200-galaxyzejwho-add-on-irsa-role/botocore-session-1594541343
 		RoleName: ts.cfg.EKSConfig.AddOnIRSAFargate.RoleName,
 
-		S3BucketName: ts.cfg.EKSConfig.S3BucketName,
+		S3BucketName: ts.cfg.EKSConfig.S3.BucketName,
 		S3Key:        ts.cfg.EKSConfig.AddOnIRSAFargate.S3Key,
 		SleepMessage: ts.sleepMessage,
 	}); err != nil {
@@ -789,8 +789,8 @@ func (ts *tester) createProfile() error {
 	if ts.cfg.EKSConfig.AddOnIRSAFargate.RoleARN == "" {
 		return errors.New("empty AddOnIRSAFargate.RoleARN")
 	}
-	if len(ts.cfg.EKSConfig.Parameters.PrivateSubnetIDs) == 0 {
-		return errors.New("empty Parameters.PrivateSubnetIDs")
+	if len(ts.cfg.EKSConfig.VPC.PrivateSubnetIDs) == 0 {
+		return errors.New("empty VPC.PrivateSubnetIDs")
 	}
 	ts.cfg.Logger.Info("creating fargate profile", zap.String("name", ts.cfg.EKSConfig.AddOnIRSAFargate.ProfileName))
 
@@ -798,7 +798,7 @@ func (ts *tester) createProfile() error {
 		ClusterName:         aws.String(ts.cfg.EKSConfig.Name),
 		FargateProfileName:  aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.ProfileName),
 		PodExecutionRoleArn: aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.RoleARN),
-		Subnets:             aws.StringSlice(ts.cfg.EKSConfig.Parameters.PrivateSubnetIDs),
+		Subnets:             aws.StringSlice(ts.cfg.EKSConfig.VPC.PrivateSubnetIDs),
 		Selectors: []*eks.FargateProfileSelector{
 			{
 				Namespace: aws.String(ts.cfg.EKSConfig.AddOnIRSAFargate.Namespace),

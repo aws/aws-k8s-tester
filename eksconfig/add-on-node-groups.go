@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
+	aws_eks_v2_types "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/aws/aws-sdk-go/service/eks"
 )
 
@@ -24,34 +25,14 @@ type AddOnNodeGroups struct {
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
+	Role *Role `json:"role"`
+
 	// S3Dir is the S3 directory to store all test results.
 	// It is under the bucket "eksconfig.Config.S3BucketName".
 	S3Dir string `json:"s3-dir"`
 
 	// FetchLogs is true to fetch logs from remote nodes using SSH.
 	FetchLogs bool `json:"fetch-logs"`
-
-	// RoleName is the name of thed node group.
-	RoleName string `json:"role-name"`
-	// RoleCreate is true to auto-create and delete role.
-	RoleCreate bool `json:"role-create"`
-	// RoleARN is the role ARN that EKS node group uses to create AWS
-	// resources for Kubernetes.
-	// By default, it's empty which triggers tester to create one.
-	RoleARN string `json:"role-arn"`
-	// RoleServicePrincipals is the node group Service Principals
-	RoleServicePrincipals []string `json:"role-service-principals"`
-	// RoleManagedPolicyARNs is node groupd policy ARNs.
-	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
-	RoleCFNStackYAMLPath  string   `json:"role-cfn-stack-yaml-path" read-only:"true"`
-	RoleCFNStackYAMLS3Key string   `json:"role-cfn-stack-yaml-s3-key" read-only:"true"`
-
-	// NodeGroupSecurityGroupID is the security group ID for the node group.
-	NodeGroupSecurityGroupID                string `json:"node-group-security-group-id" read-only:"true"`
-	NodeGroupSecurityGroupCFNStackID        string `json:"node-group-security-group-cfn-stack-id" read-only:"true"`
-	NodeGroupSecurityGroupCFNStackYAMLPath  string `json:"node-group-security-group-cfn-stack-yaml-path" read-only:"true"`
-	NodeGroupSecurityGroupCFNStackYAMLS3Key string `json:"node-group-security-group-cfn-stack-yaml-s3-key" read-only:"true"`
 
 	// LogsDir is set to specify the target directory to store all remote log files.
 	// If empty, it stores in the same directory as "ConfigPath".
@@ -95,8 +76,10 @@ type ASG struct {
 	ClusterAutoscaler *NGClusterAutoscaler `json:"cluster-autoscaler,omitempty"`
 }
 
-// EnvironmentVariablePrefixAddOnNodeGroups is the environment variable prefix used for "eksconfig".
-const EnvironmentVariablePrefixAddOnNodeGroups = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_NODE_GROUPS_"
+const (
+	// EnvironmentVariablePrefixAddOnNodeGroups is the environment variable prefix used for "eksconfig".
+	EnvironmentVariablePrefixAddOnNodeGroups = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_NODE_GROUPS_"
+)
 
 // IsEnabledAddOnNodeGroups returns true if "AddOnNodeGroups" is enabled.
 // Otherwise, nil the field for "omitempty".
@@ -113,27 +96,30 @@ func (cfg *Config) IsEnabledAddOnNodeGroups() bool {
 
 func getDefaultAddOnNodeGroups(name string) *AddOnNodeGroups {
 	return &AddOnNodeGroups{
-		Enable:     false,
-		FetchLogs:  false,
-		RoleCreate: true,
-		LogsDir:    "", // to be auto-generated
+		Enable:    false,
+		Role:      getDefaultRole(),
+		FetchLogs: false,
+		LogsDir:   "", // to be auto-generated
 		ASGs: map[string]ASG{
 			name + "-ng-asg-cpu": {
 				ASG: ec2config.ASG{
-					Name:                               name + "-ng-asg-cpu",
-					SSMDocumentCreate:                  false,
-					SSMDocumentName:                    "",
-					SSMDocumentCommands:                "",
-					SSMDocumentExecutionTimeoutSeconds: 3600,
-					RemoteAccessUserName:               "ec2-user", // assume Amazon Linux 2
-					AMIType:                            eks.AMITypesAl2X8664,
-					ImageID:                            "",
-					ImageIDSSMParameter:                "/aws/service/eks/optimized-ami/1.16/amazon-linux-2/recommended/image_id",
-					InstanceTypes:                      []string{DefaultNodeInstanceTypeCPU},
-					VolumeSize:                         DefaultNodeVolumeSize,
-					ASGMinSize:                         1,
-					ASGMaxSize:                         1,
-					ASGDesiredCapacity:                 1,
+					Name: name + "-ng-asg-cpu",
+					SSM: &ec2config.SSM{
+						DocumentCreate:                  false,
+						DocumentName:                    "",
+						DocumentCommands:                "",
+						DocumentExecutionTimeoutSeconds: 3600,
+					},
+					RemoteAccessUserName: "ec2-user", // assume Amazon Linux 2
+					AMIType:              eks.AMITypesAl2X8664,
+					ImageID:              "",
+					ImageIDSSMParameter:  "/aws/service/eks/optimized-ami/1.20/amazon-linux-2/recommended/image_id",
+					InstanceType:         DefaultNodeInstanceTypeCPU,
+					VolumeSize:           DefaultNodeVolumeSize,
+					ASGMinSize:           1,
+					ASGMaxSize:           1,
+					ASGDesiredCapacity:   1,
+					LaunchTemplateName:   name + "-launch-template",
 				},
 				KubeletExtraArgs:  "",
 				BootstrapArgs:     "",
@@ -148,6 +134,30 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		return nil
 	}
 
+	switch cfg.AddOnNodeGroups.Role.Create {
+	case true: // need create one, or already created
+		if cfg.AddOnNodeGroups.Role.Name == "" {
+			cfg.AddOnNodeGroups.Role.Name = cfg.Name + "-node-group-role"
+		}
+		// just ignore...
+		// could be populated from previous run
+		// do not error, so long as RoleCreate false, role won't be deleted
+
+	case false: // use existing one
+		if cfg.AddOnNodeGroups.Role.ARN == "" {
+			return fmt.Errorf("Role.Create false; expect non-empty RoleARN but got %q", cfg.AddOnNodeGroups.Role.ARN)
+		}
+		if cfg.AddOnNodeGroups.Role.Name == "" {
+			cfg.AddOnNodeGroups.Role.Name = getNameFromARN(cfg.AddOnNodeGroups.Role.ARN)
+		}
+	}
+	if cfg.AddOnNodeGroups.Role.PolicyName == "" {
+		cfg.AddOnNodeGroups.Role.PolicyName = cfg.Name + "-node-group-policy"
+	}
+	if cfg.AddOnNodeGroups.Role.InstanceProfileName == "" {
+		cfg.AddOnNodeGroups.Role.InstanceProfileName = cfg.Name + "-node-group-instance-profile"
+	}
+
 	n := len(cfg.AddOnNodeGroups.ASGs)
 	if n == 0 {
 		return errors.New("empty ASGs")
@@ -156,8 +166,8 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		return fmt.Errorf("NGs %d exceeds maximum number of NGs which is %d", n, NGsMaxLimit)
 	}
 
-	if cfg.Parameters.VersionValue < 1.14 {
-		return fmt.Errorf("Version %q not supported for AddOnNodeGroups", cfg.Parameters.Version)
+	if cfg.VersionValue < 1.14 {
+		return fmt.Errorf("version %q not supported for AddOnNodeGroups", cfg.Version)
 	}
 
 	if cfg.AddOnNodeGroups.S3Dir == "" {
@@ -172,77 +182,6 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 	}
 	if !strings.HasSuffix(cfg.AddOnNodeGroups.LogsTarGzPath, ".tar.gz") {
 		return fmt.Errorf("AddOnNodeGroups.LogsTarGzPath %q must end with .tar.gz", cfg.AddOnNodeGroups.LogsTarGzPath)
-	}
-
-	if cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLPath == "" {
-		cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-node-groups.sg.cfn.yaml"
-	}
-	if cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLS3Key == "" {
-		cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLS3Key = path.Join(
-			cfg.AddOnNodeGroups.S3Dir,
-			filepath.Base(cfg.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLPath),
-		)
-	}
-
-	if cfg.AddOnNodeGroups.RoleCFNStackYAMLPath == "" {
-		cfg.AddOnNodeGroups.RoleCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-node-groups.role.cfn.yaml"
-	}
-	if cfg.AddOnNodeGroups.RoleCFNStackYAMLS3Key == "" {
-		cfg.AddOnNodeGroups.RoleCFNStackYAMLS3Key = path.Join(
-			cfg.AddOnNodeGroups.S3Dir,
-			filepath.Base(cfg.AddOnNodeGroups.RoleCFNStackYAMLPath),
-		)
-	}
-	switch cfg.AddOnNodeGroups.RoleCreate {
-	case true: // need create one, or already created
-		if cfg.AddOnNodeGroups.RoleName == "" {
-			cfg.AddOnNodeGroups.RoleName = cfg.Name + "-ng-role"
-		}
-		if cfg.AddOnNodeGroups.RoleARN != "" {
-			// just ignore...
-			// could be populated from previous run
-			// do not error, so long as RoleCreate false, role won't be deleted
-		}
-		if len(cfg.AddOnNodeGroups.RoleServicePrincipals) > 0 {
-			/*
-				(InvalidParameterException: Following required service principals [ec2.amazonaws.com] were not found in the trust relationships of nodeRole arn:aws:iam::...:role/test-ng-role
-				{
-				  ClusterName: "test",
-				  Message_: "Following required service principals [ec2.amazonaws.com] were not found in the trust relationships of nodeRole arn:aws:iam::...:role/test-ng-role",
-				  NodegroupName: "test-ng-cpu"
-				})
-			*/
-			found := false
-			validSps := []string{"ec2.amazonaws.com", "ec2.amazonaws.com.cn", "ec2.c2s.ic.gov", "ec2.sc2s.sgov.gov"}
-			for _, pv := range cfg.AddOnNodeGroups.RoleServicePrincipals {
-				for _, vsp := range validSps {
-					if pv == vsp {
-						found = true
-						break
-					}
-				}
-			}
-			if !found {
-				return fmt.Errorf("AddOnNodeGroups.RoleServicePrincipals %q must include one of: %q", cfg.AddOnNodeGroups.RoleServicePrincipals, validSps)
-			}
-		}
-
-	case false: // use existing one
-		if cfg.AddOnNodeGroups.RoleARN == "" {
-			return fmt.Errorf("AddOnNodeGroups.RoleCreate false; expect non-empty RoleARN but got %q", cfg.AddOnNodeGroups.RoleARN)
-		}
-		if cfg.AddOnNodeGroups.RoleName == "" {
-			cfg.AddOnNodeGroups.RoleName = getNameFromARN(cfg.AddOnNodeGroups.RoleARN)
-		}
-		if len(cfg.AddOnNodeGroups.RoleManagedPolicyARNs) > 0 {
-			return fmt.Errorf("AddOnNodeGroups.RoleCreate false; expect empty RoleManagedPolicyARNs but got %q", cfg.AddOnNodeGroups.RoleManagedPolicyARNs)
-		}
-		if len(cfg.AddOnNodeGroups.RoleServicePrincipals) > 0 {
-			return fmt.Errorf("AddOnNodeGroups.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.AddOnNodeGroups.RoleServicePrincipals)
-		}
-		if cfg.IsEnabledAddOnStresserRemote() {
-			return errors.New("'AddOnStresserRemote.Enable == true' requires 'AddOnNodeGroups.RoleCreate == true' but got 'false'")
-		}
 	}
 
 	names, processed := make(map[string]struct{}), make(map[string]ASG)
@@ -262,19 +201,6 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].Name %q is redundant", k, cur.Name)
 		}
 
-		if cur.ASGCFNStackYAMLPath == "" {
-			cur.ASGCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".asg.cfn." + k + ".yaml"
-		}
-		if cur.ASGCFNStackYAMLS3Key == "" {
-			cur.ASGCFNStackYAMLS3Key = path.Join(
-				cfg.AddOnNodeGroups.S3Dir,
-				filepath.Base(cur.ASGCFNStackYAMLPath),
-			)
-		}
-
-		if len(cur.InstanceTypes) > 4 {
-			return fmt.Errorf("too many InstaceTypes[%q]", cur.InstanceTypes)
-		}
 		if cur.VolumeSize == 0 {
 			cur.VolumeSize = DefaultNodeVolumeSize
 		}
@@ -289,11 +215,8 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 		if cur.ImageID != "" && cur.ImageIDSSMParameter != "" {
 			cur.ImageID = ""
 		}
-
-		if !cfg.AddOnNodeGroups.RoleCreate {
-			if cur.ClusterAutoscaler != nil && cur.ClusterAutoscaler.Enable {
-				return fmt.Errorf("'ASGs[%q].ClusterAutoscaler.Enable == true' requires 'AddOnNodeGroups.RoleCreate == true' but got 'false'", cur.ASG.Name)
-			}
+		if cur.LaunchTemplateName == "" {
+			cur.LaunchTemplateName = cur.Name + "-launch-template"
 		}
 
 		switch cur.AMIType {
@@ -301,17 +224,23 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			if cur.RemoteAccessUserName != "ec2-user" {
 				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
 			}
-			if cur.SSMDocumentName != "" && cfg.S3BucketName == "" {
-				return fmt.Errorf("AMIType %q requires SSMDocumentName %q but no S3BucketName", cur.AMIType, cur.SSMDocumentName)
+			if cur.SSM != nil {
+				if cur.SSM.DocumentName != "" && cfg.S3.BucketName == "" {
+					return fmt.Errorf("AMIType %q requires SSMDocumentName %q but no S3BucketName", cur.AMIType, cur.SSM.DocumentName)
+				}
 			}
 			if cur.KubeletExtraArgs != "" {
 				return fmt.Errorf("AMIType %q but unexpected KubeletExtraArgs %q", cur.AMIType, cur.KubeletExtraArgs)
 			}
-		case eks.AMITypesAl2X8664:
+		case fmt.Sprint(aws_eks_v2_types.AMITypesAl2X8664):
 			if cur.RemoteAccessUserName != "ec2-user" {
 				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
 			}
-		case eks.AMITypesAl2X8664Gpu:
+		case fmt.Sprint(aws_eks_v2_types.AMITypesAl2Arm64):
+			if cur.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
+			}
+		case fmt.Sprint(aws_eks_v2_types.AMITypesAl2X8664Gpu):
 			if cur.RemoteAccessUserName != "ec2-user" {
 				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
 			}
@@ -321,16 +250,16 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 
 		switch cur.AMIType {
 		case ec2config.AMITypeBottleRocketCPU:
-			if len(cur.InstanceTypes) == 0 {
-				cur.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+			if cur.InstanceType == "" {
+				cur.InstanceType = DefaultNodeInstanceTypeCPU
 			}
-		case eks.AMITypesAl2X8664:
-			if len(cur.InstanceTypes) == 0 {
-				cur.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+		case fmt.Sprint(aws_eks_v2_types.AMITypesAl2X8664):
+			if cur.InstanceType == "" {
+				cur.InstanceType = DefaultNodeInstanceTypeCPU
 			}
-		case eks.AMITypesAl2X8664Gpu:
-			if len(cur.InstanceTypes) == 0 {
-				cur.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
+		case fmt.Sprint(aws_eks_v2_types.AMITypesAl2X8664Gpu):
+			if cur.InstanceType == "" {
+				cur.InstanceType = DefaultNodeInstanceTypeGPU
 			}
 		default:
 			return fmt.Errorf("unknown AddOnNodeGroups.ASGs[%q].AMIType %q", k, cur.AMIType)
@@ -340,16 +269,13 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			// "m3.xlarge" or "c4.xlarge" will fail with "InvalidTarget: Targets {...} are not supported"
 			// ref. https://github.com/aws/amazon-vpc-cni-k8s/pull/821
 			// ref. https://github.com/kubernetes/kubernetes/issues/66044#issuecomment-408188524
-			for _, ivt := range cur.InstanceTypes {
-
-				switch {
-				case strings.HasPrefix(ivt, "m3."),
-					strings.HasPrefix(ivt, "c4."):
-					return fmt.Errorf("AddOnNLBHelloWorld.Enable[%v] || AddOnALB2048.Enable[%v], but older instance type InstanceType %q for %q",
-						cfg.IsEnabledAddOnNLBHelloWorld(),
-						cfg.IsEnabledAddOnALB2048(),
-						ivt, k)
-				}
+			switch {
+			case strings.HasPrefix(cur.InstanceType, "m3."),
+				strings.HasPrefix(cur.InstanceType, "c4."):
+				return fmt.Errorf("AddOnNLBHelloWorld.Enable[%v] || AddOnALB2048.Enable[%v], but older instance type InstanceType %q for %q",
+					cfg.IsEnabledAddOnNLBHelloWorld(),
+					cfg.IsEnabledAddOnALB2048(),
+					cur.InstanceType, k)
 			}
 		}
 
@@ -376,31 +302,20 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGDesiredCapacity %d > NGMaxLimit %d", k, cur.ASGDesiredCapacity, NGMaxLimit)
 		}
 
-		if cur.SSMDocumentCFNStackYAMLPath == "" {
-			cur.SSMDocumentCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".ssm.cfn." + k + ".yaml"
-		}
-		if cur.SSMDocumentCFNStackYAMLS3Key == "" {
-			cur.SSMDocumentCFNStackYAMLS3Key = path.Join(
-				cfg.AddOnNodeGroups.S3Dir,
-				filepath.Base(cur.SSMDocumentCFNStackYAMLPath),
-			)
-		}
-		switch cur.SSMDocumentCreate {
-		case true: // need create one, or already created
-			if cur.SSMDocumentCFNStackName == "" {
-				cur.SSMDocumentCFNStackName = cur.Name + "-ssm-document"
-			}
-			if cur.SSMDocumentName == "" {
-				cur.SSMDocumentName = cur.Name + "SSMDocument"
-			}
-			cur.SSMDocumentCFNStackName = strings.ReplaceAll(cur.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
-			cur.SSMDocumentName = strings.ReplaceAll(cur.SSMDocumentName, "GetRef.Name", cfg.Name)
-			cur.SSMDocumentName = regex.ReplaceAllString(cur.SSMDocumentName, "")
-			if cur.SSMDocumentExecutionTimeoutSeconds == 0 {
-				cur.SSMDocumentExecutionTimeoutSeconds = 3600
-			}
+		if cur.SSM != nil {
+			switch cur.SSM.DocumentCreate {
+			case true: // need create one, or already created
+				if cur.SSM.DocumentName == "" {
+					cur.SSM.DocumentName = cur.Name + "SSMDocument"
+				}
+				cur.SSM.DocumentName = strings.ReplaceAll(cur.SSM.DocumentName, "GetRef.Name", cfg.Name)
+				cur.SSM.DocumentName = regex.ReplaceAllString(cur.SSM.DocumentName, "")
+				if cur.SSM.DocumentExecutionTimeoutSeconds == 0 {
+					cur.SSM.DocumentExecutionTimeoutSeconds = 3600
+				}
 
-		case false: // use existing one, or don't run any SSM
+			case false: // use existing one, or don't run any SSM
+			}
 		}
 
 		if cfg.IsEnabledAddOnNLBHelloWorld() && cfg.AddOnNLBHelloWorld.DeploymentReplicas < int32(cur.ASGDesiredCapacity) {

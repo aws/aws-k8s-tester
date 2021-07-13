@@ -229,7 +229,7 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 				items = nodes.Items
 				ts.cfg.Logger.Info("listed GPU nodes via client-go", zap.String("ng-name", ngName), zap.Int("nodes", len(items)))
 
-				foundReady := int64(0)
+				foundReady := int32(0)
 				for _, node := range items {
 					labels := node.GetLabels()
 					if labels["NGName"] != ngName {
@@ -257,9 +257,9 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 					}
 				}
 				ts.cfg.Logger.Info("nodes",
-					zap.Int64("current-ready-nodes", foundReady),
-					zap.Int64("min-ready-nodes", cur.ASGMinSize),
-					zap.Int64("desired-ready-nodes", cur.ASGDesiredCapacity),
+					zap.Int32("current-ready-nodes", foundReady),
+					zap.Int32("min-ready-nodes", cur.ASGMinSize),
+					zap.Int32("desired-ready-nodes", cur.ASGDesiredCapacity),
 				)
 				time.Sleep(5 * time.Second)
 

@@ -83,60 +83,56 @@ spec:
 
 	os.Setenv("AWS_K8S_TESTER_EKS_SKIP_DELETE_CLUSTER_AND_NODES", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_SKIP_DELETE_CLUSTER_AND_NODES")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE", "false")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID", "vpc-id")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_1", "public-cidr1")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_1")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_2", "public-cidr2")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_2")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_3", "public-cidr3")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_3")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_1", "private-cidr1")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_1")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_2", "private-cidr2")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_2")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME", `hello.com`)
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME_SERVERS", `1.2.3.0,4.5.6.7`)
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME_SERVERS")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_TAGS", `{"to-delete":"2020","hello-world":   "test"}`)
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_TAGS")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_KEY", "eks-options")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_KEY")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_VALUE", "kubernetesVersion=1.11")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_VALUE")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_RESOLVER_URL", "amazon.com")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_RESOLVER_URL")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_SIGNING_NAME", "a")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_SIGNING_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CREATE", "false")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CREATE")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_ARN", "cluster-role-arn")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_ARN")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_SERVICE_PRINCIPALS", "eks.amazonaws.com,eks-beta-pdx.aws.internal,eks-dev.aws.internal")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_SERVICE_PRINCIPALS")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS", "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION", "1.18")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_VERSION")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE", "false")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN", "key-arn")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_APISERVER_MAX_REQUESTS_INFLIGHT", "3000")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_APISERVER_MAX_REQUESTS_INFLIGHT")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_QPS", "500")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_QPS")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_BURST", "500")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_BURST")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_SCHEDULER_QPS", "500")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_SCHEDULER_QPS")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_SCHEDULER_BURST", "500")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_SCHEDULER_BURST")
-	os.Setenv("AWS_K8S_TESTER_EKS_PARAMETERS_FE_UPDATE_MASTER_FLAGS_URL", "uri")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_PARAMETERS_FE_UPDATE_MASTER_FLAGS_URL")
+	os.Setenv("AWS_K8S_TESTER_EKS_VPC_CREATE", "false")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_VPC_CREATE")
+	os.Setenv("AWS_K8S_TESTER_EKS_VPC_ID", "vpc-id")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_VPC_ID")
+	os.Setenv("AWS_K8S_TESTER_EKS_VPC_CIDRS", "public-cidr1,public-cidr2,public-cidr3")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_VPC_CIDRS")
+	os.Setenv("AWS_K8S_TESTER_EKS_VPC_PUBLIC_SUBNET_CIDRS", "public-cidr1,public-cidr2,public-cidr3")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_VPC_PUBLIC_SUBNET_CIDRS")
+	os.Setenv("AWS_K8S_TESTER_EKS_VPC_PRIVATE_SUBNET_CIDRS", "private-cidr1,private-cidr2")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_VPC_PRIVATE_SUBNET_CIDRS")
+	os.Setenv("AWS_K8S_TESTER_EKS_VPC_DHCP_OPTIONS_DOMAIN_NAME", `hello.com`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_VPC_DHCP_OPTIONS_DOMAIN_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_VPC_DHCP_OPTIONS_DOMAIN_NAME_SERVERS", `1.2.3.0,4.5.6.7`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_VPC_DHCP_OPTIONS_DOMAIN_NAME_SERVERS")
+	os.Setenv("AWS_K8S_TESTER_EKS_TAGS", `{"to-delete":"2020","hello-world":   "test"}`)
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_TAGS")
+	os.Setenv("AWS_K8S_TESTER_EKS_REQUEST_HEADER_KEY", "eks-options")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_REQUEST_HEADER_KEY")
+	os.Setenv("AWS_K8S_TESTER_EKS_REQUEST_HEADER_VALUE", "kubernetesVersion=1.11")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_REQUEST_HEADER_VALUE")
+	os.Setenv("AWS_K8S_TESTER_EKS_RESOLVER_URL", "amazon.com")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_RESOLVER_URL")
+	os.Setenv("AWS_K8S_TESTER_EKS_SIGNING_NAME", "a")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_SIGNING_NAME")
+	os.Setenv("AWS_K8S_TESTER_EKS_ROLE_CREATE", "false")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ROLE_CREATE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ROLE_ARN", "cluster-role-arn")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ROLE_ARN")
+	os.Setenv("AWS_K8S_TESTER_EKS_ROLE_SERVICE_PRINCIPALS", "eks.amazonaws.com,eks-beta-pdx.aws.internal,eks-dev.aws.internal")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ROLE_SERVICE_PRINCIPALS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ROLE_MANAGED_POLICY_ARNS", "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy,arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ROLE_MANAGED_POLICY_ARNS")
+	os.Setenv("AWS_K8S_TESTER_EKS_VERSION", "1.18")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_VERSION")
+	os.Setenv("AWS_K8S_TESTER_EKS_ENCRYPTION_CMK_CREATE", "false")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ENCRYPTION_CMK_CREATE")
+	os.Setenv("AWS_K8S_TESTER_EKS_ENCRYPTION_CMK_ARN", "key-arn")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ENCRYPTION_CMK_ARN")
+	os.Setenv("AWS_K8S_TESTER_EKS_KUBE_APISERVER_MAX_REQUESTS_INFLIGHT", "3000")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_KUBE_APISERVER_MAX_REQUESTS_INFLIGHT")
+	os.Setenv("AWS_K8S_TESTER_EKS_KUBE_CONTROLLER_MANAGER_QPS", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_KUBE_CONTROLLER_MANAGER_QPS")
+	os.Setenv("AWS_K8S_TESTER_EKS_KUBE_CONTROLLER_MANAGER_BURST", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_KUBE_CONTROLLER_MANAGER_BURST")
+	os.Setenv("AWS_K8S_TESTER_EKS_KUBE_SCHEDULER_QPS", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_KUBE_SCHEDULER_QPS")
+	os.Setenv("AWS_K8S_TESTER_EKS_KUBE_SCHEDULER_BURST", "500")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_KUBE_SCHEDULER_BURST")
+	os.Setenv("AWS_K8S_TESTER_EKS_FE_UPDATE_MASTER_FLAGS_URL", "uri")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_FE_UPDATE_MASTER_FLAGS_URL")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE")
@@ -156,18 +152,10 @@ spec:
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_FETCH_LOGS", "false")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_FETCH_LOGS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CREATE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CREATE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_NAME", "ng-role-name")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_ARN", "ng-role-arn")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_ARN")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS", "ec2.amazonaws.com,eks.amazonaws.com,hello.amazonaws.com")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS", "a,b,c")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"ng-test-name-cpu":{"name":"ng-test-name-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id-ssm-parameter":"/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id","asg-min-size":17,"kubelet-extra-args":"bbb qq","bootstrap-args":"--pause-container-account 012345678901", "cluster-autoscaler" : {"enable" : false}, "asg-max-size":99,"asg-desired-capacity":77,"instance-types":["type-cpu-2"],"volume-size":40},"ng-test-name-gpu":{"name":"ng-test-name-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-types":["type-gpu-2"],"image-id":"my-gpu-ami","volume-size":500, "cluster-autoscaler": {"enable":false},"kubelet-extra-args":"aaa aa"}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"ng-test-name-cpu":{"name":"ng-test-name-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id-ssm-parameter":"/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id","asg-min-size":17,"kubelet-extra-args":"bbb qq","bootstrap-args":"--pause-container-account 012345678901", "cluster-autoscaler" : {"enable" : false}, "asg-max-size":99,"asg-desired-capacity":77,"instance-type":"type-cpu-2","volume-size":40},"ng-test-name-gpu":{"name":"ng-test-name-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-type":"type-gpu-2","image-id":"my-gpu-ami","volume-size":500, "cluster-autoscaler": {"enable":false},"kubelet-extra-args":"aaa aa"}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_NAME", "a")
+	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_NAME")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR")
 
@@ -684,17 +672,17 @@ spec:
 	if cfg.CommandAfterCreateAddOnsTimeout != 17*time.Minute {
 		t.Fatalf("unexpected CommandAfterCreateAddOnsTimeout %v", cfg.CommandAfterCreateAddOnsTimeout)
 	}
-	if !cfg.S3BucketCreate {
-		t.Fatalf("unexpected cfg.S3BucketCreate %v", cfg.S3BucketCreate)
+	if !cfg.S3.BucketCreate {
+		t.Fatalf("unexpected cfg.S3.BucketCreate %v", cfg.S3.BucketCreate)
 	}
-	if !cfg.S3BucketCreateKeep {
-		t.Fatalf("unexpected cfg.S3BucketCreateKeep %v", cfg.S3BucketCreateKeep)
+	if !cfg.S3.BucketCreateKeep {
+		t.Fatalf("unexpected cfg.S3.BucketCreateKeep %v", cfg.S3.BucketCreateKeep)
 	}
-	if cfg.S3BucketName != "my-bucket" {
-		t.Fatalf("unexpected cfg.S3BucketName %q", cfg.S3BucketName)
+	if cfg.S3.BucketName != "my-bucket" {
+		t.Fatalf("unexpected cfg.S3.BucketName %q", cfg.S3.BucketName)
 	}
-	if cfg.S3BucketLifecycleExpirationDays != 10 {
-		t.Fatalf("unexpected cfg.S3BucketLifecycleExpirationDays %d", cfg.S3BucketLifecycleExpirationDays)
+	if cfg.S3.BucketLifecycleExpirationDays != 10 {
+		t.Fatalf("unexpected cfg.S3.BucketLifecycleExpirationDays %d", cfg.S3.BucketLifecycleExpirationDays)
 	}
 	if cfg.Clients != 333 {
 		t.Fatalf("unexpected cfg.Clients %d", cfg.Clients)
@@ -713,96 +701,91 @@ spec:
 		t.Fatalf("unexpected SkipDeleteClusterAndNodes %v", cfg.SkipDeleteClusterAndNodes)
 	}
 
-	if cfg.Parameters.VPCCreate {
-		t.Fatalf("unexpected Parameters.VPCCreate %v", cfg.Parameters.VPCCreate)
+	if cfg.VPC.Create {
+		t.Fatalf("unexpected VPC.Create %v", cfg.VPC.Create)
 	}
-	if cfg.Parameters.VPCID != "vpc-id" {
-		t.Fatalf("unexpected Parameters.VPCID %q", cfg.Parameters.VPCID)
+	if cfg.VPC.ID != "vpc-id" {
+		t.Fatalf("unexpected VPC.ID %q", cfg.VPC.ID)
 	}
-	if cfg.Parameters.PublicSubnetCIDR1 != "public-cidr1" {
-		t.Fatalf("unexpected Parameters.PublicSubnetCIDR1 %q", cfg.Parameters.PublicSubnetCIDR1)
+	if !reflect.DeepEqual(cfg.VPC.CIDRs, []string{"public-cidr1", "public-cidr2", "public-cidr3"}) {
+		t.Fatalf("unexpected VPC.CIDRs %q", cfg.VPC.CIDRs)
 	}
-	if cfg.Parameters.PublicSubnetCIDR2 != "public-cidr2" {
-		t.Fatalf("unexpected Parameters.PublicSubnetCIDR2 %q", cfg.Parameters.PublicSubnetCIDR2)
+	if !reflect.DeepEqual(cfg.VPC.PublicSubnetCIDRs, []string{"public-cidr1", "public-cidr2", "public-cidr3"}) {
+		t.Fatalf("unexpected VPC.PublicSubnetCIDRs %q", cfg.VPC.PublicSubnetCIDRs)
 	}
-	if cfg.Parameters.PublicSubnetCIDR3 != "public-cidr3" {
-		t.Fatalf("unexpected Parameters.PublicSubnetCIDR3 %q", cfg.Parameters.PublicSubnetCIDR3)
+	if !reflect.DeepEqual(cfg.VPC.PrivateSubnetCIDRs, []string{"private-cidr1", "private-cidr2"}) {
+		t.Fatalf("unexpected VPC.PrivateSubnetCIDRs %q", cfg.VPC.PrivateSubnetCIDRs)
 	}
-	if cfg.Parameters.PrivateSubnetCIDR1 != "private-cidr1" {
-		t.Fatalf("unexpected Parameters.PrivateSubnetCIDR1 %q", cfg.Parameters.PrivateSubnetCIDR1)
+
+	if cfg.VPC.DHCPOptionsDomainName != "hello.com" {
+		t.Fatalf("unexpected cfg.VPC.DHCPOptionsDomainName %q", cfg.VPC.DHCPOptionsDomainName)
 	}
-	if cfg.Parameters.PrivateSubnetCIDR2 != "private-cidr2" {
-		t.Fatalf("unexpected Parameters.PrivateSubnetCIDR2 %q", cfg.Parameters.PrivateSubnetCIDR2)
-	}
-	if cfg.Parameters.DHCPOptionsDomainName != "hello.com" {
-		t.Fatalf("unexpected cfg.Parameters.DHCPOptionsDomainName %q", cfg.Parameters.DHCPOptionsDomainName)
-	}
-	if !reflect.DeepEqual(cfg.Parameters.DHCPOptionsDomainNameServers, []string{"1.2.3.0", "4.5.6.7"}) {
-		t.Fatalf("unexpected cfg.Parameters.DHCPOptionsDomainNameServers %q", cfg.Parameters.DHCPOptionsDomainNameServers)
+	if !reflect.DeepEqual(cfg.VPC.DHCPOptionsDomainNameServers, []string{"1.2.3.0", "4.5.6.7"}) {
+		t.Fatalf("unexpected cfg.VPC.DHCPOptionsDomainNameServers %q", cfg.VPC.DHCPOptionsDomainNameServers)
 	}
 	expectedTags := map[string]string{"to-delete": "2020", "hello-world": "test"}
-	if !reflect.DeepEqual(cfg.Parameters.Tags, expectedTags) {
-		t.Fatalf("Tags expected %v, got %v", expectedTags, cfg.Parameters.Tags)
+	if !reflect.DeepEqual(cfg.Tags, expectedTags) {
+		t.Fatalf("Tags expected %v, got %v", expectedTags, cfg.Tags)
 	}
-	if cfg.Parameters.RequestHeaderKey != "eks-options" {
-		t.Fatalf("unexpected Parameters.RequestHeaderKey %q", cfg.Parameters.RequestHeaderKey)
+	if cfg.RequestHeaderKey != "eks-options" {
+		t.Fatalf("unexpected RequestHeaderKey %q", cfg.RequestHeaderKey)
 	}
-	if cfg.Parameters.RequestHeaderValue != "kubernetesVersion=1.11" {
-		t.Fatalf("unexpected Parameters.RequestHeaderValue %q", cfg.Parameters.RequestHeaderValue)
+	if cfg.RequestHeaderValue != "kubernetesVersion=1.11" {
+		t.Fatalf("unexpected RequestHeaderValue %q", cfg.RequestHeaderValue)
 	}
-	if cfg.Parameters.ResolverURL != "amazon.com" {
-		t.Fatalf("unexpected Parameters.ResolverURL %q", cfg.Parameters.ResolverURL)
+	if cfg.ResolverURL != "amazon.com" {
+		t.Fatalf("unexpected ResolverURL %q", cfg.ResolverURL)
 	}
-	if cfg.Parameters.SigningName != "a" {
-		t.Fatalf("unexpected Parameters.SigningName %q", cfg.Parameters.SigningName)
+	if cfg.SigningName != "a" {
+		t.Fatalf("unexpected SigningName %q", cfg.SigningName)
 	}
-	if cfg.Parameters.RoleCreate {
-		t.Fatalf("unexpected Parameters.RoleCreate %v", cfg.Parameters.RoleCreate)
+	if cfg.Role.Create {
+		t.Fatalf("unexpected Role.Create %v", cfg.Role.Create)
 	}
-	if cfg.Parameters.RoleARN != "cluster-role-arn" {
-		t.Fatalf("unexpected Parameters.RoleARN %q", cfg.Parameters.RoleARN)
+	if cfg.Role.ARN != "cluster-role-arn" {
+		t.Fatalf("unexpected Role.ARN %q", cfg.Role.ARN)
 	}
 	expectedRoleServicePrincipals := []string{
 		"eks.amazonaws.com",
 		"eks-beta-pdx.aws.internal",
 		"eks-dev.aws.internal",
 	}
-	if !reflect.DeepEqual(expectedRoleServicePrincipals, cfg.Parameters.RoleServicePrincipals) {
-		t.Fatalf("unexpected Parameters.RoleServicePrincipals %+v", cfg.Parameters.RoleServicePrincipals)
+	if !reflect.DeepEqual(expectedRoleServicePrincipals, cfg.Role.ServicePrincipals) {
+		t.Fatalf("unexpected RoleServicePrincipals %+v", cfg.Role.ServicePrincipals)
 	}
 	expectedRoleManagedPolicyARNs := []string{
 		"arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
 		"arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM",
 	}
-	if !reflect.DeepEqual(expectedRoleManagedPolicyARNs, cfg.Parameters.RoleManagedPolicyARNs) {
-		t.Fatalf("unexpected Parameters.RoleManagedPolicyARNs %+v", cfg.Parameters.RoleManagedPolicyARNs)
+	if !reflect.DeepEqual(expectedRoleManagedPolicyARNs, cfg.Role.ManagedPolicyARNs) {
+		t.Fatalf("unexpected RoleManagedPolicyARNs %+v", cfg.Role.ManagedPolicyARNs)
 	}
-	if cfg.Parameters.Version != "1.18" {
-		t.Fatalf("unexpected Parameters.Version %q", cfg.Parameters.Version)
+	if cfg.Version != "1.18" {
+		t.Fatalf("unexpected Version %q", cfg.Version)
 	}
-	if cfg.Parameters.EncryptionCMKCreate {
-		t.Fatalf("unexpected Parameters.EncryptionCMKCreate %v", cfg.Parameters.EncryptionCMKCreate)
+	if cfg.Encryption.CMKCreate {
+		t.Fatalf("unexpected Encryption.CMKCreate %v", cfg.Encryption.CMKCreate)
 	}
-	if cfg.Parameters.EncryptionCMKARN != "key-arn" {
-		t.Fatalf("unexpected Parameters.EncryptionCMKARN %q", cfg.Parameters.EncryptionCMKARN)
+	if cfg.Encryption.CMKARN != "key-arn" {
+		t.Fatalf("unexpected Encryption.CMKARN %q", cfg.Encryption.CMKARN)
 	}
-	if cfg.Parameters.KubeAPIServerMaxRequestsInflight != "3000" {
-		t.Fatalf("unexpected Parameters.KubeAPIServerMaxRequestsInflight %s", cfg.Parameters.KubeAPIServerMaxRequestsInflight)
+	if cfg.KubeAPIServerMaxRequestsInflight != "3000" {
+		t.Fatalf("unexpected KubeAPIServerMaxRequestsInflight %s", cfg.KubeAPIServerMaxRequestsInflight)
 	}
-	if cfg.Parameters.KubeControllerManagerQPS != "500" {
-		t.Fatalf("unexpected Parameters.KubeControllerManagerQPS %s", cfg.Parameters.KubeControllerManagerQPS)
+	if cfg.KubeControllerManagerQPS != "500" {
+		t.Fatalf("unexpected KubeControllerManagerQPS %s", cfg.KubeControllerManagerQPS)
 	}
-	if cfg.Parameters.KubeControllerManagerBurst != "500" {
-		t.Fatalf("unexpected Parameters.KubeControllerManagerBurst %s", cfg.Parameters.KubeControllerManagerBurst)
+	if cfg.KubeControllerManagerBurst != "500" {
+		t.Fatalf("unexpected KubeControllerManagerBurst %s", cfg.KubeControllerManagerBurst)
 	}
-	if cfg.Parameters.KubeSchedulerQPS != "500" {
-		t.Fatalf("unexpected Parameters.KubeSchedulerQPS %s", cfg.Parameters.KubeSchedulerQPS)
+	if cfg.KubeSchedulerQPS != "500" {
+		t.Fatalf("unexpected KubeSchedulerQPS %s", cfg.KubeSchedulerQPS)
 	}
-	if cfg.Parameters.KubeSchedulerBurst != "500" {
-		t.Fatalf("unexpected Parameters.KubeSchedulerBurst %s", cfg.Parameters.KubeSchedulerBurst)
+	if cfg.KubeSchedulerBurst != "500" {
+		t.Fatalf("unexpected KubeSchedulerBurst %s", cfg.KubeSchedulerBurst)
 	}
-	if cfg.Parameters.FEUpdateMasterFlagsURL != "uri" {
-		t.Fatalf("unexpected Parameters.FEUpdateMasterFlagsURL %s", cfg.Parameters.FEUpdateMasterFlagsURL)
+	if cfg.FEUpdateMasterFlagsURL != "uri" {
+		t.Fatalf("unexpected FEUpdateMasterFlagsURL %s", cfg.FEUpdateMasterFlagsURL)
 	}
 
 	if !cfg.AddOnClusterVersionUpgrade.Enable {
@@ -828,34 +811,13 @@ spec:
 	if !cfg.AddOnNodeGroups.Enable {
 		t.Fatalf("unexpected cfg.AddOnNodeGroups.Enable %v", cfg.AddOnNodeGroups.Enable)
 	}
+	if cfg.AddOnNodeGroups.Role.Name != "a" {
+		t.Fatalf("unexpected cfg.AddOnNodeGroups.Role.Name %v", cfg.AddOnNodeGroups.Role.Name)
+	}
 	if cfg.AddOnNodeGroups.FetchLogs {
 		t.Fatalf("unexpected cfg.AddOnNodeGroups.FetchLogs %v", cfg.AddOnNodeGroups.FetchLogs)
 	}
-	if !cfg.AddOnNodeGroups.RoleCreate {
-		t.Fatalf("unexpected AddOnNodeGroups.RoleCreate %v", cfg.AddOnNodeGroups.RoleCreate)
-	}
-	if cfg.AddOnNodeGroups.RoleName != "ng-role-name" {
-		t.Fatalf("unexpected cfg.AddOnNodeGroups.RoleName %q", cfg.AddOnNodeGroups.RoleName)
-	}
-	if cfg.AddOnNodeGroups.RoleARN != "ng-role-arn" {
-		t.Fatalf("unexpected cfg.AddOnNodeGroups.RoleARN %q", cfg.AddOnNodeGroups.RoleARN)
-	}
-	expectedNGRoleServicePrincipals := []string{
-		"ec2.amazonaws.com",
-		"eks.amazonaws.com",
-		"hello.amazonaws.com",
-	}
-	if !reflect.DeepEqual(expectedNGRoleServicePrincipals, cfg.AddOnNodeGroups.RoleServicePrincipals) {
-		t.Fatalf("unexpected cfg.AddOnNodeGroups.RoleServicePrincipals %+v", cfg.AddOnNodeGroups.RoleServicePrincipals)
-	}
-	expectedNGRoleManagedPolicyARNs := []string{
-		"a",
-		"b",
-		"c",
-	}
-	if !reflect.DeepEqual(expectedNGRoleManagedPolicyARNs, cfg.AddOnNodeGroups.RoleManagedPolicyARNs) {
-		t.Fatalf("unexpected cfg.AddOnNodeGroups.RoleManagedPolicyARNs %+v", cfg.AddOnNodeGroups.RoleManagedPolicyARNs)
-	}
+
 	cpuName, gpuName := "ng-test-name-cpu", "ng-test-name-gpu"
 	expectedASGs := map[string]ASG{
 		cpuName: {
@@ -867,7 +829,7 @@ spec:
 				ASGMinSize:           17,
 				ASGMaxSize:           99,
 				ASGDesiredCapacity:   77,
-				InstanceTypes:        []string{"type-cpu-2"},
+				InstanceType:         "type-cpu-2",
 				VolumeSize:           40,
 			},
 			BootstrapArgs:     "--pause-container-account 012345678901",
@@ -883,7 +845,7 @@ spec:
 				ASGMinSize:           30,
 				ASGMaxSize:           35,
 				ASGDesiredCapacity:   34,
-				InstanceTypes:        []string{"type-gpu-2"},
+				InstanceType:         "type-gpu-2",
 				VolumeSize:           500,
 			},
 			KubeletExtraArgs:  "aaa aa",
@@ -1641,14 +1603,13 @@ spec:
 		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.Secrets %d", cfg.AddOnStresserRemoteV2.Secrets)
 	}
 
-	cfg.Parameters.RoleManagedPolicyARNs = nil
-	cfg.Parameters.RoleServicePrincipals = nil
 	cfg.AddOnManagedNodeGroups.RoleName = ""
 	cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs = nil
 	cfg.AddOnManagedNodeGroups.RoleServicePrincipals = nil
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		t.Fatal(err)
 	}
+
 	cfg.AddOnNLBHelloWorld.Enable = false
 	cfg.AddOnALB2048.Enable = false
 	cfg.AddOnJobsEcho.Enable = false
@@ -1716,7 +1677,7 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"image-id":"my-ami",  "ssm-document-create":true,   "instance-types":["type-2"],  "ssm-document-cfn-stack-name":"GetRef.Name-ssm", "ssm-document-name":"GetRef.Name-document", "kubelet-extra-args":"aaa aa", "cluster-autoscaler": {"enable" : true}, "volume-size":500}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34, "instance-type":"type-2", "image-id":"my-ami",  "ssm":{"document-create":true,    "document-name":"GetRef.Name-document"}, "kubelet-extra-args":"aaa aa", "cluster-autoscaler": {"enable" : true}, "volume-size":500}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
@@ -1731,34 +1692,47 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 	}
 
 	cur1 := cfg.AddOnNodeGroups.ASGs[cfg.Name+"-ng-for-cni"]
-	cur1.ASGCFNStackYAMLPath = ""
-	cur1.ASGCFNStackYAMLS3Key = ""
-	cur1.SSMDocumentCFNStackYAMLPath = ""
-	cur1.SSMDocumentCFNStackYAMLS3Key = ""
-	cur1.SSMDocumentCFNStackYAMLPath = ""
-	cur1.SSMDocumentCFNStackYAMLS3Key = ""
 	cfg.AddOnNodeGroups.ASGs[cfg.Name+"-ng-for-cni"] = cur1
 	expectedNGs := map[string]ASG{
 		cfg.Name + "-ng-for-cni": {
 			ASG: ec2config.ASG{
-				Name:                               cfg.Name + "-ng-for-cni",
-				RemoteAccessUserName:               "ec2-user",
-				SSMDocumentName:                    regex.ReplaceAllString(cfg.Name+"-document", ""),
-				SSMDocumentCFNStackName:            cfg.Name + "-ssm",
-				SSMDocumentExecutionTimeoutSeconds: 3600,
-				SSMDocumentCreate:                  true,
-				ImageID:                            "my-ami",
-				AMIType:                            eks.AMITypesAl2X8664,
-				InstanceTypes:                      []string{"type-2"},
-				VolumeSize:                         500,
-				ASGMinSize:                         30,
-				ASGMaxSize:                         35,
-				ASGDesiredCapacity:                 34,
+				Name:                 cfg.Name + "-ng-for-cni",
+				RemoteAccessUserName: "ec2-user",
+				SSM: &ec2config.SSM{
+					DocumentName:                    regex.ReplaceAllString(cfg.Name+"-document", ""),
+					DocumentExecutionTimeoutSeconds: 3600,
+					DocumentCreate:                  true,
+				},
+				ImageID:            "my-ami",
+				AMIType:            eks.AMITypesAl2X8664,
+				InstanceType:       "type-2",
+				VolumeSize:         500,
+				ASGMinSize:         30,
+				ASGMaxSize:         35,
+				ASGDesiredCapacity: 34,
+				LaunchTemplateName: cfg.Name + "-ng-for-cni-launch-template",
 			},
 			KubeletExtraArgs:  "aaa aa",
 			ClusterAutoscaler: &NGClusterAutoscaler{Enable: true},
 		},
 	}
+	if !reflect.DeepEqual(*cfg.AddOnNodeGroups.ASGs[cfg.Name+"-ng-for-cni"].SSM, *cur1.SSM) {
+		t.Fatalf("expected cfg.AddOnNodeGroups.ASGs %+v, got %+v", expectedNGs, cfg.AddOnNodeGroups.ASGs)
+	}
+	if !reflect.DeepEqual(*cfg.AddOnNodeGroups.ASGs[cfg.Name+"-ng-for-cni"].ClusterAutoscaler, *cur1.ClusterAutoscaler) {
+		t.Fatalf("expected cfg.AddOnNodeGroups.ASGs %+v, got %+v", expectedNGs, cfg.AddOnNodeGroups.ASGs)
+	}
+
+	v := cfg.AddOnNodeGroups.ASGs[cfg.Name+"-ng-for-cni"]
+	v.SSM = nil
+	v.ClusterAutoscaler = nil
+	cfg.AddOnNodeGroups.ASGs[cfg.Name+"-ng-for-cni"] = v
+
+	v2 := expectedNGs[cfg.Name+"-ng-for-cni"]
+	v2.SSM = nil
+	v2.ClusterAutoscaler = nil
+	expectedNGs[cfg.Name+"-ng-for-cni"] = v2
+
 	if !reflect.DeepEqual(cfg.AddOnNodeGroups.ASGs, expectedNGs) {
 		t.Fatalf("expected cfg.AddOnNodeGroups.ASGs %+v, got %+v", expectedNGs, cfg.AddOnNodeGroups.ASGs)
 	}
@@ -1797,7 +1771,7 @@ func TestEnvAddOnConformance(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"image-id":"my-ami",  "ssm-document-create":true,   "instance-types":["type-2"],  "ssm-document-cfn-stack-name":"GetRef.Name-ssm", "ssm-document-name":"GetRef.Name-document", "cluster-autoscaler": {"enable" : false}, "kubelet-extra-args":"aaa aa",  "volume-size":500}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"instance-types":["type-2"],"asg-desired-capacity":34,"image-id":"my-ami",  "ssm":{"document-create":true,  "document-name":"GetRef.Name-document"}, "cluster-autoscaler": {"enable" : false}, "kubelet-extra-args":"aaa aa",  "volume-size":500}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE", "true")

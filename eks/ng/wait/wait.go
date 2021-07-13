@@ -16,11 +16,8 @@ import (
 	aws_ec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	k8s_object "github.com/aws/aws-k8s-tester/pkg/k8s-object"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/autoscaling"
-	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
-	"github.com/aws/aws-sdk-go/service/eks/eksiface"
+	aws_asg_v2 "github.com/aws/aws-sdk-go-v2/service/autoscaling"
+	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
 	"go.uber.org/zap"
 	certificatesv1beta1 "k8s.io/api/certificates/v1beta1"
 	v1 "k8s.io/api/core/v1"
@@ -39,9 +36,8 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
-	EC2API    ec2iface.EC2API
-	ASGAPI    autoscalingiface.AutoScalingAPI
-	EKSAPI    eksiface.EKSAPI
+	EC2APIV2  *aws_ec2_v2.Client
+	ASGAPIV2  *aws_asg_v2.Client
 }
 
 var pkgName = reflect.TypeOf(tester{}).PkgPath()
@@ -69,9 +65,11 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 	}
 
 	ts.cfg.Logger.Info("checking ASG", zap.String("asg-name", cur.Name))
-	aout, err := ts.cfg.ASGAPI.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
-		AutoScalingGroupNames: aws.StringSlice([]string{cur.Name}),
-	})
+	aout, err := ts.cfg.ASGAPIV2.DescribeAutoScalingGroups(
+		context.Background(),
+		&aws_asg_v2.DescribeAutoScalingGroupsInput{
+			AutoScalingGroupNames: []string{cur.Name},
+		})
 	if err != nil {
 		return fmt.Errorf("ASGs[%q] not found (%v)", cur.Name, err)
 	}
@@ -88,19 +86,26 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 	if checkN == 0 {
 		checkN = time.Duration(cur.ASGMinSize)
 	}
-	waitDur := 10*time.Minute + 10*time.Second*checkN
+
+	waitDur := 30*time.Minute + 10*time.Second*checkN
+	if strings.Contains(cur.InstanceType, ".metal") { // "i3.metal" takes much longer
+		ts.cfg.Logger.Info("increasing wait time for metal instance", zap.String("instance-type", cur.InstanceType))
+		waitDur = time.Hour + time.Minute*checkN
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), waitDur)
 	ec2Instances, err := aws_ec2.WaitUntilRunning(
 		ctx,
 		ts.cfg.Stopc,
-		ts.cfg.ASGAPI,
-		ts.cfg.EC2API,
+		ts.cfg.EC2APIV2,
+		ts.cfg.ASGAPIV2,
 		cur.Name,
 	)
 	cancel()
 	if err != nil {
 		return err
 	}
+
 	cur, ok = ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName]
 	if !ok {
 		return fmt.Errorf("ASG %q not found", asgName)
@@ -219,8 +224,8 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 				}
 				ts.cfg.Logger.Debug("node is ready!",
 					zap.String("name", nodeName),
-					zap.String("status-type", fmt.Sprintf("%s", cond.Type)),
-					zap.String("status", fmt.Sprintf("%s", cond.Status)),
+					zap.String("status-type", fmt.Sprint(cond.Type)),
+					zap.String("status", fmt.Sprint(cond.Status)),
 				)
 				readies++
 				break
@@ -257,11 +262,11 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 			zap.String("command", ts.cfg.EKSConfig.KubectlCommand()+" get nodes"),
 			zap.String("ng-name", cur.Name),
 			zap.Int("current-ready-nodes", readies),
-			zap.Int64("min-ready-nodes", cur.ASGMinSize),
-			zap.Int64("desired-ready-nodes", cur.ASGDesiredCapacity),
+			zap.Int32("min-ready-nodes", cur.ASGMinSize),
+			zap.Int32("desired-ready-nodes", cur.ASGDesiredCapacity),
 			zap.String("all-csrs", fmt.Sprintf("%+v", allCSRs)),
 		)
-		if int64(readies) >= cur.ASGMinSize {
+		if int32(readies) >= cur.ASGMinSize {
 			ready = true
 			break
 		}

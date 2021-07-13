@@ -23,29 +23,26 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/eks/cluster/wait"
+	wait_v2 "github.com/aws/aws-k8s-tester/eks/cluster/wait-v2"
 	"github.com/aws/aws-k8s-tester/eksconfig"
-	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
-	"github.com/aws/aws-k8s-tester/pkg/timeutil"
-	"github.com/aws/aws-k8s-tester/pkg/user"
-	"github.com/aws/aws-k8s-tester/version"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/cloudformation"
+	aws_v2 "github.com/aws/aws-sdk-go-v2/aws"
+	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
+	aws_eks_v2 "github.com/aws/aws-sdk-go-v2/service/eks"
+	aws_elbv2_v2 "github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2"
+	aws_iam_v2 "github.com/aws/aws-sdk-go-v2/service/iam"
+	aws_kms_v2 "github.com/aws/aws-sdk-go-v2/service/kms"
+	aws_s3_v2 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks"
-	aws_eks "github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
-	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
-	"github.com/aws/aws-sdk-go/service/iam/iamiface"
-	"github.com/aws/aws-sdk-go/service/kms/kmsiface"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
 )
+
+// see https://github.com/aws/aws-k8s-tester/blob/v1.6.0/eks/cluster/cluster.go for CloudFormation based workflow
 
 // Config defines version upgrade configuration.
 type Config struct {
@@ -53,13 +50,22 @@ type Config struct {
 	LogWriter io.Writer
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
-	S3API     s3iface.S3API
-	IAMAPI    iamiface.IAMAPI
-	KMSAPI    kmsiface.KMSAPI
-	CFNAPI    cloudformationiface.CloudFormationAPI
-	EC2API    ec2iface.EC2API
-	EKSAPI    eksiface.EKSAPI
-	ELBV2API  elbv2iface.ELBV2API
+
+	S3API   s3iface.S3API
+	S3APIV2 *aws_s3_v2.Client
+
+	IAMAPIV2 *aws_iam_v2.Client
+
+	KMSAPIV2 *aws_kms_v2.Client
+
+	EC2APIV2 *aws_ec2_v2.Client
+
+	EKSAPI   eksiface.EKSAPI
+	EKSAPIV2 *aws_eks_v2.Client
+
+	ELBV2APIV2 *aws_elbv2_v2.Client
+
+	CFNAPI cloudformationiface.CloudFormationAPI
 }
 
 type Tester interface {
@@ -85,6 +91,10 @@ func New(cfg Config) Tester {
 }
 
 type tester struct {
+	// v2 SDK doesn't work...
+	// ref. "api error ForbiddenException: Forbidden..."
+	useV2SDK bool
+
 	cfg       Config
 	k8sClient k8s_client.EKS
 
@@ -97,7 +107,7 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createEncryption(); err != nil {
 		return err
 	}
-	if err = ts.createClusterRole(); err != nil {
+	if err = ts.createRole(); err != nil {
 		return err
 	}
 	if err = ts.createVPC(); err != nil {
@@ -106,6 +116,7 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createEKS(); err != nil {
 		return err
 	}
+
 	ts.k8sClient, err = ts.createClient()
 	if err != nil {
 		return err
@@ -140,7 +151,7 @@ func getCaller() string {
 }
 
 func (ts *tester) checkHealth(caller string) (err error) {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Print(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]checkHealth [default](%q, caller %q)\n"), ts.cfg.EKSConfig.ConfigPath, caller)
 
 	defer func() {
@@ -203,7 +214,7 @@ func (ts *tester) Delete() error {
 		if err := ts.deleteEncryption(); err != nil {
 			errs = append(errs, err.Error())
 		}
-		if err := ts.deleteClusterRole(); err != nil {
+		if err := ts.deleteRole(); err != nil {
 			errs = append(errs, err.Error())
 		}
 		if err := ts.deleteVPC(); err != nil {
@@ -219,494 +230,31 @@ func (ts *tester) Delete() error {
 	return nil
 }
 
-// MAKE SURE TO SYNC THE DEFAULT VALUES in "eksconfig"
-
-// TemplateCluster is the CloudFormation template for EKS cluster.
-const TemplateCluster = `
----
-AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Amazon EKS Cluster'
-
-Parameters:
-
-  ClusterName:
-    Type: String
-    Description: Cluster name
-
-  Version:
-    Type: String
-    Default: 1.20
-    Description: Specify the EKS version
-
-  RoleARN:
-    Type: String
-    Description: Role ARN that EKS uses to create AWS resources for Kubernetes
-
-  SubnetIDs:
-    Type: List<AWS::EC2::Subnet::Id>
-    Description: Subnets for EKS worker nodes. Amazon EKS creates cross-account elastic network interfaces in these subnets to allow communication between  worker nodes and the Kubernetes control plane
-
-  ClusterControlPlaneSecurityGroupID:
-    Type: AWS::EC2::SecurityGroup::Id
-    Description: Security group ID for the cluster control plane communication with worker nodes
-{{ if ne .AWSEncryptionProviderCMKARN "" }}
-  AWSEncryptionProviderCMKARN:
-    Type: String
-    Description: KMS CMK for aws-encryption-provider.
-{{ end }}
-
-Resources:
-
-  Cluster:
-    Type: AWS::EKS::Cluster
-    Properties:
-      Name: !Ref ClusterName
-      Version: !Ref Version
-      RoleArn: !Ref RoleARN
-      ResourcesVpcConfig:
-        SubnetIds: !Ref SubnetIDs
-        SecurityGroupIds:
-        - !Ref ClusterControlPlaneSecurityGroupID
-{{ if ne .AWSEncryptionProviderCMKARN "" }}      EncryptionConfig:
-      - Resources:
-        - secrets
-        Provider:
-          KeyArn: !Ref AWSEncryptionProviderCMKARN
-{{ end }}
-Outputs:
-
-  ClusterARN:
-    Value: !GetAtt Cluster.Arn
-    Description: EKS Cluster ARN
-
-  ClusterAPIServerEndpoint:
-    Value: !GetAtt Cluster.Endpoint
-    Description: EKS Cluster API server endpoint
-
-`
-
-type templateEKSCluster struct {
-	AWSEncryptionProviderCMKARN string
-}
-
-const (
-	ClusterCreateTimeout = time.Hour
-	ClusterDeleteTimeout = time.Hour
-)
-
-func (ts *tester) createEKS() (err error) {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createEKS [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
-
-	if ts.cfg.EKSConfig.Status.ClusterCFNStackID != "" ||
-		ts.cfg.EKSConfig.Status.ClusterARN != "" ||
-		ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint != "" ||
-		ts.cfg.EKSConfig.Status.ClusterCA != "" ||
-		ts.cfg.EKSConfig.Status.ClusterCADecoded != "" {
-		ts.cfg.Logger.Info("non-empty cluster given; no need to create a new one", zap.String("status", ts.cfg.EKSConfig.Status.ClusterStatusCurrent))
-		return nil
-	}
-	if ts.cfg.EKSConfig.Status.Up {
-		ts.cfg.Logger.Info("cluster is up; no need to create cluster")
-		return nil
-	}
-
-	ts.describeCluster()
-	if ts.cfg.EKSConfig.Status.ClusterStatusCurrent == aws_eks.ClusterStatusActive {
-		ts.cfg.Logger.Info("cluster status is active; no need to create cluster", zap.String("status", ts.cfg.EKSConfig.Status.ClusterStatusCurrent))
-		return nil
-	}
-
-	createStart := time.Now()
-	defer func() {
-		createEnd := time.Now()
-		ts.cfg.EKSConfig.Status.TimeFrameCreate = timeutil.NewTimeFrame(createStart, createEnd)
-		ts.cfg.EKSConfig.Sync()
-	}()
-
-	initialWait := 9 * time.Minute
-
-	subnets := make([]string, len(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs))
-	copy(subnets, ts.cfg.EKSConfig.Parameters.PublicSubnetIDs)
-	if len(ts.cfg.EKSConfig.Parameters.PrivateSubnetIDs) > 0 {
-		subnets = append(subnets, ts.cfg.EKSConfig.Parameters.PrivateSubnetIDs...)
-	}
-
-	if ts.cfg.EKSConfig.Parameters.ResolverURL != "" ||
-		(ts.cfg.EKSConfig.Parameters.RequestHeaderKey != "" &&
-			ts.cfg.EKSConfig.Parameters.RequestHeaderValue != "") {
-		ts.cfg.Logger.Info("creating a cluster using EKS API",
-			zap.String("name", ts.cfg.EKSConfig.Name),
-			zap.String("resolver-url", ts.cfg.EKSConfig.Parameters.ResolverURL),
-			zap.String("signing-name", ts.cfg.EKSConfig.Parameters.SigningName),
-			zap.String("request-header-key", ts.cfg.EKSConfig.Parameters.RequestHeaderKey),
-			zap.String("request-header-value", ts.cfg.EKSConfig.Parameters.RequestHeaderValue),
-		)
-		createInput := aws_eks.CreateClusterInput{
-			Name:    aws.String(ts.cfg.EKSConfig.Name),
-			Version: aws.String(ts.cfg.EKSConfig.Parameters.Version),
-			RoleArn: aws.String(ts.cfg.EKSConfig.Parameters.RoleARN),
-			ResourcesVpcConfig: &aws_eks.VpcConfigRequest{
-				SubnetIds:        aws.StringSlice(subnets),
-				SecurityGroupIds: aws.StringSlice([]string{ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID}),
-			},
-			Tags: map[string]*string{
-				"Kind":                   aws.String("aws-k8s-tester"),
-				"aws-k8s-tester-version": aws.String(version.ReleaseVersion),
-				"User":                   aws.String(user.Get()),
-			},
-		}
-		for k, v := range ts.cfg.EKSConfig.Parameters.Tags {
-			createInput.Tags[k] = aws.String(v)
-			ts.cfg.Logger.Info("added EKS tag to EKS API request",
-				zap.String("key", k),
-				zap.String("value", v),
-			)
-		}
-		if ts.cfg.EKSConfig.Parameters.EncryptionCMKARN != "" {
-			ts.cfg.Logger.Info("added encryption to EKS API request",
-				zap.String("cmk-arn", ts.cfg.EKSConfig.Parameters.EncryptionCMKARN),
-			)
-			createInput.EncryptionConfig = []*aws_eks.EncryptionConfig{
-				{
-					Resources: aws.StringSlice([]string{"secrets"}),
-					Provider: &aws_eks.Provider{
-						KeyArn: aws.String(ts.cfg.EKSConfig.Parameters.EncryptionCMKARN),
-					},
-				},
-			}
-		}
-		req, _ := ts.cfg.EKSAPI.CreateClusterRequest(&createInput)
-		if ts.cfg.EKSConfig.Parameters.RequestHeaderKey != "" && ts.cfg.EKSConfig.Parameters.RequestHeaderValue != "" {
-			req.HTTPRequest.Header[ts.cfg.EKSConfig.Parameters.RequestHeaderKey] = []string{ts.cfg.EKSConfig.Parameters.RequestHeaderValue}
-			ts.cfg.Logger.Info("set request header for EKS create request",
-				zap.String("key", ts.cfg.EKSConfig.Parameters.RequestHeaderKey),
-				zap.String("value", ts.cfg.EKSConfig.Parameters.RequestHeaderValue),
-			)
-		}
-		err = req.Send()
-		if err != nil {
-			return err
-		}
-		ts.cfg.Logger.Info("sent create cluster request")
-
-	} else {
-
-		tpl := template.Must(template.New("TemplateCluster").Parse(TemplateCluster))
-		buf := bytes.NewBuffer(nil)
-		if err := tpl.Execute(buf, templateEKSCluster{
-			AWSEncryptionProviderCMKARN: ts.cfg.EKSConfig.Parameters.EncryptionCMKARN,
-		}); err != nil {
-			return err
-		}
-
-		// grant write permission in case of overwrites
-		if err := ioutil.WriteFile(ts.cfg.EKSConfig.Status.ClusterCFNStackYAMLPath, buf.Bytes(), 0600); err != nil {
-			return err
-		}
-		if err := aws_s3.Upload(
-			ts.cfg.Logger,
-			ts.cfg.S3API,
-			ts.cfg.EKSConfig.S3BucketName,
-			ts.cfg.EKSConfig.Status.ClusterCFNStackYAMLS3Key,
-			ts.cfg.EKSConfig.Status.ClusterCFNStackYAMLPath,
-		); err != nil {
-			return err
-		}
-		initialWait = time.Minute
-		ts.cfg.Logger.Info("creating a cluster using CFN",
-			zap.String("name", ts.cfg.EKSConfig.Name),
-			zap.String("cfn-file-path", ts.cfg.EKSConfig.Status.ClusterCFNStackYAMLPath),
-		)
-		stackInput := &cloudformation.CreateStackInput{
-			StackName:    aws.String(ts.cfg.EKSConfig.Name + "-cluster"),
-			Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
-			OnFailure:    aws.String(cloudformation.OnFailureDelete),
-			TemplateBody: aws.String(buf.String()),
-			Tags: cfn.NewTags(map[string]string{
-				"Kind":                   "aws-k8s-tester",
-				"Name":                   ts.cfg.EKSConfig.Name,
-				"aws-k8s-tester-version": version.ReleaseVersion,
-				"User":                   user.Get(),
-			}),
-			Parameters: []*cloudformation.Parameter{
-				{
-					ParameterKey:   aws.String("ClusterName"),
-					ParameterValue: aws.String(ts.cfg.EKSConfig.Name),
-				},
-				{
-					ParameterKey:   aws.String("Version"),
-					ParameterValue: aws.String(ts.cfg.EKSConfig.Parameters.Version),
-				},
-				{
-					ParameterKey:   aws.String("RoleARN"),
-					ParameterValue: aws.String(ts.cfg.EKSConfig.Parameters.RoleARN),
-				},
-				{
-					ParameterKey:   aws.String("SubnetIDs"),
-					ParameterValue: aws.String(strings.Join(subnets, ",")),
-				},
-				{
-					ParameterKey:   aws.String("ClusterControlPlaneSecurityGroupID"),
-					ParameterValue: aws.String(ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID),
-				},
-			},
-		}
-		if ts.cfg.EKSConfig.Parameters.EncryptionCMKARN != "" {
-			ts.cfg.Logger.Info("added encryption config to EKS CFN request",
-				zap.String("cmk-arn", ts.cfg.EKSConfig.Parameters.EncryptionCMKARN),
-			)
-			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-				ParameterKey:   aws.String("AWSEncryptionProviderCMKARN"),
-				ParameterValue: aws.String(ts.cfg.EKSConfig.Parameters.EncryptionCMKARN),
-			})
-		}
-		stackOutput, err := ts.cfg.CFNAPI.CreateStack(stackInput)
-		if err != nil {
-			return err
-		}
-		ts.cfg.EKSConfig.Status.ClusterCFNStackID = aws.StringValue(stackOutput.StackId)
-		ctx, cancel := context.WithTimeout(context.Background(), ClusterCreateTimeout)
-		ch := cfn.Poll(
-			ctx,
-			ts.cfg.Stopc,
-			ts.cfg.Logger,
-			ts.cfg.LogWriter,
-			ts.cfg.CFNAPI,
-			ts.cfg.EKSConfig.Status.ClusterCFNStackID,
-			cloudformation.ResourceStatusCreateComplete,
-			9*time.Minute,
-			30*time.Second,
-		)
-		var st cfn.StackStatus
-		for st = range ch {
-			if st.Error != nil {
-				ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to create cluster (%v)", st.Error))
-				ts.cfg.Logger.Warn("polling errror", zap.Error(st.Error))
-			}
-		}
-		cancel()
-		if st.Error != nil {
-			return st.Error
-		}
-		// update status after creating a new cluster
-		for _, o := range st.Stack.Outputs {
-			switch k := aws.StringValue(o.OutputKey); k {
-			case "ClusterARN":
-				ts.cfg.EKSConfig.Status.ClusterARN = aws.StringValue(o.OutputValue)
-			case "ClusterAPIServerEndpoint":
-				ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint = aws.StringValue(o.OutputValue)
-			default:
-				return fmt.Errorf("unexpected OutputKey %q from %q", k, ts.cfg.EKSConfig.Status.ClusterCFNStackID)
-			}
-		}
-
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), ClusterCreateTimeout)
-	ch := wait.Poll(
-		ctx,
-		ts.cfg.Stopc,
-		ts.cfg.Logger,
-		ts.cfg.LogWriter,
-		ts.cfg.EKSAPI,
-		ts.cfg.EKSConfig.Name,
-		aws_eks.ClusterStatusActive,
-		initialWait,
-		30*time.Second,
-	)
-	for sv := range ch {
-		ts.updateClusterStatus(sv, aws_eks.ClusterStatusActive)
-		err = sv.Error
-	}
-	cancel()
-
-	switch err {
-	case nil:
-		ts.cfg.Logger.Info("created a cluster",
-			zap.String("cluster-cfn-stack-id", ts.cfg.EKSConfig.Status.ClusterCFNStackID),
-			zap.String("cluster-arn", ts.cfg.EKSConfig.Status.ClusterARN),
-			zap.String("cluster-api-server-endpoint", ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint),
-			zap.Int("cluster-ca-bytes", len(ts.cfg.EKSConfig.Status.ClusterCA)),
-			zap.String("config-path", ts.cfg.EKSConfig.ConfigPath),
-			zap.String("started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
-		)
-
-	case context.DeadlineExceeded:
-		ts.cfg.Logger.Warn("cluster creation took too long",
-			zap.String("cluster-cfn-stack-id", ts.cfg.EKSConfig.Status.ClusterCFNStackID),
-			zap.String("cluster-arn", ts.cfg.EKSConfig.Status.ClusterARN),
-			zap.String("cluster-api-server-endpoint", ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint),
-			zap.String("config-path", ts.cfg.EKSConfig.ConfigPath),
-			zap.String("started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
-			zap.Error(err),
-		)
-		return err
-
-	default:
-		ts.cfg.Logger.Warn("failed to create cluster",
-			zap.String("cluster-cfn-stack-id", ts.cfg.EKSConfig.Status.ClusterCFNStackID),
-			zap.String("cluster-arn", ts.cfg.EKSConfig.Status.ClusterARN),
-			zap.String("cluster-api-server-endpoint", ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint),
-			zap.String("config-path", ts.cfg.EKSConfig.ConfigPath),
-			zap.String("started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
-			zap.Error(err),
-		)
-		return err
-	}
-
-	ts.cfg.EKSConfig.Sync()
-	return nil
-}
-
-// deleteEKS returns error if EKS cluster delete fails.
-// It returns nil if the cluster has already been deleted.
-func (ts *tester) deleteEKS() error {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteEKS [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
-
-	ts.describeCluster()
-	if ts.cfg.EKSConfig.Status.ClusterStatusCurrent == "" || ts.cfg.EKSConfig.Status.ClusterStatusCurrent == eksconfig.ClusterStatusDELETEDORNOTEXIST {
-		ts.cfg.Logger.Info("cluster already deleted; no need to delete cluster")
-		return nil
-	}
-
-	deleteStart := time.Now()
-	defer func() {
-		deleteEnd := time.Now()
-		ts.cfg.EKSConfig.Status.TimeFrameDelete = timeutil.NewTimeFrame(deleteStart, deleteEnd)
-		ts.cfg.EKSConfig.Sync()
-	}()
-
-	ts.cfg.Logger.Info("deleting cluster", zap.String("cluster-name", ts.cfg.EKSConfig.Name))
-	if ts.cfg.EKSConfig.Status.ClusterCFNStackID != "" {
-
-		_, err := ts.cfg.CFNAPI.DeleteStack(&cloudformation.DeleteStackInput{
-			StackName: aws.String(ts.cfg.EKSConfig.Status.ClusterCFNStackID),
-		})
-		if err != nil {
-			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete cluster (%v)", err))
-			ts.cfg.Logger.Warn("failed to delete cluster", zap.Error(err))
-			return err
-		}
-		ts.cfg.EKSConfig.Status.Up = false
-		ts.cfg.EKSConfig.Sync()
-		ctx, cancel := context.WithTimeout(context.Background(), ClusterDeleteTimeout)
-		ch := cfn.Poll(
-			ctx,
-			make(chan struct{}), // do not exit on stop
-			ts.cfg.Logger,
-			ts.cfg.LogWriter,
-			ts.cfg.CFNAPI,
-			ts.cfg.EKSConfig.Status.ClusterCFNStackID,
-			cloudformation.ResourceStatusDeleteComplete,
-			5*time.Minute,
-			20*time.Second,
-		)
-		var st cfn.StackStatus
-		for st = range ch {
-			if st.Error != nil {
-				cancel()
-				ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete cluster (%v)", st.Error))
-				ts.cfg.Logger.Warn("polling errror", zap.Error(st.Error))
-			}
-		}
-		cancel()
-		if st.Error != nil {
-			return st.Error
-		}
-		ts.cfg.EKSConfig.RecordStatus(eksconfig.ClusterStatusDELETEDORNOTEXIST)
-
-	} else {
-
-		_, err := ts.cfg.EKSAPI.DeleteCluster(&aws_eks.DeleteClusterInput{
-			Name: aws.String(ts.cfg.EKSConfig.Name),
-		})
-		if err != nil {
-			awsErr, ok := err.(awserr.Error)
-			if ok && awsErr.Code() == "ResourceNotFoundException" &&
-				strings.HasPrefix(awsErr.Message(), "No cluster found for") {
-				ts.cfg.EKSConfig.RecordStatus(eksconfig.ClusterStatusDELETEDORNOTEXIST)
-				ts.cfg.Logger.Warn("cluster is already deleted", zap.Error(err))
-				return nil
-			}
-
-			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to delete cluster (%v)", err))
-			ts.cfg.Logger.Warn("failed to delete cluster", zap.Error(err))
-			return err
-		}
-		ts.cfg.EKSConfig.Status.Up = false
-		ts.cfg.EKSConfig.Sync()
-
-		ctx, cancel := context.WithTimeout(context.Background(), ClusterDeleteTimeout)
-		csCh := wait.Poll(
-			ctx,
-			make(chan struct{}), // do not exit on stop
-			ts.cfg.Logger,
-			ts.cfg.LogWriter,
-			ts.cfg.EKSAPI,
-			ts.cfg.EKSConfig.Name,
-			eksconfig.ClusterStatusDELETEDORNOTEXIST,
-			5*time.Minute,
-			20*time.Second,
-		)
-		for v := range csCh {
-			ts.updateClusterStatus(v, eksconfig.ClusterStatusDELETEDORNOTEXIST)
-		}
-		cancel()
-	}
-
-	ts.cfg.Logger.Info("deleted a cluster",
-		zap.String("cluster-cfn-stack-id", ts.cfg.EKSConfig.Status.ClusterCFNStackID),
-		zap.String("cluster-name", ts.cfg.EKSConfig.Name),
-	)
-	ts.cfg.EKSConfig.Sync()
-	return nil
-}
-
-func (ts *tester) describeCluster() {
-	dout, err := ts.cfg.EKSAPI.DescribeCluster(&aws_eks.DescribeClusterInput{Name: aws.String(ts.cfg.EKSConfig.Name)})
-	if err != nil {
-		if wait.IsDeleted(err) {
-			ts.cfg.EKSConfig.RecordStatus(eksconfig.ClusterStatusDELETEDORNOTEXIST)
-		} else {
-			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed to describe cluster (%v)", err))
-		}
-	}
-	if dout.Cluster == nil {
-		ts.cfg.EKSConfig.RecordStatus(eksconfig.ClusterStatusDELETEDORNOTEXIST)
-	} else {
-		ts.cfg.EKSConfig.RecordStatus(aws.StringValue(dout.Cluster.Status))
-	}
-	ts.cfg.Logger.Info("described cluster",
-		zap.String("name", ts.cfg.EKSConfig.Name),
-		zap.String("status", ts.cfg.EKSConfig.Status.ClusterStatusCurrent),
-	)
-}
-
-func (ts *tester) updateClusterStatus(v wait.ClusterStatus, desired string) {
-	if v.Cluster == nil {
-		if v.Error != nil {
-			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed with error %v", v.Error))
+func (ts *tester) updateClusterStatusV1(v1 wait.ClusterStatus, desired string) {
+	if v1.Cluster == nil {
+		if v1.Error != nil {
+			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed with error %v", v1.Error))
 			ts.cfg.EKSConfig.Status.Up = false
 		} else {
 			ts.cfg.EKSConfig.RecordStatus(eksconfig.ClusterStatusDELETEDORNOTEXIST)
 		}
 		return
 	}
-	ts.cfg.EKSConfig.Status.ClusterARN = aws.StringValue(v.Cluster.Arn)
-	ts.cfg.EKSConfig.RecordStatus(aws.StringValue(v.Cluster.Status))
 
-	if desired != eksconfig.ClusterStatusDELETEDORNOTEXIST && ts.cfg.EKSConfig.Status.ClusterStatusCurrent != eksconfig.ClusterStatusDELETEDORNOTEXIST {
+	ts.cfg.EKSConfig.Status.ClusterARN = aws_v2.ToString(v1.Cluster.Arn)
+	ts.cfg.EKSConfig.RecordStatus(aws_v2.ToString(v1.Cluster.Status))
 
-		if v.Cluster.Endpoint != nil {
-			ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint = aws.StringValue(v.Cluster.Endpoint)
+	if desired != eksconfig.ClusterStatusDELETEDORNOTEXIST &&
+		ts.cfg.EKSConfig.Status.ClusterStatusCurrent != eksconfig.ClusterStatusDELETEDORNOTEXIST {
+
+		if v1.Cluster.Endpoint != nil {
+			ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint = aws_v2.ToString(v1.Cluster.Endpoint)
 		}
 
-		if v.Cluster.Identity != nil &&
-			v.Cluster.Identity.Oidc != nil &&
-			v.Cluster.Identity.Oidc.Issuer != nil {
-			ts.cfg.EKSConfig.Status.ClusterOIDCIssuerURL = aws.StringValue(v.Cluster.Identity.Oidc.Issuer)
+		if v1.Cluster.Identity != nil &&
+			v1.Cluster.Identity.Oidc != nil &&
+			v1.Cluster.Identity.Oidc.Issuer != nil {
+			ts.cfg.EKSConfig.Status.ClusterOIDCIssuerURL = aws_v2.ToString(v1.Cluster.Identity.Oidc.Issuer)
 			u, err := url.Parse(ts.cfg.EKSConfig.Status.ClusterOIDCIssuerURL)
 			if err != nil {
 				ts.cfg.Logger.Warn(
@@ -772,8 +320,122 @@ func (ts *tester) updateClusterStatus(v wait.ClusterStatus, desired string) {
 			}
 		}
 
-		if v.Cluster.CertificateAuthority != nil && v.Cluster.CertificateAuthority.Data != nil {
-			ts.cfg.EKSConfig.Status.ClusterCA = aws.StringValue(v.Cluster.CertificateAuthority.Data)
+		if v1.Cluster.CertificateAuthority != nil && v1.Cluster.CertificateAuthority.Data != nil {
+			ts.cfg.EKSConfig.Status.ClusterCA = aws_v2.ToString(v1.Cluster.CertificateAuthority.Data)
+		}
+		d, err := base64.StdEncoding.DecodeString(ts.cfg.EKSConfig.Status.ClusterCA)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to decode cluster CA", zap.Error(err))
+		}
+		ts.cfg.EKSConfig.Status.ClusterCADecoded = string(d)
+
+	} else {
+
+		ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint = ""
+		ts.cfg.EKSConfig.Status.ClusterOIDCIssuerURL = ""
+		ts.cfg.EKSConfig.Status.ClusterOIDCIssuerHostPath = ""
+		ts.cfg.EKSConfig.Status.ClusterOIDCIssuerARN = ""
+		ts.cfg.EKSConfig.Status.ClusterOIDCIssuerCAThumbprint = ""
+		ts.cfg.EKSConfig.Status.ClusterCA = ""
+		ts.cfg.EKSConfig.Status.ClusterCADecoded = ""
+
+	}
+
+	ts.cfg.EKSConfig.Sync()
+}
+
+func (ts *tester) updateClusterStatusV2(v2 wait_v2.ClusterStatus, desired string) {
+	if v2.Cluster == nil {
+		if v2.Error != nil {
+			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("failed with error %v", v2.Error))
+			ts.cfg.EKSConfig.Status.Up = false
+		} else {
+			ts.cfg.EKSConfig.RecordStatus(eksconfig.ClusterStatusDELETEDORNOTEXIST)
+		}
+		return
+	}
+
+	ts.cfg.EKSConfig.Status.ClusterARN = aws_v2.ToString(v2.Cluster.Arn)
+	ts.cfg.EKSConfig.RecordStatus(fmt.Sprint(v2.Cluster.Status))
+
+	if desired != eksconfig.ClusterStatusDELETEDORNOTEXIST &&
+		ts.cfg.EKSConfig.Status.ClusterStatusCurrent != eksconfig.ClusterStatusDELETEDORNOTEXIST {
+
+		if v2.Cluster.Endpoint != nil {
+			ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint = aws_v2.ToString(v2.Cluster.Endpoint)
+		}
+
+		if v2.Cluster.Identity != nil &&
+			v2.Cluster.Identity.Oidc != nil &&
+			v2.Cluster.Identity.Oidc.Issuer != nil {
+			ts.cfg.EKSConfig.Status.ClusterOIDCIssuerURL = aws_v2.ToString(v2.Cluster.Identity.Oidc.Issuer)
+			u, err := url.Parse(ts.cfg.EKSConfig.Status.ClusterOIDCIssuerURL)
+			if err != nil {
+				ts.cfg.Logger.Warn(
+					"failed to parse ClusterOIDCIssuerURL",
+					zap.String("url", ts.cfg.EKSConfig.Status.ClusterOIDCIssuerURL),
+					zap.Error(err),
+				)
+			}
+			if u.Scheme != "https" {
+				ts.cfg.Logger.Warn("invalid scheme", zap.String("scheme", u.Scheme))
+			}
+			if u.Port() == "" {
+				ts.cfg.Logger.Info("updating host with port :443", zap.String("host", u.Host))
+				u.Host += ":443"
+			}
+			ts.cfg.EKSConfig.Status.ClusterOIDCIssuerURL = u.String()
+			ts.cfg.EKSConfig.Status.ClusterOIDCIssuerHostPath = u.Hostname() + u.Path
+			ts.cfg.EKSConfig.Status.ClusterOIDCIssuerARN = fmt.Sprintf(
+				"arn:aws:iam::%s:oidc-provider/%s",
+				ts.cfg.EKSConfig.Status.AWSAccountID,
+				ts.cfg.EKSConfig.Status.ClusterOIDCIssuerHostPath,
+			)
+
+			ts.cfg.Logger.Info("fetching OIDC CA thumbprint", zap.String("url", ts.cfg.EKSConfig.Status.ClusterOIDCIssuerURL))
+			httpClient := &http.Client{
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{},
+					Proxy:           http.ProxyFromEnvironment,
+				},
+			}
+			var resp *http.Response
+			for i := 0; i < 5; i++ {
+				resp, err = httpClient.Get(ts.cfg.EKSConfig.Status.ClusterOIDCIssuerURL)
+				if err == nil {
+					break
+				}
+				code := 0
+				if resp != nil {
+					code = resp.StatusCode
+				}
+				// TODO: parse response status code to decide retries?
+				ts.cfg.Logger.Warn("failed to fetch OIDC CA thumbprint",
+					zap.String("url", ts.cfg.EKSConfig.Status.ClusterOIDCIssuerURL),
+					zap.Int("status-code", code),
+					zap.Error(err),
+				)
+				time.Sleep(5 * time.Second)
+			}
+			if resp != nil && resp.Body != nil {
+				defer resp.Body.Close()
+			}
+			if resp != nil && resp.TLS != nil {
+				certs := len(resp.TLS.PeerCertificates)
+				if certs >= 1 {
+					root := resp.TLS.PeerCertificates[certs-1]
+					ts.cfg.EKSConfig.Status.ClusterOIDCIssuerCAThumbprint = fmt.Sprintf("%x", sha1.Sum(root.Raw))
+					ts.cfg.Logger.Info("fetched OIDC CA thumbprint")
+				} else {
+					ts.cfg.Logger.Warn("received empty TLS peer certs")
+				}
+			} else {
+				ts.cfg.Logger.Warn("received empty HTTP empty TLS response")
+			}
+		}
+
+		if v2.Cluster.CertificateAuthority != nil && v2.Cluster.CertificateAuthority.Data != nil {
+			ts.cfg.EKSConfig.Status.ClusterCA = aws_v2.ToString(v2.Cluster.CertificateAuthority.Data)
 		}
 		d, err := base64.StdEncoding.DecodeString(ts.cfg.EKSConfig.Status.ClusterCA)
 		if err != nil {
@@ -834,7 +496,7 @@ users:
 // https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html
 // "aws eks update-kubeconfig --name --role-arn --kubeconfig"
 func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Print(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createClient [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
 
 	if ts.cfg.EKSConfig.AWSIAMAuthenticatorPath != "" && ts.cfg.EKSConfig.AWSIAMAuthenticatorDownloadURL != "" {
@@ -855,7 +517,7 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 		if err = aws_s3.Upload(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
-			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.S3.BucketName,
 			path.Join(ts.cfg.EKSConfig.Name, "kubeconfig.yaml"),
 			ts.cfg.EKSConfig.KubeConfigPath,
 		); err != nil {
@@ -872,8 +534,8 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 			fmt.Sprintf("--kubeconfig=%s", ts.cfg.EKSConfig.KubeConfigPath),
 			"--verbose",
 		}
-		if ts.cfg.EKSConfig.Parameters.ResolverURL != "" {
-			args = append(args, fmt.Sprintf("--endpoint=%s", ts.cfg.EKSConfig.Parameters.ResolverURL))
+		if ts.cfg.EKSConfig.ResolverURL != "" {
+			args = append(args, fmt.Sprintf("--endpoint=%s", ts.cfg.EKSConfig.ResolverURL))
 		}
 		cmd := strings.Join(args, " ")
 		ts.cfg.Logger.Info("writing KUBECONFIG with 'aws eks update-kubeconfig'",
@@ -904,7 +566,7 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 			if err = aws_s3.Upload(
 				ts.cfg.Logger,
 				ts.cfg.S3API,
-				ts.cfg.EKSConfig.S3BucketName,
+				ts.cfg.EKSConfig.S3.BucketName,
 				path.Join(ts.cfg.EKSConfig.Name, "kubeconfig.yaml"),
 				ts.cfg.EKSConfig.KubeConfigPath,
 			); err != nil {
@@ -928,10 +590,10 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 		ClusterName:                        ts.cfg.EKSConfig.Name,
 		KubeConfigPath:                     ts.cfg.EKSConfig.KubeConfigPath,
 		KubectlPath:                        ts.cfg.EKSConfig.KubectlPath,
-		ServerVersion:                      ts.cfg.EKSConfig.Parameters.Version,
-		EncryptionEnabled:                  ts.cfg.EKSConfig.Parameters.EncryptionCMKARN != "",
+		ServerVersion:                      ts.cfg.EKSConfig.Version,
+		EncryptionEnabled:                  ts.cfg.EKSConfig.Encryption.CMKARN != "",
 		S3API:                              ts.cfg.S3API,
-		S3BucketName:                       ts.cfg.EKSConfig.S3BucketName,
+		S3BucketName:                       ts.cfg.EKSConfig.S3.BucketName,
 		S3MetricsRawOutputDirKubeAPIServer: path.Join(ts.cfg.EKSConfig.Name, "metrics-kube-apiserver"),
 		MetricsRawOutputDirKubeAPIServer:   filepath.Join(filepath.Dir(ts.cfg.EKSConfig.ConfigPath), ts.cfg.EKSConfig.Name+"-metrics-kube-apiserver"),
 		Clients:                            ts.cfg.EKSConfig.Clients,

@@ -14,13 +14,10 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
-	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
-	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
-	"github.com/aws/aws-sdk-go/service/eks/eksiface"
-	"github.com/aws/aws-sdk-go/service/iam/iamiface"
-	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
+	aws_asg_v2 "github.com/aws/aws-sdk-go-v2/service/autoscaling"
+	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
+	aws_iam_v2 "github.com/aws/aws-sdk-go-v2/service/iam"
+	aws_ssm_v2 "github.com/aws/aws-sdk-go-v2/service/ssm"
 	"go.uber.org/zap"
 )
 
@@ -31,13 +28,11 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
-	S3API     s3iface.S3API
-	IAMAPI    iamiface.IAMAPI
-	CFNAPI    cloudformationiface.CloudFormationAPI
-	EC2API    ec2iface.EC2API
-	ASGAPI    autoscalingiface.AutoScalingAPI
-	EKSAPI    eksiface.EKSAPI
-	SSMAPI    ssmiface.SSMAPI
+
+	IAMAPIV2 *aws_iam_v2.Client
+	EC2APIV2 *aws_ec2_v2.Client
+	SSMAPIV2 *aws_ssm_v2.Client
+	ASGAPIV2 *aws_asg_v2.Client
 }
 
 // Tester implements EKS "Node Group" for "kubetest2" Deployer.
@@ -75,9 +70,8 @@ func New(cfg Config) Tester {
 			Stopc:     cfg.Stopc,
 			EKSConfig: cfg.EKSConfig,
 			K8SClient: cfg.K8SClient,
-			EC2API:    cfg.EC2API,
-			ASGAPI:    cfg.ASGAPI,
-			EKSAPI:    cfg.EKSAPI,
+			EC2APIV2:  cfg.EC2APIV2,
+			ASGAPIV2:  cfg.ASGAPIV2,
 		}),
 		logsMu:     new(sync.RWMutex),
 		failedOnce: false,
@@ -108,8 +102,8 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.Logger.Info("node group is already created; skipping creation")
 		return nil
 	}
-	if len(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs) == 0 {
-		return errors.New("empty EKSConfig.Parameters.PublicSubnetIDs")
+	if len(ts.cfg.EKSConfig.VPC.PublicSubnetIDs) == 0 {
+		return errors.New("empty EKSConfig.VPC.PublicSubnetIDs")
 	}
 
 	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", pkgName))
@@ -120,10 +114,13 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.EKSConfig.Sync()
 	}()
 
-	if err = ts.createRole(); err != nil {
+	if err = ts.createSecurityGroups(); err != nil {
 		return err
 	}
-	if err = ts.createSG(); err != nil {
+	if err = ts.authorizeSecurityGroup(); err != nil {
+		return err
+	}
+	if err = ts.createRole(); err != nil {
 		return err
 	}
 	if err = ts.createConfigMap(); err != nil {
@@ -166,21 +163,50 @@ func (ts *tester) Delete() error {
 		ts.cfg.Logger.Warn("failed to delete SSM", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
+
+	if err := ts.deleteRole(); err != nil {
+		ts.cfg.Logger.Warn("failed to delete role", zap.Error(err))
+		errs = append(errs, err.Error())
+	}
+
+	select {
+	case <-time.After(10 * time.Second):
+	case <-ts.cfg.Stopc:
+		return errors.New("stopped")
+	}
+
 	if err := ts.deleteASGs(); err != nil {
 		ts.cfg.Logger.Warn("failed to delete ASGs", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
-	time.Sleep(10 * time.Second)
+
 	if ok := ts.deleteENIs(); ok {
 		time.Sleep(10 * time.Second)
 	}
-	if err := ts.deleteSG(); err != nil {
+
+	select {
+	case <-time.After(10 * time.Second):
+	case <-ts.cfg.Stopc:
+		return errors.New("stopped")
+	}
+
+	if ok := ts.deleteENIs(); ok {
+		time.Sleep(10 * time.Second)
+	}
+
+	select {
+	case <-time.After(10 * time.Second):
+	case <-ts.cfg.Stopc:
+		return errors.New("stopped")
+	}
+
+	if err := ts.deleteSecurityGroups(); err != nil {
 		ts.cfg.Logger.Warn("failed to delete SG", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
-	if err := ts.deleteRole(); err != nil {
-		ts.cfg.Logger.Warn("failed to delete role", zap.Error(err))
-		errs = append(errs, err.Error())
+
+	if ok := ts.deleteENIs(); ok {
+		time.Sleep(10 * time.Second)
 	}
 
 	if len(errs) > 0 {

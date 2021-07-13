@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -24,17 +23,10 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/pkg/terminal"
-	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/mitchellh/colorstring"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml" // must use "sigs.k8s.io/yaml"
 )
-
-// AWS_K8S_TESTER_EKS_PREFIX is the environment variable prefix used for "eksconfig".
-const AWS_K8S_TESTER_EKS_PREFIX = "AWS_K8S_TESTER_EKS_"
-
-// EnvironmentVariablePrefixParameters is the environment variable prefix used for "eksconfig".
-const EnvironmentVariablePrefixParameters = AWS_K8S_TESTER_EKS_PREFIX + "PARAMETERS_"
 
 // Config defines EKS configuration.
 type Config struct {
@@ -53,6 +45,9 @@ type Config struct {
 	// Region is the AWS geographic area for EKS deployment.
 	// If empty, set default region.
 	Region string `json:"region"`
+	// AvailabilityZoneNames lists the availability zones for the specified region.
+	// ref. https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeAvailabilityZones.html
+	AvailabilityZoneNames []string `json:"availability-zone-names,omitempty" read-only:"true"`
 
 	// ConfigPath is the configuration file path.
 	// Deployer is expected to update this file with latest status.
@@ -121,16 +116,6 @@ type Config struct {
 	CommandAfterCreateAddOnsTimeout       time.Duration `json:"command-after-create-add-ons-timeout"`
 	CommandAfterCreateAddOnsTimeoutString string        `json:"command-after-create-add-ons-timeout-string" read-only:"true"`
 
-	// S3BucketCreate is true to auto-create S3 bucket.
-	S3BucketCreate bool `json:"s3-bucket-create"`
-	// S3BucketCreateKeep is true to not delete auto-created S3 bucket.
-	// The created S3 bucket is kept.
-	S3BucketCreateKeep bool `json:"s3-bucket-create-keep"`
-	// S3BucketName is the name of cluster S3.
-	S3BucketName string `json:"s3-bucket-name"`
-	// S3BucketLifecycleExpirationDays is expiration in days for the lifecycle of the object.
-	S3BucketLifecycleExpirationDays int64 `json:"s3-bucket-lifecycle-expiration-days"`
-
 	// CWNamespace is the CloudWatch namespace to put metric datum.
 	CWNamespace string `json:"cw-namespace"`
 
@@ -141,10 +126,52 @@ type Config struct {
 	// Use this to use existing clusters to create/delete add-ons.
 	SkipDeleteClusterAndNodes bool `json:"skip-delete-cluster-and-nodes"`
 
-	// Parameters defines EKS "cluster" creation parameters.
-	// It's ok to leave any parameters empty.
-	// If empty, it will use default values.
-	Parameters *Parameters `json:"parameters,omitempty"`
+	S3         *S3         `json:"s3"`
+	Encryption *Encryption `json:"encryption"`
+	Role       *Role       `json:"role"`
+	VPC        *VPC        `json:"vpc"`
+
+	// Tags defines EKS create cluster tags.
+	Tags map[string]string `json:"tags"`
+	// RequestHeaderKey defines EKS create cluster request header key.
+	RequestHeaderKey string `json:"request-header-key"`
+	// RequestHeaderValue defines EKS create cluster request header value.
+	RequestHeaderValue string `json:"request-header-value"`
+
+	// ResolverURL defines an AWS resolver endpoint for EKS API.
+	// Must be left empty to use production EKS service.
+	ResolverURL string `json:"resolver-url"`
+	// SigningName is the EKS create request signing name.
+	SigningName string `json:"signing-name"`
+
+	// Version is the version of EKS Kubernetes "cluster".
+	// If empty, set default version.
+	Version      string  `json:"version"`
+	VersionValue float64 `json:"version-value" read-only:"true"`
+
+	// EKS internal only
+	// If empty, use default kube-controller-manager and kube-scheduler qps and burst
+	// ref. https://kubernetes.io/docs/reference/command-line-tools-reference/kube-controller-manager/
+	// ref. https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/
+
+	// KubeAPIServerMaxRequestsInflight is the EKS kube-apiserver max-requests-inflight
+	// The maximum number of non-mutating requests in flight at a given time. When the server exceeds this, it rejects requests. Zero for no limit.
+	// --max-requests-inflight int     Default: 400
+	KubeAPIServerMaxRequestsInflight string `json:"kube-apiserver-max-requests-inflight"`
+	// KubeControllerManagerQPS is the EKS kube-controller-manager qps
+	// --kube-api-qps float32     Default: 20
+	KubeControllerManagerQPS string `json:"kube-controller-manager-qps,omitempty"`
+	// KubeControllerManagerBurst is the EKS kube-controller-manager burst
+	// --kube-api-burst int32     Default: 30
+	KubeControllerManagerBurst string `json:"kube-controller-manager-burst,omitempty"`
+	// KubeSchedulerQPS is the internal EKS kube-scheduler qps
+	// --kube-api-qps float32     Default: 50
+	KubeSchedulerQPS string `json:"kube-scheduler-qps,omitempty"`
+	// KubeSchedulerBurst is the internal EKS kube-scheduler burst
+	// --kube-api-burst int32     Default: 100
+	KubeSchedulerBurst string `json:"kube-scheduler-burst,omitempty"`
+	// FEUpdateMasterFlagsURL is the internal EKS update master flags endpoint
+	FEUpdateMasterFlagsURL string `json:"fe-update-master-flags-url,omitempty"`
 
 	// RemoteAccessKeyCreate is true to create the remote SSH access private key.
 	RemoteAccessKeyCreate bool `json:"remote-access-key-create"`
@@ -198,6 +225,23 @@ type Config struct {
 	ClientTimeout       time.Duration `json:"client-timeout"`
 	ClientTimeoutString string        `json:"client-timeout-string,omitempty" read-only:"true"`
 
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+
 	// AddOnCNIVPC defines parameters for https://github.com/aws/amazon-vpc-cni-k8s.
 	AddOnCNIVPC *AddOnCNIVPC `json:"add-on-cni-vpc"`
 	// AddOnNodeGroups defines EKS "Node Group"
@@ -210,8 +254,8 @@ type Config struct {
 	AddOnManagedNodeGroups *AddOnManagedNodeGroups `json:"add-on-managed-node-groups,omitempty"`
 
 	// TotalNodes is the total number of nodes from all node groups.
-	TotalNodes       int64 `json:"total-nodes" read-only:"true"`
-	TotalHollowNodes int64 `json:"total-hollow-nodes" read-only:"true"`
+	TotalNodes       int32 `json:"total-nodes" read-only:"true"`
+	TotalHollowNodes int32 `json:"total-hollow-nodes" read-only:"true"`
 
 	// AddOnCWAgent defines parameters for EKS cluster
 	// add-on Fluentd.
@@ -376,138 +420,152 @@ func (c Config) Colorize(input string) string {
 	return colorize.Color(input)
 }
 
-// Parameters defines EKS "cluster" creation parameters.
-// It's ok to leave any parameters empty.
-// If empty, it will use default values.
-type Parameters struct {
-	// RoleName is the name of cluster role.
-	RoleName string `json:"role-name"`
-	// RoleCreate is true to auto-create and delete cluster role.
-	RoleCreate bool `json:"role-create"`
-	// RoleARN is the role ARN that EKS uses to create AWS resources for Kubernetes.
+type S3 struct {
+	// BucketCreate is true to auto-create S3 bucket.
+	BucketCreate bool `json:"bucket-create"`
+	// BucketCreateKeep is true to not delete auto-created S3 bucket.
+	// The created S3 bucket is kept.
+	BucketCreateKeep bool `json:"bucket-create-keep"`
+	// BucketName is the name of cluster S3.
+	BucketName string `json:"bucket-name"`
+	// BucketLifecycleExpirationDays is expiration in days for the lifecycle of the object.
+	BucketLifecycleExpirationDays int64 `json:"bucket-lifecycle-expiration-days"`
+}
+
+func getDefaultS3() *S3 {
+	return &S3{
+		BucketName:                    "",
+		BucketCreate:                  true,
+		BucketCreateKeep:              true,
+		BucketLifecycleExpirationDays: 0,
+	}
+}
+
+type Encryption struct {
+	// CMKCreate is true to auto-create and delete KMS CMK
+	// for encryption feature.
+	CMKCreate bool `json:"cmk-create"`
+	// CMKARN is the KMS CMK ARN for encryption feature.
+	// If not empty, the cluster is created with encryption feature
+	// enabled.
+	CMKARN string `json:"cmk-arn"`
+}
+
+func getDefaultEncryption() *Encryption {
+	return &Encryption{
+		CMKCreate: true,
+	}
+}
+
+type Role struct {
+	// Name is the name of cluster role.
+	Name string `json:"name"`
+	// Create is true to auto-create and delete cluster role.
+	Create bool `json:"create"`
+	// ARN is the role ARN that EKS uses to create AWS resources for Kubernetes.
 	// By default, it's empty which triggers tester to create one.
-	RoleARN string `json:"role-arn"`
-	// RoleServicePrincipals is the EKS Role Service Principals
-	RoleServicePrincipals []string `json:"role-service-principals"`
-	// RoleManagedPolicyARNs is EKS Role managed policy ARNs.
-	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
-	RoleCFNStackYAMLPath  string   `json:"role-cfn-stack-yaml-path" read-only:"true"`
-	RoleCFNStackYAMLS3Key string   `json:"role-cfn-stack-yaml-s3-key" read-only:"true"`
+	ARN string `json:"arn"`
 
-	// Tags defines EKS create cluster tags.
-	Tags map[string]string `json:"tags"`
-	// RequestHeaderKey defines EKS create cluster request header key.
-	RequestHeaderKey string `json:"request-header-key"`
-	// RequestHeaderValue defines EKS create cluster request header value.
-	RequestHeaderValue string `json:"request-header-value"`
+	// ServicePrincipals is the EKS Role Service Principals
+	ServicePrincipals []string `json:"service-principals"`
+	// ManagedPolicyARNs is EKS Role managed policy ARNs.
+	ManagedPolicyARNs []string `json:"managed-policy-arns"`
 
-	// ResolverURL defines an AWS resolver endpoint for EKS API.
-	// Must be left empty to use production EKS service.
-	ResolverURL string `json:"resolver-url"`
-	// SigningName is the EKS create request signing name.
-	SigningName string `json:"signing-name"`
+	// PolicyName is the name of the policy.
+	PolicyName string `json:"policy-name" read-only:"true"`
+	// PolicyARN is the attached policy ARN.
+	PolicyARN string `json:"policy-arn" read-only:"true"`
 
-	// VPCCreate is true to auto-create and delete VPC.
-	VPCCreate bool `json:"vpc-create"`
-	// VPCID is the VPC ID for cluster creation.
+	// InstanceProfileName is the instance profile name for the node group.
+	InstanceProfileName string `json:"instance-profile-name" read-only:"true"`
+	// InstanceProfileARN is the instance profile ARN for the node group.
+	InstanceProfileARN string `json:"instance-profile-arn" read-only:"true"`
+}
+
+func getDefaultRole() *Role {
+	return &Role{
+		Create: true,
+		ServicePrincipals: []string{
+			"ec2.amazonaws.com",
+			"eks.amazonaws.com",
+			"eks-fargate-pods.amazonaws.com",
+		},
+		// TODO: scope this down
+		ManagedPolicyARNs: []string{
+			"arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
+			"arn:aws:iam::aws:policy/AmazonSSMFullAccess",
+			"arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
+			"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+			"arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess",
+			"arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
+			"arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy",
+		},
+	}
+}
+
+type VPC struct {
+	// Create is true to auto-create and delete VPC.
+	Create bool `json:"create"`
+	// ID is the VPC ID for cluster creation.
 	// If not empty, VPC is reused and not deleted.
 	// If empty, VPC is created anew and deleted on cluster deletion.
-	VPCID                string `json:"vpc-id"`
-	VPCCFNStackID        string `json:"vpc-cfn-stack-id" read-only:"true"`
-	VPCCFNStackYAMLPath  string `json:"vpc-cfn-stack-yaml-path" read-only:"true"`
-	VPCCFNStackYAMLS3Key string `json:"vpc-cfn-stack-yaml-s3-key" read-only:"true"`
-	// VpcBlock1 is the IP range (CIDR notation) for the primary VPC Block, must be a valid private
-	// (RFC 1918) CIDR range.
-	VPCBlock1 string `json:"vpc-cidr-block1,omitempty"`
-	// VpcBlock2 is the IP range (CIDR notation) for the secondary VPC Block, must be a valid private
-	// (RFC 1918) CIDR range.
-	VPCBlock2 string `json:"vpc-cidr-block2,omitempty"`
-	// VpcBlock3 is the IP range (CIDR notation) for the secondary VPC Block, must be a valid private
-	// (RFC 1918) CIDR range.
-	VPCBlock3 string `json:"vpc-cidr-block3,omitempty"`
-	// VpcBlock4 is the IP range (CIDR notation) for the secondary VPC Block, must be a valid private
-	// (RFC 1918) CIDR range.
-	VPCBlock4 string `json:"vpc-cidr-block4,omitempty"`
-	// PublicSubnetCIDR1 is the CIDR Block for subnet 1 within the VPC.
-	PublicSubnetCIDR1 string `json:"public-subnet-cidr-1,omitempty"`
-	// PublicSubnetCIDR2 is the CIDR Block for subnet 2 within the VPC.
-	PublicSubnetCIDR2 string `json:"public-subnet-cidr-2,omitempty"`
-	// PublicSubnetCIDR3 is the CIDR Block for subnet 3 within the VPC.
-	PublicSubnetCIDR3 string `json:"public-subnet-cidr-3,omitempty"`
-	// PrivateSubnetCIDR1 is the CIDR Block for subnet 1 within the VPC.
-	PrivateSubnetCIDR1 string `json:"private-subnet-cidr-1,omitempty"`
-	// PrivateSubnetCIDR2 is the CIDR Block for subnet 2 within the VPC.
-	PrivateSubnetCIDR2 string `json:"private-subnet-cidr-2,omitempty"`
-	// PublicSubnetIDs is the list of all public subnets in the VPC.
-	PublicSubnetIDs []string `json:"public-subnet-ids" read-only:"true"`
-	// PrivateSubnetIDs is the list of all private subnets in the VPC.
-	PrivateSubnetIDs []string `json:"private-subnet-ids" read-only:"true"`
+	ID              string `json:"id"`
+	SecurityGroupID string `json:"security-group-id" read-only:"true"`
+
+	// CIDRs is the list of CIDR blocks with IP range (CIDR notation) for the primary VPC Block.
+	// Must be a valid RFC 1918 CIDR range.
+	CIDRs []string `json:"cidrs"`
+
+	// PublicSubnetCIDRs is the CIDR blocks for public subnets.
+	PublicSubnetCIDRs                    []string `json:"public-subnet-cidrs"`
+	PublicSubnetIDs                      []string `json:"public-subnet-ids" read-only:"true"`
+	InternetGatewayID                    string   `json:"internet-gateway-id" read-only:"true"`
+	PublicRouteTableID                   string   `json:"public-route-table-id" read-only:"true"`
+	PublicSubnetRouteTableAssociationIDs []string `json:"public-subnet-route-table-association-ids" read-only:"true"`
+	EIPAllocationIDs                     []string `json:"eip-allocation-ids" read-only:"true"`
+	NATGatewayIDs                        []string `json:"nat-gateway-ids" read-only:"true"`
+
+	// PrivateSubnetCIDRs is the CIDR blocks for private subnets.
+	PrivateSubnetCIDRs                    []string `json:"private-subnet-cidrs,omitempty"`
+	PrivateSubnetIDs                      []string `json:"private-subnet-ids" read-only:"true"`
+	PrivateRouteTableIDs                  []string `json:"private-route-table-ids" read-only:"true"`
+	PrivateSubnetRouteTableAssociationIDs []string `json:"private-subnet-route-table-association-ids" read-only:"true"`
 
 	// DHCPOptionsDomainName is used to complete unqualified DNS hostnames for VPC.
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-dhcp-options.html
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html
-	DHCPOptionsDomainName string `json:"dhcp-options-domain-name"`
+	DHCPOptionsDomainName string `json:"dhcp-options-domain-name,omitempty"`
 	// DHCPOptionsDomainNameServers is a list of strings.
 	// The IPv4 addresses of up to four domain name servers, or AmazonProvidedDNS, for VPC.
 	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-dhcp-options.html
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html
-	DHCPOptionsDomainNameServers []string `json:"dhcp-options-domain-name-servers"`
+	DHCPOptionsDomainNameServers []string `json:"dhcp-options-domain-name-servers,omitempty"`
+	DHCPOptionsID                string   `json:"dhcp-options-id,omitempty" read-only:"true"`
 
-	// Version is the version of EKS Kubernetes "cluster".
-	// If empty, set default version.
-	Version      string  `json:"version"`
-	VersionValue float64 `json:"version-value" read-only:"true"`
-
-	// EncryptionCMKCreate is true to auto-create and delete KMS CMK
-	// for encryption feature.
-	EncryptionCMKCreate bool `json:"encryption-cmk-create"`
-	// EncryptionCMKARN is the KMS CMK ARN for encryption feature.
-	// If not empty, the cluster is created with encryption feature
-	// enabled.
-	EncryptionCMKARN string `json:"encryption-cmk-arn"`
-
-	// EKS internal only
-	// If empty, use default kube-controller-manager and kube-scheduler qps and burst
-	// ref. https://kubernetes.io/docs/reference/command-line-tools-reference/kube-controller-manager/
-	// ref. https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/
-
-	// KubeAPIServerMaxRequestsInflight is the EKS kube-apiserver max-requests-inflight
-	// The maximum number of non-mutating requests in flight at a given time. When the server exceeds this, it rejects requests. Zero for no limit.
-	// --max-requests-inflight int     Default: 400
-	KubeAPIServerMaxRequestsInflight string `json:"kube-apiserver-max-requests-inflight"`
-	// KubeControllerManagerQPS is the EKS kube-controller-manager qps
-	// --kube-api-qps float32     Default: 20
-	KubeControllerManagerQPS string `json:"kube-controller-manager-qps,omitempty"`
-	// KubeControllerManagerBurst is the EKS kube-controller-manager burst
-	// --kube-api-burst int32     Default: 30
-	KubeControllerManagerBurst string `json:"kube-controller-manager-burst,omitempty"`
-	// KubeSchedulerQPS is the internal EKS kube-scheduler qps
-	// --kube-api-qps float32     Default: 50
-	KubeSchedulerQPS string `json:"kube-scheduler-qps,omitempty"`
-	// KubeSchedulerBurst is the internal EKS kube-scheduler burst
-	// --kube-api-burst int32     Default: 100
-	KubeSchedulerBurst string `json:"kube-scheduler-burst,omitempty"`
-	// FEUpdateMasterFlagsURL is the internal EKS update master flags endpoint
-	FEUpdateMasterFlagsURL string `json:"fe-update-master-flags-url,omitempty"`
+	// NodeGroupSecurityGroupName is the name of the node security group.
+	NodeGroupSecurityGroupName string `json:"node-group-security-group-name" read-only:"true"`
+	// NodeGroupSecurityGroupID is the security group ID for the node group.
+	NodeGroupSecurityGroupID string `json:"node-group-security-group-id" read-only:"true"`
 }
 
-func getDefaultParameters() *Parameters {
-	return &Parameters{
-		RoleCreate:          true,
-		VPCCreate:           true,
-		VPCBlock1:           "10.0.0.0/16",
-		VPCBlock2:           "10.1.0.0/16",
-		VPCBlock3:           "10.2.0.0/16",
-		VPCBlock4:           "10.3.0.0/16",
-		PublicSubnetCIDR1:   "10.0.0.0/16",
-		PublicSubnetCIDR2:   "10.1.0.0/16",
-		PublicSubnetCIDR3:   "10.2.0.0/16",
-		PrivateSubnetCIDR1:  "10.3.0.0/17",
-		PrivateSubnetCIDR2:  "10.3.128.0/17",
-		SigningName:         "eks",
-		Version:             "1.20",
-		EncryptionCMKCreate: true,
+func getDefaultVPC() *VPC {
+	return &VPC{
+		Create: true,
+		CIDRs: []string{
+			"10.0.0.0/16",
+			"10.1.0.0/16",
+			"10.2.0.0/16",
+			"10.3.0.0/16",
+		},
+		PublicSubnetCIDRs: []string{
+			"10.0.0.0/16",
+			"10.1.0.0/16",
+			"10.2.0.0/16",
+		},
+		PrivateSubnetCIDRs: []string{
+			"10.3.0.0/17",
+			"10.3.128.0/17",
+		},
 	}
 }
 
@@ -810,8 +868,8 @@ func NewDefault() *Config {
 		mu: new(sync.RWMutex),
 
 		Name:      name,
-		Partition: endpoints.AwsPartitionID,
-		Region:    endpoints.UsWest2RegionID,
+		Partition: "aws",
+		Region:    "us-west-2",
 
 		// to be auto-generated
 		ConfigPath:                "",
@@ -836,15 +894,17 @@ func NewDefault() *Config {
 		OnFailureDelete:            true,
 		OnFailureDeleteWaitSeconds: 120,
 
-		S3BucketName:                    "",
-		S3BucketCreate:                  true,
-		S3BucketCreateKeep:              true,
-		S3BucketLifecycleExpirationDays: 0,
-
 		CWNamespace: "aws-k8s-tester-eks",
 
 		SkipDeleteClusterAndNodes: false,
-		Parameters:                getDefaultParameters(),
+
+		S3:         getDefaultS3(),
+		Encryption: getDefaultEncryption(),
+		Role:       getDefaultRole(),
+		VPC:        getDefaultVPC(),
+
+		SigningName: "eks",
+		Version:     "1.20",
 
 		RemoteAccessKeyCreate: true,
 		// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner
@@ -912,6 +972,7 @@ func NewDefault() *Config {
 		Status: &Status{
 			Up:                   false,
 			PrivateDNSToNodeInfo: make(map[string]NodeInfo),
+			DeletedResources:     make(map[string]string),
 		},
 	}
 
@@ -962,9 +1023,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	if err := cfg.validateConfig(); err != nil {
 		return fmt.Errorf("validateConfig failed [%v]", err)
 	}
-	if err := cfg.validateParameters(); err != nil {
-		return fmt.Errorf("validateParameters failed [%v]", err)
-	}
 	if err := cfg.validateAddOnNodeGroups(); err != nil {
 		return fmt.Errorf("validateAddOnNodeGroups failed [%v]", err)
 	}
@@ -976,7 +1034,7 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		return fmt.Errorf("validateAddOnCNIVPC failed [%v]", err)
 	}
 
-	total := int64(0)
+	total := int32(0)
 	if cfg.IsEnabledAddOnNodeGroups() {
 		for _, cur := range cfg.AddOnNodeGroups.ASGs {
 			total += cur.ASGDesiredCapacity
@@ -984,17 +1042,17 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.IsEnabledAddOnManagedNodeGroups() {
 		for _, cur := range cfg.AddOnManagedNodeGroups.MNGs {
-			total += int64(cur.ASGDesiredCapacity)
+			total += int32(cur.ASGDesiredCapacity)
 		}
 	}
 	cfg.TotalNodes = total
 
-	totalHollowNodes := int64(0)
+	totalHollowNodes := int32(0)
 	if cfg.IsEnabledAddOnHollowNodesLocal() {
-		totalHollowNodes += int64(cfg.AddOnHollowNodesLocal.Nodes)
+		totalHollowNodes += int32(cfg.AddOnHollowNodesLocal.Nodes)
 	}
 	if cfg.IsEnabledAddOnHollowNodesRemote() {
-		totalHollowNodes += int64(cfg.AddOnHollowNodesRemote.Nodes) * int64(cfg.AddOnHollowNodesRemote.NodeGroups)
+		totalHollowNodes += int32(cfg.AddOnHollowNodesRemote.Nodes) * int32(cfg.AddOnHollowNodesRemote.NodeGroups)
 	}
 	cfg.TotalHollowNodes = totalHollowNodes
 
@@ -1125,33 +1183,16 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	return nil
 }
 
+// endpoints package no longer exists in the AWS SDK for Go V2
+// "github.com/aws/aws-sdk-go/aws/endpoints" is deprecated...
+// the check will be done in "eks" with AWS API call
+// ref. https://aws.github.io/aws-sdk-go-v2/docs/migrating/
 func (cfg *Config) validateConfig() error {
 	if len(cfg.Name) == 0 {
-		return errors.New("Name is empty")
+		return errors.New("name is empty")
 	}
 	if cfg.Name != strings.ToLower(cfg.Name) {
-		return fmt.Errorf("Name %q must be in lower-case", cfg.Name)
-	}
-
-	var partition endpoints.Partition
-	switch cfg.Partition {
-	case endpoints.AwsPartitionID:
-		partition = endpoints.AwsPartition()
-	case endpoints.AwsCnPartitionID:
-		partition = endpoints.AwsCnPartition()
-	case endpoints.AwsUsGovPartitionID:
-		partition = endpoints.AwsUsGovPartition()
-	case endpoints.AwsIsoPartitionID:
-		partition = endpoints.AwsIsoPartition()
-	case endpoints.AwsIsoBPartitionID:
-		partition = endpoints.AwsIsoBPartition()
-	default:
-		return fmt.Errorf("unknown partition %q", cfg.Partition)
-	}
-	regions := partition.Regions()
-	if _, ok := regions[cfg.Region]; !ok {
-		// we will get this error when the Go AWS SDK is not updated to support a new region
-		fmt.Fprintf(os.Stderr, "[WARN] region %q for partition %q not found in %+v", cfg.Region, cfg.Partition, regions)
+		return fmt.Errorf("name %q must be in lower-case", cfg.Name)
 	}
 
 	if cfg.LogColorOverride == "" {
@@ -1225,6 +1266,120 @@ func (cfg *Config) validateConfig() error {
 		return fmt.Errorf("*.log file not found in %q", cfg.LogOutputs)
 	}
 
+	if cfg.Version == "" {
+		return errors.New("empty Parameters.Version")
+	}
+	var err error
+	cfg.VersionValue, err = strconv.ParseFloat(cfg.Version, 64)
+	if err != nil {
+		return fmt.Errorf("cannot parse Parameters.Version %q (%v)", cfg.Version, err)
+	}
+
+	if len(cfg.Role.ServicePrincipals) == 0 {
+		return errors.New("empty Role.ServicePrincipals")
+	}
+	if len(cfg.Role.ManagedPolicyARNs) == 0 {
+		return errors.New("empty Role.ManagedPolicyARNs")
+	}
+	// e.g.,
+	// "api error LimitExceeded: Cannot exceed quota for PoliciesPerRole: 10"
+	if len(cfg.Role.ManagedPolicyARNs) > 9 {
+		return fmt.Errorf("too many ManagedPolicyARNs %q", cfg.Role.ManagedPolicyARNs)
+	}
+
+	found := false
+	for _, v := range cfg.Role.ServicePrincipals {
+		if v == "eks.amazonaws.com" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("Role.ServicePrincipals missing 'eks.amazonaws.com' (%q)", cfg.Role.ServicePrincipals)
+	}
+	found = false
+	for _, v := range cfg.Role.ManagedPolicyARNs {
+		if v == "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("Role.ManagedPolicyARNs missing 'arn:aws:iam::aws:policy/AmazonEKSClusterPolicy' (%q)", cfg.Role.ManagedPolicyARNs)
+	}
+
+	switch cfg.Role.Create {
+	case true: // need create one, or already created
+		if cfg.Role.Name == "" {
+			cfg.Role.Name = cfg.Name + "-role"
+		}
+		// just ignore...
+		// could be populated from previous run
+		// do not error, so long as RoleCreate false, role won't be deleted
+
+	case false: // use existing one
+		if cfg.Role.ARN == "" {
+			return fmt.Errorf("Role.Create false; expect non-empty RoleARN but got %q", cfg.Role.ARN)
+		}
+		if cfg.Role.Name == "" {
+			cfg.Role.Name = getNameFromARN(cfg.Role.ARN)
+		}
+	}
+	if cfg.Role.PolicyName == "" {
+		cfg.Role.PolicyName = cfg.Name + "-policy"
+	}
+
+	switch cfg.VPC.Create {
+	case true: // need create one, or already created
+	// just ignore...
+	// could be populated from previous run
+	// do not error, so long as VPCCreate false, VPC won't be deleted
+	case false: // use existing one
+		if cfg.VPC.ID == "" {
+			return fmt.Errorf("RoleCreate false; expect non-empty VPCID but got %q", cfg.VPC.ID)
+		}
+	}
+
+	if cfg.VPC.NodeGroupSecurityGroupName == "" {
+		cfg.VPC.NodeGroupSecurityGroupName = cfg.Name + "-node-group-security-group"
+	}
+	if len(cfg.VPC.PublicSubnetCIDRs) < 2 {
+		return fmt.Errorf("unexpected number of VPC.PublicSubnetCIDRs %v (expected at least 2)", cfg.VPC.PublicSubnetCIDRs)
+	}
+
+	switch cfg.Encryption.CMKCreate {
+	case true: // need create one, or already created
+		// just ignore...
+		// could be populated from previous run
+		// do not error, so long as EncryptionCMKCreate false, CMK won't be deleted
+	case false: // use existing one
+	}
+
+	switch cfg.RemoteAccessKeyCreate {
+	case true: // need create one, or already created
+		if cfg.RemoteAccessKeyName == "" {
+			cfg.RemoteAccessKeyName = cfg.Name + "-remote-access-key"
+		}
+		if cfg.RemoteAccessPrivateKeyPath == "" {
+			cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randutil.String(10)+".insecure.key")
+		}
+
+	case false: // use existing one
+		if cfg.RemoteAccessKeyName == "" {
+			return fmt.Errorf("RemoteAccessKeyCreate false; expect non-empty RemoteAccessKeyName but got %q", cfg.RemoteAccessKeyName)
+		}
+		if cfg.RemoteAccessPrivateKeyPath == "" {
+			return fmt.Errorf("RemoteAccessKeyCreate false; expect non-empty RemoteAccessPrivateKeyPath but got %q", cfg.RemoteAccessPrivateKeyPath)
+		}
+		if !fileutil.Exist(cfg.RemoteAccessPrivateKeyPath) {
+			return fmt.Errorf("RemoteAccessPrivateKeyPath %q does not exist", cfg.RemoteAccessPrivateKeyPath)
+		}
+	}
+	keyDir := filepath.Dir(cfg.RemoteAccessPrivateKeyPath)
+	if err := fileutil.IsDirWriteable(keyDir); err != nil {
+		return err
+	}
+
 	if cfg.KubectlCommandsOutputPath == "" {
 		cfg.KubectlCommandsOutputPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".kubectl.sh"
 	}
@@ -1290,16 +1445,16 @@ func (cfg *Config) validateConfig() error {
 		return err
 	}
 
-	switch cfg.S3BucketCreate {
+	switch cfg.S3.BucketCreate {
 	case true: // need create one, or already created
-		if cfg.S3BucketName == "" {
-			cfg.S3BucketName = cfg.Name + "-s3-bucket"
+		if cfg.S3.BucketName == "" {
+			cfg.S3.BucketName = cfg.Name + "-s3-bucket"
 		}
-		if cfg.S3BucketLifecycleExpirationDays > 0 && cfg.S3BucketLifecycleExpirationDays < 3 {
-			cfg.S3BucketLifecycleExpirationDays = 3
+		if cfg.S3.BucketLifecycleExpirationDays > 0 && cfg.S3.BucketLifecycleExpirationDays < 3 {
+			cfg.S3.BucketLifecycleExpirationDays = 3
 		}
 	case false: // use existing one
-		if cfg.S3BucketName == "" {
+		if cfg.S3.BucketName == "" {
 			return errors.New("empty S3BucketName")
 		}
 	}
@@ -1314,156 +1469,6 @@ func (cfg *Config) validateConfig() error {
 			PrivateDNSToNodeInfo: make(map[string]NodeInfo),
 		}
 	}
-	if cfg.Status.ClusterCFNStackYAMLPath == "" {
-		cfg.Status.ClusterCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".cluster.cfn.yaml"
-	}
-	if cfg.Status.ClusterCFNStackYAMLS3Key == "" {
-		cfg.Status.ClusterCFNStackYAMLS3Key = path.Join(cfg.Name, path.Base(cfg.Status.ClusterCFNStackYAMLPath))
-	}
-	return nil
-}
-
-func (cfg *Config) validateParameters() error {
-	if cfg.Parameters.Version == "" {
-		return errors.New("empty Parameters.Version")
-	}
-	var err error
-	cfg.Parameters.VersionValue, err = strconv.ParseFloat(cfg.Parameters.Version, 64)
-	if err != nil {
-		return fmt.Errorf("cannot parse Parameters.Version %q (%v)", cfg.Parameters.Version, err)
-	}
-
-	if cfg.Parameters.RoleCFNStackYAMLPath == "" {
-		cfg.Parameters.RoleCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".role.cfn.yaml"
-	}
-	if cfg.Parameters.RoleCFNStackYAMLS3Key == "" {
-		cfg.Parameters.RoleCFNStackYAMLS3Key = path.Join(cfg.Name, path.Base(cfg.Parameters.RoleCFNStackYAMLPath))
-	}
-	switch cfg.Parameters.RoleCreate {
-	case true: // need create one, or already created
-		if cfg.Parameters.RoleName == "" {
-			cfg.Parameters.RoleName = cfg.Name + "-role"
-		}
-		if cfg.Parameters.RoleARN != "" {
-			// just ignore...
-			// could be populated from previous run
-			// do not error, so long as RoleCreate false, role won't be deleted
-		}
-
-	case false: // use existing one
-		if cfg.Parameters.RoleARN == "" {
-			return fmt.Errorf("Parameters.RoleCreate false; expect non-empty RoleARN but got %q", cfg.Parameters.RoleARN)
-		}
-		if cfg.Parameters.RoleName == "" {
-			cfg.Parameters.RoleName = getNameFromARN(cfg.Parameters.RoleARN)
-		}
-		if len(cfg.Parameters.RoleManagedPolicyARNs) > 0 {
-			return fmt.Errorf("Parameters.RoleCreate false; expect empty RoleManagedPolicyARNs but got %q", cfg.Parameters.RoleManagedPolicyARNs)
-		}
-		if len(cfg.Parameters.RoleServicePrincipals) > 0 {
-			return fmt.Errorf("Parameters.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.Parameters.RoleServicePrincipals)
-		}
-	}
-
-	if cfg.Parameters.VPCCFNStackYAMLPath == "" {
-		cfg.Parameters.VPCCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".vpc.cfn.yaml"
-	}
-	if cfg.Parameters.VPCCFNStackYAMLS3Key == "" {
-		cfg.Parameters.VPCCFNStackYAMLS3Key = path.Join(cfg.Name, path.Base(cfg.Parameters.VPCCFNStackYAMLPath))
-	}
-	switch cfg.Parameters.VPCCreate {
-	case true: // need create one, or already created
-		if cfg.Parameters.VPCID != "" {
-			// just ignore...
-			// could be populated from previous run
-			// do not error, so long as VPCCreate false, VPC won't be deleted
-		}
-	case false: // use existing one
-		if cfg.Parameters.VPCID == "" {
-			return fmt.Errorf("Parameters.RoleCreate false; expect non-empty VPCID but got %q", cfg.Parameters.VPCID)
-		}
-	}
-
-	switch cfg.Parameters.EncryptionCMKCreate {
-	case true: // need create one, or already created
-		if cfg.Parameters.EncryptionCMKARN != "" {
-			// just ignore...
-			// could be populated from previous run
-			// do not error, so long as EncryptionCMKCreate false, CMK won't be deleted
-		}
-	case false: // use existing one
-		if cfg.Parameters.EncryptionCMKARN == "" {
-			// return fmt.Errorf("Parameters.EncryptionCMKCreate false; expect non-empty EncryptionCMKARN but got %q", cfg.Parameters.EncryptionCMKARN)
-		}
-	}
-
-	switch {
-	case cfg.Parameters.VPCBlock1 != "":
-		if cfg.Parameters.PublicSubnetCIDR1 == "" {
-			return fmt.Errorf("empty Parameters.PublicSubnetCIDR1 when VPCBlock1 is %q", cfg.Parameters.VPCBlock1)
-		}
-	case cfg.Parameters.VPCBlock2 != "":
-		if cfg.Parameters.PublicSubnetCIDR2 == "" {
-			return fmt.Errorf("empty Parameters.PublicSubnetCIDR2 when VPCBlock2 is %q", cfg.Parameters.VPCBlock2)
-		}
-	case cfg.Parameters.VPCBlock3 != "":
-		if cfg.Parameters.PublicSubnetCIDR3 == "" {
-			return fmt.Errorf("empty Parameters.PublicSubnetCIDR3 when VPCBlock3 is %q", cfg.Parameters.VPCBlock3)
-		}
-	case cfg.Parameters.VPCBlock4 != "":
-		switch {
-		case cfg.Parameters.PrivateSubnetCIDR1 == "":
-			return fmt.Errorf("empty Parameters.PrivateSubnetCIDR1 when VPCBlock4 is %q", cfg.Parameters.VPCBlock4)
-		case cfg.Parameters.PrivateSubnetCIDR2 == "":
-			return fmt.Errorf("empty Parameters.PrivateSubnetCIDR2 when VPCBlock4 is %q", cfg.Parameters.VPCBlock4)
-		}
-
-	case cfg.Parameters.VPCBlock1 == "":
-		if cfg.Parameters.PublicSubnetCIDR1 != "" {
-			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR1 %q when VPCBlock1 is empty", cfg.Parameters.PublicSubnetCIDR1)
-		}
-	case cfg.Parameters.VPCBlock2 == "":
-		if cfg.Parameters.PublicSubnetCIDR2 != "" {
-			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR2 %q when VPCBlock2 is empty", cfg.Parameters.PublicSubnetCIDR2)
-		}
-	case cfg.Parameters.VPCBlock3 == "":
-		if cfg.Parameters.PublicSubnetCIDR3 != "" {
-			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR3 %q when VPCBlock3 is empty", cfg.Parameters.PublicSubnetCIDR3)
-		}
-	case cfg.Parameters.VPCBlock4 == "":
-		switch {
-		case cfg.Parameters.PrivateSubnetCIDR1 != "":
-			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR1 %q when VPCBlock4 is empty", cfg.Parameters.PrivateSubnetCIDR1)
-		case cfg.Parameters.PrivateSubnetCIDR2 != "":
-			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR2 %q when VPCBlock4 is empty", cfg.Parameters.PrivateSubnetCIDR1)
-		}
-	}
-
-	switch cfg.RemoteAccessKeyCreate {
-	case true: // need create one, or already created
-		if cfg.RemoteAccessKeyName == "" {
-			cfg.RemoteAccessKeyName = cfg.Name + "-remote-access-key"
-		}
-		if cfg.RemoteAccessPrivateKeyPath == "" {
-			cfg.RemoteAccessPrivateKeyPath = filepath.Join(os.TempDir(), randutil.String(10)+".insecure.key")
-		}
-
-	case false: // use existing one
-		if cfg.RemoteAccessKeyName == "" {
-			return fmt.Errorf("RemoteAccessKeyCreate false; expect non-empty RemoteAccessKeyName but got %q", cfg.RemoteAccessKeyName)
-		}
-		if cfg.RemoteAccessPrivateKeyPath == "" {
-			return fmt.Errorf("RemoteAccessKeyCreate false; expect non-empty RemoteAccessPrivateKeyPath but got %q", cfg.RemoteAccessPrivateKeyPath)
-		}
-		if !fileutil.Exist(cfg.RemoteAccessPrivateKeyPath) {
-			return fmt.Errorf("RemoteAccessPrivateKeyPath %q does not exist", cfg.RemoteAccessPrivateKeyPath)
-		}
-	}
-	keyDir := filepath.Dir(cfg.RemoteAccessPrivateKeyPath)
-	if err := fileutil.IsDirWriteable(keyDir); err != nil {
-		return err
-	}
-
 	return nil
 }
 

@@ -80,7 +80,7 @@ func (ts *tester) Create() (err error) {
 
 	ts.cfg.Logger.Info("starting cluster version upgrade",
 		zap.String("name", ts.cfg.EKSConfig.Name),
-		zap.String("from", ts.cfg.EKSConfig.Parameters.Version),
+		zap.String("from", ts.cfg.EKSConfig.Version),
 		zap.String("to", ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.Version),
 	)
 	var updateOut *eks.UpdateClusterVersionOutput
@@ -183,7 +183,7 @@ func (ts *tester) Create() (err error) {
 	}
 
 	ts.cfg.Logger.Info("completed cluster version upgrade",
-		zap.String("from", ts.cfg.EKSConfig.Parameters.Version),
+		zap.String("from", ts.cfg.EKSConfig.Version),
 		zap.String("to", ts.cfg.EKSConfig.AddOnClusterVersionUpgrade.Version),
 	)
 	return nil

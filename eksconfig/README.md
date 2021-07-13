@@ -43,102 +43,114 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 
 
 
-*----------------------------------------------------------------*-------------------*----------------------------------------------------------*----------------*
-|                     ENVIRONMENTAL VARIABLE                     |     READ ONLY     |                           TYPE                           |    GO TYPE     |
-*----------------------------------------------------------------*-------------------*----------------------------------------------------------*----------------*
-| AWS_K8S_TESTER_EKS_,INLINE                                     | read-only "false" | *eksconfig.Config.TypeMeta                               | v1.TypeMeta    |
-| AWS_K8S_TESTER_EKS_METADATA                                    | read-only "false" | *eksconfig.Config.ObjectMeta                             | v1.ObjectMeta  |
-| AWS_K8S_TESTER_EKS_NAME                                        | read-only "false" | *eksconfig.Config.Name                                   | string         |
-| AWS_K8S_TESTER_EKS_PARTITION                                   | read-only "false" | *eksconfig.Config.Partition                              | string         |
-| AWS_K8S_TESTER_EKS_REGION                                      | read-only "false" | *eksconfig.Config.Region                                 | string         |
-| AWS_K8S_TESTER_EKS_CONFIG_PATH                                 | read-only "false" | *eksconfig.Config.ConfigPath                             | string         |
-| AWS_K8S_TESTER_EKS_KUBECTL_COMMANDS_OUTPUT_PATH                | read-only "false" | *eksconfig.Config.KubectlCommandsOutputPath              | string         |
-| AWS_K8S_TESTER_EKS_REMOTE_ACCESS_COMMANDS_OUTPUT_PATH          | read-only "false" | *eksconfig.Config.RemoteAccessCommandsOutputPath         | string         |
-| AWS_K8S_TESTER_EKS_LOG_COLOR                                   | read-only "false" | *eksconfig.Config.LogColor                               | bool           |
-| AWS_K8S_TESTER_EKS_LOG_COLOR_OVERRIDE                          | read-only "false" | *eksconfig.Config.LogColorOverride                       | string         |
-| AWS_K8S_TESTER_EKS_LOG_LEVEL                                   | read-only "false" | *eksconfig.Config.LogLevel                               | string         |
-| AWS_K8S_TESTER_EKS_LOG_OUTPUTS                                 | read-only "false" | *eksconfig.Config.LogOutputs                             | []string       |
-| AWS_K8S_TESTER_EKS_AWS_CLI_PATH                                | read-only "false" | *eksconfig.Config.AWSCLIPath                             | string         |
-| AWS_K8S_TESTER_EKS_KUBECTL_PATH                                | read-only "false" | *eksconfig.Config.KubectlPath                            | string         |
-| AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL                        | read-only "false" | *eksconfig.Config.KubectlDownloadURL                     | string         |
-| AWS_K8S_TESTER_EKS_KUBECONFIG_PATH                             | read-only "false" | *eksconfig.Config.KubeConfigPath                         | string         |
-| AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH                  | read-only "false" | *eksconfig.Config.AWSIAMAuthenticatorPath                | string         |
-| AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL          | read-only "false" | *eksconfig.Config.AWSIAMAuthenticatorDownloadURL         | string         |
-| AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE                           | read-only "false" | *eksconfig.Config.OnFailureDelete                        | bool           |
-| AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE_WAIT_SECONDS              | read-only "false" | *eksconfig.Config.OnFailureDeleteWaitSeconds             | uint64         |
-| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER                | read-only "false" | *eksconfig.Config.CommandAfterCreateCluster              | string         |
-| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER_OUTPUT_PATH    | read-only "true"  | *eksconfig.Config.CommandAfterCreateClusterOutputPath    | string         |
-| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER_TIMEOUT        | read-only "false" | *eksconfig.Config.CommandAfterCreateClusterTimeout       | time.Duration  |
-| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER_TIMEOUT_STRING | read-only "true"  | *eksconfig.Config.CommandAfterCreateClusterTimeoutString | string         |
-| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS                | read-only "false" | *eksconfig.Config.CommandAfterCreateAddOns               | string         |
-| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS_OUTPUT_PATH    | read-only "true"  | *eksconfig.Config.CommandAfterCreateAddOnsOutputPath     | string         |
-| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS_TIMEOUT        | read-only "false" | *eksconfig.Config.CommandAfterCreateAddOnsTimeout        | time.Duration  |
-| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS_TIMEOUT_STRING | read-only "true"  | *eksconfig.Config.CommandAfterCreateAddOnsTimeoutString  | string         |
-| AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE                            | read-only "false" | *eksconfig.Config.S3BucketCreate                         | bool           |
-| AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE_KEEP                       | read-only "false" | *eksconfig.Config.S3BucketCreateKeep                     | bool           |
-| AWS_K8S_TESTER_EKS_S3_BUCKET_NAME                              | read-only "false" | *eksconfig.Config.S3BucketName                           | string         |
-| AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS         | read-only "false" | *eksconfig.Config.S3BucketLifecycleExpirationDays        | int64          |
-| AWS_K8S_TESTER_EKS_CW_NAMESPACE                                | read-only "false" | *eksconfig.Config.CWNamespace                            | string         |
-| AWS_K8S_TESTER_EKS_SKIP_DELETE_CLUSTER_AND_NODES               | read-only "false" | *eksconfig.Config.SkipDeleteClusterAndNodes              | bool           |
-| AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE                    | read-only "false" | *eksconfig.Config.RemoteAccessKeyCreate                  | bool           |
-| AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_NAME                      | read-only "false" | *eksconfig.Config.RemoteAccessKeyName                    | string         |
-| AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH              | read-only "false" | *eksconfig.Config.RemoteAccessPrivateKeyPath             | string         |
-| AWS_K8S_TESTER_EKS_CLIENTS                                     | read-only "false" | *eksconfig.Config.Clients                                | int            |
-| AWS_K8S_TESTER_EKS_CLIENT_QPS                                  | read-only "false" | *eksconfig.Config.ClientQPS                              | float32        |
-| AWS_K8S_TESTER_EKS_CLIENT_BURST                                | read-only "false" | *eksconfig.Config.ClientBurst                            | int            |
-| AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT                              | read-only "false" | *eksconfig.Config.ClientTimeout                          | time.Duration  |
-| AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT_STRING                       | read-only "true"  | *eksconfig.Config.ClientTimeoutString                    | string         |
-| AWS_K8S_TESTER_EKS_TOTAL_NODES                                 | read-only "true"  | *eksconfig.Config.TotalNodes                             | int64          |
-| AWS_K8S_TESTER_EKS_TOTAL_HOLLOW_NODES                          | read-only "true"  | *eksconfig.Config.TotalHollowNodes                       | int64          |
-| AWS_K8S_TESTER_EKS_SPEC                                        | read-only "false" | *eksconfig.Config.Spec                                   | eksconfig.Spec |
-*----------------------------------------------------------------*-------------------*----------------------------------------------------------*----------------*
+*----------------------------------------------------------------*-------------------*----------------------------------------------------------*-------------------*
+|                     ENVIRONMENTAL VARIABLE                     |     READ ONLY     |                           TYPE                           |      GO TYPE      |
+*----------------------------------------------------------------*-------------------*----------------------------------------------------------*-------------------*
+| AWS_K8S_TESTER_EKS_,INLINE                                     | read-only "false" | *eksconfig.Config.TypeMeta                               | v1.TypeMeta       |
+| AWS_K8S_TESTER_EKS_METADATA                                    | read-only "false" | *eksconfig.Config.ObjectMeta                             | v1.ObjectMeta     |
+| AWS_K8S_TESTER_EKS_NAME                                        | read-only "false" | *eksconfig.Config.Name                                   | string            |
+| AWS_K8S_TESTER_EKS_PARTITION                                   | read-only "false" | *eksconfig.Config.Partition                              | string            |
+| AWS_K8S_TESTER_EKS_REGION                                      | read-only "false" | *eksconfig.Config.Region                                 | string            |
+| AWS_K8S_TESTER_EKS_AVAILABILITY_ZONE_NAMES                     | read-only "true"  | *eksconfig.Config.AvailabilityZoneNames                  | []string          |
+| AWS_K8S_TESTER_EKS_CONFIG_PATH                                 | read-only "false" | *eksconfig.Config.ConfigPath                             | string            |
+| AWS_K8S_TESTER_EKS_KUBECTL_COMMANDS_OUTPUT_PATH                | read-only "false" | *eksconfig.Config.KubectlCommandsOutputPath              | string            |
+| AWS_K8S_TESTER_EKS_REMOTE_ACCESS_COMMANDS_OUTPUT_PATH          | read-only "false" | *eksconfig.Config.RemoteAccessCommandsOutputPath         | string            |
+| AWS_K8S_TESTER_EKS_LOG_COLOR                                   | read-only "false" | *eksconfig.Config.LogColor                               | bool              |
+| AWS_K8S_TESTER_EKS_LOG_COLOR_OVERRIDE                          | read-only "false" | *eksconfig.Config.LogColorOverride                       | string            |
+| AWS_K8S_TESTER_EKS_LOG_LEVEL                                   | read-only "false" | *eksconfig.Config.LogLevel                               | string            |
+| AWS_K8S_TESTER_EKS_LOG_OUTPUTS                                 | read-only "false" | *eksconfig.Config.LogOutputs                             | []string          |
+| AWS_K8S_TESTER_EKS_AWS_CLI_PATH                                | read-only "false" | *eksconfig.Config.AWSCLIPath                             | string            |
+| AWS_K8S_TESTER_EKS_KUBECTL_PATH                                | read-only "false" | *eksconfig.Config.KubectlPath                            | string            |
+| AWS_K8S_TESTER_EKS_KUBECTL_DOWNLOAD_URL                        | read-only "false" | *eksconfig.Config.KubectlDownloadURL                     | string            |
+| AWS_K8S_TESTER_EKS_KUBECONFIG_PATH                             | read-only "false" | *eksconfig.Config.KubeConfigPath                         | string            |
+| AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_PATH                  | read-only "false" | *eksconfig.Config.AWSIAMAuthenticatorPath                | string            |
+| AWS_K8S_TESTER_EKS_AWS_IAM_AUTHENTICATOR_DOWNLOAD_URL          | read-only "false" | *eksconfig.Config.AWSIAMAuthenticatorDownloadURL         | string            |
+| AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE                           | read-only "false" | *eksconfig.Config.OnFailureDelete                        | bool              |
+| AWS_K8S_TESTER_EKS_ON_FAILURE_DELETE_WAIT_SECONDS              | read-only "false" | *eksconfig.Config.OnFailureDeleteWaitSeconds             | uint64            |
+| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER                | read-only "false" | *eksconfig.Config.CommandAfterCreateCluster              | string            |
+| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER_OUTPUT_PATH    | read-only "true"  | *eksconfig.Config.CommandAfterCreateClusterOutputPath    | string            |
+| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER_TIMEOUT        | read-only "false" | *eksconfig.Config.CommandAfterCreateClusterTimeout       | time.Duration     |
+| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_CLUSTER_TIMEOUT_STRING | read-only "true"  | *eksconfig.Config.CommandAfterCreateClusterTimeoutString | string            |
+| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS                | read-only "false" | *eksconfig.Config.CommandAfterCreateAddOns               | string            |
+| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS_OUTPUT_PATH    | read-only "true"  | *eksconfig.Config.CommandAfterCreateAddOnsOutputPath     | string            |
+| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS_TIMEOUT        | read-only "false" | *eksconfig.Config.CommandAfterCreateAddOnsTimeout        | time.Duration     |
+| AWS_K8S_TESTER_EKS_COMMAND_AFTER_CREATE_ADD_ONS_TIMEOUT_STRING | read-only "true"  | *eksconfig.Config.CommandAfterCreateAddOnsTimeoutString  | string            |
+| AWS_K8S_TESTER_EKS_CW_NAMESPACE                                | read-only "false" | *eksconfig.Config.CWNamespace                            | string            |
+| AWS_K8S_TESTER_EKS_SKIP_DELETE_CLUSTER_AND_NODES               | read-only "false" | *eksconfig.Config.SkipDeleteClusterAndNodes              | bool              |
+| AWS_K8S_TESTER_EKS_TAGS                                        | read-only "false" | *eksconfig.Config.Tags                                   | map[string]string |
+| AWS_K8S_TESTER_EKS_REQUEST_HEADER_KEY                          | read-only "false" | *eksconfig.Config.RequestHeaderKey                       | string            |
+| AWS_K8S_TESTER_EKS_REQUEST_HEADER_VALUE                        | read-only "false" | *eksconfig.Config.RequestHeaderValue                     | string            |
+| AWS_K8S_TESTER_EKS_RESOLVER_URL                                | read-only "false" | *eksconfig.Config.ResolverURL                            | string            |
+| AWS_K8S_TESTER_EKS_SIGNING_NAME                                | read-only "false" | *eksconfig.Config.SigningName                            | string            |
+| AWS_K8S_TESTER_EKS_VERSION                                     | read-only "false" | *eksconfig.Config.Version                                | string            |
+| AWS_K8S_TESTER_EKS_VERSION_VALUE                               | read-only "true"  | *eksconfig.Config.VersionValue                           | float64           |
+| AWS_K8S_TESTER_EKS_KUBE_APISERVER_MAX_REQUESTS_INFLIGHT        | read-only "false" | *eksconfig.Config.KubeAPIServerMaxRequestsInflight       | string            |
+| AWS_K8S_TESTER_EKS_KUBE_CONTROLLER_MANAGER_QPS                 | read-only "false" | *eksconfig.Config.KubeControllerManagerQPS               | string            |
+| AWS_K8S_TESTER_EKS_KUBE_CONTROLLER_MANAGER_BURST               | read-only "false" | *eksconfig.Config.KubeControllerManagerBurst             | string            |
+| AWS_K8S_TESTER_EKS_KUBE_SCHEDULER_QPS                          | read-only "false" | *eksconfig.Config.KubeSchedulerQPS                       | string            |
+| AWS_K8S_TESTER_EKS_KUBE_SCHEDULER_BURST                        | read-only "false" | *eksconfig.Config.KubeSchedulerBurst                     | string            |
+| AWS_K8S_TESTER_EKS_FE_UPDATE_MASTER_FLAGS_URL                  | read-only "false" | *eksconfig.Config.FEUpdateMasterFlagsURL                 | string            |
+| AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_CREATE                    | read-only "false" | *eksconfig.Config.RemoteAccessKeyCreate                  | bool              |
+| AWS_K8S_TESTER_EKS_REMOTE_ACCESS_KEY_NAME                      | read-only "false" | *eksconfig.Config.RemoteAccessKeyName                    | string            |
+| AWS_K8S_TESTER_EKS_REMOTE_ACCESS_PRIVATE_KEY_PATH              | read-only "false" | *eksconfig.Config.RemoteAccessPrivateKeyPath             | string            |
+| AWS_K8S_TESTER_EKS_CLIENTS                                     | read-only "false" | *eksconfig.Config.Clients                                | int               |
+| AWS_K8S_TESTER_EKS_CLIENT_QPS                                  | read-only "false" | *eksconfig.Config.ClientQPS                              | float32           |
+| AWS_K8S_TESTER_EKS_CLIENT_BURST                                | read-only "false" | *eksconfig.Config.ClientBurst                            | int               |
+| AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT                              | read-only "false" | *eksconfig.Config.ClientTimeout                          | time.Duration     |
+| AWS_K8S_TESTER_EKS_CLIENT_TIMEOUT_STRING                       | read-only "true"  | *eksconfig.Config.ClientTimeoutString                    | string            |
+| AWS_K8S_TESTER_EKS_TOTAL_NODES                                 | read-only "true"  | *eksconfig.Config.TotalNodes                             | int32             |
+| AWS_K8S_TESTER_EKS_TOTAL_HOLLOW_NODES                          | read-only "true"  | *eksconfig.Config.TotalHollowNodes                       | int32             |
+| AWS_K8S_TESTER_EKS_SPEC                                        | read-only "false" | *eksconfig.Config.Spec                                   | eksconfig.Spec    |
+*----------------------------------------------------------------*-------------------*----------------------------------------------------------*-------------------*
 
 
-*--------------------------------------------------------------------*-------------------*--------------------------------------------------------*-------------------*
-|                       ENVIRONMENTAL VARIABLE                       |     READ ONLY     |                          TYPE                          |      GO TYPE      |
-*--------------------------------------------------------------------*-------------------*--------------------------------------------------------*-------------------*
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_NAME                            | read-only "false" | *eksconfig.Parameters.RoleName                         | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CREATE                          | read-only "false" | *eksconfig.Parameters.RoleCreate                       | bool              |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_ARN                             | read-only "false" | *eksconfig.Parameters.RoleARN                          | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_SERVICE_PRINCIPALS              | read-only "false" | *eksconfig.Parameters.RoleServicePrincipals            | []string          |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_MANAGED_POLICY_ARNS             | read-only "false" | *eksconfig.Parameters.RoleManagedPolicyARNs            | []string          |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_ID                    | read-only "true"  | *eksconfig.Parameters.RoleCFNStackID                   | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_YAML_PATH             | read-only "true"  | *eksconfig.Parameters.RoleCFNStackYAMLPath             | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ROLE_CFN_STACK_YAML_S3_KEY           | read-only "true"  | *eksconfig.Parameters.RoleCFNStackYAMLS3Key            | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_TAGS                                 | read-only "false" | *eksconfig.Parameters.Tags                             | map[string]string |
-| AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_KEY                   | read-only "false" | *eksconfig.Parameters.RequestHeaderKey                 | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_REQUEST_HEADER_VALUE                 | read-only "false" | *eksconfig.Parameters.RequestHeaderValue               | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_RESOLVER_URL                         | read-only "false" | *eksconfig.Parameters.ResolverURL                      | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_SIGNING_NAME                         | read-only "false" | *eksconfig.Parameters.SigningName                      | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CREATE                           | read-only "false" | *eksconfig.Parameters.VPCCreate                        | bool              |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_ID                               | read-only "false" | *eksconfig.Parameters.VPCID                            | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_ID                     | read-only "true"  | *eksconfig.Parameters.VPCCFNStackID                    | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_YAML_PATH              | read-only "true"  | *eksconfig.Parameters.VPCCFNStackYAMLPath              | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CFN_STACK_YAML_S3_KEY            | read-only "true"  | *eksconfig.Parameters.VPCCFNStackYAMLS3Key             | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR_BLOCK1                      | read-only "false" | *eksconfig.Parameters.VPCBlock1                        | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR_BLOCK2                      | read-only "false" | *eksconfig.Parameters.VPCBlock2                        | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR_BLOCK3                      | read-only "false" | *eksconfig.Parameters.VPCBlock3                        | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR_BLOCK4                      | read-only "false" | *eksconfig.Parameters.VPCBlock4                        | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_1                 | read-only "false" | *eksconfig.Parameters.PublicSubnetCIDR1                | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_2                 | read-only "false" | *eksconfig.Parameters.PublicSubnetCIDR2                | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_3                 | read-only "false" | *eksconfig.Parameters.PublicSubnetCIDR3                | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_1                | read-only "false" | *eksconfig.Parameters.PrivateSubnetCIDR1               | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_2                | read-only "false" | *eksconfig.Parameters.PrivateSubnetCIDR2               | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_IDS                    | read-only "true"  | *eksconfig.Parameters.PublicSubnetIDs                  | []string          |
-| AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_IDS                   | read-only "true"  | *eksconfig.Parameters.PrivateSubnetIDs                 | []string          |
-| AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME             | read-only "false" | *eksconfig.Parameters.DHCPOptionsDomainName            | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME_SERVERS     | read-only "false" | *eksconfig.Parameters.DHCPOptionsDomainNameServers     | []string          |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VERSION                              | read-only "false" | *eksconfig.Parameters.Version                          | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_VERSION_VALUE                        | read-only "true"  | *eksconfig.Parameters.VersionValue                     | float64           |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_CREATE                | read-only "false" | *eksconfig.Parameters.EncryptionCMKCreate              | bool              |
-| AWS_K8S_TESTER_EKS_PARAMETERS_ENCRYPTION_CMK_ARN                   | read-only "false" | *eksconfig.Parameters.EncryptionCMKARN                 | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_APISERVER_MAX_REQUESTS_INFLIGHT | read-only "false" | *eksconfig.Parameters.KubeAPIServerMaxRequestsInflight | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_QPS          | read-only "false" | *eksconfig.Parameters.KubeControllerManagerQPS         | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_CONTROLLER_MANAGER_BURST        | read-only "false" | *eksconfig.Parameters.KubeControllerManagerBurst       | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_SCHEDULER_QPS                   | read-only "false" | *eksconfig.Parameters.KubeSchedulerQPS                 | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_KUBE_SCHEDULER_BURST                 | read-only "false" | *eksconfig.Parameters.KubeSchedulerBurst               | string            |
-| AWS_K8S_TESTER_EKS_PARAMETERS_FE_UPDATE_MASTER_FLAGS_URL           | read-only "false" | *eksconfig.Parameters.FEUpdateMasterFlagsURL           | string            |
-*--------------------------------------------------------------------*-------------------*--------------------------------------------------------*-------------------*
+*------------------------------------------*-------------------*---------------------------------*---------*
+|          ENVIRONMENTAL VARIABLE          |     READ ONLY     |              TYPE               | GO TYPE |
+*------------------------------------------*-------------------*---------------------------------*---------*
+| AWS_K8S_TESTER_EKS_ENCRYPTION_CMK_CREATE | read-only "false" | *eksconfig.Encryption.CMKCreate | bool    |
+| AWS_K8S_TESTER_EKS_ENCRYPTION_CMK_ARN    | read-only "false" | *eksconfig.Encryption.CMKARN    | string  |
+*------------------------------------------*-------------------*---------------------------------*---------*
+
+
+*-----------------------------------------------*-------------------*-------------------------------------*----------*
+|            ENVIRONMENTAL VARIABLE             |     READ ONLY     |                TYPE                 | GO TYPE  |
+*-----------------------------------------------*-------------------*-------------------------------------*----------*
+| AWS_K8S_TESTER_EKS_ROLE_NAME                  | read-only "false" | *eksconfig.Role.Name                | string   |
+| AWS_K8S_TESTER_EKS_ROLE_CREATE                | read-only "false" | *eksconfig.Role.Create              | bool     |
+| AWS_K8S_TESTER_EKS_ROLE_ARN                   | read-only "false" | *eksconfig.Role.ARN                 | string   |
+| AWS_K8S_TESTER_EKS_ROLE_SERVICE_PRINCIPALS    | read-only "false" | *eksconfig.Role.ServicePrincipals   | []string |
+| AWS_K8S_TESTER_EKS_ROLE_MANAGED_POLICY_ARNS   | read-only "false" | *eksconfig.Role.ManagedPolicyARNs   | []string |
+| AWS_K8S_TESTER_EKS_ROLE_POLICY_NAME           | read-only "true"  | *eksconfig.Role.PolicyName          | string   |
+| AWS_K8S_TESTER_EKS_ROLE_POLICY_ARN            | read-only "true"  | *eksconfig.Role.PolicyARN           | string   |
+| AWS_K8S_TESTER_EKS_ROLE_INSTANCE_PROFILE_NAME | read-only "true"  | *eksconfig.Role.InstanceProfileName | string   |
+| AWS_K8S_TESTER_EKS_ROLE_INSTANCE_PROFILE_ARN  | read-only "true"  | *eksconfig.Role.InstanceProfileARN  | string   |
+*-----------------------------------------------*-------------------*-------------------------------------*----------*
+
+
+*-------------------------------------------------------------------*-------------------*------------------------------------------------------*----------*
+|                      ENVIRONMENTAL VARIABLE                       |     READ ONLY     |                         TYPE                         | GO TYPE  |
+*-------------------------------------------------------------------*-------------------*------------------------------------------------------*----------*
+| AWS_K8S_TESTER_EKS_VPC_CREATE                                     | read-only "false" | *eksconfig.VPC.Create                                | bool     |
+| AWS_K8S_TESTER_EKS_VPC_ID                                         | read-only "false" | *eksconfig.VPC.ID                                    | string   |
+| AWS_K8S_TESTER_EKS_VPC_SECURITY_GROUP_ID                          | read-only "true"  | *eksconfig.VPC.SecurityGroupID                       | string   |
+| AWS_K8S_TESTER_EKS_VPC_CIDRS                                      | read-only "false" | *eksconfig.VPC.CIDRs                                 | []string |
+| AWS_K8S_TESTER_EKS_VPC_PUBLIC_SUBNET_CIDRS                        | read-only "false" | *eksconfig.VPC.PublicSubnetCIDRs                     | []string |
+| AWS_K8S_TESTER_EKS_VPC_PUBLIC_SUBNET_IDS                          | read-only "true"  | *eksconfig.VPC.PublicSubnetIDs                       | []string |
+| AWS_K8S_TESTER_EKS_VPC_INTERNET_GATEWAY_ID                        | read-only "true"  | *eksconfig.VPC.InternetGatewayID                     | string   |
+| AWS_K8S_TESTER_EKS_VPC_PUBLIC_ROUTE_TABLE_ID                      | read-only "true"  | *eksconfig.VPC.PublicRouteTableID                    | string   |
+| AWS_K8S_TESTER_EKS_VPC_PUBLIC_SUBNET_ROUTE_TABLE_ASSOCIATION_IDS  | read-only "true"  | *eksconfig.VPC.PublicSubnetRouteTableAssociationIDs  | []string |
+| AWS_K8S_TESTER_EKS_VPC_EIP_ALLOCATION_IDS                         | read-only "true"  | *eksconfig.VPC.EIPAllocationIDs                      | []string |
+| AWS_K8S_TESTER_EKS_VPC_NAT_GATEWAY_IDS                            | read-only "true"  | *eksconfig.VPC.NATGatewayIDs                         | []string |
+| AWS_K8S_TESTER_EKS_VPC_PRIVATE_SUBNET_CIDRS                       | read-only "false" | *eksconfig.VPC.PrivateSubnetCIDRs                    | []string |
+| AWS_K8S_TESTER_EKS_VPC_PRIVATE_SUBNET_IDS                         | read-only "true"  | *eksconfig.VPC.PrivateSubnetIDs                      | []string |
+| AWS_K8S_TESTER_EKS_VPC_PRIVATE_ROUTE_TABLE_IDS                    | read-only "true"  | *eksconfig.VPC.PrivateRouteTableIDs                  | []string |
+| AWS_K8S_TESTER_EKS_VPC_PRIVATE_SUBNET_ROUTE_TABLE_ASSOCIATION_IDS | read-only "true"  | *eksconfig.VPC.PrivateSubnetRouteTableAssociationIDs | []string |
+| AWS_K8S_TESTER_EKS_VPC_DHCP_OPTIONS_DOMAIN_NAME                   | read-only "false" | *eksconfig.VPC.DHCPOptionsDomainName                 | string   |
+| AWS_K8S_TESTER_EKS_VPC_DHCP_OPTIONS_DOMAIN_NAME_SERVERS           | read-only "false" | *eksconfig.VPC.DHCPOptionsDomainNameServers          | []string |
+| AWS_K8S_TESTER_EKS_VPC_DHCP_OPTIONS_ID                            | read-only "true"  | *eksconfig.VPC.DHCPOptionsID                         | string   |
+| AWS_K8S_TESTER_EKS_VPC_NODE_GROUP_SECURITY_GROUP_NAME             | read-only "true"  | *eksconfig.VPC.NodeGroupSecurityGroupName            | string   |
+| AWS_K8S_TESTER_EKS_VPC_NODE_GROUP_SECURITY_GROUP_ID               | read-only "true"  | *eksconfig.VPC.NodeGroupSecurityGroupID              | string   |
+*-------------------------------------------------------------------*-------------------*------------------------------------------------------*----------*
 
 
 *--------------------------------------------------------------*-------------------*------------------------------------------------*--------------------*
@@ -163,31 +175,34 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *--------------------------------------------------------------*-------------------*------------------------------------------------*--------------------*
 
 
-*---------------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------------*--------------------------*
-|                                ENVIRONMENTAL VARIABLE                                 |     READ ONLY     |                                TYPE                                |         GO TYPE          |
-*---------------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------------*--------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE                                          | read-only "false" | *eksconfig.AddOnNodeGroups.Enable                                  | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_CREATED                                         | read-only "true"  | *eksconfig.AddOnNodeGroups.Created                                 | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_TIME_FRAME_CREATE                               | read-only "true"  | *eksconfig.AddOnNodeGroups.TimeFrameCreate                         | timeutil.TimeFrame       |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_TIME_FRAME_DELETE                               | read-only "true"  | *eksconfig.AddOnNodeGroups.TimeFrameDelete                         | timeutil.TimeFrame       |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_S3_DIR                                          | read-only "false" | *eksconfig.AddOnNodeGroups.S3Dir                                   | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_FETCH_LOGS                                      | read-only "false" | *eksconfig.AddOnNodeGroups.FetchLogs                               | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_NAME                                       | read-only "false" | *eksconfig.AddOnNodeGroups.RoleName                                | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CREATE                                     | read-only "false" | *eksconfig.AddOnNodeGroups.RoleCreate                              | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_ARN                                        | read-only "false" | *eksconfig.AddOnNodeGroups.RoleARN                                 | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS                         | read-only "false" | *eksconfig.AddOnNodeGroups.RoleServicePrincipals                   | []string                 |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS                        | read-only "false" | *eksconfig.AddOnNodeGroups.RoleManagedPolicyARNs                   | []string                 |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CFN_STACK_ID                               | read-only "true"  | *eksconfig.AddOnNodeGroups.RoleCFNStackID                          | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CFN_STACK_YAML_PATH                        | read-only "true"  | *eksconfig.AddOnNodeGroups.RoleCFNStackYAMLPath                    | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CFN_STACK_YAML_S3_KEY                      | read-only "true"  | *eksconfig.AddOnNodeGroups.RoleCFNStackYAMLS3Key                   | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_ID                    | read-only "true"  | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupID                | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_CFN_STACK_ID          | read-only "true"  | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackID        | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_CFN_STACK_YAML_PATH   | read-only "true"  | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLPath  | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_NODE_GROUP_SECURITY_GROUP_CFN_STACK_YAML_S3_KEY | read-only "true"  | *eksconfig.AddOnNodeGroups.NodeGroupSecurityGroupCFNStackYAMLS3Key | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR                                        | read-only "false" | *eksconfig.AddOnNodeGroups.LogsDir                                 | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_TAR_GZ_PATH                                | read-only "false" | *eksconfig.AddOnNodeGroups.LogsTarGzPath                           | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS                                            | read-only "false" | *eksconfig.AddOnNodeGroups.ASGs                                    | map[string]eksconfig.ASG |
-*---------------------------------------------------------------------------------------*-------------------*--------------------------------------------------------------------*--------------------------*
+*---------------------------------------------------------*-------------------*--------------------------------------------*--------------------------*
+|                 ENVIRONMENTAL VARIABLE                  |     READ ONLY     |                    TYPE                    |         GO TYPE          |
+*---------------------------------------------------------*-------------------*--------------------------------------------*--------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE            | read-only "false" | *eksconfig.AddOnNodeGroups.Enable          | bool                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_CREATED           | read-only "true"  | *eksconfig.AddOnNodeGroups.Created         | bool                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_TIME_FRAME_CREATE | read-only "true"  | *eksconfig.AddOnNodeGroups.TimeFrameCreate | timeutil.TimeFrame       |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_TIME_FRAME_DELETE | read-only "true"  | *eksconfig.AddOnNodeGroups.TimeFrameDelete | timeutil.TimeFrame       |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_S3_DIR            | read-only "false" | *eksconfig.AddOnNodeGroups.S3Dir           | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_FETCH_LOGS        | read-only "false" | *eksconfig.AddOnNodeGroups.FetchLogs       | bool                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR          | read-only "false" | *eksconfig.AddOnNodeGroups.LogsDir         | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_TAR_GZ_PATH  | read-only "false" | *eksconfig.AddOnNodeGroups.LogsTarGzPath   | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS              | read-only "false" | *eksconfig.AddOnNodeGroups.ASGs            | map[string]eksconfig.ASG |
+*---------------------------------------------------------*-------------------*--------------------------------------------*--------------------------*
+
+
+*------------------------------------------------------------------*-------------------*-------------------------------------*----------*
+|                      ENVIRONMENTAL VARIABLE                      |     READ ONLY     |                TYPE                 | GO TYPE  |
+*------------------------------------------------------------------*-------------------*-------------------------------------*----------*
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_NAME                  | read-only "false" | *eksconfig.Role.Name                | string   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_CREATE                | read-only "false" | *eksconfig.Role.Create              | bool     |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_ARN                   | read-only "false" | *eksconfig.Role.ARN                 | string   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS    | read-only "false" | *eksconfig.Role.ServicePrincipals   | []string |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS   | read-only "false" | *eksconfig.Role.ManagedPolicyARNs   | []string |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_POLICY_NAME           | read-only "true"  | *eksconfig.Role.PolicyName          | string   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_POLICY_ARN            | read-only "true"  | *eksconfig.Role.PolicyARN           | string   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_INSTANCE_PROFILE_NAME | read-only "true"  | *eksconfig.Role.InstanceProfileName | string   |
+| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_INSTANCE_PROFILE_ARN  | read-only "true"  | *eksconfig.Role.InstanceProfileARN  | string   |
+*------------------------------------------------------------------*-------------------*-------------------------------------*----------*
 
 
 *--------------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------------*

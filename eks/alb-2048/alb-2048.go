@@ -218,7 +218,7 @@ func (ts *tester) Delete() error {
 		ts.cfg.Logger,
 		ts.cfg.ELB2API,
 		ts.cfg.EKSConfig.AddOnALB2048.ALBARN,
-		ts.cfg.EKSConfig.Parameters.VPCID,
+		ts.cfg.EKSConfig.VPC.ID,
 		map[string]string{
 			"kubernetes.io/cluster/" + ts.cfg.EKSConfig.Name: "owned",
 			"kubernetes.io/namespace":                        ts.cfg.EKSConfig.AddOnALB2048.Namespace,
@@ -552,7 +552,7 @@ func (ts *tester) createALBDeployment() error {
 									Args: []string{
 										"--ingress-class=alb",
 										fmt.Sprintf("--cluster-name=%s", ts.cfg.EKSConfig.Name),
-										fmt.Sprintf("--aws-vpc-id=%s", ts.cfg.EKSConfig.Parameters.VPCID),
+										fmt.Sprintf("--aws-vpc-id=%s", ts.cfg.EKSConfig.VPC.ID),
 										fmt.Sprintf("--aws-region=%s", ts.cfg.EKSConfig.Region),
 										"-v=2", // for debugging
 									},

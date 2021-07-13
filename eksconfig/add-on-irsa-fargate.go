@@ -98,8 +98,8 @@ func (cfg *Config) validateAddOnIRSAFargate() error {
 		return errors.New("AddOnIRSAFargate.Enable true but no node group is enabled")
 	}
 
-	if cfg.Parameters.VersionValue < 1.14 {
-		return fmt.Errorf("Version %q not supported for AddOnIRSAFargate", cfg.Parameters.Version)
+	if cfg.VersionValue < 1.14 {
+		return fmt.Errorf("Version %q not supported for AddOnIRSAFargate", cfg.Version)
 	}
 
 	if cfg.AddOnIRSAFargate.S3Dir == "" {

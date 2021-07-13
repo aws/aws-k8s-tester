@@ -12,6 +12,15 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	// AWS_K8S_TESTER_EKS_PREFIX is the environment variable prefix used for "eksconfig".
+	AWS_K8S_TESTER_EKS_PREFIX            = "AWS_K8S_TESTER_EKS_"
+	AWS_K8S_TESTER_EKS_S3_PREFIX         = AWS_K8S_TESTER_EKS_PREFIX + "S3_"
+	AWS_K8S_TESTER_EKS_ENCRYPTION_PREFIX = AWS_K8S_TESTER_EKS_PREFIX + "ENCRYPTION_"
+	AWS_K8S_TESTER_EKS_ROLE_PREFIX       = AWS_K8S_TESTER_EKS_PREFIX + "ROLE_"
+	AWS_K8S_TESTER_EKS_VPC_PREFIX        = AWS_K8S_TESTER_EKS_PREFIX + "VPC_"
+)
+
 // UpdateFromEnvs updates fields from environmental variables.
 // Empty values are ignored and do not overwrite fields with empty values.
 // WARNING: The environmental variable value always overwrites current field
@@ -31,36 +40,75 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.mu = mu
 	}
 
-	if cfg.Parameters == nil {
-		cfg.Parameters = &Parameters{}
-	}
 	var vv interface{}
 	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_PREFIX, cfg)
 	if err != nil {
 		return err
 	}
 	if av, ok := vv.(*Config); ok {
-		before := cfg.Parameters
+		a1, b1 := av.Role, av.VPC
 		cfg = av
-		after := cfg.Parameters
-		if !reflect.DeepEqual(before, after) {
-			return fmt.Errorf("Parameters overwritten [before %+v, after %+v]", before, after)
+		a2, b2 := cfg.Role, cfg.VPC
+		if !reflect.DeepEqual(a1, a2) {
+			return fmt.Errorf("Role overwritten [before %+v, after %+v]", a1, a2)
+		}
+		if !reflect.DeepEqual(b1, b2) {
+			return fmt.Errorf("VPC overwritten [before %+v, after %+v]", b1, b2)
 		}
 	} else {
 		return fmt.Errorf("expected *Config, got %T", vv)
 	}
 
-	if cfg.Parameters == nil {
-		cfg.Parameters = &Parameters{}
+	if cfg.S3 == nil {
+		cfg.S3 = &S3{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixParameters, cfg.Parameters)
+	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_S3_PREFIX, cfg.S3)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*Parameters); ok {
-		cfg.Parameters = av
+	if av, ok := vv.(*S3); ok {
+		cfg.S3 = av
 	} else {
-		return fmt.Errorf("expected *Parameters, got %T", vv)
+		return fmt.Errorf("expected *S3, got %T", vv)
+	}
+
+	if cfg.Encryption == nil {
+		cfg.Encryption = &Encryption{}
+	}
+	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_ENCRYPTION_PREFIX, cfg.Encryption)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*Encryption); ok {
+		cfg.Encryption = av
+	} else {
+		return fmt.Errorf("expected *Encryption, got %T", vv)
+	}
+
+	if cfg.Role == nil {
+		cfg.Role = &Role{}
+	}
+	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_ROLE_PREFIX, cfg.Role)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*Role); ok {
+		cfg.Role = av
+	} else {
+		return fmt.Errorf("expected *Role, got %T", vv)
+	}
+
+	if cfg.VPC == nil {
+		cfg.VPC = &VPC{}
+	}
+	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_VPC_PREFIX, cfg.VPC)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*VPC); ok {
+		cfg.VPC = av
+	} else {
+		return fmt.Errorf("expected *VPC, got %T", vv)
 	}
 
 	if cfg.AddOnCNIVPC == nil {
@@ -87,6 +135,19 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnNodeGroups = av
 	} else {
 		return fmt.Errorf("expected *AddOnNodeGroups, got %T", vv)
+	}
+
+	if cfg.AddOnNodeGroups.Role == nil {
+		cfg.AddOnNodeGroups.Role = &Role{}
+	}
+	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnNodeGroups+"ROLE_", cfg.AddOnNodeGroups.Role)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*Role); ok {
+		cfg.AddOnNodeGroups.Role = av
+	} else {
+		return fmt.Errorf("expected *AddOnNodeGroups.Role, got %T", vv)
 	}
 
 	if cfg.AddOnManagedNodeGroups == nil {

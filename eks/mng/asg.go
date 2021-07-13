@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"sort"
 	"strings"
 	"text/template"
@@ -14,7 +13,6 @@ import (
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/eks/mng/wait"
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
-	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	"github.com/aws/aws-k8s-tester/pkg/user"
 	"github.com/aws/aws-k8s-tester/version"
@@ -187,7 +185,7 @@ func (ts *tester) createASGs() (err error) {
 					MinSize: aws.Int64(int64(cur.ASGMinSize)),
 					MaxSize: aws.Int64(int64(cur.ASGMaxSize)),
 				},
-				Subnets: aws.StringSlice(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs),
+				Subnets: aws.StringSlice(ts.cfg.EKSConfig.VPC.PublicSubnetIDs),
 				Tags: map[string]*string{
 					"Kind":                   aws.String("aws-k8s-tester"),
 					"aws-k8s-tester-version": aws.String(version.ReleaseVersion),
@@ -279,7 +277,7 @@ func (ts *tester) createASGs() (err error) {
 					},
 					{
 						ParameterKey:   aws.String("PublicSubnetIDs"),
-						ParameterValue: aws.String(strings.Join(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs, ",")),
+						ParameterValue: aws.String(strings.Join(ts.cfg.EKSConfig.VPC.PublicSubnetIDs, ",")),
 					},
 					{
 						ParameterKey:   aws.String("RemoteAccessKeyName"),
@@ -319,22 +317,8 @@ func (ts *tester) createASGs() (err error) {
 			}
 			stackInput.TemplateBody = aws.String(buf.String())
 
-			// grant write permission in case of overwrites
-			if err = ioutil.WriteFile(cur.MNGCFNStackYAMLPath, buf.Bytes(), 0600); err != nil {
-				return err
-			}
-			if err = aws_s3.Upload(
-				ts.cfg.Logger,
-				ts.cfg.S3API,
-				ts.cfg.EKSConfig.S3BucketName,
-				cur.MNGCFNStackYAMLS3Key,
-				cur.MNGCFNStackYAMLPath,
-			); err != nil {
-				return err
-			}
 			ts.cfg.Logger.Info("creating a new MNG using CFN",
 				zap.String("mng-name", mngName),
-				zap.String("mng-cfn-file-path", cur.MNGCFNStackYAMLPath),
 			)
 
 			if cur.AMIType != "" {

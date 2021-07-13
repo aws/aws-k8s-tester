@@ -615,7 +615,7 @@ func (ts *tester) createObject() (batchv1.Job, string, error) {
 	testerCmd := fmt.Sprintf("/aws-k8s-tester eks create configmaps --partition=%s --region=%s --s3-bucket-name=%s --clients=%d --client-qps=%f --client-burst=%d --client-timeout=%s --namespace=%s --objects=%d --object-size=%d --requests-raw-writes-json-s3-dir=%s --requests-summary-writes-json-s3-dir=%s --requests-summary-writes-table-s3-dir=%s --writes-output-name-prefix=%s",
 		ts.cfg.EKSConfig.Partition,
 		ts.cfg.EKSConfig.Region,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		ts.cfg.EKSConfig.Clients,
 		ts.cfg.EKSConfig.ClientQPS,
 		ts.cfg.EKSConfig.ClientBurst,
@@ -767,7 +767,7 @@ func (ts *tester) checkResults() (err error) {
 	writesDirRaw, err = aws_s3.DownloadDir(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		path.Dir(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsRawWritesJSONS3Key),
 	)
 	if err == nil {
@@ -807,7 +807,7 @@ func (ts *tester) checkResults() (err error) {
 	writesDirSummary, err = aws_s3.DownloadDir(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		path.Dir(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesJSONS3Key),
 	)
 	if err == nil {
@@ -878,7 +878,7 @@ func (ts *tester) checkResults() (err error) {
 	if err = aws_s3.Upload(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsRawWritesJSONS3Key,
 		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsRawWritesJSONPath,
 	); err != nil {
@@ -891,7 +891,7 @@ func (ts *tester) checkResults() (err error) {
 	if err = aws_s3.Upload(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesJSONS3Key,
 		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesJSONPath,
 	); err != nil {
@@ -904,7 +904,7 @@ func (ts *tester) checkResults() (err error) {
 	if err = aws_s3.Upload(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesTableS3Key,
 		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesTablePath,
 	); err != nil {
@@ -917,7 +917,7 @@ func (ts *tester) checkResults() (err error) {
 		s3Objects, err = aws_s3.ListInDescendingLastModified(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
-			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.S3.BucketName,
 			path.Clean(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareS3Dir)+"/",
 		)
 	}
@@ -927,7 +927,7 @@ func (ts *tester) checkResults() (err error) {
 		durRawS3Key := path.Join(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsRawWritesCompareS3Dir, path.Base(reqSummaryS3Key))
 
 		var prevSummary metrics.RequestsSummary
-		prevSummary, err = metrics.DownloadRequestsSummaryFromS3(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, reqSummaryS3Key)
+		prevSummary, err = metrics.DownloadRequestsSummaryFromS3(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3.BucketName, reqSummaryS3Key)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to download results", zap.Error(err))
 			return err
@@ -944,7 +944,7 @@ func (ts *tester) checkResults() (err error) {
 		if err = aws_s3.Upload(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
-			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.S3.BucketName,
 			ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareJSONS3Key,
 			ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareJSONPath,
 		); err != nil {
@@ -957,7 +957,7 @@ func (ts *tester) checkResults() (err error) {
 		if err = aws_s3.Upload(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
-			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.S3.BucketName,
 			ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareTableS3Key,
 			ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareTablePath,
 		); err != nil {
@@ -966,7 +966,7 @@ func (ts *tester) checkResults() (err error) {
 		fmt.Fprintf(ts.cfg.LogWriter, "\n\nRequestsSummaryWritesCompare:\n%s\n", ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompare.Table())
 
 		var prevDurations metrics.Durations
-		prevDurations, err = metrics.DownloadDurationsFromS3(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, durRawS3Key)
+		prevDurations, err = metrics.DownloadDurationsFromS3(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3.BucketName, durRawS3Key)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to download results", zap.Error(err))
 			return err
@@ -999,7 +999,7 @@ func (ts *tester) checkResults() (err error) {
 		if err = aws_s3.Upload(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
-			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.S3.BucketName,
 			ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsRawWritesCompareAllJSONS3Key,
 			ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsRawWritesCompareAllJSONPath,
 		); err != nil {
@@ -1011,7 +1011,7 @@ func (ts *tester) checkResults() (err error) {
 		if err = aws_s3.Upload(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
-			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.S3.BucketName,
 			ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsRawWritesCompareAllCSVS3Key,
 			ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsRawWritesCompareAllCSVPath,
 		); err != nil {
@@ -1024,7 +1024,7 @@ func (ts *tester) checkResults() (err error) {
 	if err = aws_s3.Upload(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		path.Join(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsRawWritesCompareS3Dir, curTS),
 		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsRawWritesJSONPath,
 	); err != nil {
@@ -1033,7 +1033,7 @@ func (ts *tester) checkResults() (err error) {
 	if err = aws_s3.Upload(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		path.Join(ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesCompareS3Dir, curTS),
 		ts.cfg.EKSConfig.AddOnConfigmapsRemote.RequestsSummaryWritesJSONPath,
 	); err != nil {

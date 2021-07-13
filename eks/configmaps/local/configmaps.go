@@ -87,7 +87,7 @@ func (ts *tester) Create() (err error) {
 		LogWriter:                       ts.cfg.LogWriter,
 		Stopc:                           ts.cfg.Stopc,
 		S3API:                           ts.cfg.S3API,
-		S3BucketName:                    ts.cfg.EKSConfig.S3BucketName,
+		S3BucketName:                    ts.cfg.EKSConfig.S3.BucketName,
 		Client:                          ts.cfg.K8SClient,
 		ClientTimeout:                   ts.cfg.EKSConfig.ClientTimeout,
 		Namespace:                       ts.cfg.EKSConfig.AddOnConfigmapsLocal.Namespace,
@@ -174,7 +174,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations) (err error) 
 		s3Objects, err = aws_s3.ListInDescendingLastModified(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
-			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.S3.BucketName,
 			path.Clean(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompareS3Dir)+"/",
 		)
 	}
@@ -184,7 +184,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations) (err error) 
 		durRawS3Key := path.Join(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsRawWritesCompareS3Dir, path.Base(reqSummaryS3Key))
 
 		var prevSummary metrics.RequestsSummary
-		prevSummary, err = metrics.DownloadRequestsSummaryFromS3(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, reqSummaryS3Key)
+		prevSummary, err = metrics.DownloadRequestsSummaryFromS3(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3.BucketName, reqSummaryS3Key)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to download results", zap.Error(err))
 			return err
@@ -201,7 +201,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations) (err error) 
 		if err = aws_s3.Upload(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
-			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.S3.BucketName,
 			ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompareJSONS3Key,
 			ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompareJSONPath,
 		); err != nil {
@@ -214,7 +214,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations) (err error) 
 		if err = aws_s3.Upload(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
-			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.S3.BucketName,
 			ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompareTableS3Key,
 			ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompareTablePath,
 		); err != nil {
@@ -223,7 +223,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations) (err error) 
 		fmt.Fprintf(ts.cfg.LogWriter, "\n\nRequestsSummaryWritesCompare:\n%s\n", ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompare.Table())
 
 		var prevDurations metrics.Durations
-		prevDurations, err = metrics.DownloadDurationsFromS3(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3BucketName, durRawS3Key)
+		prevDurations, err = metrics.DownloadDurationsFromS3(ts.cfg.Logger, ts.cfg.S3API, ts.cfg.EKSConfig.S3.BucketName, durRawS3Key)
 		if err != nil {
 			ts.cfg.Logger.Warn("failed to download results", zap.Error(err))
 			return err
@@ -256,7 +256,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations) (err error) 
 		if err = aws_s3.Upload(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
-			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.S3.BucketName,
 			ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsRawWritesCompareAllJSONS3Key,
 			ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsRawWritesCompareAllJSONPath,
 		); err != nil {
@@ -268,7 +268,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations) (err error) 
 		if err = aws_s3.Upload(
 			ts.cfg.Logger,
 			ts.cfg.S3API,
-			ts.cfg.EKSConfig.S3BucketName,
+			ts.cfg.EKSConfig.S3.BucketName,
 			ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsRawWritesCompareAllCSVS3Key,
 			ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsRawWritesCompareAllCSVPath,
 		); err != nil {
@@ -281,7 +281,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations) (err error) 
 	if err = aws_s3.Upload(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		path.Join(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsRawWritesCompareS3Dir, curTS),
 		ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsRawWritesJSONPath,
 	); err != nil {
@@ -290,7 +290,7 @@ func (ts *tester) checkResults(curWriteLatencies metrics.Durations) (err error) 
 	if err = aws_s3.Upload(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		path.Join(ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsSummaryWritesCompareS3Dir, curTS),
 		ts.cfg.EKSConfig.AddOnConfigmapsLocal.RequestsSummaryWritesJSONPath,
 	); err != nil {

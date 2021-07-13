@@ -211,7 +211,7 @@ func (cfg *Config) validateAddOnCSRsRemote() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnCSRsRemote.RequestsRawWritesCompareS3Dir == "" {
-		cfg.AddOnCSRsRemote.RequestsRawWritesCompareS3Dir = path.Join("add-on-csrs-remote", "requests-raw-writes-compare", cfg.Parameters.Version)
+		cfg.AddOnCSRsRemote.RequestsRawWritesCompareS3Dir = path.Join("add-on-csrs-remote", "requests-raw-writes-compare", cfg.Version)
 	}
 	if cfg.AddOnCSRsRemote.RequestsRawWritesCompareAllJSONPath == "" {
 		cfg.AddOnCSRsRemote.RequestsRawWritesCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-raw-writes-compare-all.json"
@@ -260,7 +260,7 @@ func (cfg *Config) validateAddOnCSRsRemote() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareS3Dir == "" {
-		cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-csrs-remote", "requests-summary-writes-compare", cfg.Parameters.Version)
+		cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-csrs-remote", "requests-summary-writes-compare", cfg.Version)
 	}
 	if cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareJSONPath == "" {
 		cfg.AddOnCSRsRemote.RequestsSummaryWritesCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-csrs-remote-requests-summary-writes-compare.json"

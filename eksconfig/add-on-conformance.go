@@ -174,7 +174,7 @@ func (cfg *Config) validateAddOnConformance() error {
 	}
 
 	if cfg.AddOnConformance.SonobuoyRunKubeConformanceImage == "" {
-		cfg.AddOnConformance.SonobuoyRunKubeConformanceImage = fmt.Sprintf("k8s.gcr.io/conformance:v%s.0", cfg.Parameters.Version)
+		cfg.AddOnConformance.SonobuoyRunKubeConformanceImage = fmt.Sprintf("k8s.gcr.io/conformance:v%s.0", cfg.Version)
 	}
 
 	cfg.AddOnConformance.SonobuoyResultDir = filepath.Join(

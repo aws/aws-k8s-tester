@@ -11,17 +11,17 @@ import (
 )
 
 func (ts *Tester) createS3() (err error) {
-	if ts.cfg.S3BucketCreate {
-		if ts.cfg.S3BucketName == "" {
+	if ts.cfg.S3.BucketCreate {
+		if ts.cfg.S3.BucketName == "" {
 			return errors.New("empty S3 bucket name")
 		}
-		if err = aws_s3.CreateBucket(ts.lg, ts.s3API, ts.cfg.S3BucketName, ts.cfg.Region, ts.cfg.Name, ts.cfg.S3BucketLifecycleExpirationDays); err != nil {
+		if err = aws_s3.CreateBucket(ts.lg, ts.s3API, ts.cfg.S3.BucketName, ts.cfg.Region, ts.cfg.Name, ts.cfg.S3.BucketLifecycleExpirationDays); err != nil {
 			return err
 		}
 	} else {
 		ts.lg.Info("skipping S3 bucket creation")
 	}
-	if ts.cfg.S3BucketName == "" {
+	if ts.cfg.S3.BucketName == "" {
 		ts.lg.Info("skipping s3 bucket creation")
 		return nil
 	}
@@ -29,22 +29,22 @@ func (ts *Tester) createS3() (err error) {
 }
 
 func (ts *Tester) deleteS3() error {
-	if !ts.cfg.S3BucketCreate {
-		ts.lg.Info("skipping S3 bucket deletion", zap.String("s3-bucket-name", ts.cfg.S3BucketName))
+	if !ts.cfg.S3.BucketCreate {
+		ts.lg.Info("skipping S3 bucket deletion", zap.String("s3-bucket-name", ts.cfg.S3.BucketName))
 		return nil
 	}
-	if ts.cfg.S3BucketCreateKeep {
-		ts.lg.Info("skipping S3 bucket deletion", zap.String("s3-bucket-name", ts.cfg.S3BucketName), zap.Bool("s3-bucket-create-keep", ts.cfg.S3BucketCreateKeep))
+	if ts.cfg.S3.BucketCreateKeep {
+		ts.lg.Info("skipping S3 bucket deletion", zap.String("s3-bucket-name", ts.cfg.S3.BucketName), zap.Bool("s3-bucket-create-keep", ts.cfg.S3.BucketCreateKeep))
 		return nil
 	}
-	if err := aws_s3.EmptyBucket(ts.lg, ts.s3API, ts.cfg.S3BucketName); err != nil {
+	if err := aws_s3.EmptyBucket(ts.lg, ts.s3API, ts.cfg.S3.BucketName); err != nil {
 		return err
 	}
-	return aws_s3.DeleteBucket(ts.lg, ts.s3API, ts.cfg.S3BucketName)
+	return aws_s3.DeleteBucket(ts.lg, ts.s3API, ts.cfg.S3.BucketName)
 }
 
 func (ts *Tester) uploadToS3() (err error) {
-	if ts.cfg.S3BucketName == "" {
+	if ts.cfg.S3.BucketName == "" {
 		ts.lg.Info("skipping s3 uploads; s3 bucket name is empty")
 		return nil
 	}
@@ -53,7 +53,7 @@ func (ts *Tester) uploadToS3() (err error) {
 		if err = aws_s3.Upload(
 			ts.lg,
 			ts.s3API,
-			ts.cfg.S3BucketName,
+			ts.cfg.S3.BucketName,
 			path.Join(ts.cfg.Name, "aws-k8s-tester-eks.config.yaml"),
 			ts.cfg.ConfigPath,
 		); err != nil {
@@ -72,7 +72,7 @@ func (ts *Tester) uploadToS3() (err error) {
 		if err = aws_s3.Upload(
 			ts.lg,
 			ts.s3API,
-			ts.cfg.S3BucketName,
+			ts.cfg.S3.BucketName,
 			path.Join(ts.cfg.Name, "aws-k8s-tester-eks.log"),
 			logFilePath,
 		); err != nil {

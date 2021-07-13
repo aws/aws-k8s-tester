@@ -15,8 +15,12 @@ import (
 )
 
 func (ts *tester) createConfigMap() error {
-	ts.cfg.Logger.Info("writing ConfigMap", zap.String("instance-role-arn", ts.cfg.EKSConfig.AddOnNodeGroups.RoleARN))
-	body, p, err := writeConfigMapAuth(ts.cfg.EKSConfig.AddOnNodeGroups.RoleARN)
+	if ts.cfg.EKSConfig.AddOnNodeGroups.Role.ARN == "" {
+		return errors.New("empty AddOnNodeGroups.Role.ARN")
+	}
+
+	ts.cfg.Logger.Info("writing ConfigMap", zap.String("instance-role-arn", ts.cfg.EKSConfig.AddOnNodeGroups.Role.ARN))
+	body, p, err := writeConfigMapAuth(ts.cfg.EKSConfig.AddOnNodeGroups.Role.ARN)
 	if err != nil {
 		return err
 	}
@@ -39,7 +43,8 @@ func (ts *tester) createConfigMap() error {
 			ctx,
 			ts.cfg.EKSConfig.KubectlPath,
 			"--kubeconfig="+ts.cfg.EKSConfig.KubeConfigPath,
-			"apply", "--filename="+p,
+			"apply",
+			"--filename="+p,
 		).CombinedOutput()
 		cancel()
 		out := string(output)

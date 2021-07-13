@@ -67,7 +67,7 @@ func (ts *tester) Upgrade(mngName string) (err error) {
 		ts.cfg.Logger.Info("MNG version upgrade is already completed; skipping upgrade", zap.String("mng-name", mngName))
 		return nil
 	}
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Print(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]MNGs[%q].Upgrade\n"), mngName)
 
 	ts.cfg.Logger.Info("starting tester.Upgrade", zap.String("tester", pkgName))

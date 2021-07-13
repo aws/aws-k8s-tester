@@ -63,20 +63,22 @@ func NewDefault() *Config {
 		ASGsFetchLogs: true,
 		ASGs: map[string]ASG{
 			name + "-asg": {
-				Name:                               name + "-asg",
-				SSMDocumentCreate:                  false,
-				SSMDocumentName:                    "",
-				SSMDocumentCommands:                "",
-				SSMDocumentExecutionTimeoutSeconds: 3600,
-				RemoteAccessUserName:               "ec2-user", // for AL2
-				AMIType:                            AMITypeAL2X8664,
-				ImageID:                            "",
-				ImageIDSSMParameter:                "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
-				InstanceTypes:                      []string{DefaultNodeInstanceTypeCPU},
-				VolumeSize:                         DefaultNodeVolumeSize,
-				ASGMinSize:                         1,
-				ASGMaxSize:                         1,
-				ASGDesiredCapacity:                 1,
+				Name: name + "-asg",
+				SSM: &SSM{
+					DocumentCreate:                  false,
+					DocumentName:                    "",
+					DocumentCommands:                "",
+					DocumentExecutionTimeoutSeconds: 3600,
+				},
+				RemoteAccessUserName: "ec2-user", // for AL2
+				AMIType:              AMITypeAL2X8664,
+				ImageID:              "",
+				ImageIDSSMParameter:  "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
+				InstanceType:         DefaultNodeInstanceTypeCPU,
+				VolumeSize:           DefaultNodeVolumeSize,
+				ASGMinSize:           1,
+				ASGMaxSize:           1,
+				ASGDesiredCapacity:   1,
 			},
 		},
 	}
@@ -353,7 +355,7 @@ func (cfg *Config) validateASGs() error {
 		return fmt.Errorf("ASGs %d exceeds maximum number of ASGs which is %d", n, ASGsMaxLimit)
 	}
 	names, processed := make(map[string]struct{}), make(map[string]ASG)
-	total := int64(0)
+	total := int32(0)
 	for k, cur := range cfg.ASGs {
 		k = strings.ReplaceAll(k, "GetRef.Name", cfg.Name)
 		cur.Name = strings.ReplaceAll(cur.Name, "GetRef.Name", cfg.Name)
@@ -371,19 +373,6 @@ func (cfg *Config) validateASGs() error {
 			return fmt.Errorf("ASGs[%q].Name %q is redundant", k, cur.Name)
 		}
 
-		if cur.ASGCFNStackYAMLPath == "" {
-			cur.ASGCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".asg.cfn." + k + ".yaml"
-		}
-		if cur.ASGCFNStackYAMLS3Key == "" {
-			cur.ASGCFNStackYAMLS3Key = path.Join(
-				cfg.S3Dir,
-				filepath.Base(cur.ASGCFNStackYAMLPath),
-			)
-		}
-
-		if len(cur.InstanceTypes) > 4 {
-			return fmt.Errorf("too many InstaceTypes[%q]", cur.InstanceTypes)
-		}
 		if cur.VolumeSize == 0 {
 			cur.VolumeSize = DefaultNodeVolumeSize
 		}
@@ -422,20 +411,20 @@ func (cfg *Config) validateASGs() error {
 
 		switch cur.AMIType {
 		case AMITypeAL2ARM64:
-			if len(cur.InstanceTypes) == 0 {
-				cur.InstanceTypes = []string{DefaultNodeInstanceTypeCPUARM}
+			if cur.InstanceType == "" {
+				cur.InstanceType = DefaultNodeInstanceTypeCPUARM
 			}
 		case AMITypeBottleRocketCPU:
-			if len(cur.InstanceTypes) == 0 {
-				cur.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+			if cur.InstanceType == "" {
+				cur.InstanceType = DefaultNodeInstanceTypeCPU
 			}
 		case AMITypeAL2X8664:
-			if len(cur.InstanceTypes) == 0 {
-				cur.InstanceTypes = []string{DefaultNodeInstanceTypeCPU}
+			if cur.InstanceType == "" {
+				cur.InstanceType = DefaultNodeInstanceTypeCPU
 			}
 		case AMITypeAL2X8664GPU:
-			if len(cur.InstanceTypes) == 0 {
-				cur.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
+			if cur.InstanceType == "" {
+				cur.InstanceType = DefaultNodeInstanceTypeGPU
 			}
 		default:
 			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, cur.AMIType)
@@ -464,28 +453,15 @@ func (cfg *Config) validateASGs() error {
 			return fmt.Errorf("ASGs[%q].ASGDesiredCapacity %d > ASGMaxLimit %d", k, cur.ASGDesiredCapacity, ASGMaxLimit)
 		}
 
-		if cur.SSMDocumentCFNStackYAMLPath == "" {
-			cur.SSMDocumentCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".ssm.cfn." + k + ".yaml"
-		}
-		if cur.SSMDocumentCFNStackYAMLS3Key == "" {
-			cur.SSMDocumentCFNStackYAMLS3Key = path.Join(
-				cfg.S3Dir,
-				filepath.Base(cur.SSMDocumentCFNStackYAMLPath),
-			)
-		}
-		switch cur.SSMDocumentCreate {
+		switch cur.SSM.DocumentCreate {
 		case true: // need create one, or already created
-			if cur.SSMDocumentCFNStackName == "" {
-				cur.SSMDocumentCFNStackName = cur.Name + "-ssm-document"
+			if cur.SSM.DocumentName == "" {
+				cur.SSM.DocumentName = cur.Name + "SSMDocument"
 			}
-			if cur.SSMDocumentName == "" {
-				cur.SSMDocumentName = cur.Name + "SSMDocument"
-			}
-			cur.SSMDocumentCFNStackName = strings.ReplaceAll(cur.SSMDocumentCFNStackName, "GetRef.Name", cfg.Name)
-			cur.SSMDocumentName = strings.ReplaceAll(cur.SSMDocumentName, "GetRef.Name", cfg.Name)
-			cur.SSMDocumentName = ssmDocNameRegex.ReplaceAllString(cur.SSMDocumentName, "")
-			if cur.SSMDocumentExecutionTimeoutSeconds == 0 {
-				cur.SSMDocumentExecutionTimeoutSeconds = 3600
+			cur.SSM.DocumentName = strings.ReplaceAll(cur.SSM.DocumentName, "GetRef.Name", cfg.Name)
+			cur.SSM.DocumentName = ssmDocNameRegex.ReplaceAllString(cur.SSM.DocumentName, "")
+			if cur.SSM.DocumentExecutionTimeoutSeconds == 0 {
+				cur.SSM.DocumentExecutionTimeoutSeconds = 3600
 			}
 
 		case false: // use existing one, or don't run any SSM

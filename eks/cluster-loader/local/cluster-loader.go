@@ -67,7 +67,7 @@ func (ts *tester) Create() (err error) {
 		Stopc: ts.cfg.Stopc,
 
 		S3API:        ts.cfg.S3API,
-		S3BucketName: ts.cfg.EKSConfig.S3BucketName,
+		S3BucketName: ts.cfg.EKSConfig.S3.BucketName,
 
 		KubeConfigPath: ts.cfg.EKSConfig.KubeConfigPath,
 

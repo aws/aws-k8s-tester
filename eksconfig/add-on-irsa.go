@@ -101,8 +101,8 @@ func (cfg *Config) validateAddOnIRSA() error {
 		return errors.New("AddOnIRSA.Enable true but no node group is enabled")
 	}
 
-	if cfg.Parameters.VersionValue < 1.14 {
-		return fmt.Errorf("Version %q not supported for AddOnIRSA", cfg.Parameters.Version)
+	if cfg.VersionValue < 1.14 {
+		return fmt.Errorf("Version %q not supported for AddOnIRSA", cfg.Version)
 	}
 
 	if cfg.AddOnIRSA.S3Dir == "" {

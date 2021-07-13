@@ -224,8 +224,8 @@ func (ts *tester) createPolicy() error {
 		return nil
 	}
 	roleNames := make([]string, 0)
-	if ts.cfg.EKSConfig.AddOnNodeGroups != nil && ts.cfg.EKSConfig.AddOnNodeGroups.RoleName != "" {
-		roleNames = append(roleNames, ts.cfg.EKSConfig.AddOnNodeGroups.RoleName)
+	if ts.cfg.EKSConfig.AddOnNodeGroups != nil && ts.cfg.EKSConfig.Role.Name != "" {
+		roleNames = append(roleNames, ts.cfg.EKSConfig.Role.Name)
 	}
 	if ts.cfg.EKSConfig.AddOnManagedNodeGroups != nil && ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName != "" {
 		roleNames = append(roleNames, ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName)
@@ -241,7 +241,7 @@ func (ts *tester) createPolicy() error {
 	if err := aws_s3.Upload(
 		ts.cfg.Logger,
 		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
+		ts.cfg.EKSConfig.S3.BucketName,
 		ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackYAMLS3Key,
 		ts.cfg.EKSConfig.AddOnAppMesh.PolicyCFNStackYAMLPath,
 	); err != nil {

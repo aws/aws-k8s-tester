@@ -33,14 +33,8 @@ type Status struct {
 	// And to be mounted as a volume as 'Secret' object.
 	AWSCredentialPath string `json:"aws-credential-path"`
 
-	ClusterARN               string `json:"cluster-arn"`
-	ClusterCFNStackID        string `json:"cluster-cfn-stack-id"`
-	ClusterCFNStackYAMLPath  string `json:"cluster-cfn-stack-yaml-path" read-only:"true"`
-	ClusterCFNStackYAMLS3Key string `json:"cluster-cfn-stack-yaml-s3-key" read-only:"true"`
+	ClusterARN string `json:"cluster-arn"`
 
-	// ClusterControlPlaneSecurityGroupID is the security group ID for the cluster control
-	// plane communication with worker nodes.
-	ClusterControlPlaneSecurityGroupID string `json:"cluster-control-plane-security-group-id"`
 	// ClusterAPIServerEndpoint is the cluster endpoint of the EKS cluster,
 	// required for KUBECONFIG write.
 	ClusterAPIServerEndpoint string `json:"cluster-api-server-endpoint"`
@@ -79,6 +73,8 @@ type Status struct {
 	// Kubernetes node object name is the node's EC2 instance private DNS.
 	// This is used for SSH access.
 	PrivateDNSToNodeInfo map[string]NodeInfo `json:"private-dns-to-node-info"`
+
+	DeletedResources map[string]string `json:"deleted-resources"`
 }
 
 // NodeInfo represents basic SSH access configuration for worker nodes.

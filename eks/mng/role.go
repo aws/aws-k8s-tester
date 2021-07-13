@@ -5,14 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"strings"
 	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
 	aws_iam "github.com/aws/aws-k8s-tester/pkg/aws/iam"
-	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/pkg/user"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
@@ -275,7 +273,7 @@ func (ts *tester) createRole() error {
 	}
 
 	tr := templateRole{
-		S3BucketName: ts.cfg.EKSConfig.S3BucketName,
+		S3BucketName: ts.cfg.EKSConfig.S3.BucketName,
 		ClusterName:  ts.cfg.EKSConfig.Name,
 	}
 	if ts.cfg.EKSConfig.IsEnabledAddOnFluentd() {
@@ -287,19 +285,7 @@ func (ts *tester) createRole() error {
 	if err := tpl.Execute(buf, tr); err != nil {
 		return err
 	}
-	// grant write permission in case of overwrites
-	if err := ioutil.WriteFile(ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLPath, buf.Bytes(), 0600); err != nil {
-		return err
-	}
-	if err := aws_s3.Upload(
-		ts.cfg.Logger,
-		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
-		ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLS3Key,
-		ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLPath,
-	); err != nil {
-		return err
-	}
+
 	ts.cfg.Logger.Info("creating a new node group role using CFN",
 		zap.String("role-name", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName),
 		zap.String("role-cfn-file-path", ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleCFNStackYAMLPath),

@@ -16,12 +16,14 @@ import (
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
+	aws_asg_v2 "github.com/aws/aws-sdk-go-v2/service/autoscaling"
+	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
+	aws_iam_v2 "github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"github.com/aws/aws-sdk-go/service/iam/iamiface"
-	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"go.uber.org/zap"
 )
 
@@ -32,12 +34,16 @@ type Config struct {
 	Stopc     chan struct{}
 	EKSConfig *eksconfig.Config
 	K8SClient k8s_client.EKS
-	S3API     s3iface.S3API
-	IAMAPI    iamiface.IAMAPI
-	CFNAPI    cloudformationiface.CloudFormationAPI
-	EC2API    ec2iface.EC2API
-	ASGAPI    autoscalingiface.AutoScalingAPI
-	EKSAPI    eksiface.EKSAPI
+
+	IAMAPIV2 *aws_iam_v2.Client
+	EC2APIV2 *aws_ec2_v2.Client
+	ASGAPIV2 *aws_asg_v2.Client
+	EKSAPI   eksiface.EKSAPI
+
+	IAMAPI iamiface.IAMAPI
+	CFNAPI cloudformationiface.CloudFormationAPI
+	EC2API ec2iface.EC2API
+	ASGAPI autoscalingiface.AutoScalingAPI
 }
 
 // Tester implements EKS "Managed Node Group" for "kubetest2" Deployer.
@@ -79,8 +85,8 @@ func New(cfg Config) Tester {
 			Stopc:     cfg.Stopc,
 			EKSConfig: cfg.EKSConfig,
 			K8SClient: cfg.K8SClient,
-			EC2API:    cfg.EC2API,
-			ASGAPI:    cfg.ASGAPI,
+			EC2APIV2:  cfg.EC2APIV2,
+			ASGAPIV2:  cfg.ASGAPIV2,
 			EKSAPI:    cfg.EKSAPI,
 		}),
 		scaler: scale.New(scale.Config{
@@ -121,8 +127,8 @@ func (ts *tester) Create() (err error) {
 		ts.cfg.Logger.Info("managed node group is already created; skipping creation")
 		return nil
 	}
-	if len(ts.cfg.EKSConfig.Parameters.PublicSubnetIDs) == 0 {
-		return errors.New("empty EKSConfig.Parameters.PublicSubnetIDs")
+	if len(ts.cfg.EKSConfig.VPC.PublicSubnetIDs) == 0 {
+		return errors.New("empty EKSConfig.VPC.PublicSubnetIDs")
 	}
 
 	ts.cfg.Logger.Info("starting tester.Create", zap.String("tester", pkgName))

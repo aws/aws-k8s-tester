@@ -178,7 +178,7 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnStresserLocal.RequestsRawWritesCompareS3Dir == "" {
-		cfg.AddOnStresserLocal.RequestsRawWritesCompareS3Dir = path.Join("add-on-stresser-local", "requests-raw-writes-compare", cfg.Parameters.Version)
+		cfg.AddOnStresserLocal.RequestsRawWritesCompareS3Dir = path.Join("add-on-stresser-local", "requests-raw-writes-compare", cfg.Version)
 	}
 	if cfg.AddOnStresserLocal.RequestsRawWritesCompareAllJSONPath == "" {
 		cfg.AddOnStresserLocal.RequestsRawWritesCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-raw-writes-compare-all.json"
@@ -227,7 +227,7 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnStresserLocal.RequestsSummaryWritesCompareS3Dir == "" {
-		cfg.AddOnStresserLocal.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-stresser-local", "requests-summary-writes-compare", cfg.Parameters.Version)
+		cfg.AddOnStresserLocal.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-stresser-local", "requests-summary-writes-compare", cfg.Version)
 	}
 	if cfg.AddOnStresserLocal.RequestsSummaryWritesCompareJSONPath == "" {
 		cfg.AddOnStresserLocal.RequestsSummaryWritesCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-summary-writes-compare.json"
@@ -266,7 +266,7 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnStresserLocal.RequestsRawReadsCompareS3Dir == "" {
-		cfg.AddOnStresserLocal.RequestsRawReadsCompareS3Dir = path.Join("add-on-stresser-local", "requests-raw-reads-compare", cfg.Parameters.Version)
+		cfg.AddOnStresserLocal.RequestsRawReadsCompareS3Dir = path.Join("add-on-stresser-local", "requests-raw-reads-compare", cfg.Version)
 	}
 	if cfg.AddOnStresserLocal.RequestsRawReadsCompareAllJSONPath == "" {
 		cfg.AddOnStresserLocal.RequestsRawReadsCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-raw-reads-compare-all.json"
@@ -315,7 +315,7 @@ func (cfg *Config) validateAddOnStresserLocal() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnStresserLocal.RequestsSummaryReadsCompareS3Dir == "" {
-		cfg.AddOnStresserLocal.RequestsSummaryReadsCompareS3Dir = path.Join("add-on-stresser-local", "requests-summary-reads-compare", cfg.Parameters.Version)
+		cfg.AddOnStresserLocal.RequestsSummaryReadsCompareS3Dir = path.Join("add-on-stresser-local", "requests-summary-reads-compare", cfg.Version)
 	}
 	if cfg.AddOnStresserLocal.RequestsSummaryReadsCompareJSONPath == "" {
 		cfg.AddOnStresserLocal.RequestsSummaryReadsCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-stresser-local-requests-summary-reads-compare.json"

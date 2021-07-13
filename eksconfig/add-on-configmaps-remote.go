@@ -208,7 +208,7 @@ func (cfg *Config) validateAddOnConfigmapsRemote() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnConfigmapsRemote.RequestsRawWritesCompareS3Dir == "" {
-		cfg.AddOnConfigmapsRemote.RequestsRawWritesCompareS3Dir = path.Join("add-on-configmaps-remote", "requests-raw-writes-compare", cfg.Parameters.Version)
+		cfg.AddOnConfigmapsRemote.RequestsRawWritesCompareS3Dir = path.Join("add-on-configmaps-remote", "requests-raw-writes-compare", cfg.Version)
 	}
 	if cfg.AddOnConfigmapsRemote.RequestsRawWritesCompareAllJSONPath == "" {
 		cfg.AddOnConfigmapsRemote.RequestsRawWritesCompareAllJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-remote-requests-raw-writes-compare-all.json"
@@ -257,7 +257,7 @@ func (cfg *Config) validateAddOnConfigmapsRemote() error {
 
 	//////////////////////////////////////////////////////////////////////////////
 	if cfg.AddOnConfigmapsRemote.RequestsSummaryWritesCompareS3Dir == "" {
-		cfg.AddOnConfigmapsRemote.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-configmaps-remote", "requests-summary-writes-compare", cfg.Parameters.Version)
+		cfg.AddOnConfigmapsRemote.RequestsSummaryWritesCompareS3Dir = path.Join("add-on-configmaps-remote", "requests-summary-writes-compare", cfg.Version)
 	}
 	if cfg.AddOnConfigmapsRemote.RequestsSummaryWritesCompareJSONPath == "" {
 		cfg.AddOnConfigmapsRemote.RequestsSummaryWritesCompareJSONPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + "-configmaps-remote-requests-summary-writes-compare.json"

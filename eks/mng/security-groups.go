@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"text/template"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
-	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/pkg/user"
 	"github.com/aws/aws-k8s-tester/version"
 	"github.com/aws/aws-sdk-go/aws"
@@ -223,19 +221,6 @@ func (ts *tester) createSG(name string) error {
 		return err
 	}
 
-	// grant write permission in case of overwrites
-	if err := ioutil.WriteFile(cur.RemoteAccessSecurityCFNStackYAMLPath, buf.Bytes(), 0600); err != nil {
-		return err
-	}
-	if err := aws_s3.Upload(
-		ts.cfg.Logger,
-		ts.cfg.S3API,
-		ts.cfg.EKSConfig.S3BucketName,
-		cur.RemoteAccessSecurityCFNStackYAMLS3Key,
-		cur.RemoteAccessSecurityCFNStackYAMLPath,
-	); err != nil {
-		return err
-	}
 	sgID := cur.RemoteAccessSecurityGroupID
 	ts.cfg.Logger.Info("creating ingress/egress security group for mng using CFN",
 		zap.String("mng-name", name),
@@ -257,7 +242,7 @@ func (ts *tester) createSG(name string) error {
 		Parameters: []*cloudformation.Parameter{
 			{
 				ParameterKey:   aws.String("ClusterControlPlaneSecurityGroupID"),
-				ParameterValue: aws.String(ts.cfg.EKSConfig.Status.ClusterControlPlaneSecurityGroupID),
+				ParameterValue: aws.String(ts.cfg.EKSConfig.VPC.SecurityGroupID),
 			},
 			{
 				ParameterKey:   aws.String("ManagedNodeGroupSecurityGroupID"),

@@ -102,8 +102,8 @@ func (cfg *Config) validateAddOnFargate() error {
 	if !cfg.IsEnabledAddOnNodeGroups() && !cfg.IsEnabledAddOnManagedNodeGroups() {
 		return errors.New("AddOnFargate.Enable true but no node group is enabled")
 	}
-	if cfg.Parameters.VersionValue < 1.14 {
-		return fmt.Errorf("Version %q not supported for AddOnFargate", cfg.Parameters.Version)
+	if cfg.VersionValue < 1.14 {
+		return fmt.Errorf("Version %q not supported for AddOnFargate", cfg.Version)
 	}
 
 	if cfg.AddOnFargate.S3Dir == "" {

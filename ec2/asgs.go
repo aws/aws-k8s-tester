@@ -368,7 +368,7 @@ const userDataAL2InstallSSM = `        UserData:
 type templateASG struct {
 	Metadata           string
 	UserData           string
-	ASGDesiredCapacity int64
+	ASGDesiredCapacity int32
 }
 
 func (ts *Tester) createASGs() (err error) {
