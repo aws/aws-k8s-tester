@@ -8,15 +8,15 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.0...v1.6.1
 
 ### `eksconfig`
 
-- Rename all fields [`AWS_K8S_TESTER_EKS_PARAMETERS_*` to `AWS_K8S_TESTER_EKS_`](https://github.com/aws/aws-k8s-tester/commit/TODO).
-- Rename fields [`AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR_BLOCK*` to `AWS_K8S_TESTER_EKS_VPC_CIDRS`](https://github.com/aws/aws-k8s-tester/commit/TODO).
-- Rename fields [`AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_*` to `AWS_K8S_TESTER_EKS_VPC_PUBLIC_SUBNET_CIDRS`](https://github.com/aws/aws-k8s-tester/commit/TODO).
-- Rename fields [`AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_*` to `AWS_K8S_TESTER_EKS_VPC_PRIVATE_SUBNET_CIDRS`](https://github.com/aws/aws-k8s-tester/commit/TODO).
-- Rename fields [`AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME*` to `AWS_K8S_TESTER_EKS_VPC_DHCP_OPTIONS_*`](https://github.com/aws/aws-k8s-tester/commit/TODO).
-- Change [`ssm*` fields in `AddOnNodeGroups` as nested](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- Rename all fields [`AWS_K8S_TESTER_EKS_PARAMETERS_*` to `AWS_K8S_TESTER_EKS_`](https://github.com/aws/aws-k8s-tester/commit/3051914e6ec185215274245ac5393f2bf0a57fa4).
+- Rename fields [`AWS_K8S_TESTER_EKS_PARAMETERS_VPC_CIDR_BLOCK*` to `AWS_K8S_TESTER_EKS_VPC_CIDRS`](https://github.com/aws/aws-k8s-tester/commit/3051914e6ec185215274245ac5393f2bf0a57fa4).
+- Rename fields [`AWS_K8S_TESTER_EKS_PARAMETERS_PUBLIC_SUBNET_CIDR_*` to `AWS_K8S_TESTER_EKS_VPC_PUBLIC_SUBNET_CIDRS`](https://github.com/aws/aws-k8s-tester/commit/3051914e6ec185215274245ac5393f2bf0a57fa4).
+- Rename fields [`AWS_K8S_TESTER_EKS_PARAMETERS_PRIVATE_SUBNET_CIDR_*` to `AWS_K8S_TESTER_EKS_VPC_PRIVATE_SUBNET_CIDRS`](https://github.com/aws/aws-k8s-tester/commit/3051914e6ec185215274245ac5393f2bf0a57fa4).
+- Rename fields [`AWS_K8S_TESTER_EKS_PARAMETERS_DHCP_OPTIONS_DOMAIN_NAME*` to `AWS_K8S_TESTER_EKS_VPC_DHCP_OPTIONS_*`](https://github.com/aws/aws-k8s-tester/commit/3051914e6ec185215274245ac5393f2bf0a57fa4).
+- Change [`ssm*` fields in `AddOnNodeGroups` as nested](https://github.com/aws/aws-k8s-tester/commit/3051914e6ec185215274245ac5393f2bf0a57fa4).
   - before, `AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS='{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"image-id":"my-ami",  "ssm-document-create":true,   "instance-type":"type-2",  "ssm-document-cfn-stack-name":"GetRef.Name-ssm", "ssm-document-name":"GetRef.Name-document", "kubelet-extra-args":"aaa aa", "cluster-autoscaler": {"enable" : true}, "volume-size":500}}'`
   - after, `AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS='{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34, "instance-type":"type-2", "image-id":"my-ami",  "ssm":{"document-create":true,    "document-name":"GetRef.Name-document"}, "kubelet-extra-args":"aaa aa", "cluster-autoscaler": {"enable" : true}, "volume-size":500}}'`
-- Rename [`AddOnNodeGroups.ASG.InstanceTypes` to `InstanceType`](https://github.com/aws/aws-k8s-tester/commit/TODO).
+- Rename [`AddOnNodeGroups.ASG.InstanceTypes` to `InstanceType`](https://github.com/aws/aws-k8s-tester/commit/3051914e6ec185215274245ac5393f2bf0a57fa4).
   - Rename `"instance-types"` to `"instance-type"`.
 
 ### `k8s-tester`
