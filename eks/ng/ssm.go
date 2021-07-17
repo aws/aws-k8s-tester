@@ -2,14 +2,18 @@ package ng
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	aws_v2 "github.com/aws/aws-sdk-go-v2/aws"
 	aws_ssm_v2 "github.com/aws/aws-sdk-go-v2/service/ssm"
+	aws_ssm_v2_types "github.com/aws/aws-sdk-go-v2/service/ssm/types"
+	smithy "github.com/aws/smithy-go"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
@@ -47,28 +51,76 @@ func (ts *tester) createSSMDocument() error {
 			continue
 		}
 
+		// ref. https://docs.aws.amazon.com/systems-manager/latest/userguide/create-ssm-document-api.html
+		content := `schemaVersion: '2.2'
+description: SSM document
+parameters:
+  region:
+    type: String
+	description: 'AWS Region'
+  executionTimeoutSeconds:
+    type: String
+	description: 'timeout for script, in seconds'
+  moreCommands:
+    type: String
+	description: 'more commands'
+mainSteps:
+  - action: aws:runShellScript
+    name: %s
+    inputs:
+      timeoutSeconds: '{{ executionTimeoutSeconds }}'
+      runCommand:
+        - |
+          AWS_DEFAULT_REGION={{region}}
+          echo "running SSM with AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}"
+          echo "running more SSM command"
+          {{ moreCommands }}
+`
+
 		ts.cfg.Logger.Info("creating SSM document",
 			zap.String("asg-name", asgName),
 			zap.String("ssm-document-name", cur.SSM.DocumentName),
 		)
-
-		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
-		ts.cfg.EKSConfig.Sync()
+		_, err := ts.cfg.SSMAPIV2.CreateDocument(
+			context.Background(),
+			&aws_ssm_v2.CreateDocumentInput{
+				DocumentFormat: aws_ssm_v2_types.DocumentFormatYaml,
+				DocumentType:   aws_ssm_v2_types.DocumentTypeCommand,
+				VersionName:    aws_v2.String("v1"),
+				Tags: []aws_ssm_v2_types.Tag{
+					{
+						Key:   aws_v2.String("Name"),
+						Value: aws_v2.String(ts.cfg.EKSConfig.Name),
+					},
+					{
+						Key:   aws_v2.String("DocumentName"),
+						Value: aws_v2.String(cur.SSM.DocumentName),
+					},
+					{
+						Key:   aws_v2.String("DocumentVersion"),
+						Value: aws_v2.String("v1"),
+					},
+				},
+				// ref. https://docs.aws.amazon.com/systems-manager/latest/userguide/create-ssm-document-api.html
+				Content: aws_v2.String(fmt.Sprintf(content, cur.SSM.DocumentName)),
+			},
+		)
+		if err != nil {
+			return err
+		}
 
 		ts.cfg.Logger.Info("created SSM Document",
 			zap.String("asg-name", cur.Name),
 			zap.String("ssm-document-name", cur.SSM.DocumentName),
 			zap.String("started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
 		)
-		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
-		ts.cfg.EKSConfig.Sync()
 	}
 
 	ts.cfg.EKSConfig.Sync()
 	return nil
 }
 
-func (ts *tester) deleteSSMDocument() error {
+func (ts *tester) deleteSSMDocument() (err error) {
 	for asgName, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
 		if cur.SSM == nil {
 			continue
@@ -85,8 +137,30 @@ func (ts *tester) deleteSSMDocument() error {
 			zap.String("asg-name", cur.Name),
 			zap.String("ssm-document-name", cur.SSM.DocumentName),
 		)
-
-		ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("%q/%s", cur.SSM.DocumentName, ec2config.StatusDELETEDORNOTEXIST))
+		_, err = ts.cfg.SSMAPIV2.DeleteDocument(
+			context.Background(),
+			&aws_ssm_v2.DeleteDocumentInput{
+				Name:  aws_v2.String(cur.SSM.DocumentName),
+				Force: true,
+			},
+		)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to delete SSM document", zap.Error(err))
+			var apiErr smithy.APIError
+			if errors.As(err, &apiErr) {
+				if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+					ts.cfg.EKSConfig.Status.DeletedResources[cur.SSM.DocumentName] = "SSM.DocumentName"
+					ts.cfg.EKSConfig.Sync()
+					err = nil
+				}
+			}
+		} else {
+			ts.cfg.EKSConfig.Status.DeletedResources[cur.SSM.DocumentName] = "SSM.DocumentName"
+			ts.cfg.EKSConfig.Sync()
+		}
+		if err == nil {
+			ts.cfg.EKSConfig.RecordStatus(fmt.Sprintf("%q/%s", cur.SSM.DocumentName, ec2config.StatusDELETEDORNOTEXIST))
+		}
 
 		ts.cfg.Logger.Info("deleted SSM document",
 			zap.String("asg-name", cur.Name),
@@ -95,7 +169,7 @@ func (ts *tester) deleteSSMDocument() error {
 	}
 
 	ts.cfg.EKSConfig.Sync()
-	return nil
+	return err
 }
 
 func (ts *tester) sendSSMDocumentCommand() error {

@@ -18,9 +18,6 @@ import (
 // see https://github.com/aws/aws-k8s-tester/blob/v1.6.0/eks/mng/role.go for CloudFormation based workflow
 
 func (ts *tester) createRole() error {
-	fmt.Print(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createRole.AddOnManagedNodeGroups [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
-
 	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.Role.Create {
 		ts.cfg.Logger.Info("AddOnManagedNodeGroups.Role.Create false; skipping creation")
 		return aws_iam.ValidateV2(
@@ -61,9 +58,6 @@ func (ts *tester) createRole() error {
 }
 
 func (ts *tester) deleteRole() error {
-	fmt.Print(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_blue]deleteRole.AddOnManagedNodeGroups [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
-
 	if !ts.cfg.EKSConfig.AddOnManagedNodeGroups.Role.Create {
 		ts.cfg.Logger.Info("Role.Create false; skipping deletion")
 		return nil
