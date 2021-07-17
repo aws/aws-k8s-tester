@@ -120,7 +120,15 @@ func (ts *tester) authorizeSecurityGroup() error {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to authorize ingress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "Duplicate") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("authorized IngressWithinNodeGroupSecurityGroup")
 
@@ -150,7 +158,15 @@ func (ts *tester) authorizeSecurityGroup() error {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to authorize ingress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "Duplicate") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("authorized Ingress443FromNGtoCP")
 
@@ -180,7 +196,15 @@ func (ts *tester) authorizeSecurityGroup() error {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to authorize ingress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "Duplicate") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("authorized Ingress443FromCPtoNG")
 
@@ -209,7 +233,15 @@ func (ts *tester) authorizeSecurityGroup() error {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to authorize egress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "Duplicate") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("authorized Egress443FromCPtoNG")
 
@@ -238,7 +270,15 @@ func (ts *tester) authorizeSecurityGroup() error {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to authorize ingress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "Duplicate") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("authorized IngressAllFromCPtoNG")
 
@@ -267,7 +307,15 @@ func (ts *tester) authorizeSecurityGroup() error {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to authorize egress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "Duplicate") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("authorized EgressAllFromCPtoNG")
 
@@ -293,7 +341,15 @@ func (ts *tester) authorizeSecurityGroup() error {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to authorize ingress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "Duplicate") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("authorized Ingress22ForSSH")
 
@@ -319,7 +375,15 @@ func (ts *tester) authorizeSecurityGroup() error {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to authorize ingress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "Duplicate") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("authorized IngressForGuestBook")
 
@@ -340,7 +404,15 @@ func (ts *tester) authorizeSecurityGroup() error {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to authorize egress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "Duplicate") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("authorized EgressForGuestBook")
 
@@ -366,7 +438,15 @@ func (ts *tester) authorizeSecurityGroup() error {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to authorize ingress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "Duplicate") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("authorized IngressForNodePortConformance")
 
@@ -404,7 +484,15 @@ func (ts *tester) revokeSecurityGroups() (err error) {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to revoke ingress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("revoked IngressWithinNodeGroupSecurityGroup")
 
@@ -434,7 +522,15 @@ func (ts *tester) revokeSecurityGroups() (err error) {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to revoke ingress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("revoked Ingress443FromNGtoCP")
 
@@ -464,7 +560,15 @@ func (ts *tester) revokeSecurityGroups() (err error) {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to revoke ingress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("revoked Ingress443FromCPtoNG")
 
@@ -493,7 +597,15 @@ func (ts *tester) revokeSecurityGroups() (err error) {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to revoke egress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("revoked Egress443FromCPtoNG")
 
@@ -522,7 +634,15 @@ func (ts *tester) revokeSecurityGroups() (err error) {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to revoke ingress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("revoked IngressAllFromCPtoNG")
 
@@ -551,7 +671,15 @@ func (ts *tester) revokeSecurityGroups() (err error) {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to revoke egress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("revoked EgressAllFromCPtoNG")
 
@@ -577,7 +705,15 @@ func (ts *tester) revokeSecurityGroups() (err error) {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to revoke ingress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("revoked Ingress22ForSSH")
 
@@ -603,7 +739,15 @@ func (ts *tester) revokeSecurityGroups() (err error) {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to revoke ingress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("revoked IngressForGuestBook")
 
@@ -624,7 +768,15 @@ func (ts *tester) revokeSecurityGroups() (err error) {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to revoke egress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("revoked EgressForGuestBook")
 
@@ -650,7 +802,15 @@ func (ts *tester) revokeSecurityGroups() (err error) {
 	)
 	if err != nil {
 		ts.cfg.Logger.Warn("failed to revoke ingress", zap.Error(err))
-		return err
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+				err = nil
+			}
+		}
+		if err != nil {
+			return err
+		}
 	}
 	ts.cfg.Logger.Info("revoked IngressForNodePortConformance")
 

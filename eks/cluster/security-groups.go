@@ -119,6 +119,12 @@ func (ts *tester) deleteOtherSecurityGroups() (err error) {
 			cancel()
 			if err != nil {
 				ts.cfg.Logger.Warn("failed to revoke ingress", zap.Error(err))
+				var apiErr smithy.APIError
+				if errors.As(err, &apiErr) {
+					if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+						deleted = true
+					}
+				}
 			} else {
 				ts.cfg.Logger.Info("revoked ingress")
 				deleted = true
@@ -159,6 +165,12 @@ func (ts *tester) deleteOtherSecurityGroups() (err error) {
 					})
 				if err != nil {
 					ts.cfg.Logger.Warn("failed to revoke egress", zap.Error(err))
+					var apiErr smithy.APIError
+					if errors.As(err, &apiErr) {
+						if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+							deleted = true
+						}
+					}
 				} else {
 					ts.cfg.Logger.Info("revoked egress")
 					deleted = true
@@ -181,22 +193,15 @@ func (ts *tester) deleteOtherSecurityGroups() (err error) {
 				})
 			cancel()
 			if err != nil {
+				ts.cfg.Logger.Warn("failed to revoke egress", zap.Error(err))
 				var apiErr smithy.APIError
 				if errors.As(err, &apiErr) {
-					if apiErr.ErrorCode() == "InvalidPermission.NotFound" {
-						ts.cfg.Logger.Warn("egress ip permission does not exist", zap.Error(err))
+					if strings.Contains(apiErr.ErrorCode(), "NotFound") {
 						deleted = true
-					} else {
-						ts.cfg.Logger.Warn("failed to revoke egress", zap.String("error-code", apiErr.ErrorCode()), zap.Error(err))
 					}
-				} else {
-					ts.cfg.Logger.Warn("failed to revoke egress", zap.Error(err))
 				}
 			} else {
-				ts.cfg.Logger.Info("revoked egress",
-					zap.String("security-group-id", sgID),
-					zap.Error(err),
-				)
+				ts.cfg.Logger.Info("revoked egress")
 				deleted = true
 			}
 
@@ -235,22 +240,15 @@ func (ts *tester) deleteOtherSecurityGroups() (err error) {
 					})
 				cancel()
 				if err != nil {
+					ts.cfg.Logger.Warn("failed to revoke ingress", zap.Error(err))
 					var apiErr smithy.APIError
 					if errors.As(err, &apiErr) {
-						if apiErr.ErrorCode() == "InvalidPermission.NotFound" {
-							ts.cfg.Logger.Warn("ingress ip permission does not exist", zap.Error(err))
+						if strings.Contains(apiErr.ErrorCode(), "NotFound") {
 							deleted = true
-						} else {
-							ts.cfg.Logger.Warn("failed to revoke ingress", zap.String("error-code", apiErr.ErrorCode()), zap.Error(err))
 						}
-					} else {
-						ts.cfg.Logger.Warn("failed to revoke ingress", zap.Error(err))
 					}
 				} else {
-					ts.cfg.Logger.Info("revoked ingress",
-						zap.String("security-group-id", sgID),
-						zap.Error(err),
-					)
+					ts.cfg.Logger.Info("revoked ingress")
 					deleted = true
 				}
 			}
