@@ -62,8 +62,8 @@ type AddOnCNIVPC struct {
 	NodeSelector map[string]string `json:"node-selector"`
 }
 
-// EnvironmentVariablePrefixAddOnCNIVPC is the environment variable prefix used for "eksconfig".
-const EnvironmentVariablePrefixAddOnCNIVPC = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_CNI_VPC_"
+// AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_PREFIX is the environment variable prefix used for "eksconfig".
+const AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_PREFIX = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_CNI_VPC_"
 
 // IsEnabledAddOnCNIVPC returns true if "AddOnCNIVPC" is enabled.
 // Otherwise, nil the field for "omitempty".

@@ -42,27 +42,31 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCNIVPC, &eksconfig.AddOnCNIVPC{}))
+	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_PREFIX, &eksconfig.AddOnCNIVPC{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnNodeGroups, &eksconfig.AddOnNodeGroups{}))
+	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_PREFIX, &eksconfig.AddOnNodeGroups{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnNodeGroups+"ROLE_", &eksconfig.Role{}))
+	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_PREFIX+"ROLE_", &eksconfig.Role{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnManagedNodeGroups, &eksconfig.AddOnManagedNodeGroups{}))
+	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_PREFIX, &eksconfig.AddOnManagedNodeGroups{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnCWAgent, &eksconfig.AddOnCWAgent{}))
+	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_PREFIX+"ROLE_", &eksconfig.Role{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnFluentd, &eksconfig.AddOnFluentd{}))
+	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_ADD_ON_CW_AGENT_PREFIX, &eksconfig.AddOnCWAgent{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_PREFIX, &eksconfig.AddOnFluentd{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

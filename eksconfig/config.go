@@ -495,7 +495,6 @@ func getDefaultRole() *Role {
 			"arn:aws:iam::aws:policy/AmazonEKSClusterPolicy",
 			"arn:aws:iam::aws:policy/AmazonSSMFullAccess",
 			"arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
-			"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
 			"arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess",
 			"arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
 			"arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy",

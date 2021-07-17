@@ -18,12 +18,10 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/timeutil"
 	aws_asg_v2 "github.com/aws/aws-sdk-go-v2/service/autoscaling"
 	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
+	aws_eks_v2 "github.com/aws/aws-sdk-go-v2/service/eks"
 	aws_iam_v2 "github.com/aws/aws-sdk-go-v2/service/iam"
-	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
 	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
-	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"go.uber.org/zap"
 )
 
@@ -39,11 +37,9 @@ type Config struct {
 	EC2APIV2 *aws_ec2_v2.Client
 	ASGAPIV2 *aws_asg_v2.Client
 	EKSAPI   eksiface.EKSAPI
+	EKSAPIV2 *aws_eks_v2.Client
 
-	IAMAPI iamiface.IAMAPI
 	CFNAPI cloudformationiface.CloudFormationAPI
-	EC2API ec2iface.EC2API
-	ASGAPI autoscalingiface.AutoScalingAPI
 }
 
 // Tester implements EKS "Managed Node Group" for "kubetest2" Deployer.
@@ -142,14 +138,15 @@ func (ts *tester) Create() (err error) {
 	if err = ts.createRole(); err != nil {
 		return err
 	}
-	if err = ts.createASGs(); err != nil {
+	if err = ts.createMNGs(); err != nil {
 		return err
 	}
 	for mngName := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		if err = ts.createSG(mngName); err != nil {
+		if err = ts.authorizeSecurityGroups(mngName); err != nil {
 			return err
 		}
 	}
+
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.Created = true
 	ts.cfg.EKSConfig.Sync()
 	return nil
@@ -176,6 +173,7 @@ func (ts *tester) UpgradeVersion() (err error) {
 		ts.cfg.Logger.Info("ManagedNodeGroup is not created; skipping upgrade")
 		return nil
 	}
+
 	for mngName := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
 		if err = ts.versionUpgrader.Upgrade(mngName); err != nil {
 			return err
@@ -184,6 +182,7 @@ func (ts *tester) UpgradeVersion() (err error) {
 			return err
 		}
 	}
+
 	ts.cfg.EKSConfig.Sync()
 	return nil
 }
@@ -209,15 +208,16 @@ func (ts *tester) Delete() error {
 	var err error
 
 	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
-		err = ts.deleteSG(name)
+		err = ts.revokeSecurityGroups(name)
 		if err != nil {
 			errs = append(errs, err.Error())
 		}
 	}
+
 	failedMNGs := make(map[string]struct{})
 	for name := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
 		for i := 0; i < 5; i++ { // retry, leakly ENI may take awhile to be deleted
-			derr := ts.deleteASG(name)
+			derr := ts.deleteMNG(name)
 			if derr == nil {
 				ts.cfg.Logger.Info("successfully deleted mng", zap.String("name", name))
 				delete(failedMNGs, name)
@@ -250,7 +250,7 @@ func (ts *tester) Delete() error {
 		ts.cfg.Logger.Warn("retrying mng delete after failure", zap.String("name", name))
 		var derr error
 		for i := 0; i < 5; i++ { // retry, leakly ENI may take awhile to be deleted
-			derr = ts.deleteASG(name)
+			derr = ts.deleteMNG(name)
 			if derr == nil {
 				ts.cfg.Logger.Info("successfully deleted mng (previously failed for delete)", zap.String("name", name))
 				delete(failedMNGs, name)

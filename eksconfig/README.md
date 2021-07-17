@@ -182,7 +182,6 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 | AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_CREATED           | read-only "true"  | *eksconfig.AddOnNodeGroups.Created         | bool                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_TIME_FRAME_CREATE | read-only "true"  | *eksconfig.AddOnNodeGroups.TimeFrameCreate | timeutil.TimeFrame       |
 | AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_TIME_FRAME_DELETE | read-only "true"  | *eksconfig.AddOnNodeGroups.TimeFrameDelete | timeutil.TimeFrame       |
-| AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_S3_DIR            | read-only "false" | *eksconfig.AddOnNodeGroups.S3Dir           | string                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_FETCH_LOGS        | read-only "false" | *eksconfig.AddOnNodeGroups.FetchLogs       | bool                     |
 | AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_DIR          | read-only "false" | *eksconfig.AddOnNodeGroups.LogsDir         | string                   |
 | AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_LOGS_TAR_GZ_PATH  | read-only "false" | *eksconfig.AddOnNodeGroups.LogsTarGzPath   | string                   |
@@ -205,31 +204,37 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *------------------------------------------------------------------*-------------------*-------------------------------------*----------*
 
 
-*--------------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------------*
-|                          ENVIRONMENTAL VARIABLE                          |     READ ONLY     |                          TYPE                           |         GO TYPE          |
-*--------------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------------*
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE                     | read-only "false" | *eksconfig.AddOnManagedNodeGroups.Enable                | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED                    | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.Created               | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_TIME_FRAME_CREATE          | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.TimeFrameCreate       | timeutil.TimeFrame       |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_TIME_FRAME_DELETE          | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.TimeFrameDelete       | timeutil.TimeFrame       |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_S3_DIR                     | read-only "false" | *eksconfig.AddOnManagedNodeGroups.S3Dir                 | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS                 | read-only "false" | *eksconfig.AddOnManagedNodeGroups.FetchLogs             | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_NAME                  | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleName              | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE                | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleCreate            | bool                     |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_ARN                   | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleARN               | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS    | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleServicePrincipals | []string                 |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS   | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RoleManagedPolicyARNs | []string                 |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CFN_STACK_ID          | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.RoleCFNStackID        | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CFN_STACK_YAML_PATH   | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.RoleCFNStackYAMLPath  | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CFN_STACK_YAML_S3_KEY | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.RoleCFNStackYAMLS3Key | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REQUEST_HEADER_KEY         | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RequestHeaderKey      | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REQUEST_HEADER_VALUE       | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RequestHeaderValue    | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_RESOLVER_URL               | read-only "false" | *eksconfig.AddOnManagedNodeGroups.ResolverURL           | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME               | read-only "false" | *eksconfig.AddOnManagedNodeGroups.SigningName           | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR                   | read-only "false" | *eksconfig.AddOnManagedNodeGroups.LogsDir               | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_TAR_GZ_PATH           | read-only "false" | *eksconfig.AddOnManagedNodeGroups.LogsTarGzPath         | string                   |
-| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS                       | read-only "false" | *eksconfig.AddOnManagedNodeGroups.MNGs                  | map[string]eksconfig.MNG |
-*--------------------------------------------------------------------------*-------------------*---------------------------------------------------------*--------------------------*
+*--------------------------------------------------------------------*-------------------*------------------------------------------------------*--------------------------*
+|                       ENVIRONMENTAL VARIABLE                       |     READ ONLY     |                         TYPE                         |         GO TYPE          |
+*--------------------------------------------------------------------*-------------------*------------------------------------------------------*--------------------------*
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE               | read-only "false" | *eksconfig.AddOnManagedNodeGroups.Enable             | bool                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_CREATED              | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.Created            | bool                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_TIME_FRAME_CREATE    | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.TimeFrameCreate    | timeutil.TimeFrame       |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_TIME_FRAME_DELETE    | read-only "true"  | *eksconfig.AddOnManagedNodeGroups.TimeFrameDelete    | timeutil.TimeFrame       |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_FETCH_LOGS           | read-only "false" | *eksconfig.AddOnManagedNodeGroups.FetchLogs          | bool                     |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REQUEST_HEADER_KEY   | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RequestHeaderKey   | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_REQUEST_HEADER_VALUE | read-only "false" | *eksconfig.AddOnManagedNodeGroups.RequestHeaderValue | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_RESOLVER_URL         | read-only "false" | *eksconfig.AddOnManagedNodeGroups.ResolverURL        | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_SIGNING_NAME         | read-only "false" | *eksconfig.AddOnManagedNodeGroups.SigningName        | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_DIR             | read-only "false" | *eksconfig.AddOnManagedNodeGroups.LogsDir            | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_LOGS_TAR_GZ_PATH     | read-only "false" | *eksconfig.AddOnManagedNodeGroups.LogsTarGzPath      | string                   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_MNGS                 | read-only "false" | *eksconfig.AddOnManagedNodeGroups.MNGs               | map[string]eksconfig.MNG |
+*--------------------------------------------------------------------*-------------------*------------------------------------------------------*--------------------------*
+
+
+*--------------------------------------------------------------------------*-------------------*-------------------------------------*----------*
+|                          ENVIRONMENTAL VARIABLE                          |     READ ONLY     |                TYPE                 | GO TYPE  |
+*--------------------------------------------------------------------------*-------------------*-------------------------------------*----------*
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_NAME                  | read-only "false" | *eksconfig.Role.Name                | string   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_CREATE                | read-only "false" | *eksconfig.Role.Create              | bool     |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_ARN                   | read-only "false" | *eksconfig.Role.ARN                 | string   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_SERVICE_PRINCIPALS    | read-only "false" | *eksconfig.Role.ServicePrincipals   | []string |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_MANAGED_POLICY_ARNS   | read-only "false" | *eksconfig.Role.ManagedPolicyARNs   | []string |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_POLICY_NAME           | read-only "true"  | *eksconfig.Role.PolicyName          | string   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_POLICY_ARN            | read-only "true"  | *eksconfig.Role.PolicyARN           | string   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_INSTANCE_PROFILE_NAME | read-only "true"  | *eksconfig.Role.InstanceProfileName | string   |
+| AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_INSTANCE_PROFILE_ARN  | read-only "true"  | *eksconfig.Role.InstanceProfileARN  | string   |
+*--------------------------------------------------------------------------*-------------------*-------------------------------------*----------*
 
 
 *------------------------------------------------------*-------------------*-----------------------------------------*--------------------*

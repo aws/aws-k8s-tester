@@ -55,8 +55,8 @@ func (ts *tester) createRole() error {
 	}
 
 	ts.cfg.Logger.Info("created a new role and attached policy",
-		zap.String("cluster-role-arn", ts.cfg.EKSConfig.AddOnNodeGroups.Role.ARN),
-		zap.String("cluster-role-name", ts.cfg.EKSConfig.AddOnNodeGroups.Role.Name),
+		zap.String("role-arn", ts.cfg.EKSConfig.AddOnNodeGroups.Role.ARN),
+		zap.String("role-name", ts.cfg.EKSConfig.AddOnNodeGroups.Role.Name),
 	)
 	return nil
 }
@@ -95,8 +95,8 @@ func (ts *tester) deleteRole() error {
 
 	if len(errs) == 0 {
 		ts.cfg.Logger.Info("successfully deleted role",
-			zap.String("cluster-role-arn", ts.cfg.EKSConfig.AddOnNodeGroups.Role.ARN),
-			zap.String("cluster-role-name", ts.cfg.EKSConfig.AddOnNodeGroups.Role.Name),
+			zap.String("role-arn", ts.cfg.EKSConfig.AddOnNodeGroups.Role.ARN),
+			zap.String("role-name", ts.cfg.EKSConfig.AddOnNodeGroups.Role.Name),
 		)
 		return nil
 	}
@@ -525,6 +525,24 @@ func createStatementEntriesForRolePolicyDocument(partition string, bucketName st
 			Resource: "*",
 			Action: []string{
 				"s3:*",
+			},
+		},
+		{ // arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+			Effect:   "Allow",
+			Resource: "*",
+			Action: []string{
+				"ecr:GetAuthorizationToken",
+				"ecr:BatchCheckLayerAvailability",
+				"ecr:GetDownloadUrlForLayer",
+				"ecr:GetRepositoryPolicy",
+				"ecr:DescribeRepositories",
+				"ecr:ListImages",
+				"ecr:DescribeImages",
+				"ecr:BatchGetImage",
+				"ecr:GetLifecyclePolicy",
+				"ecr:GetLifecyclePolicyPreview",
+				"ecr:ListTagsForResource",
+				"ecr:DescribeImageScanFindings",
 			},
 		},
 	}

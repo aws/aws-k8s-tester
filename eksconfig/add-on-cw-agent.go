@@ -23,8 +23,8 @@ type AddOnCWAgent struct {
 	Namespace string `json:"namespace"`
 }
 
-// EnvironmentVariablePrefixAddOnCWAgent is the environment variable prefix used for "eksconfig".
-const EnvironmentVariablePrefixAddOnCWAgent = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_CW_AGENT_"
+// AWS_K8S_TESTER_EKS_ADD_ON_CW_AGENT_PREFIX is the environment variable prefix used for "eksconfig".
+const AWS_K8S_TESTER_EKS_ADD_ON_CW_AGENT_PREFIX = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_CW_AGENT_"
 
 // IsEnabledAddOnCWAgent returns true if "AddOnCWAgent" is enabled.
 // Otherwise, nil the field for "omitempty".

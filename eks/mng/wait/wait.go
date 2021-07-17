@@ -16,9 +16,9 @@ import (
 	aws_ec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	k8s_object "github.com/aws/aws-k8s-tester/pkg/k8s-object"
+	aws_v2 "github.com/aws/aws-sdk-go-v2/aws"
 	aws_asg_v2 "github.com/aws/aws-sdk-go-v2/service/autoscaling"
 	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/eks/eksiface"
 	"go.uber.org/zap"
@@ -42,8 +42,7 @@ type Config struct {
 
 	EC2APIV2 *aws_ec2_v2.Client
 	ASGAPIV2 *aws_asg_v2.Client
-
-	EKSAPI eksiface.EKSAPI
+	EKSAPI   eksiface.EKSAPI
 }
 
 var pkgName = reflect.TypeOf(tester{}).PkgPath()
@@ -52,7 +51,7 @@ func (ts *tester) Name() string { return pkgName }
 
 // New creates a new node waiter.
 func New(cfg Config) NodeWaiter {
-	cfg.Logger.Info("creating NodeWaiter", zap.String("tester", pkgName))
+	cfg.Logger.Info("creating node waiter", zap.String("tester", pkgName))
 	return &tester{cfg: cfg}
 }
 
@@ -70,10 +69,10 @@ func (ts *tester) waitForNodes(mngName string, retriesLeft int) error {
 		return fmt.Errorf("MNGs[%q] not found", mngName)
 	}
 
-	ts.cfg.Logger.Info("checking MNG", zap.String("mng-name", cur.Name))
+	ts.cfg.Logger.Info("checking MNG using EKS API", zap.String("mng-name", cur.Name))
 	dout, err := ts.cfg.EKSAPI.DescribeNodegroup(&eks.DescribeNodegroupInput{
-		ClusterName:   aws.String(ts.cfg.EKSConfig.Name),
-		NodegroupName: aws.String(cur.Name),
+		ClusterName:   aws_v2.String(ts.cfg.EKSConfig.Name),
+		NodegroupName: aws_v2.String(cur.Name),
 	})
 	if err != nil {
 		return err
@@ -88,7 +87,7 @@ func (ts *tester) waitForNodes(mngName string, retriesLeft int) error {
 		return fmt.Errorf("expected 1 ASG for %q, got %d", mngName, len(dout.Nodegroup.Resources.AutoScalingGroups))
 	}
 	if cur.RemoteAccessSecurityGroupID == "" {
-		cur.RemoteAccessSecurityGroupID = aws.StringValue(dout.Nodegroup.Resources.RemoteAccessSecurityGroup)
+		cur.RemoteAccessSecurityGroupID = aws_v2.ToString(dout.Nodegroup.Resources.RemoteAccessSecurityGroup)
 		ts.cfg.Logger.Info("checking MNG security group", zap.String("mng-name", cur.Name), zap.String("security-group-id", cur.RemoteAccessSecurityGroupID))
 	}
 	if cur.RemoteAccessSecurityGroupID == "" {
@@ -107,7 +106,7 @@ func (ts *tester) waitForNodes(mngName string, retriesLeft int) error {
 		return fmt.Errorf("MNGs[%q] not found", mngName)
 	}
 	asg := dout.Nodegroup.Resources.AutoScalingGroups[0]
-	cur.ASGName = aws.StringValue(asg.Name)
+	cur.ASGName = aws_v2.ToString(asg.Name)
 	ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
 	ts.cfg.EKSConfig.Sync()
 	ts.cfg.Logger.Info("checking MNG ASG", zap.String("mng-name", cur.Name), zap.String("asg-name", cur.ASGName))
@@ -247,8 +246,8 @@ func (ts *tester) waitForNodes(mngName string, retriesLeft int) error {
 				}
 				ts.cfg.Logger.Debug("node is ready!",
 					zap.String("name", nodeName),
-					zap.String("status-type", fmt.Sprintf("%s", cond.Type)),
-					zap.String("status", fmt.Sprintf("%s", cond.Status)),
+					zap.String("status-type", fmt.Sprint(cond.Type)),
+					zap.String("status", fmt.Sprint(cond.Status)),
 				)
 				readies++
 				break

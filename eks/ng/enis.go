@@ -2,6 +2,7 @@ package ng
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -9,8 +10,7 @@ import (
 	aws_v2 "github.com/aws/aws-sdk-go-v2/aws"
 	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
 	aws_ec2_v2_types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
+	smithy "github.com/aws/smithy-go"
 	"go.uber.org/zap"
 )
 
@@ -47,6 +47,9 @@ func (ts *tester) deleteENIs() bool {
 	deleted := false
 	for _, eni := range enis {
 		eniID := aws_v2.ToString(eni.NetworkInterfaceId)
+		if _, ok := ts.cfg.EKSConfig.Status.DeletedResources[eniID]; ok {
+			continue
+		}
 
 		ts.cfg.Logger.Warn("detaching ENI", zap.String("eni", eniID))
 		out, err := ts.cfg.EC2APIV2.DescribeNetworkInterfaces(
@@ -72,7 +75,7 @@ func (ts *tester) deleteENIs() bool {
 					context.Background(),
 					&aws_ec2_v2.DetachNetworkInterfaceInput{
 						AttachmentId: out.NetworkInterfaces[0].Attachment.AttachmentId,
-						Force:        aws.Bool(true),
+						Force:        aws_v2.Bool(true),
 					})
 				if err == nil {
 					ts.cfg.Logger.Info("successfully detached ENI", zap.String("eni", eniID))
@@ -89,7 +92,7 @@ func (ts *tester) deleteENIs() bool {
 			_, err = ts.cfg.EC2APIV2.DeleteNetworkInterface(
 				context.Background(),
 				&aws_ec2_v2.DeleteNetworkInterfaceInput{
-					NetworkInterfaceId: aws.String(eniID),
+					NetworkInterfaceId: aws_v2.String(eniID),
 				})
 			if err == nil {
 				ts.cfg.Logger.Info("successfully deleted ENI", zap.String("eni", eniID))
@@ -117,9 +120,11 @@ func (ts *tester) deleteENIs() bool {
 				ts.cfg.Logger.Warn("ENI still exists", zap.String("eni", eniID), zap.Error(derr))
 				continue
 			}
-			if awsErr, ok := err.(awserr.Error); ok {
-				if strings.Contains(awsErr.Code(), "InvalidNetworkInterfaceID.NotFound") {
-					ts.cfg.Logger.Info("confirmed ENI deletion", zap.String("eni", eniID))
+			var apiErr smithy.APIError
+			if errors.As(err, &apiErr) {
+				if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+					ts.cfg.EKSConfig.Status.DeletedResources[eniID] = "AddOnNodeGroups.ENI"
+					ts.cfg.EKSConfig.Sync()
 					deleted = true
 					break
 				}
@@ -128,7 +133,7 @@ func (ts *tester) deleteENIs() bool {
 			_, derr := ts.cfg.EC2APIV2.DeleteNetworkInterface(
 				context.Background(),
 				&aws_ec2_v2.DeleteNetworkInterfaceInput{
-					NetworkInterfaceId: aws.String(eniID),
+					NetworkInterfaceId: aws_v2.String(eniID),
 				})
 			ts.cfg.Logger.Warn("ENI still exists", zap.String("eni", eniID), zap.String("errors", fmt.Sprintf("%v, %v", err, derr)))
 		}

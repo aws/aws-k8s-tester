@@ -1063,6 +1063,7 @@ func (ts *tester) deletePublicNATGateways() (err error) {
 		if _, ok := ts.cfg.EKSConfig.Status.DeletedResources[id]; ok {
 			continue
 		}
+
 		_, err := ts.cfg.EC2APIV2.DeleteNatGateway(
 			context.Background(),
 			&aws_ec2_v2.DeleteNatGatewayInput{
@@ -1084,19 +1085,29 @@ func (ts *tester) deletePublicNATGateways() (err error) {
 			}
 			continue
 		}
-		for i := 0; i < 6; i++ {
+		for i := 0; i < 10; i++ {
 			time.Sleep(10 * time.Second)
-			_, err = ts.cfg.EC2APIV2.DeleteNatGateway(
+			_, err1 := ts.cfg.EC2APIV2.DeleteNatGateway(
 				context.Background(),
 				&aws_ec2_v2.DeleteNatGatewayInput{
 					NatGatewayId: aws_v2.String(id),
 				},
 			)
-			if err == nil {
+			_, err2 := ts.cfg.EC2APIV2.DescribeNatGateways(
+				context.Background(),
+				&aws_ec2_v2.DescribeNatGatewaysInput{
+					NatGatewayIds: []string{id},
+				},
+			)
+			if err2 == nil {
 				continue
 			}
+			ts.cfg.Logger.Warn("failed to describe NAT gateway during deletion",
+				zap.String("delete-error", fmt.Sprintf("%v", err1)),
+				zap.Error(err2),
+			)
 			var apiErr smithy.APIError
-			if errors.As(err, &apiErr) {
+			if errors.As(err2, &apiErr) {
 				if strings.Contains(apiErr.ErrorCode(), "NotFound") {
 					ts.cfg.EKSConfig.Status.DeletedResources[id] = "VPC.NATGatewayID"
 					ts.cfg.EKSConfig.Sync()

@@ -865,30 +865,30 @@ spec:
 	if cfg.AddOnManagedNodeGroups.FetchLogs {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.FetchLogs %v", cfg.AddOnManagedNodeGroups.FetchLogs)
 	}
-	if !cfg.AddOnManagedNodeGroups.RoleCreate {
-		t.Fatalf("unexpected AddOnManagedNodeGroups.RoleCreate %v", cfg.AddOnManagedNodeGroups.RoleCreate)
+	if !cfg.AddOnManagedNodeGroups.Role.Create {
+		t.Fatalf("unexpected AddOnManagedNodeGroups.RoleCreate %v", cfg.AddOnManagedNodeGroups.Role.Create)
 	}
-	if cfg.AddOnManagedNodeGroups.RoleName != "mng-role-name" {
-		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RoleName %q", cfg.AddOnManagedNodeGroups.RoleName)
+	if cfg.AddOnManagedNodeGroups.Role.Name != "mng-role-name" {
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RoleName %q", cfg.AddOnManagedNodeGroups.Role.Name)
 	}
-	if cfg.AddOnManagedNodeGroups.RoleARN != "mng-role-arn" {
-		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RoleARN %q", cfg.AddOnManagedNodeGroups.RoleARN)
+	if cfg.AddOnManagedNodeGroups.Role.ARN != "mng-role-arn" {
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RoleARN %q", cfg.AddOnManagedNodeGroups.Role.ARN)
 	}
 	expectedMNGRoleServicePrincipals := []string{
 		"ec2.amazonaws.com",
 		"eks.amazonaws.com",
 		"hello.amazonaws.com",
 	}
-	if !reflect.DeepEqual(expectedMNGRoleServicePrincipals, cfg.AddOnManagedNodeGroups.RoleServicePrincipals) {
-		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RoleServicePrincipals %+v", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
+	if !reflect.DeepEqual(expectedMNGRoleServicePrincipals, cfg.AddOnManagedNodeGroups.Role.ServicePrincipals) {
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RoleServicePrincipals %+v", cfg.AddOnManagedNodeGroups.Role.ServicePrincipals)
 	}
 	expectedMNGRoleManagedPolicyARNs := []string{
 		"a",
 		"b",
 		"c",
 	}
-	if !reflect.DeepEqual(expectedMNGRoleManagedPolicyARNs, cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs) {
-		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs %+v", cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs)
+	if !reflect.DeepEqual(expectedMNGRoleManagedPolicyARNs, cfg.AddOnManagedNodeGroups.Role.ManagedPolicyARNs) {
+		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs %+v", cfg.AddOnManagedNodeGroups.Role.ManagedPolicyARNs)
 	}
 	if cfg.AddOnManagedNodeGroups.RequestHeaderKey != "a" {
 		t.Fatalf("unexpected cfg.AddOnManagedNodeGroups.RequestHeaderKey %q", cfg.AddOnManagedNodeGroups.RequestHeaderKey)
@@ -1603,9 +1603,6 @@ spec:
 		t.Fatalf("unexpected cfg.AddOnStresserRemoteV2.Secrets %d", cfg.AddOnStresserRemoteV2.Secrets)
 	}
 
-	cfg.AddOnManagedNodeGroups.RoleName = ""
-	cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs = nil
-	cfg.AddOnManagedNodeGroups.RoleServicePrincipals = nil
 	if err := cfg.ValidateAndSetDefaults(); err != nil {
 		t.Fatal(err)
 	}
@@ -1738,10 +1735,6 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 	}
 
 	cur2 := cfg.AddOnManagedNodeGroups.MNGs[cfg.Name+"-mng-for-cni"]
-	cur2.MNGCFNStackYAMLPath = ""
-	cur2.MNGCFNStackYAMLS3Key = ""
-	cur2.RemoteAccessSecurityCFNStackYAMLPath = ""
-	cur2.RemoteAccessSecurityCFNStackYAMLS3Key = ""
 	cfg.AddOnManagedNodeGroups.MNGs[cfg.Name+"-mng-for-cni"] = cur2
 	expectedMNGs := map[string]MNG{
 		cfg.Name + "-mng-for-cni": {
@@ -1877,10 +1870,6 @@ func TestEnvAddOnManagedNodeGroupsCNI(t *testing.T) {
 		t.Fatalf("unexpected cfg.RemoteAccessPrivateKeyPath %q", cfg.RemoteAccessPrivateKeyPath)
 	}
 	cur := cfg.AddOnManagedNodeGroups.MNGs["test-mng-for-cni"]
-	cur.MNGCFNStackYAMLPath = ""
-	cur.MNGCFNStackYAMLS3Key = ""
-	cur.RemoteAccessSecurityCFNStackYAMLPath = ""
-	cur.RemoteAccessSecurityCFNStackYAMLS3Key = ""
 	cfg.AddOnManagedNodeGroups.MNGs["test-mng-for-cni"] = cur
 	expectedMNGs := map[string]MNG{
 		"test-mng-for-cni": {

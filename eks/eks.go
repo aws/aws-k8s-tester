@@ -176,9 +176,10 @@ type Tester struct {
 	ecrAPIV2         *aws_ecr_v2.Client
 
 	// used for EKS + EKS MNG API calls
-	eksSession *session.Session
-	eksAPI     eksiface.EKSAPI
-	eksAPIV2   *aws_eks_v2.Client
+	eksAPIForCluster   eksiface.EKSAPI
+	eksAPIForClusterV2 *aws_eks_v2.Client
+	eksAPIForMNG       eksiface.EKSAPI
+	eksAPIForMNGV2     *aws_eks_v2.Client
 
 	s3Uploaded bool
 
@@ -496,7 +497,8 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	}
 
 	// create a separate session for EKS (for resolver endpoint)
-	ts.eksSession, _, ts.cfg.Status.AWSCredentialPath, err = pkg_aws.New(&pkg_aws.Config{
+	var eksSessionForCluster *session.Session
+	eksSessionForCluster, _, ts.cfg.Status.AWSCredentialPath, err = pkg_aws.New(&pkg_aws.Config{
 		Logger:        ts.lg,
 		DebugAPICalls: ts.cfg.LogLevel == "debug",
 		Partition:     ts.cfg.Partition,
@@ -507,9 +509,8 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	if err != nil {
 		return nil, err
 	}
-	ts.eksAPI = aws_eks.New(ts.eksSession)
+	ts.eksAPIForCluster = aws_eks.New(eksSessionForCluster)
 
-	ts.lg.Info("checking AWS SDK Go v2 for EKS")
 	awsCfgV2EKS, err := pkg_aws.NewV2(&pkg_aws.Config{
 		Logger:        ts.lg,
 		DebugAPICalls: ts.cfg.LogLevel == "debug",
@@ -521,11 +522,40 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	if err != nil {
 		return nil, err
 	}
-	ts.eksAPIV2 = aws_eks_v2.NewFromConfig(awsCfgV2EKS)
+	ts.eksAPIForClusterV2 = aws_eks_v2.NewFromConfig(awsCfgV2EKS)
+
+	if ts.cfg.IsEnabledAddOnManagedNodeGroups() {
+		var eksSessionForMNG *session.Session
+		eksSessionForMNG, _, ts.cfg.Status.AWSCredentialPath, err = pkg_aws.New(&pkg_aws.Config{
+			Logger:        ts.lg,
+			DebugAPICalls: ts.cfg.LogLevel == "debug",
+			Partition:     ts.cfg.Partition,
+			Region:        ts.cfg.Region,
+			ResolverURL:   ts.cfg.AddOnManagedNodeGroups.ResolverURL,
+			SigningName:   ts.cfg.AddOnManagedNodeGroups.SigningName,
+		})
+		if err != nil {
+			return nil, err
+		}
+		ts.eksAPIForMNG = aws_eks.New(eksSessionForMNG)
+
+		awsCfgV2EKS, err := pkg_aws.NewV2(&pkg_aws.Config{
+			Logger:        ts.lg,
+			DebugAPICalls: ts.cfg.LogLevel == "debug",
+			Partition:     ts.cfg.Partition,
+			Region:        ts.cfg.Region,
+			ResolverURL:   ts.cfg.AddOnManagedNodeGroups.ResolverURL,
+			SigningName:   ts.cfg.AddOnManagedNodeGroups.SigningName,
+		})
+		if err != nil {
+			return nil, err
+		}
+		ts.eksAPIForMNGV2 = aws_eks_v2.NewFromConfig(awsCfgV2EKS)
+	}
 
 	ts.lg.Info("checking EKS API v1 availability; listing clusters")
 	var eksListResp *aws_eks.ListClustersOutput
-	eksListResp, err = ts.eksAPI.ListClusters(&aws_eks.ListClustersInput{
+	eksListResp, err = ts.eksAPIForCluster.ListClusters(&aws_eks.ListClustersInput{
 		MaxResults: aws.Int64(20),
 	})
 	if err != nil {
@@ -539,7 +569,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 	ts.lg.Info("checking EKS API v2 availability; listing clusters")
 	var eksListRespV2 *aws_eks_v2.ListClustersOutput
 	cctx, ccancel := context.WithTimeout(context.Background(), 10*time.Second)
-	eksListRespV2, err = ts.eksAPIV2.ListClusters(
+	eksListRespV2, err = ts.eksAPIForClusterV2.ListClusters(
 		cctx,
 		&aws_eks_v2.ListClustersInput{
 			MaxResults: aws.Int32(20),
@@ -618,8 +648,8 @@ func (ts *Tester) createTesters() (err error) {
 		KMSAPIV2:   ts.kmsAPIV2,
 		CFNAPI:     ts.cfnAPI,
 		EC2APIV2:   ts.ec2APIV2,
-		EKSAPI:     ts.eksAPI,
-		EKSAPIV2:   ts.eksAPIV2,
+		EKSAPI:     ts.eksAPIForCluster,
+		EKSAPIV2:   ts.eksAPIForClusterV2,
 		ELBV2APIV2: ts.elbv2APIV2,
 	})
 
@@ -654,12 +684,10 @@ func (ts *Tester) createTesters() (err error) {
 		IAMAPIV2: ts.iamAPIV2,
 		EC2APIV2: ts.ec2APIV2,
 		ASGAPIV2: ts.asgAPIV2,
-		EKSAPI:   ts.eksAPI,
+		EKSAPI:   ts.eksAPIForMNG,
+		EKSAPIV2: ts.eksAPIForMNGV2,
 
-		IAMAPI: ts.iamAPI,
 		CFNAPI: ts.cfnAPI,
-		EC2API: ts.ec2API,
-		ASGAPI: ts.asgAPI,
 	})
 	ts.gpuTester = gpu.New(gpu.Config{
 		Logger:    ts.lg,
@@ -873,7 +901,7 @@ func (ts *Tester) createTesters() (err error) {
 			S3API:     ts.s3API,
 			IAMAPI:    ts.iamAPI,
 			CFNAPI:    ts.cfnAPI,
-			EKSAPI:    ts.eksAPI,
+			EKSAPI:    ts.eksAPIForCluster,
 			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnFargateRepositoryRegion())),
 		}),
 		irsa.New(irsa.Config{
@@ -896,7 +924,7 @@ func (ts *Tester) createTesters() (err error) {
 			S3API:     ts.s3API,
 			IAMAPI:    ts.iamAPI,
 			CFNAPI:    ts.cfnAPI,
-			EKSAPI:    ts.eksAPI,
+			EKSAPI:    ts.eksAPIForCluster,
 			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnIRSAFargateRepositoryRegion())),
 		}),
 		wordpress.New(wordpress.Config{
@@ -995,7 +1023,7 @@ func (ts *Tester) createTesters() (err error) {
 			Stopc:     ts.stopCreationCh,
 			EKSConfig: ts.cfg,
 			K8SClient: ts.k8sClient,
-			EKSAPI:    ts.eksAPI,
+			EKSAPI:    ts.eksAPIForCluster,
 		}),
 		ami_soft_lockup_issue_454.New(ami_soft_lockup_issue_454.Config{
 			Logger:    ts.lg,

@@ -3,7 +3,6 @@ package eksconfig
 import (
 	"errors"
 	"fmt"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -26,10 +25,6 @@ type AddOnNodeGroups struct {
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
 	Role *Role `json:"role"`
-
-	// S3Dir is the S3 directory to store all test results.
-	// It is under the bucket "eksconfig.Config.S3BucketName".
-	S3Dir string `json:"s3-dir"`
 
 	// FetchLogs is true to fetch logs from remote nodes using SSH.
 	FetchLogs bool `json:"fetch-logs"`
@@ -77,8 +72,8 @@ type ASG struct {
 }
 
 const (
-	// EnvironmentVariablePrefixAddOnNodeGroups is the environment variable prefix used for "eksconfig".
-	EnvironmentVariablePrefixAddOnNodeGroups = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_NODE_GROUPS_"
+	// AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_PREFIX is the environment variable prefix used for "eksconfig".
+	AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_PREFIX = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_NODE_GROUPS_"
 )
 
 // IsEnabledAddOnNodeGroups returns true if "AddOnNodeGroups" is enabled.
@@ -168,10 +163,6 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 
 	if cfg.VersionValue < 1.14 {
 		return fmt.Errorf("version %q not supported for AddOnNodeGroups", cfg.Version)
-	}
-
-	if cfg.AddOnNodeGroups.S3Dir == "" {
-		cfg.AddOnNodeGroups.S3Dir = path.Join(cfg.Name, "add-on-node-groups")
 	}
 
 	if cfg.AddOnNodeGroups.LogsDir == "" {
@@ -279,16 +270,15 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			}
 		}
 
-		if cur.ASGMinSize == 0 && cur.ASGDesiredCapacity == 0 {
-			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGMinSize/ASGDesiredCapacity must be >0", k)
+		if cur.ASGMinSize == 0 {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGMinSize must be >0", k)
 		}
-		if cur.ASGDesiredCapacity > 0 && cur.ASGMinSize == 0 {
-			cur.ASGMinSize = cur.ASGDesiredCapacity
+		if cur.ASGDesiredCapacity == 0 {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGDesiredCapacity must be >0", k)
 		}
-		if cur.ASGDesiredCapacity > 0 && cur.ASGMaxSize == 0 {
-			cur.ASGMaxSize = cur.ASGDesiredCapacity
+		if cur.ASGMaxSize == 0 {
+			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGMaxSize must be >0", k)
 		}
-
 		if cur.ASGMinSize > cur.ASGMaxSize {
 			return fmt.Errorf("AddOnNodeGroups.ASGs[%q].ASGMinSize %d > ASGMaxSize %d", k, cur.ASGMinSize, cur.ASGMaxSize)
 		}

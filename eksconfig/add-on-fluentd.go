@@ -73,8 +73,8 @@ type AddOnFluentd struct {
 	MetadataSkipNamespaceMetadata bool `json:"metadata-skip-namespace-metadata"`
 }
 
-// EnvironmentVariablePrefixAddOnFluentd is the environment variable prefix used for "eksconfig".
-const EnvironmentVariablePrefixAddOnFluentd = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_FLUENTD_"
+// AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_PREFIX is the environment variable prefix used for "eksconfig".
+const AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_PREFIX = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_FLUENTD_"
 
 // IsEnabledAddOnFluentd returns true if "AddOnFluentd" is enabled.
 // Otherwise, nil the field for "omitempty".

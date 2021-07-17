@@ -30,7 +30,6 @@ func (ts *tester) createASGs() (err error) {
 	if err = ts.waitForASGs(tss); err != nil {
 		return err
 	}
-
 	return nil
 }
 

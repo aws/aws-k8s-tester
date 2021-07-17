@@ -227,8 +227,8 @@ func (ts *tester) createPolicy() error {
 	if ts.cfg.EKSConfig.AddOnNodeGroups != nil && ts.cfg.EKSConfig.Role.Name != "" {
 		roleNames = append(roleNames, ts.cfg.EKSConfig.Role.Name)
 	}
-	if ts.cfg.EKSConfig.AddOnManagedNodeGroups != nil && ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName != "" {
-		roleNames = append(roleNames, ts.cfg.EKSConfig.AddOnManagedNodeGroups.RoleName)
+	if ts.cfg.EKSConfig.AddOnManagedNodeGroups != nil && ts.cfg.EKSConfig.AddOnManagedNodeGroups.Role.Name != "" {
+		roleNames = append(roleNames, ts.cfg.EKSConfig.AddOnManagedNodeGroups.Role.Name)
 	}
 	if len(roleNames) == 0 {
 		return errors.New("roles not found from node group or managed node group")

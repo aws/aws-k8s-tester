@@ -114,7 +114,7 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 	if cfg.AddOnCNIVPC == nil {
 		cfg.AddOnCNIVPC = &AddOnCNIVPC{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCNIVPC, cfg.AddOnCNIVPC)
+	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_ADD_ON_CNI_VPC_PREFIX, cfg.AddOnCNIVPC)
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 	if cfg.AddOnNodeGroups == nil {
 		cfg.AddOnNodeGroups = &AddOnNodeGroups{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnNodeGroups, cfg.AddOnNodeGroups)
+	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_PREFIX, cfg.AddOnNodeGroups)
 	if err != nil {
 		return err
 	}
@@ -140,7 +140,7 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 	if cfg.AddOnNodeGroups.Role == nil {
 		cfg.AddOnNodeGroups.Role = &Role{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnNodeGroups+"ROLE_", cfg.AddOnNodeGroups.Role)
+	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_PREFIX+"ROLE_", cfg.AddOnNodeGroups.Role)
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 	if cfg.AddOnManagedNodeGroups == nil {
 		cfg.AddOnManagedNodeGroups = &AddOnManagedNodeGroups{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnManagedNodeGroups, cfg.AddOnManagedNodeGroups)
+	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_PREFIX, cfg.AddOnManagedNodeGroups)
 	if err != nil {
 		return err
 	}
@@ -163,10 +163,23 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnManagedNodeGroups, got %T", vv)
 	}
 
+	if cfg.AddOnManagedNodeGroups.Role == nil {
+		cfg.AddOnManagedNodeGroups.Role = &Role{}
+	}
+	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_PREFIX+"ROLE_", cfg.AddOnManagedNodeGroups.Role)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*Role); ok {
+		cfg.AddOnManagedNodeGroups.Role = av
+	} else {
+		return fmt.Errorf("expected *AddOnManagedNodeGroups.Role, got %T", vv)
+	}
+
 	if cfg.AddOnCWAgent == nil {
 		cfg.AddOnCWAgent = &AddOnCWAgent{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnCWAgent, cfg.AddOnCWAgent)
+	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_ADD_ON_CW_AGENT_PREFIX, cfg.AddOnCWAgent)
 	if err != nil {
 		return err
 	}
@@ -179,7 +192,7 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 	if cfg.AddOnFluentd == nil {
 		cfg.AddOnFluentd = &AddOnFluentd{}
 	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnFluentd, cfg.AddOnFluentd)
+	vv, err = parseEnvs(AWS_K8S_TESTER_EKS_ADD_ON_FLUENTD_PREFIX, cfg.AddOnFluentd)
 	if err != nil {
 		return err
 	}

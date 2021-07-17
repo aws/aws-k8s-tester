@@ -3,7 +3,6 @@ package eksconfig
 import (
 	"errors"
 	"fmt"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -26,28 +25,10 @@ type AddOnManagedNodeGroups struct {
 	TimeFrameCreate timeutil.TimeFrame `json:"time-frame-create" read-only:"true"`
 	TimeFrameDelete timeutil.TimeFrame `json:"time-frame-delete" read-only:"true"`
 
-	// S3Dir is the S3 directory to store all test results.
-	// It is under the bucket "eksconfig.Config.S3BucketName".
-	S3Dir string `json:"s3-dir"`
-
 	// FetchLogs is true to fetch logs from remote nodes using SSH.
 	FetchLogs bool `json:"fetch-logs"`
 
-	// RoleName is the name of the managed node group.
-	RoleName string `json:"role-name"`
-	// RoleCreate is true to auto-create and delete role.
-	RoleCreate bool `json:"role-create"`
-	// RoleARN is the role ARN that EKS managed node group uses to create AWS
-	// resources for Kubernetes.
-	// By default, it's empty which triggers tester to create one.
-	RoleARN string `json:"role-arn"`
-	// RoleServicePrincipals is the node group Service Principals
-	RoleServicePrincipals []string `json:"role-service-principals"`
-	// RoleManagedPolicyARNs is node group managed policy ARNs.
-	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
-	RoleCFNStackYAMLPath  string   `json:"role-cfn-stack-yaml-path" read-only:"true"`
-	RoleCFNStackYAMLS3Key string   `json:"role-cfn-stack-yaml-s3-key" read-only:"true"`
+	Role *Role `json:"role"`
 
 	// RequestHeaderKey defines EKS managed node group create cluster request header key.
 	RequestHeaderKey string `json:"request-header-key,omitempty"`
@@ -130,15 +111,9 @@ type MNG struct {
 	// PhysicalID is the Physical ID for the created "AWS::EKS::Nodegroup".
 	PhysicalID string `json:"physical-id" read-only:"true"`
 
-	// MNGCFNStackID is the CloudFormation stack ID for a managed node group.
-	MNGCFNStackID        string `json:"mng-cfn-stack-id" read-only:"true"`
-	MNGCFNStackYAMLPath  string `json:"mng-cfn-stack-yaml-path" read-only:"true"`
-	MNGCFNStackYAMLS3Key string `json:"mng-cfn-stack-yaml-s3-key" read-only:"true"`
-
-	RemoteAccessSecurityGroupID                      string `json:"remote-access-security-group-id" read-only:"true"`
-	RemoteAccessSecurityGroupIngressEgressCFNStackID string `json:"remote-access-security-group-ingress-egress-cfn-stack-id" read-only:"true"`
-	RemoteAccessSecurityCFNStackYAMLPath             string `json:"remote-access-security-group-cfn-stack-yaml-path" read-only:"true"`
-	RemoteAccessSecurityCFNStackYAMLS3Key            string `json:"remote-access-security-group-cfn-stack-yaml-s3-key" read-only:"true"`
+	// RemoteAccessSecurityGroupID is the security group ID for the MNG.
+	// Returned from EKS MNG API.
+	RemoteAccessSecurityGroupID string `json:"remote-access-security-group-id" read-only:"true"`
 
 	// Status is the current status of EKS "Managed Node Group".
 	Status string `json:"status" read-only:"true"`
@@ -200,8 +175,8 @@ type MNGVersionUpgrade struct {
 	VersionValue float64 `json:"version-value" read-only:"true"`
 }
 
-// EnvironmentVariablePrefixAddOnManagedNodeGroups is the environment variable prefix used for "eksconfig".
-const EnvironmentVariablePrefixAddOnManagedNodeGroups = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_MANAGED_NODE_GROUPS_"
+// AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_PREFIX is the environment variable prefix used for "eksconfig".
+const AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_PREFIX = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_MANAGED_NODE_GROUPS_"
 
 // IsEnabledAddOnManagedNodeGroups returns true if "AddOnManagedNodeGroups" is enabled.
 // Otherwise, nil the field for "omitempty".
@@ -221,7 +196,7 @@ func getDefaultAddOnManagedNodeGroups(name string) *AddOnManagedNodeGroups {
 		Enable:      false,
 		FetchLogs:   false,
 		SigningName: "eks",
-		RoleCreate:  true,
+		Role:        getDefaultRole(),
 		LogsDir:     "", // to be auto-generated
 		MNGs: map[string]MNG{
 			name + "-mng-cpu": {
@@ -257,10 +232,6 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		return fmt.Errorf("Version %q not supported for AddOnManagedNodeGroups", cfg.Version)
 	}
 
-	if cfg.AddOnManagedNodeGroups.S3Dir == "" {
-		cfg.AddOnManagedNodeGroups.S3Dir = path.Join(cfg.Name, "add-on-managed-node-groups")
-	}
-
 	if cfg.AddOnManagedNodeGroups.LogsDir == "" {
 		cfg.AddOnManagedNodeGroups.LogsDir = filepath.Join(filepath.Dir(cfg.ConfigPath), cfg.Name+"-logs-mngs")
 	}
@@ -271,26 +242,12 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		return fmt.Errorf("AddOnManagedNodeGroups.LogsTarGzPath %q must end with .tar.gz", cfg.AddOnManagedNodeGroups.LogsTarGzPath)
 	}
 
-	if cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLPath == "" {
-		cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".add-on-managed-node-groups.role.cfn.yaml"
-	}
-	if cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLS3Key == "" {
-		cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLS3Key = path.Join(
-			cfg.AddOnManagedNodeGroups.S3Dir,
-			filepath.Base(cfg.AddOnManagedNodeGroups.RoleCFNStackYAMLPath),
-		)
-	}
-	switch cfg.AddOnManagedNodeGroups.RoleCreate {
+	switch cfg.AddOnManagedNodeGroups.Role.Create {
 	case true: // need create one, or already created
-		if cfg.AddOnManagedNodeGroups.RoleName == "" {
-			cfg.AddOnManagedNodeGroups.RoleName = cfg.Name + "-mng-role"
+		if cfg.AddOnManagedNodeGroups.Role.Name == "" {
+			cfg.AddOnManagedNodeGroups.Role.Name = cfg.Name + "-mng-role"
 		}
-		if cfg.AddOnManagedNodeGroups.RoleARN != "" {
-			// just ignore...
-			// could be populated from previous run
-			// do not error, so long as RoleCreate false, role won't be deleted
-		}
-		if len(cfg.AddOnManagedNodeGroups.RoleServicePrincipals) > 0 {
+		if len(cfg.AddOnManagedNodeGroups.Role.ServicePrincipals) > 0 {
 			/*
 				(InvalidParameterException: Following required service principals [ec2.amazonaws.com] were not found in the trust relationships of nodeRole arn:aws:iam::...:role/test-mng-role
 				{
@@ -300,32 +257,26 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 				})
 			*/
 			found := false
-			for _, pv := range cfg.AddOnManagedNodeGroups.RoleServicePrincipals {
+			for _, pv := range cfg.AddOnManagedNodeGroups.Role.ServicePrincipals {
 				if pv == "ec2.amazonaws.com" || pv == "ec2.amazonaws.com.cn" {
 					found = true
 					break
 				}
 			}
 			if !found {
-				return fmt.Errorf("AddOnManagedNodeGroups.RoleServicePrincipals %q must include 'ec2.amazonaws.com' or 'ec2.amazonaws.com.cn'", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
+				return fmt.Errorf("AddOnManagedNodeGroups.Role.ServicePrincipals %q must include 'ec2.amazonaws.com' or 'ec2.amazonaws.com.cn'", cfg.AddOnManagedNodeGroups.Role.ServicePrincipals)
 			}
 		}
 
 	case false: // use existing one
-		if cfg.AddOnManagedNodeGroups.RoleARN == "" {
-			return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false; expect non-empty RoleARN but got %q", cfg.AddOnManagedNodeGroups.RoleARN)
+		if cfg.AddOnManagedNodeGroups.Role.ARN == "" {
+			return fmt.Errorf("AddOnManagedNodeGroups.Role.Create false; expect non-empty RoleARN but got %q", cfg.AddOnManagedNodeGroups.Role.ARN)
 		}
-		if cfg.AddOnManagedNodeGroups.RoleName == "" {
-			cfg.AddOnManagedNodeGroups.RoleName = getNameFromARN(cfg.AddOnManagedNodeGroups.RoleARN)
-		}
-		if len(cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs) > 0 {
-			return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false; expect empty RoleManagedPolicyARNs but got %q", cfg.AddOnManagedNodeGroups.RoleManagedPolicyARNs)
-		}
-		if len(cfg.AddOnManagedNodeGroups.RoleServicePrincipals) > 0 {
-			return fmt.Errorf("AddOnManagedNodeGroups.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.AddOnManagedNodeGroups.RoleServicePrincipals)
+		if cfg.AddOnManagedNodeGroups.Role.Name == "" {
+			cfg.AddOnManagedNodeGroups.Role.Name = getNameFromARN(cfg.AddOnManagedNodeGroups.Role.ARN)
 		}
 		if cfg.IsEnabledAddOnStresserRemote() {
-			return errors.New("'AddOnStresserRemote.Enable == true' requires 'AddOnManagedNodeGroups.RoleCreate == true' but got 'false'")
+			return errors.New("'AddOnStresserRemote.Enable == true' requires 'AddOnManagedNodeGroups.Role.Create == true' but got 'false'")
 		}
 	}
 
@@ -438,26 +389,6 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			cur.RemoteAccessUserName = "ec2-user"
 		}
 
-		if cur.MNGCFNStackYAMLPath == "" {
-			cur.MNGCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".mng.cfn." + k + ".yaml"
-		}
-		if cur.MNGCFNStackYAMLS3Key == "" {
-			cur.MNGCFNStackYAMLS3Key = path.Join(
-				cfg.AddOnManagedNodeGroups.S3Dir,
-				filepath.Base(cur.MNGCFNStackYAMLPath),
-			)
-		}
-
-		if cur.RemoteAccessSecurityCFNStackYAMLPath == "" {
-			cur.RemoteAccessSecurityCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".mng-sg.cfn." + k + ".yaml"
-		}
-		if cur.RemoteAccessSecurityCFNStackYAMLS3Key == "" {
-			cur.RemoteAccessSecurityCFNStackYAMLS3Key = path.Join(
-				cfg.AddOnManagedNodeGroups.S3Dir,
-				filepath.Base(cur.RemoteAccessSecurityCFNStackYAMLPath),
-			)
-		}
-
 		switch cur.AMIType {
 		case eks.AMITypesAl2X8664:
 			if cur.RemoteAccessUserName != "ec2-user" {
@@ -501,16 +432,15 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			}
 		}
 
-		if cur.ASGMinSize == 0 && cur.ASGDesiredCapacity == 0 {
-			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMinSize/ASGDesiredCapacity must be >0", k)
+		if cur.ASGMinSize == 0 {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMinSize must be >0", k)
 		}
-		if cur.ASGDesiredCapacity > 0 && cur.ASGMinSize == 0 {
-			cur.ASGMinSize = cur.ASGDesiredCapacity
+		if cur.ASGDesiredCapacity == 0 {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGDesiredCapacity must be >0", k)
 		}
-		if cur.ASGDesiredCapacity > 0 && cur.ASGMaxSize == 0 {
-			cur.ASGMaxSize = cur.ASGDesiredCapacity
+		if cur.ASGMaxSize == 0 {
+			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMaxSize must be >0", k)
 		}
-
 		if cur.ASGMinSize > cur.ASGMaxSize {
 			return fmt.Errorf("AddOnManagedNodeGroups.MNGs[%q].ASGMinSize %d > ASGMaxSize %d", k, cur.ASGMinSize, cur.ASGMaxSize)
 		}

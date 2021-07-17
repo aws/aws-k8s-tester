@@ -46,7 +46,7 @@ func (ts *tester) Name() string { return pkgName }
 
 // New creates a new node waiter.
 func New(cfg Config) NodeWaiter {
-	cfg.Logger.Info("creating NodeWaiter", zap.String("tester", pkgName))
+	cfg.Logger.Info("creating node waiter", zap.String("tester", pkgName))
 	return &tester{cfg: cfg}
 }
 
@@ -64,7 +64,7 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 		return fmt.Errorf("ASGs[%q] not found", asgName)
 	}
 
-	ts.cfg.Logger.Info("checking ASG", zap.String("asg-name", cur.Name))
+	ts.cfg.Logger.Info("checking NG using ASG API", zap.String("asg-name", cur.Name))
 	aout, err := ts.cfg.ASGAPIV2.DescribeAutoScalingGroups(
 		context.Background(),
 		&aws_asg_v2.DescribeAutoScalingGroupsInput{

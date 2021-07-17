@@ -200,6 +200,10 @@ func (ts *tester) Delete() error {
 		return errors.New("stopped")
 	}
 
+	if err := ts.revokeSecurityGroups(); err != nil {
+		ts.cfg.Logger.Warn("failed to revoke SG", zap.Error(err))
+		errs = append(errs, err.Error())
+	}
 	if err := ts.deleteSecurityGroups(); err != nil {
 		ts.cfg.Logger.Warn("failed to delete SG", zap.Error(err))
 		errs = append(errs, err.Error())

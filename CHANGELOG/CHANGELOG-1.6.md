@@ -18,6 +18,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.0...v1.6.1
   - after, `AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS='{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34, "instance-type":"type-2", "image-id":"my-ami",  "ssm":{"document-create":true,    "document-name":"GetRef.Name-document"}, "kubelet-extra-args":"aaa aa", "cluster-autoscaler": {"enable" : true}, "volume-size":500}}'`
 - Rename [`AddOnNodeGroups.ASG.InstanceTypes` to `InstanceType`](https://github.com/aws/aws-k8s-tester/commit/a4a3e3635466731519a38f411a1035318fecec59).
   - Rename `"instance-types"` to `"instance-type"`.
+- [Remove CloudFormation dependency from `AddOnManagedNodeGroups`](https://github.com/aws/aws-k8s-tester/commit/).
 
 ### `k8s-tester`
 
