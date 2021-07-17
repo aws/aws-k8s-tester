@@ -174,7 +174,10 @@ func (ts *tester) UpgradeVersion() (err error) {
 		return nil
 	}
 
-	for mngName := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+	for mngName, cur := range ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs {
+		if cur.VersionUpgrade == nil || !cur.VersionUpgrade.Enable {
+			continue
+		}
 		if err = ts.versionUpgrader.Upgrade(mngName); err != nil {
 			return err
 		}
