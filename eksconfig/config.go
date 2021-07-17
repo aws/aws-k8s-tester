@@ -497,6 +497,8 @@ func getDefaultRole() *Role {
 			"arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
 			"arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess",
 			"arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
+			"arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",          // required for MNG
+			"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly", // required for MNG
 			"arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy",
 		},
 	}
