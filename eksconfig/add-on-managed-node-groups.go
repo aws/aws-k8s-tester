@@ -279,6 +279,9 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			return errors.New("'AddOnStresserRemote.Enable == true' requires 'AddOnManagedNodeGroups.Role.Create == true' but got 'false'")
 		}
 	}
+	if cfg.AddOnManagedNodeGroups.Role.PolicyName == "" {
+		cfg.AddOnManagedNodeGroups.Role.PolicyName = cfg.Name + "-managed-node-group-policy"
+	}
 
 	names, processed := make(map[string]struct{}), make(map[string]MNG)
 	for k, cur := range cfg.AddOnManagedNodeGroups.MNGs {
@@ -300,7 +303,7 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		if cfg.IsEnabledAddOnNodeGroups() {
 			_, ok = cfg.AddOnNodeGroups.ASGs[cur.Name]
 			if ok {
-				return fmt.Errorf("MNGs[%q] name is conflicting with NG ASG", cur.Name)
+				return fmt.Errorf("MNGs[%q] name already exists (conflict) in AddOnNodeGroups.ASGs", cur.Name)
 			}
 		}
 

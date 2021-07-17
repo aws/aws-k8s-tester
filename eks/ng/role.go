@@ -158,6 +158,9 @@ func (ts *tester) _deleteRole() error {
 // https://github.com/kubernetes-sigs/aws-alb-ingress-controller/blob/master/docs/examples/iam-policy.json
 // https://github.com/aws/eks-charts/tree/master/stable/appmesh-controller
 func (ts *tester) createPolicy() error {
+	if ts.cfg.EKSConfig.AddOnNodeGroups.Role.PolicyName == "" {
+		return errors.New("emtpy PolicyName")
+	}
 	ts.cfg.Logger.Info("creating policy", zap.String("name", ts.cfg.EKSConfig.AddOnNodeGroups.Role.PolicyName))
 	pout, err := ts.cfg.IAMAPIV2.CreatePolicy(
 		context.Background(),
