@@ -328,6 +328,9 @@ func (cfg *Config) validateASGs() error {
 		if cur.ImageID != "" && cur.ImageIDSSMParameter != "" {
 			cur.ImageID = ""
 		}
+		if cur.LaunchTemplateName == "" {
+			cur.LaunchTemplateName = cur.Name + "-launch-template"
+		}
 
 		switch cur.AMIType {
 		case AMITypeAL2ARM64:
@@ -371,16 +374,15 @@ func (cfg *Config) validateASGs() error {
 			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, cur.AMIType)
 		}
 
-		if cur.ASGMinSize == 0 && cur.ASGDesiredCapacity == 0 {
-			return fmt.Errorf("ASGs[%q].ASGMinSize/ASGDesiredCapacity must be >0", k)
+		if cur.ASGMinSize == 0 {
+			return fmt.Errorf("ASGs[%q].ASGMinSize must be >0", k)
 		}
-		if cur.ASGDesiredCapacity > 0 && cur.ASGMinSize == 0 {
-			cur.ASGMinSize = cur.ASGDesiredCapacity
+		if cur.ASGDesiredCapacity == 0 {
+			return fmt.Errorf("ASGs[%q].ASGDesiredCapacity must be >0", k)
 		}
-		if cur.ASGDesiredCapacity > 0 && cur.ASGMaxSize == 0 {
-			cur.ASGMaxSize = cur.ASGDesiredCapacity
+		if cur.ASGMaxSize == 0 {
+			return fmt.Errorf("ASGs[%q].ASGMaxSize must be >0", k)
 		}
-
 		if cur.ASGMinSize > cur.ASGMaxSize {
 			return fmt.Errorf("ASGs[%q].ASGMinSize %d > ASGMaxSize %d", k, cur.ASGMinSize, cur.ASGMaxSize)
 		}
