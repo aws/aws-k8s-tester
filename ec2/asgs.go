@@ -369,8 +369,7 @@ func (ts *Tester) waitForASGs(tss tupleTimes) (err error) {
 		cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, time.Now())
 		ts.cfg.ASGs[asgName] = cur
 		ts.cfg.Sync()
-
-		ts.lg.Info("waited for ASG", zap.String("asg-name", asgName))
+		ts.lg.Info("waited for ASG", zap.String("asg-name", asgName), zap.Int("instances", len(cur.Instances)))
 	}
 
 	ts.lg.Info("waited for ASGs")

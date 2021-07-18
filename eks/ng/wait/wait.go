@@ -115,6 +115,8 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 		ivv.RemoteAccessUserName = cur.RemoteAccessUserName
 		cur.Instances[id] = ivv
 	}
+	ts.cfg.Logger.Info("waited for ASG", zap.String("asg-name", cur.Name), zap.Int("instances", len(cur.Instances)))
+
 	for _, inst := range cur.Instances {
 		ts.cfg.EKSConfig.Status.PrivateDNSToNodeInfo[inst.PrivateDNSName] = eksconfig.NodeInfo{
 			NodeGroupName: cur.Name,
