@@ -158,6 +158,14 @@ func (ts *tester) deleteSSMDocument() (err error) {
 					err = nil
 				}
 			}
+			// InvalidDocument: Document eks2021071804awseyzymhjfdInstallBottlerocket does not exist in your account
+			if err != nil {
+				if strings.Contains(err.Error(), "does not exist") {
+					ts.cfg.EKSConfig.Status.DeletedResources[cur.SSM.DocumentName] = "SSM.DocumentName"
+					ts.cfg.EKSConfig.Sync()
+					err = nil
+				}
+			}
 		} else {
 			ts.cfg.EKSConfig.Status.DeletedResources[cur.SSM.DocumentName] = "SSM.DocumentName"
 			ts.cfg.EKSConfig.Sync()

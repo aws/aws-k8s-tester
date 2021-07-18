@@ -158,6 +158,14 @@ func (ts *Tester) deleteSSMDocument() (err error) {
 					err = nil
 				}
 			}
+			// InvalidDocument: Document eks2021071804awseyzymhjfdInstallBottlerocket does not exist in your account
+			if err != nil {
+				if strings.Contains(err.Error(), "does not exist") {
+					ts.cfg.DeletedResources[cur.SSM.DocumentName] = "SSM.DocumentName"
+					ts.cfg.Sync()
+					err = nil
+				}
+			}
 		} else {
 			ts.cfg.DeletedResources[cur.SSM.DocumentName] = "SSM.DocumentName"
 			ts.cfg.Sync()
