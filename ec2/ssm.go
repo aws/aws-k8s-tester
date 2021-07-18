@@ -55,31 +55,25 @@ func (ts *Tester) createSSMDocument() error {
 		}
 
 		// ref. https://docs.aws.amazon.com/systems-manager/latest/userguide/create-ssm-document-api.html
-		content := `schemaVersion: '2.2'
-description: SSM document
+		content := `---
+schemaVersion: '2.2'
+description: aws:runShellScript
 parameters:
-  region:
-    type: String
-	description: 'AWS Region'
   executionTimeoutSeconds:
     type: String
-	description: 'timeout for script, in seconds'
-  moreCommands:
+    description: 'timeout for script, in seconds'
+  commands:
     type: String
-	description: 'more commands'
+    description: "(Required) The commands to run or the path to an existing script on the instance."
+    default: echo Hello World
 mainSteps:
-  - action: aws:runShellScript
-    name: %s
-    inputs:
-      timeoutSeconds: '{{ executionTimeoutSeconds }}'
-      runCommand:
-        - |
-          AWS_DEFAULT_REGION={{region}}
-          echo "running SSM with AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}"
-          echo "running more SSM command"
-          {{ moreCommands }}
+- action: aws:runShellScript
+  name: %s
+  inputs:
+    timeoutSeconds: '{{ executionTimeoutSeconds }}'
+    runCommand:
+    - "{{ commands }}"
 `
-
 		ts.lg.Info("creating SSM document",
 			zap.String("asg-name", asgName),
 			zap.String("ssm-document-name", cur.SSM.DocumentName),
@@ -230,14 +224,13 @@ func (ts *Tester) sendSSMDocumentCommand() error {
 				InstanceIds:    batch,
 				MaxConcurrency: aws_v2.String(fmt.Sprintf("%d", len(batch))),
 				Parameters: map[string][]string{
-					"region":                  {ts.cfg.Region},
 					"executionTimeoutSeconds": {fmt.Sprintf("%d", cur.SSM.DocumentExecutionTimeoutSeconds)},
 				},
 				OutputS3BucketName: aws_v2.String(ts.cfg.S3.BucketName),
 				OutputS3KeyPrefix:  aws_v2.String(path.Join(ts.cfg.Name, "ssm-outputs")),
 			}
 			if len(cur.SSM.DocumentCommands) > 0 {
-				ssmInput.Parameters["moreCommands"] = []string{cur.SSM.DocumentCommands}
+				ssmInput.Parameters["commands"] = []string{cur.SSM.DocumentCommands}
 			}
 			cmd, err := ts.ssmAPIV2.SendCommand(
 				context.Background(),
