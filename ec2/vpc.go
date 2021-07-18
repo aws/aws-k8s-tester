@@ -1089,13 +1089,17 @@ func (ts *Tester) deletePublicNATGateways() (err error) {
 					NatGatewayId: aws_v2.String(id),
 				},
 			)
-			_, err2 := ts.ec2APIV2.DescribeNatGateways(
+			dout, err2 := ts.ec2APIV2.DescribeNatGateways(
 				context.Background(),
 				&aws_ec2_v2.DescribeNatGatewaysInput{
 					NatGatewayIds: []string{id},
 				},
 			)
 			if err2 == nil {
+				ts.lg.Warn("described NAT gateways", zap.Int("nat-gateways", len(dout.NatGateways)))
+				if len(dout.NatGateways) == 0 {
+					break
+				}
 				continue
 			}
 			ts.lg.Warn("failed to describe NAT gateway during deletion",
@@ -1103,6 +1107,13 @@ func (ts *Tester) deletePublicNATGateways() (err error) {
 				zap.Error(err2),
 			)
 			var apiErr smithy.APIError
+			if errors.As(err1, &apiErr) {
+				if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+					ts.cfg.DeletedResources[id] = "VPC.NATGatewayID"
+					ts.cfg.Sync()
+					break
+				}
+			}
 			if errors.As(err2, &apiErr) {
 				if strings.Contains(apiErr.ErrorCode(), "NotFound") {
 					ts.cfg.DeletedResources[id] = "VPC.NATGatewayID"
