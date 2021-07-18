@@ -123,6 +123,9 @@ func (ts *Tester) deleteKeyPair() error {
 	if ts.cfg.RemoteAccessKeyName == "" {
 		return errors.New("cannot delete EC2 key pair without key name")
 	}
+	if _, ok := ts.cfg.Status.DeletedResources[ts.cfg.RemoteAccessKeyName]; ok {
+		return nil
+	}
 
 	err := os.RemoveAll(ts.cfg.RemoteAccessPrivateKeyPath)
 	if err != nil {
@@ -141,6 +144,8 @@ func (ts *Tester) deleteKeyPair() error {
 		if errors.As(err, &apiErr) {
 			if strings.Contains(apiErr.ErrorCode(), "NotFound") {
 				ts.lg.Warn("key pair already deleted")
+				ts.cfg.Status.DeletedResources[ts.cfg.RemoteAccessKeyName] = "RemoteAccessKeyName"
+				ts.cfg.Sync()
 				return nil
 			}
 		}
@@ -163,10 +168,13 @@ func (ts *Tester) deleteKeyPair() error {
 		var apiErr smithy.APIError
 		if errors.As(err, &apiErr) {
 			if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+				ts.cfg.Status.DeletedResources[ts.cfg.RemoteAccessKeyName] = "RemoteAccessKeyName"
+				ts.cfg.Sync()
 				deleted = true
 				break
 			}
 		}
+		ts.lg.Warn("failed to describe key", zap.Error(err))
 	}
 	if !deleted {
 		return fmt.Errorf("deleted key pair but %q still exists", ts.cfg.RemoteAccessKeyName)

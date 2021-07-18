@@ -16,8 +16,8 @@ import (
 	aws_v2 "github.com/aws/aws-sdk-go-v2/aws"
 	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/s3"
+	smithy "github.com/aws/smithy-go"
 	humanize "github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
@@ -120,6 +120,9 @@ func (ts *Tester) deleteKeyPair() error {
 	if ts.cfg.RemoteAccessKeyName == "" {
 		return errors.New("cannot delete EC2 key pair without key name")
 	}
+	if _, ok := ts.cfg.DeletedResources[ts.cfg.RemoteAccessKeyName]; ok {
+		return nil
+	}
 
 	err := os.RemoveAll(ts.cfg.RemoteAccessPrivateKeyPath)
 	if err != nil {
@@ -135,6 +138,15 @@ func (ts *Tester) deleteKeyPair() error {
 		},
 	)
 	if err != nil {
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+				ts.lg.Warn("key pair already deleted")
+				ts.cfg.DeletedResources[ts.cfg.RemoteAccessKeyName] = "RemoteAccessKeyName"
+				ts.cfg.Sync()
+				return nil
+			}
+		}
 		return err
 	}
 
@@ -150,17 +162,17 @@ func (ts *Tester) deleteKeyPair() error {
 			time.Sleep(3 * time.Second)
 			continue
 		}
-		if request.IsErrorRetryable(err) || request.IsErrorThrottle(err) {
-			ts.lg.Warn("failed to describe EC2 key pair, retrying...", zap.Error(err))
-			time.Sleep(5 * time.Second)
-			continue
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+				ts.lg.Warn("key pair already deleted")
+				ts.cfg.DeletedResources[ts.cfg.RemoteAccessKeyName] = "RemoteAccessKeyName"
+				ts.cfg.Sync()
+				deleted = true
+				break
+			}
 		}
-		// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html
-		awsErr, ok := err.(awserr.Error)
-		if ok && awsErr.Code() == "InvalidKeyPair.NotFound" {
-			deleted = true
-			break
-		}
+		ts.lg.Warn("failed to describe key", zap.Error(err))
 	}
 	if !deleted {
 		return fmt.Errorf("deleted EC2 key pair but %q still exists", ts.cfg.RemoteAccessKeyName)
