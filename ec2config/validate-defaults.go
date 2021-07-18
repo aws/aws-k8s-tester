@@ -244,6 +244,9 @@ func (cfg *Config) validateConfig() error {
 			cfg.Role.Name = getNameFromARN(cfg.Role.ARN)
 		}
 	}
+	if cfg.Role.PolicyName == "" {
+		cfg.Role.PolicyName = cfg.Name + "-policy"
+	}
 
 	switch cfg.VPC.Create {
 	case true: // need create one, or already created

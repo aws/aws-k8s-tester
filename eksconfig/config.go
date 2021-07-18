@@ -1314,10 +1314,6 @@ func (cfg *Config) validateConfig() error {
 		if cfg.Role.Name == "" {
 			cfg.Role.Name = cfg.Name + "-role"
 		}
-		// just ignore...
-		// could be populated from previous run
-		// do not error, so long as RoleCreate false, role won't be deleted
-
 	case false: // use existing one
 		if cfg.Role.ARN == "" {
 			return fmt.Errorf("Role.Create false; expect non-empty RoleARN but got %q", cfg.Role.ARN)
