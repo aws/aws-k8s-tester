@@ -110,6 +110,7 @@ mainSteps:
 		ts.cfg.Logger.Info("created SSM Document",
 			zap.String("asg-name", cur.Name),
 			zap.String("ssm-document-name", cur.SSM.DocumentName),
+			zap.Int("instances", len(cur.Instances)),
 			zap.String("started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
 		)
 	}
@@ -204,8 +205,9 @@ func (ts *tester) sendSSMDocumentCommand() error {
 		ts.cfg.Logger.Info("sending SSM document",
 			zap.String("asg-name", asgName),
 			zap.String("ssm-document-name", cur.SSM.DocumentName),
-			zap.Int("instance-ids", len(ids)),
+			zap.Strings("instance-ids", ids),
 		)
+
 		left := make([]string, len(ids))
 		copy(left, ids)
 		for len(left) > 0 {
