@@ -18,6 +18,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// NOT WORKING...
+// invalid document content
+
 func (ts *tester) createSSM() error {
 	if err := ts.createSSMDocument(); err != nil {
 		return err
