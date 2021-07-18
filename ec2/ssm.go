@@ -2,20 +2,18 @@ package ec2
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-	"github.com/aws/aws-k8s-tester/pkg/aws/cfn"
-	aws_s3 "github.com/aws/aws-k8s-tester/pkg/aws/s3"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
-	"github.com/aws/aws-k8s-tester/pkg/user"
-	"github.com/aws/aws-k8s-tester/version"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/cloudformation"
-	"github.com/aws/aws-sdk-go/service/ssm"
+	aws_v2 "github.com/aws/aws-sdk-go-v2/aws"
+	aws_ssm_v2 "github.com/aws/aws-sdk-go-v2/service/ssm"
+	aws_ssm_v2_types "github.com/aws/aws-sdk-go-v2/service/ssm/types"
+	smithy "github.com/aws/smithy-go"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
 )
@@ -27,264 +25,169 @@ func (ts *Tester) createSSM() error {
 	if err := ts.sendSSMDocumentCommand(); err != nil {
 		return err
 	}
-	return ts.cfg.Sync()
+	return nil
 }
 
 func (ts *Tester) deleteSSM() error {
 	if err := ts.deleteSSMDocument(); err != nil {
 		return err
 	}
-	return ts.cfg.Sync()
+	return nil
 }
-
-// TemplateSSMDocument is the CFN template for SSM Document.
-const TemplateSSMDocument = `
----
-AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Amazon SSM Document'
-
-Parameters:
-
-  Name:
-    Type: String
-    Default: aws-k8s-tester-ec2-ssm
-
-  DocumentName:
-    Type: String
-    Default: awsK8sTesterEC2SSMDocument
-
-  Commands:
-    Type: String
-
-Resources:
-
-  SSMDocument:
-    Type: AWS::SSM::Document
-    Properties:
-      DocumentType: Command
-      Tags:
-      - Key: Name
-        Value: !Ref Name
-      - Key: DocumentName
-        Value: !Ref DocumentName
-      - Key: DocumentVersion
-        Value: v1
-      Content:
-        schemaVersion: '2.2'
-        description: SSM document to bootstrap EC2.
-        parameters:
-          region: {type: String, description: 'AWS Region', default: { Ref: "AWS::Region" } }
-          executionTimeoutSeconds: {type: String, description: 'timeout for script, in seconds'}
-          moreCommands: {type: String, description: 'more commands', default: { Ref: Commands } }
-        mainSteps:
-          - action: aws:runShellScript
-            name: !Ref DocumentName
-            inputs:
-              timeoutSeconds: '{{ executionTimeoutSeconds }}'
-              runCommand:
-                - |
-                  set -xue
-                  log() {
-                    echo -e "[$(date -u +'%Y-%m-%dT%H:%M:%SZ')] $1"
-                  }
-                  AWS_DEFAULT_REGION={{region}}
-                  log "running SSM with AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}"
-
-                  log "running more SSM command"
-                  {{ moreCommands }}
-
-Outputs:
-
-  SSMDocumentName:
-    Value: !Ref SSMDocument
-
-`
 
 func (ts *Tester) createSSMDocument() error {
 	createStart := time.Now()
 
 	for asgName, cur := range ts.cfg.ASGs {
-		if !cur.SSMDocumentCreate {
+		if cur.SSM == nil {
+			continue
+		}
+
+		if !cur.SSM.DocumentCreate {
 			ts.lg.Info("skipping SSM document create",
 				zap.String("asg-name", asgName),
-				zap.String("ssm-document-cfn-stack-name", cur.SSMDocumentCFNStackName),
-				zap.String("ssm-document-name", cur.SSMDocumentName),
+				zap.String("ssm-document-name", cur.SSM.DocumentName),
 			)
 			continue
 		}
-		if err := ioutil.WriteFile(cur.SSMDocumentCFNStackYAMLPath, []byte(TemplateSSMDocument), 0400); err != nil {
-			return err
-		}
-		if err := aws_s3.Upload(
-			ts.lg,
-			ts.s3API,
-			ts.cfg.S3BucketName,
-			cur.SSMDocumentCFNStackYAMLS3Key,
-			cur.SSMDocumentCFNStackYAMLPath,
-		); err != nil {
-			return err
-		}
+
+		// ref. https://docs.aws.amazon.com/systems-manager/latest/userguide/create-ssm-document-api.html
+		content := `schemaVersion: '2.2'
+description: SSM document
+parameters:
+  region:
+    type: String
+	description: 'AWS Region'
+  executionTimeoutSeconds:
+    type: String
+	description: 'timeout for script, in seconds'
+  moreCommands:
+    type: String
+	description: 'more commands'
+mainSteps:
+  - action: aws:runShellScript
+    name: %s
+    inputs:
+      timeoutSeconds: '{{ executionTimeoutSeconds }}'
+      runCommand:
+        - |
+          AWS_DEFAULT_REGION={{region}}
+          echo "running SSM with AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}"
+          echo "running more SSM command"
+          {{ moreCommands }}
+`
+
 		ts.lg.Info("creating SSM document",
 			zap.String("asg-name", asgName),
-			zap.String("ssm-document-name", cur.SSMDocumentName),
-			zap.String("ssm-document-cfn-file-path", cur.SSMDocumentCFNStackYAMLPath),
+			zap.String("ssm-document-name", cur.SSM.DocumentName),
 		)
-		stackInput := &cloudformation.CreateStackInput{
-			StackName:    aws.String(cur.SSMDocumentCFNStackName),
-			Capabilities: aws.StringSlice([]string{"CAPABILITY_IAM"}),
-			OnFailure:    aws.String(cloudformation.OnFailureDelete),
-			TemplateBody: aws.String(TemplateSSMDocument),
-			Tags: cfn.NewTags(map[string]string{
-				"Kind":                   "aws-k8s-tester",
-				"Name":                   ts.cfg.Name,
-				"aws-k8s-tester-version": version.ReleaseVersion,
-				"User":                   user.Get(),
-			}),
-			Parameters: []*cloudformation.Parameter{
-				{
-					ParameterKey:   aws.String("Name"),
-					ParameterValue: aws.String(cur.SSMDocumentCFNStackName),
+		_, err := ts.ssmAPIV2.CreateDocument(
+			context.Background(),
+			&aws_ssm_v2.CreateDocumentInput{
+				Name:           aws_v2.String(cur.SSM.DocumentName),
+				DocumentFormat: aws_ssm_v2_types.DocumentFormatYaml,
+				DocumentType:   aws_ssm_v2_types.DocumentTypeCommand,
+				VersionName:    aws_v2.String("v1"),
+				Tags: []aws_ssm_v2_types.Tag{
+					{
+						Key:   aws_v2.String("Name"),
+						Value: aws_v2.String(ts.cfg.Name),
+					},
+					{
+						Key:   aws_v2.String("DocumentName"),
+						Value: aws_v2.String(cur.SSM.DocumentName),
+					},
+					{
+						Key:   aws_v2.String("DocumentVersion"),
+						Value: aws_v2.String("v1"),
+					},
 				},
-				{
-					ParameterKey:   aws.String("DocumentName"),
-					ParameterValue: aws.String(cur.SSMDocumentName),
-				},
+				// ref. https://docs.aws.amazon.com/systems-manager/latest/userguide/create-ssm-document-api.html
+				Content: aws_v2.String(fmt.Sprintf(content, cur.SSM.DocumentName)),
 			},
-		}
-		if len(cur.SSMDocumentCommands) > 0 {
-			ts.lg.Info("added SSM document commands", zap.String("commands", cur.SSMDocumentCommands))
-			stackInput.Parameters = append(stackInput.Parameters, &cloudformation.Parameter{
-				ParameterKey:   aws.String("Commands"),
-				ParameterValue: aws.String(cur.SSMDocumentCommands),
-			})
-		}
-		stackOutput, err := ts.cfnAPI.CreateStack(stackInput)
+		)
 		if err != nil {
 			return err
-		}
-		cur.SSMDocumentCFNStackID = aws.StringValue(stackOutput.StackId)
-		ts.cfg.ASGs[asgName] = cur
-		ts.cfg.Sync()
-
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-		ch := cfn.Poll(
-			ctx,
-			ts.stopCreationCh,
-			ts.lg,
-			ts.logWriter,
-			ts.cfnAPI,
-			cur.SSMDocumentCFNStackID,
-			cloudformation.ResourceStatusCreateComplete,
-			time.Minute,
-			30*time.Second,
-		)
-		var st cfn.StackStatus
-		for st = range ch {
-			if st.Error != nil {
-				ts.cfg.RecordStatus(fmt.Sprintf("failed to create ASG (%v)", st.Error))
-				ts.lg.Warn("polling errror", zap.Error(st.Error))
-			}
-		}
-		cancel()
-		if st.Error != nil {
-			return st.Error
-		}
-		// update status after creating a new ASG
-		for _, o := range st.Stack.Outputs {
-			switch k := aws.StringValue(o.OutputKey); k {
-			case "SSMDocumentName":
-				cur.SSMDocumentName = aws.StringValue(o.OutputValue)
-				ts.lg.Info("found SSMDocumentName value from CFN", zap.String("value", cur.SSMDocumentName))
-			default:
-				return fmt.Errorf("unexpected OutputKey %q from %q", k, cur.SSMDocumentCFNStackID)
-			}
 		}
 
 		ts.lg.Info("created SSM Document",
 			zap.String("asg-name", cur.Name),
-			zap.String("ssm-document-cfn-stack-name", cur.SSMDocumentCFNStackName),
-			zap.String("ssm-document-name", cur.SSMDocumentName),
-			zap.String("cfn-stack-id", cur.SSMDocumentCFNStackID),
+			zap.String("ssm-document-name", cur.SSM.DocumentName),
 			zap.String("started", humanize.RelTime(createStart, time.Now(), "ago", "from now")),
 		)
-		ts.cfg.ASGs[asgName] = cur
-		ts.cfg.Sync()
 	}
 
-	return ts.cfg.Sync()
+	ts.cfg.Sync()
+	return nil
 }
 
-func (ts *Tester) deleteSSMDocument() error {
+func (ts *Tester) deleteSSMDocument() (err error) {
 	for asgName, cur := range ts.cfg.ASGs {
-		if !cur.SSMDocumentCreate {
+		if cur.SSM == nil {
+			continue
+		}
+
+		if !cur.SSM.DocumentCreate {
 			ts.lg.Info("skipping SSM document delete",
 				zap.String("asg-name", asgName),
-				zap.String("ssm-document-cfn-stack-name", cur.SSMDocumentCFNStackName),
-				zap.String("ssm-document-name", cur.SSMDocumentName),
+				zap.String("ssm-document-name", cur.SSM.DocumentName),
 			)
 			continue
 		}
 		ts.lg.Info("deleting SSM document",
 			zap.String("asg-name", cur.Name),
-			zap.String("ssm-document-cfn-stack-name", cur.SSMDocumentCFNStackName),
-			zap.String("ssm-document-name", cur.SSMDocumentName),
-			zap.String("cfn-stack-id", cur.SSMDocumentCFNStackID),
+			zap.String("ssm-document-name", cur.SSM.DocumentName),
 		)
-		_, err := ts.cfnAPI.DeleteStack(&cloudformation.DeleteStackInput{
-			StackName: aws.String(cur.SSMDocumentCFNStackID),
-		})
+		_, err = ts.ssmAPIV2.DeleteDocument(
+			context.Background(),
+			&aws_ssm_v2.DeleteDocumentInput{
+				Name:  aws_v2.String(cur.SSM.DocumentName),
+				Force: true,
+			},
+		)
 		if err != nil {
-			ts.cfg.RecordStatus(fmt.Sprintf("failed to delete SSM Document (%v)", err))
-			return err
-		}
-		ts.cfg.Sync()
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
-		ch := cfn.Poll(
-			ctx,
-			make(chan struct{}), // do not exit on stop
-			ts.lg,
-			ts.logWriter,
-			ts.cfnAPI,
-			cur.SSMDocumentCFNStackID,
-			cloudformation.ResourceStatusDeleteComplete,
-			time.Minute,
-			20*time.Second,
-		)
-		var st cfn.StackStatus
-		for st = range ch {
-			if st.Error != nil {
-				cancel()
-				ts.cfg.RecordStatus(fmt.Sprintf("failed to delete SSM Document (%v)", st.Error))
-				ts.lg.Warn("polling errror", zap.Error(st.Error))
+			ts.lg.Warn("failed to delete SSM document", zap.Error(err))
+			var apiErr smithy.APIError
+			if errors.As(err, &apiErr) {
+				if strings.Contains(apiErr.ErrorCode(), "NotFound") {
+					ts.cfg.DeletedResources[cur.SSM.DocumentName] = "SSM.DocumentName"
+					ts.cfg.Sync()
+					err = nil
+				}
 			}
+		} else {
+			ts.cfg.DeletedResources[cur.SSM.DocumentName] = "SSM.DocumentName"
+			ts.cfg.Sync()
 		}
-		cancel()
-		if st.Error != nil {
-			return st.Error
+		if err == nil {
+			ts.cfg.RecordStatus(fmt.Sprintf("%q/%s", cur.SSM.DocumentName, ec2config.StatusDELETEDORNOTEXIST))
 		}
-		ts.cfg.RecordStatus(fmt.Sprintf("%q/%s", cur.SSMDocumentName, ec2config.StatusDELETEDORNOTEXIST))
 
 		ts.lg.Info("deleted SSM document",
 			zap.String("asg-name", cur.Name),
-			zap.String("ssm-document-cfn-stack-name", cur.SSMDocumentCFNStackName),
-			zap.String("ssm-document-name", cur.SSMDocumentName),
+			zap.String("ssm-document-name", cur.SSM.DocumentName),
 		)
 	}
 
-	return ts.cfg.Sync()
+	ts.cfg.Sync()
+	return err
 }
 
 func (ts *Tester) sendSSMDocumentCommand() error {
 	for asgName, cur := range ts.cfg.ASGs {
-		if cur.SSMDocumentName == "" {
+		if cur.SSM == nil {
+			continue
+		}
+
+		if cur.SSM.DocumentName == "" {
 			ts.lg.Info("skipping SSM document send",
 				zap.String("asg-name", asgName),
-				zap.String("ssm-document-name", cur.SSMDocumentName),
+				zap.String("ssm-document-name", cur.SSM.DocumentName),
 			)
 			continue
 		}
 		if len(cur.Instances) == 0 {
-			return fmt.Errorf("no instance found for SSM document %q", cur.SSMDocumentName)
+			return fmt.Errorf("no instance found for SSM document %q", cur.SSM.DocumentName)
 		}
 		ids := make([]string, 0)
 		for id := range cur.Instances {
@@ -295,10 +198,9 @@ func (ts *Tester) sendSSMDocumentCommand() error {
 		// e.g. 'instanceIds' failed to satisfy constraint: Member must have length less than or equal to 50
 		ts.lg.Info("sending SSM document",
 			zap.String("asg-name", asgName),
-			zap.String("ssm-document-name", cur.SSMDocumentName),
+			zap.String("ssm-document-name", cur.SSM.DocumentName),
 			zap.Int("instance-ids", len(ids)),
 		)
-
 		left := make([]string, len(ids))
 		copy(left, ids)
 		for len(left) > 0 {
@@ -311,35 +213,38 @@ func (ts *Tester) sendSSMDocumentCommand() error {
 				batch = append(batch, left[:50]...)
 				left = left[50:]
 			}
-			ssmInput := &ssm.SendCommandInput{
-				DocumentName:   aws.String(cur.SSMDocumentName),
-				Comment:        aws.String(cur.SSMDocumentName + "-" + randutil.String(10)),
-				InstanceIds:    aws.StringSlice(batch),
-				MaxConcurrency: aws.String(fmt.Sprintf("%d", len(batch))),
-				Parameters: map[string][]*string{
-					"region":                  aws.StringSlice([]string{ts.cfg.Region}),
-					"executionTimeoutSeconds": aws.StringSlice([]string{fmt.Sprintf("%d", cur.SSMDocumentExecutionTimeoutSeconds)}),
+			ssmInput := &aws_ssm_v2.SendCommandInput{
+				DocumentName:   aws_v2.String(cur.SSM.DocumentName),
+				Comment:        aws_v2.String(cur.SSM.DocumentName + "-" + randutil.String(10)),
+				InstanceIds:    batch,
+				MaxConcurrency: aws_v2.String(fmt.Sprintf("%d", len(batch))),
+				Parameters: map[string][]string{
+					"region":                  {ts.cfg.Region},
+					"executionTimeoutSeconds": {fmt.Sprintf("%d", cur.SSM.DocumentExecutionTimeoutSeconds)},
 				},
-				OutputS3BucketName: aws.String(ts.cfg.S3BucketName),
-				OutputS3KeyPrefix:  aws.String(path.Join(ts.cfg.Name, "ssm-outputs")),
+				OutputS3BucketName: aws_v2.String(ts.cfg.S3.BucketName),
+				OutputS3KeyPrefix:  aws_v2.String(path.Join(ts.cfg.Name, "ssm-outputs")),
 			}
-			if len(cur.SSMDocumentCommands) > 0 {
-				ssmInput.Parameters["moreCommands"] = aws.StringSlice([]string{cur.SSMDocumentCommands})
+			if len(cur.SSM.DocumentCommands) > 0 {
+				ssmInput.Parameters["moreCommands"] = []string{cur.SSM.DocumentCommands}
 			}
-			cmd, err := ts.ssmAPI.SendCommand(ssmInput)
+			cmd, err := ts.ssmAPIV2.SendCommand(
+				context.Background(),
+				ssmInput,
+			)
 			if err != nil {
 				return err
 			}
-			docName := aws.StringValue(cmd.Command.DocumentName)
-			if docName != cur.SSMDocumentName {
-				return fmt.Errorf("SSM Document Name expected %q, got %q", cur.SSMDocumentName, docName)
+			docName := aws_v2.ToString(cmd.Command.DocumentName)
+			if docName != cur.SSM.DocumentName {
+				return fmt.Errorf("SSM Document Name expected %q, got %q", cur.SSM.DocumentName, docName)
 			}
-			cmdID := aws.StringValue(cmd.Command.CommandId)
-			cur.SSMDocumentCommandIDs = append(cur.SSMDocumentCommandIDs, cmdID)
+			cmdID := aws_v2.ToString(cmd.Command.CommandId)
+			cur.SSM.DocumentCommandIDs = append(cur.SSM.DocumentCommandIDs, cmdID)
 
 			ts.lg.Info("sent SSM document",
 				zap.String("asg-name", asgName),
-				zap.String("ssm-document-name", cur.SSMDocumentName),
+				zap.String("ssm-document-name", cur.SSM.DocumentName),
 				zap.String("ssm-command-id", cmdID),
 				zap.Int("sent-instance-ids", len(batch)),
 				zap.Int("left-instance-ids", len(left)),
@@ -356,5 +261,6 @@ func (ts *Tester) sendSSMDocumentCommand() error {
 		ts.cfg.Sync()
 	}
 
-	return ts.cfg.Sync()
+	ts.cfg.Sync()
+	return nil
 }

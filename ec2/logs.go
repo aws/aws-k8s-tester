@@ -82,7 +82,7 @@ func (ts *Tester) FetchLogs() (err error) {
 	sz := humanize.Bytes(uint64(s.Size()))
 	ts.lg.Info("gzipped logs dir", zap.String("logs-dir", ts.cfg.ASGsLogsDir), zap.String("file-path", fpath), zap.String("file-size", sz))
 
-	if ts.cfg.S3BucketName != "" {
+	if ts.cfg.S3.BucketName != "" {
 		rf, err := os.OpenFile(fpath, os.O_RDONLY, 0444)
 		if err != nil {
 			ts.lg.Warn("failed to read a file", zap.Error(err))
@@ -92,7 +92,7 @@ func (ts *Tester) FetchLogs() (err error) {
 
 		s3Key := path.Join(ts.cfg.Name, filepath.Base(fpath))
 		_, err = ts.s3API.PutObject(&s3.PutObjectInput{
-			Bucket: aws.String(ts.cfg.S3BucketName),
+			Bucket: aws.String(ts.cfg.S3.BucketName),
 			Key:    aws.String(s3Key),
 			Body:   rf,
 
@@ -107,13 +107,13 @@ func (ts *Tester) FetchLogs() (err error) {
 		})
 		if err == nil {
 			ts.lg.Info("uploaded the gzipped file",
-				zap.String("bucket", ts.cfg.S3BucketName),
+				zap.String("bucket", ts.cfg.S3.BucketName),
 				zap.String("remote-path", s3Key),
 				zap.String("file-size", sz),
 			)
 		} else {
 			ts.lg.Warn("failed to upload the gzipped file",
-				zap.String("bucket", ts.cfg.S3BucketName),
+				zap.String("bucket", ts.cfg.S3.BucketName),
 				zap.String("remote-path", s3Key),
 				zap.String("file-size", sz),
 				zap.Error(err),

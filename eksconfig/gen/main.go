@@ -30,6 +30,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_S3_PREFIX, &eksconfig.S3{}))
+
+	b.WriteByte('\n')
+	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_ENCRYPTION_PREFIX, &eksconfig.Encryption{}))
 
 	b.WriteByte('\n')
@@ -50,7 +54,7 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_PREFIX+"ROLE_", &eksconfig.Role{}))
+	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_PREFIX, &eksconfig.Role{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
@@ -58,7 +62,7 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_PREFIX+"ROLE_", &eksconfig.Role{}))
+	b.WriteString(es.writeDoc(eksconfig.AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_PREFIX, &eksconfig.Role{}))
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')

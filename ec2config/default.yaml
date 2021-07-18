@@ -1,29 +1,23 @@
 asgs:
-  ec2-2021042610-flowerp40w88-asg:
+  ec2-2021071718-wind8mffgayn-asg:
     ami-type: AL2_x86_64
-    asg-cfn-stack-id: ""
-    asg-cfn-stack-yaml-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.asg.cfn.ec2-2021042610-flowerp40w88-asg.yaml
-    asg-cfn-stack-yaml-s3-key: ec2-2021042610-flowerp40w88/default.asg.cfn.ec2-2021042610-flowerp40w88-asg.yaml
     asg-desired-capacity: 1
     asg-max-size: 1
     asg-min-size: 1
     image-id: ""
     image-id-ssm-parameter: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
     instanaces: null
-    instance-types:
-    - c5.xlarge
+    instance-type: c5.xlarge
+    launch-template-name: ""
     logs: null
-    name: ec2-2021042610-flowerp40w88-asg
+    name: ec2-2021071718-wind8mffgayn-asg
     remote-access-user-name: ec2-user
-    ssm-document-cfn-stack-id: ""
-    ssm-document-cfn-stack-name: ""
-    ssm-document-cfn-stack-yaml-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.ssm.cfn.ec2-2021042610-flowerp40w88-asg.yaml
-    ssm-document-cfn-stack-yaml-s3-key: ec2-2021042610-flowerp40w88/default.ssm.cfn.ec2-2021042610-flowerp40w88-asg.yaml
-    ssm-document-command-ids: null
-    ssm-document-commands: ""
-    ssm-document-create: false
-    ssm-document-execution-timeout-in-seconds: 3600
-    ssm-document-name: ""
+    ssm:
+      document-command-ids: null
+      document-commands: ""
+      document-create: false
+      document-execution-timeout-in-seconds: 3600
+      document-name: ""
     time-frame-create:
       complete-utc: "0001-01-01T00:00:00Z"
       complete-utc-rfc3339-nano: ""
@@ -40,46 +34,48 @@ asgs:
       took-string: ""
     volume-size: 40
 asgs-fetch-logs: true
-asgs-logs-dir: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/ec2-2021042610-flowerp40w88-logs-remote
+asgs-logs-dir: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/ec2-2021071718-wind8mffgayn-logs-remote
 aws-account-id: ""
 aws-credential-path: ""
 aws-iam-role-arn: ""
 aws-user-id: ""
 config-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.yaml
-dhcp-options-domain-name: ""
-dhcp-options-domain-name-servers: null
+deleted-resources: {}
 log-color: true
 log-color-override: ""
 log-level: info
 log-outputs:
 - stderr
 - /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.yaml.log
-name: ec2-2021042610-flowerp40w88
+name: ec2-2021071718-wind8mffgayn
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 partition: aws
-private-subnet-ids: null
-public-subnet-ids: null
 region: us-west-2
 remote-access-commands-output-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: ec2-2021042610-flowerp40w88-key
-remote-access-private-key-path: /var/folders/xt/szh_n5x154x2hyhj0zkpd3qr0000gn/T/mountaincz.insecure.key
-role-arn: ""
-role-cfn-stack-id: ""
-role-cfn-stack-yaml-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.role.cfn.yaml
-role-cfn-stack-yaml-s3-key: ec2-2021042610-flowerp40w88/default.role.cfn.yaml
-role-create: true
-role-managed-policy-arns: null
-role-name: ec2-2021042610-flowerp40w88-role
-role-service-principals: null
-s3-bucket-create: true
-s3-bucket-create-keep: true
-s3-bucket-lifecycle-expiration-days: 0
-s3-bucket-name: ec2-2021042610-flowerp40w88-s3-bucket
-s3-dir: ec2-2021042610-flowerp40w88
-security-group-id: ""
-ssh-ingress-ipv4-range: ""
+remote-access-key-name: ec2-2021071718-wind8mffgayn-key
+remote-access-private-key-path: /var/folders/xt/szh_n5x154x2hyhj0zkpd3qr0000gn/T/breezemy7r.insecure.key
+role:
+  arn: ""
+  create: true
+  instance-profile-arn: ""
+  instance-profile-name: ""
+  managed-policy-arns:
+  - arn:aws:iam::aws:policy/AmazonEC2FullAccess
+  - arn:aws:iam::aws:policy/AmazonSSMFullAccess
+  - arn:aws:iam::aws:policy/AmazonS3FullAccess
+  name: ec2-2021071718-wind8mffgayn-role
+  policy-arn: ""
+  policy-name: ""
+  service-principals:
+  - ec2.amazonaws.com
+s3:
+  bucket-create: true
+  bucket-create-keep: true
+  bucket-lifecycle-expiration-days: 0
+  bucket-name: ec2-2021071718-wind8mffgayn-s3-bucket
+  dir: ec2-2021071718-wind8mffgayn
 status: null
 status-current: ""
 time-frame-create:
@@ -98,8 +94,28 @@ time-frame-delete:
   took-string: ""
 total-nodes: 1
 up: false
-vpc-cfn-stack-id: ""
-vpc-cfn-stack-yaml-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.vpc.cfn.yaml
-vpc-cfn-stack-yaml-s3-key: ec2-2021042610-flowerp40w88/default.vpc.cfn.yaml
-vpc-create: true
-vpc-id: ""
+vpc:
+  cidrs:
+  - 10.0.0.0/16
+  - 10.1.0.0/16
+  - 10.2.0.0/16
+  - 10.3.0.0/16
+  create: true
+  eip-allocation-ids: null
+  id: ""
+  internet-gateway-id: ""
+  nat-gateway-ids: null
+  private-route-table-ids: null
+  private-subnet-cidrs:
+  - 10.3.0.0/17
+  - 10.3.128.0/17
+  private-subnet-ids: null
+  private-subnet-route-table-association-ids: null
+  public-route-table-id: ""
+  public-subnet-cidrs:
+  - 10.0.0.0/16
+  - 10.1.0.0/16
+  - 10.2.0.0/16
+  public-subnet-ids: null
+  public-subnet-route-table-association-ids: null
+  security-group-id: ""

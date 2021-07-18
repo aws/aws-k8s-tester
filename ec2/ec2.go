@@ -2,38 +2,35 @@
 package ec2
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/signal"
+	"sort"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/ec2config"
-	pkgaws "github.com/aws/aws-k8s-tester/pkg/aws"
+	pkg_aws "github.com/aws/aws-k8s-tester/pkg/aws"
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/version"
+	aws_v2 "github.com/aws/aws-sdk-go-v2/aws"
+	aws_asg_v2 "github.com/aws/aws-sdk-go-v2/service/autoscaling"
+	aws_cw_v2 "github.com/aws/aws-sdk-go-v2/service/cloudwatch"
+	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
+	aws_elbv2_v2 "github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2"
+	aws_iam_v2 "github.com/aws/aws-sdk-go-v2/service/iam"
+	aws_kms_v2 "github.com/aws/aws-sdk-go-v2/service/kms"
+	aws_ssm_v2 "github.com/aws/aws-sdk-go-v2/service/ssm"
+	aws_sts_v2 "github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/autoscaling"
-	"github.com/aws/aws-sdk-go/service/autoscaling/autoscalingiface"
-	"github.com/aws/aws-sdk-go/service/cloudformation"
-	"github.com/aws/aws-sdk-go/service/cloudformation/cloudformationiface"
-	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
-	"github.com/aws/aws-sdk-go/service/elbv2"
-	"github.com/aws/aws-sdk-go/service/elbv2/elbv2iface"
-	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/aws/aws-sdk-go/service/iam/iamiface"
-	"github.com/aws/aws-sdk-go/service/kms"
-	"github.com/aws/aws-sdk-go/service/kms/kmsiface"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
-	"github.com/aws/aws-sdk-go/service/ssm"
-	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/dustin/go-humanize"
 	"go.uber.org/zap"
@@ -59,14 +56,16 @@ type Tester struct {
 	cfg *ec2config.Config
 
 	awsSession *session.Session
-	iamAPI     iamiface.IAMAPI
-	kmsAPI     kmsiface.KMSAPI
-	ssmAPI     ssmiface.SSMAPI
-	cfnAPI     cloudformationiface.CloudFormationAPI
-	ec2API     ec2iface.EC2API
+
+	stsAPIV2   *aws_sts_v2.Client
+	iamAPIV2   *aws_iam_v2.Client
+	kmsAPIV2   *aws_kms_v2.Client
+	ssmAPIV2   *aws_ssm_v2.Client
+	ec2APIV2   *aws_ec2_v2.Client
 	s3API      s3iface.S3API
-	asgAPI     autoscalingiface.AutoScalingAPI
-	elbv2API   elbv2iface.ELBV2API
+	cwAPIV2    *aws_cw_v2.Client
+	asgAPIV2   *aws_asg_v2.Client
+	elbv2APIV2 *aws_elbv2_v2.Client
 }
 
 // New creates a new EC2 tester.
@@ -102,14 +101,14 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 
 	defer ts.cfg.Sync()
 
-	awsCfg := &pkgaws.Config{
+	awsCfg := &pkg_aws.Config{
 		Logger:        ts.lg,
 		DebugAPICalls: ts.cfg.LogLevel == "debug",
 		Partition:     ts.cfg.Partition,
 		Region:        ts.cfg.Region,
 	}
 	var stsOutput *sts.GetCallerIdentityOutput
-	ts.awsSession, stsOutput, ts.cfg.AWSCredentialPath, err = pkgaws.New(awsCfg)
+	ts.awsSession, stsOutput, ts.cfg.AWSCredentialPath, err = pkg_aws.New(awsCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -118,33 +117,97 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 	ts.cfg.AWSIAMRoleARN = aws.StringValue(stsOutput.Arn)
 	ts.cfg.Sync()
 
-	ts.iamAPI = iam.New(ts.awsSession)
-	ts.kmsAPI = kms.New(ts.awsSession)
-	ts.ssmAPI = ssm.New(ts.awsSession)
-	ts.cfnAPI = cloudformation.New(ts.awsSession)
+	ts.s3API = s3.New(ts.awsSession)
 
-	ts.ec2API = ec2.New(ts.awsSession)
-	if _, err := ts.ec2API.DescribeInstances(&ec2.DescribeInstancesInput{MaxResults: aws.Int64(5)}); err != nil {
+	awsCfgV2, err := pkg_aws.NewV2(awsCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	ts.iamAPIV2 = aws_iam_v2.NewFromConfig(awsCfgV2)
+	ts.kmsAPIV2 = aws_kms_v2.NewFromConfig(awsCfgV2)
+	ts.ssmAPIV2 = aws_ssm_v2.NewFromConfig(awsCfgV2)
+
+	ts.ec2APIV2 = aws_ec2_v2.NewFromConfig(awsCfgV2)
+	if _, err := ts.ec2APIV2.DescribeInstances(
+		context.Background(),
+		&aws_ec2_v2.DescribeInstancesInput{MaxResults: aws_v2.Int32(5)}); err != nil {
 		return nil, fmt.Errorf("failed to describe instances using EC2 API (%v)", err)
 	}
 	fmt.Fprintln(ts.logWriter, "EC2 API available!")
 
-	ts.s3API = s3.New(ts.awsSession)
-	ts.asgAPI = autoscaling.New(ts.awsSession)
-	ts.elbv2API = elbv2.New(ts.awsSession)
+	ts.asgAPIV2 = aws_asg_v2.NewFromConfig(awsCfgV2)
+	ts.elbv2APIV2 = aws_elbv2_v2.NewFromConfig(awsCfgV2)
+
+	// endpoints package no longer exists in the AWS SDK for Go V2
+	// "github.com/aws/aws-sdk-go/aws/endpoints" is deprecated...
+	// the check will be done in "eks" with AWS API call
+	// ref. https://aws.github.io/aws-sdk-go-v2/docs/migrating/
+	fmt.Fprintln(ts.logWriter, "checking region...")
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	rout, err := ts.ec2APIV2.DescribeRegions(
+		ctx,
+		&aws_ec2_v2.DescribeRegionsInput{
+			RegionNames: []string{ts.cfg.Region},
+			AllRegions:  aws_v2.Bool(false),
+		},
+	)
+	cancel()
+	if err != nil {
+		return nil, fmt.Errorf("failed to describe region using EC2 API v2 (%v)", err)
+	}
+	if len(rout.Regions) != 1 {
+		return nil, fmt.Errorf("failed to describe region using EC2 API v2 (expected 1, but got %v)", rout.Regions)
+	}
+	ts.lg.Info("found region",
+		zap.String("region-name", aws_v2.ToString(rout.Regions[0].RegionName)),
+		zap.String("endpoint", aws_v2.ToString(rout.Regions[0].Endpoint)),
+		zap.String("opt-in-status", aws_v2.ToString(rout.Regions[0].OptInStatus)),
+	)
+
+	fmt.Fprintln(ts.logWriter, "checking availability zones...")
+	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+	dout, err := ts.ec2APIV2.DescribeAvailabilityZones(
+		ctx,
+		&aws_ec2_v2.DescribeAvailabilityZonesInput{
+			// TODO: include opt-in zones?
+			AllAvailabilityZones: aws_v2.Bool(false),
+		},
+	)
+	cancel()
+	if err != nil {
+		return nil, fmt.Errorf("failed to describe availability zones using EC2 API v2 (%v)", err)
+	}
+	for _, z := range dout.AvailabilityZones {
+		ts.lg.Info("availability zone",
+			zap.String("zone-name", aws_v2.ToString(z.ZoneName)),
+			zap.String("zone-id", aws_v2.ToString(z.ZoneId)),
+			zap.String("zone-type", aws_v2.ToString(z.ZoneType)),
+			zap.String("zone-opt-in-status", fmt.Sprintf("%+v", z.OptInStatus)),
+		)
+		ts.cfg.AvailabilityZoneNames = append(ts.cfg.AvailabilityZoneNames, aws_v2.ToString(z.ZoneName))
+	}
+	sort.Strings(ts.cfg.AvailabilityZoneNames)
+	if len(ts.cfg.AvailabilityZoneNames) > len(ts.cfg.VPC.PublicSubnetCIDRs) {
+		ts.cfg.AvailabilityZoneNames = ts.cfg.AvailabilityZoneNames[:len(ts.cfg.VPC.PublicSubnetCIDRs)]
+	}
+	ts.cfg.Sync()
+	if len(ts.cfg.AvailabilityZoneNames) < 2 {
+		return nil, fmt.Errorf("too few availability zone %v (expected at least two)", ts.cfg.AvailabilityZoneNames)
+	}
 
 	return ts, nil
 }
 
 // Up should provision a new cluster for testing
 func (ts *Tester) Up() (err error) {
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_green]UP START [default](%q)\n"), ts.cfg.ConfigPath)
 
 	now := time.Now()
 
 	defer func() {
-		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Fprintf(ts.logWriter, ts.color("[light_green]UP DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
 		ts.logFile.Sync()
 
@@ -156,7 +219,7 @@ func (ts *Tester) Up() (err error) {
 		if err == nil {
 			if ts.cfg.Up {
 				if ts.cfg.TotalNodes < 10 {
-					fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+					fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 					fmt.Fprintf(ts.logWriter, ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
 					fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
 				}
@@ -164,7 +227,7 @@ func (ts *Tester) Up() (err error) {
 				ts.lg.Info("Up succeeded",
 					zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 				)
-				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 				fmt.Fprintf(ts.logWriter, ts.color("\n\n💯 😁 👍 :) [light_green]Up success\n\n\n"))
 
 				ts.lg.Sugar().Infof("Up.defer end (%s)", ts.cfg.ConfigPath)
@@ -180,7 +243,7 @@ func (ts *Tester) Up() (err error) {
 		if !ts.cfg.OnFailureDelete {
 			if ts.cfg.Up {
 				if ts.cfg.TotalNodes < 10 {
-					fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+					fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 					fmt.Fprintf(ts.logWriter, ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
 					fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
 				}
@@ -190,8 +253,8 @@ func (ts *Tester) Up() (err error) {
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 				zap.Error(err),
 			)
-			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-			fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
+			fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprint(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
 
 			fmt.Fprintf(ts.logWriter, "\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
 			ts.logFile.Sync()
@@ -200,13 +263,13 @@ func (ts *Tester) Up() (err error) {
 
 		if ts.cfg.Up {
 			if ts.cfg.TotalNodes < 10 {
-				fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+				fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 				fmt.Fprintf(ts.logWriter, ts.color("[light_green]SSH [default](%q)\n"), ts.cfg.ConfigPath)
 				fmt.Fprintln(ts.logWriter, ts.cfg.SSHCommands())
 			}
 		}
-		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprint(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
 
 		ts.lg.Warn("Up failed; reverting resource creation",
 			zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
@@ -229,8 +292,8 @@ func (ts *Tester) Up() (err error) {
 		} else {
 			ts.lg.Warn("reverted Up")
 		}
-		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprint(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]UP FAIL\n"))
 
 		fmt.Fprintf(ts.logWriter, "\n\n# to delete instances\nec2-utils delete instances --path %s\n\n", ts.cfg.ConfigPath)
 		ts.logFile.Sync()
@@ -242,7 +305,7 @@ func (ts *Tester) Up() (err error) {
 	)
 	defer ts.cfg.Sync()
 
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createS3 [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -254,7 +317,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createRole [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -266,7 +329,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createVPC [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -278,7 +341,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createKeyPair [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -290,7 +353,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createASGs [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -302,7 +365,7 @@ func (ts *Tester) Up() (err error) {
 		return err
 	}
 
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_green]createSSM [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := catchInterrupt(
 		ts.lg,
@@ -315,7 +378,7 @@ func (ts *Tester) Up() (err error) {
 	}
 
 	if ts.cfg.ASGsFetchLogs {
-		fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Fprintf(ts.logWriter, ts.color("[light_green]FetchLogs [default](%q)\n"), ts.cfg.ConfigPath)
 
 		waitDur := 20 * time.Second
@@ -343,7 +406,7 @@ func (ts *Tester) Down() error {
 }
 
 func (ts *Tester) down() (err error) {
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]DOWN START [default](%q)\n"), ts.cfg.ConfigPath)
 
 	now := time.Now()
@@ -357,7 +420,7 @@ func (ts *Tester) down() (err error) {
 	defer func() {
 		ts.cfg.Sync()
 		if err == nil {
-			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 			fmt.Fprintf(ts.logWriter, ts.color("[light_blue]DOWN DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
 			fmt.Fprintf(ts.logWriter, ts.color("\n\n💯 😁 👍 :)  [light_blue]DOWN SUCCESS\n\n\n"))
 
@@ -366,9 +429,9 @@ func (ts *Tester) down() (err error) {
 			)
 
 		} else {
-			fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+			fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 			fmt.Fprintf(ts.logWriter, ts.color("[light_blue]DOWN DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
-			fmt.Fprintf(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]DOWN FAIL\n"))
+			fmt.Fprint(ts.logWriter, ts.color("🔥 💀 👽 😱 😡 (-_-) [light_magenta]DOWN FAIL\n"))
 
 			ts.lg.Info("failed Down",
 				zap.Error(err),
@@ -379,48 +442,48 @@ func (ts *Tester) down() (err error) {
 
 	var errs []string
 
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteSSM [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := ts.deleteSSM(); err != nil {
 		ts.lg.Warn("deleteSSM failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteASGs [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := ts.deleteASGs(); err != nil {
 		ts.lg.Warn("deleteASGs failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteKeyPair [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := ts.deleteKeyPair(); err != nil {
 		ts.lg.Warn("deleteKeyPair failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteRole [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := ts.deleteRole(); err != nil {
 		ts.lg.Warn("deleteRole failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	if ts.cfg.VPCCreate { // VPC was created
+	if ts.cfg.VPC.Create { // VPC was created
 		waitDur := 30 * time.Second
 		ts.lg.Info("sleeping before VPC deletion", zap.Duration("wait", waitDur))
 		time.Sleep(waitDur)
 	}
 
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteVPC [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := ts.deleteVPC(); err != nil {
 		ts.lg.Warn("deleteVPC failed", zap.Error(err))
 		errs = append(errs, err.Error())
 	}
 
-	fmt.Fprintf(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 	fmt.Fprintf(ts.logWriter, ts.color("[light_blue]deleteS3 [default](%q)\n"), ts.cfg.ConfigPath)
 	if err := ts.deleteS3(); err != nil {
 		ts.lg.Warn("deleteS3 failed", zap.Error(err))

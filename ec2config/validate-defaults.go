@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -31,6 +30,9 @@ func NewDefault() *Config {
 	return &Config{
 		mu: new(sync.RWMutex),
 
+		Up:               false,
+		DeletedResources: make(map[string]string),
+
 		Name:      name,
 		Partition: endpoints.AwsPartitionID,
 		Region:    endpoints.UsWest2RegionID,
@@ -50,13 +52,9 @@ func NewDefault() *Config {
 		OnFailureDelete:            true,
 		OnFailureDeleteWaitSeconds: 120,
 
-		S3BucketName:                    "",
-		S3BucketCreate:                  true,
-		S3BucketCreateKeep:              true,
-		S3BucketLifecycleExpirationDays: 0,
-
-		RoleCreate:                 true,
-		VPCCreate:                  true,
+		S3:                         getDefaultS3(),
+		Role:                       getDefaultRole(),
+		VPC:                        getDefaultVPC(),
 		RemoteAccessKeyCreate:      true,
 		RemoteAccessPrivateKeyPath: filepath.Join(os.TempDir(), randutil.String(10)+".insecure.key"),
 
@@ -109,10 +107,10 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 
 func (cfg *Config) validateConfig() error {
 	if len(cfg.Name) == 0 {
-		return errors.New("Name is empty")
+		return errors.New("empty Name")
 	}
 	if cfg.Name != strings.ToLower(cfg.Name) {
-		return fmt.Errorf("Name %q must be in lower-case", cfg.Name)
+		return fmt.Errorf("not lower-case Name %q", cfg.Name)
 	}
 
 	var partition endpoints.Partition
@@ -195,43 +193,29 @@ func (cfg *Config) validateConfig() error {
 		return err
 	}
 
-	switch cfg.S3BucketCreate {
+	switch cfg.S3.BucketCreate {
 	case true: // need create one, or already created
-		if cfg.S3BucketName == "" {
-			cfg.S3BucketName = cfg.Name + "-s3-bucket"
+		if cfg.S3.BucketName == "" {
+			cfg.S3.BucketName = cfg.Name + "-s3-bucket"
 		}
-		if cfg.S3BucketLifecycleExpirationDays > 0 && cfg.S3BucketLifecycleExpirationDays < 3 {
-			cfg.S3BucketLifecycleExpirationDays = 3
+		if cfg.S3.BucketLifecycleExpirationDays > 0 && cfg.S3.BucketLifecycleExpirationDays < 3 {
+			cfg.S3.BucketLifecycleExpirationDays = 3
 		}
 	case false: // use existing one
-		if cfg.S3BucketName == "" {
+		if cfg.S3.BucketName == "" {
 			return errors.New("empty S3BucketName")
 		}
 	}
-	if cfg.S3Dir == "" {
-		cfg.S3Dir = cfg.Name
+	if cfg.S3.Dir == "" {
+		cfg.S3.Dir = cfg.Name
 	}
 
-	if cfg.RoleCFNStackYAMLPath == "" {
-		cfg.RoleCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".role.cfn.yaml"
-	}
-	if cfg.RoleCFNStackYAMLS3Key == "" {
-		cfg.RoleCFNStackYAMLS3Key = path.Join(
-			cfg.S3Dir,
-			filepath.Base(cfg.RoleCFNStackYAMLPath),
-		)
-	}
-	switch cfg.RoleCreate {
+	switch cfg.Role.Create {
 	case true: // need create one, or already created
-		if cfg.RoleName == "" {
-			cfg.RoleName = cfg.Name + "-role"
+		if cfg.Role.Name == "" {
+			cfg.Role.Name = cfg.Name + "-role"
 		}
-		if cfg.RoleARN != "" {
-			// just ignore...
-			// could be populated from previous run
-			// do not error, so long as RoleCreate false, role won't be deleted
-		}
-		if len(cfg.RoleServicePrincipals) > 0 {
+		if len(cfg.Role.ServicePrincipals) > 0 {
 			/*
 				create node group request failed (InvalidParameterException: Following required service principals [ec2.amazonaws.com] were not found in the trust relationships of nodeRole arn:aws:iam::...:role/test-mng-role
 				{
@@ -241,81 +225,32 @@ func (cfg *Config) validateConfig() error {
 				})
 			*/
 			found := false
-			for _, pv := range cfg.RoleServicePrincipals {
+			for _, pv := range cfg.Role.ServicePrincipals {
 				if pv == "ec2.amazonaws.com" { // TODO: support China regions ec2.amazonaws.com.cn or eks.amazonaws.com.cn
 					found = true
 					break
 				}
 			}
 			if !found {
-				return fmt.Errorf("RoleServicePrincipals %q must include 'ec2.amazonaws.com'", cfg.RoleServicePrincipals)
+				return fmt.Errorf("RoleServicePrincipals %q must include 'ec2.amazonaws.com'", cfg.Role.ServicePrincipals)
 			}
 		}
 
 	case false: // use existing one
-		if cfg.RoleARN == "" {
-			return fmt.Errorf("Parameters.RoleCreate false; expect non-empty RoleARN but got %q", cfg.RoleARN)
+		if cfg.Role.ARN == "" {
+			return fmt.Errorf("Parameters.RoleCreate false; expect non-empty RoleARN but got %q", cfg.Role.ARN)
 		}
-		if cfg.RoleName == "" {
-			cfg.RoleName = getNameFromARN(cfg.RoleARN)
-		}
-		if len(cfg.RoleManagedPolicyARNs) > 0 {
-			return fmt.Errorf("Parameters.RoleCreate false; expect empty RoleManagedPolicyARNs but got %q", cfg.RoleManagedPolicyARNs)
-		}
-		if len(cfg.RoleServicePrincipals) > 0 {
-			return fmt.Errorf("Parameters.RoleCreate false; expect empty RoleServicePrincipals but got %q", cfg.RoleServicePrincipals)
+		if cfg.Role.Name == "" {
+			cfg.Role.Name = getNameFromARN(cfg.Role.ARN)
 		}
 	}
 
-	if cfg.VPCCFNStackYAMLPath == "" {
-		cfg.VPCCFNStackYAMLPath = strings.ReplaceAll(cfg.ConfigPath, ".yaml", "") + ".vpc.cfn.yaml"
-	}
-	if cfg.VPCCFNStackYAMLS3Key == "" {
-		cfg.VPCCFNStackYAMLS3Key = path.Join(
-			cfg.S3Dir,
-			filepath.Base(cfg.VPCCFNStackYAMLPath),
-		)
-	}
-	switch cfg.VPCCreate {
+	switch cfg.VPC.Create {
 	case true: // need create one, or already created
-		if cfg.VPCID != "" {
-			// just ignore...
-			// could be populated from previous run
-			// do not error, so long as VPCCreate false, VPC won't be deleted
-		}
+
 	case false: // use existing one
-		if cfg.VPCID == "" {
-			return fmt.Errorf("Parameters.RoleCreate false; expect non-empty VPCID but got %q", cfg.VPCID)
-		}
-	}
-
-	switch {
-	case cfg.VPCCIDR != "":
-		switch {
-		case cfg.PublicSubnetCIDR1 == "":
-			return fmt.Errorf("empty Parameters.PublicSubnetCIDR1 when VPCCIDR is %q", cfg.VPCCIDR)
-		case cfg.PublicSubnetCIDR2 == "":
-			return fmt.Errorf("empty Parameters.PublicSubnetCIDR2 when VPCCIDR is %q", cfg.VPCCIDR)
-		case cfg.PublicSubnetCIDR3 == "":
-			return fmt.Errorf("empty Parameters.PublicSubnetCIDR3 when VPCCIDR is %q", cfg.VPCCIDR)
-		case cfg.PrivateSubnetCIDR1 == "":
-			return fmt.Errorf("empty Parameters.PrivateSubnetCIDR1 when VPCCIDR is %q", cfg.VPCCIDR)
-		case cfg.PrivateSubnetCIDR2 == "":
-			return fmt.Errorf("empty Parameters.PrivateSubnetCIDR2 when VPCCIDR is %q", cfg.VPCCIDR)
-		}
-
-	case cfg.VPCCIDR == "":
-		switch {
-		case cfg.PublicSubnetCIDR1 != "":
-			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR1 %q when VPCCIDR is empty", cfg.PublicSubnetCIDR1)
-		case cfg.PublicSubnetCIDR2 != "":
-			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR2 %q when VPCCIDR is empty", cfg.PublicSubnetCIDR2)
-		case cfg.PublicSubnetCIDR3 != "":
-			return fmt.Errorf("non-empty Parameters.PublicSubnetCIDR3 %q when VPCCIDR is empty", cfg.PublicSubnetCIDR3)
-		case cfg.PrivateSubnetCIDR1 != "":
-			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR1 %q when VPCCIDR is empty", cfg.PrivateSubnetCIDR1)
-		case cfg.PrivateSubnetCIDR2 != "":
-			return fmt.Errorf("non-empty Parameters.PrivateSubnetCIDR2 %q when VPCCIDR is empty", cfg.PrivateSubnetCIDR2)
+		if cfg.VPC.ID == "" {
+			return fmt.Errorf("Parameters.RoleCreate false; expect non-empty VPCID but got %q", cfg.VPC.ID)
 		}
 	}
 

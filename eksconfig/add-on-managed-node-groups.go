@@ -175,8 +175,11 @@ type MNGVersionUpgrade struct {
 	VersionValue float64 `json:"version-value" read-only:"true"`
 }
 
-// AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_PREFIX is the environment variable prefix used for "eksconfig".
-const AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_PREFIX = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_MANAGED_NODE_GROUPS_"
+const (
+	// AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_PREFIX is the environment variable prefix used for "eksconfig".
+	AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_PREFIX      = AWS_K8S_TESTER_EKS_PREFIX + "ADD_ON_MANAGED_NODE_GROUPS_"
+	AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ROLE_PREFIX = AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_PREFIX + "ROLE_"
+)
 
 // IsEnabledAddOnManagedNodeGroups returns true if "AddOnManagedNodeGroups" is enabled.
 // Otherwise, nil the field for "omitempty".

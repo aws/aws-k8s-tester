@@ -86,7 +86,6 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 	if checkN == 0 {
 		checkN = time.Duration(cur.ASGMinSize)
 	}
-
 	waitDur := 30*time.Minute + 10*time.Second*checkN
 	if strings.Contains(cur.InstanceType, ".metal") { // "i3.metal" takes much longer
 		ts.cfg.Logger.Info("increasing wait time for metal instance", zap.String("instance-type", cur.InstanceType))

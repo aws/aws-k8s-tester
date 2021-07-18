@@ -104,6 +104,16 @@ AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_VERSION_UPGRADE_ENABLE=true \
 *----------------------------------------------------------------*-------------------*----------------------------------------------------------*-------------------*
 
 
+*--------------------------------------------------------*-------------------*---------------------------------------------*---------*
+|                 ENVIRONMENTAL VARIABLE                 |     READ ONLY     |                    TYPE                     | GO TYPE |
+*--------------------------------------------------------*-------------------*---------------------------------------------*---------*
+| AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE                    | read-only "false" | *eksconfig.S3.BucketCreate                  | bool    |
+| AWS_K8S_TESTER_EKS_S3_BUCKET_CREATE_KEEP               | read-only "false" | *eksconfig.S3.BucketCreateKeep              | bool    |
+| AWS_K8S_TESTER_EKS_S3_BUCKET_NAME                      | read-only "false" | *eksconfig.S3.BucketName                    | string  |
+| AWS_K8S_TESTER_EKS_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS | read-only "false" | *eksconfig.S3.BucketLifecycleExpirationDays | int64   |
+*--------------------------------------------------------*-------------------*---------------------------------------------*---------*
+
+
 *------------------------------------------*-------------------*---------------------------------*---------*
 |          ENVIRONMENTAL VARIABLE          |     READ ONLY     |              TYPE               | GO TYPE |
 *------------------------------------------*-------------------*---------------------------------*---------*

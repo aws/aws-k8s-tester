@@ -84,6 +84,7 @@ mainSteps:
 		_, err := ts.cfg.SSMAPIV2.CreateDocument(
 			context.Background(),
 			&aws_ssm_v2.CreateDocumentInput{
+				Name:           aws_v2.String(cur.SSM.DocumentName),
 				DocumentFormat: aws_ssm_v2_types.DocumentFormatYaml,
 				DocumentType:   aws_ssm_v2_types.DocumentTypeCommand,
 				VersionName:    aws_v2.String("v1"),

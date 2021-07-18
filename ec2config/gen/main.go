@@ -23,6 +23,13 @@ func main() {
 func createDoc() string {
 	b := strings.Builder{}
 	b.WriteString(writeDoc(ec2config.AWS_K8S_TESTER_EC2_PREFIX, &ec2config.Config{}))
+	b.WriteString("\n\n")
+	b.WriteString(writeDoc(ec2config.AWS_K8S_TESTER_EC2_PREFIX+"S3_", &ec2config.S3{}))
+	b.WriteString("\n\n")
+	b.WriteString(writeDoc(ec2config.AWS_K8S_TESTER_EC2_PREFIX+"ROLE_", &ec2config.Role{}))
+	b.WriteString("\n\n")
+	b.WriteString(writeDoc(ec2config.AWS_K8S_TESTER_EC2_PREFIX+"VPC_", &ec2config.VPC{}))
+	b.WriteString("\n\n")
 	return b.String()
 }
 

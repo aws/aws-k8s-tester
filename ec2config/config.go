@@ -59,7 +59,8 @@ type Config struct {
 	// StatusCurrent represents the current status of the cluster.
 	StatusCurrent string `json:"status-current"`
 	// Status represents the status of the cluster.
-	Status []Status `json:"status"`
+	Status           []Status          `json:"status"`
+	DeletedResources map[string]string `json:"deleted-resources"`
 
 	// Name is the cluster name.
 	// If empty, deployer auto-populates it.
@@ -70,6 +71,9 @@ type Config struct {
 	// Region is the AWS geographic area for EC2 deployment.
 	// If empty, set default region.
 	Region string `json:"region"`
+	// AvailabilityZoneNames lists the availability zones for the specified region.
+	// ref. https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeAvailabilityZones.html
+	AvailabilityZoneNames []string `json:"availability-zone-names,omitempty" read-only:"true"`
 
 	// ConfigPath is the configuration file path.
 	// Deployer is expected to update this file with latest status.
@@ -109,76 +113,9 @@ type Config struct {
 	// all resources on creation fail.
 	OnFailureDeleteWaitSeconds uint64 `json:"on-failure-delete-wait-seconds"`
 
-	// S3BucketCreate is true to auto-create S3 bucket.
-	S3BucketCreate bool `json:"s3-bucket-create"`
-	// S3BucketCreateKeep is true to not delete auto-created S3 bucket.
-	// The created S3 bucket is kept.
-	S3BucketCreateKeep bool `json:"s3-bucket-create-keep"`
-	// S3BucketName is the name of cluster S3.
-	S3BucketName string `json:"s3-bucket-name"`
-	// S3BucketLifecycleExpirationDays is expiration in days for the lifecycle of the object.
-	S3BucketLifecycleExpirationDays int64 `json:"s3-bucket-lifecycle-expiration-days"`
-
-	// S3Dir is the S3 directory to store all test results.
-	// It is under the bucket "eksconfig.Config.S3BucketName".
-	S3Dir string `json:"s3-dir"`
-
-	// RoleName is the name of cluster role.
-	RoleName string `json:"role-name"`
-	// RoleCreate is true to auto-create and delete cluster role.
-	RoleCreate bool `json:"role-create"`
-	// RoleARN is the role ARN that EC2 uses to create AWS resources for Kubernetes.
-	// By default, it's empty which triggers tester to create one.
-	RoleARN string `json:"role-arn"`
-	// RoleServicePrincipals is the EC2 Role Service Principals
-	RoleServicePrincipals []string `json:"role-service-principals"`
-	// RoleManagedPolicyARNs is EC2 Role managed policy ARNs.
-	RoleManagedPolicyARNs []string `json:"role-managed-policy-arns"`
-	RoleCFNStackID        string   `json:"role-cfn-stack-id" read-only:"true"`
-	RoleCFNStackYAMLPath  string   `json:"role-cfn-stack-yaml-path" read-only:"true"`
-	RoleCFNStackYAMLS3Key string   `json:"role-cfn-stack-yaml-s3-key" read-only:"true"`
-
-	// VPCCreate is true to auto-create and delete VPC.
-	VPCCreate bool `json:"vpc-create"`
-	// VPCID is the VPC ID for cluster creation.
-	// If not empty, VPC is reused and not deleted.
-	// If empty, VPC is created anew and deleted on cluster deletion.
-	VPCID                string `json:"vpc-id"`
-	VPCCFNStackID        string `json:"vpc-cfn-stack-id" read-only:"true"`
-	VPCCFNStackYAMLPath  string `json:"vpc-cfn-stack-yaml-path" read-only:"true"`
-	VPCCFNStackYAMLS3Key string `json:"vpc-cfn-stack-yaml-s3-key" read-only:"true"`
-	// SSHIngressIPv4Range is the IP range for SSH inbound traffic.
-	SSHIngressIPv4Range string `json:"ssh-ingress-ipv4-range"`
-	// VpcCIDR is the IP range (CIDR notation) for VPC, must be a valid private
-	// (RFC 1918) CIDR range.
-	VPCCIDR string `json:"vpc-cidr,omitempty"`
-	// PublicSubnetCIDR1 is the CIDR Block for subnet 1 within the VPC.
-	PublicSubnetCIDR1 string `json:"public-subnet-cidr-1,omitempty"`
-	// PublicSubnetCIDR2 is the CIDR Block for subnet 2 within the VPC.
-	PublicSubnetCIDR2 string `json:"public-subnet-cidr-2,omitempty"`
-	// PublicSubnetCIDR3 is the CIDR Block for subnet 3 within the VPC.
-	PublicSubnetCIDR3 string `json:"public-subnet-cidr-3,omitempty"`
-	// PrivateSubnetCIDR1 is the CIDR Block for subnet 1 within the VPC.
-	PrivateSubnetCIDR1 string `json:"private-subnet-cidr-1,omitempty"`
-	// PrivateSubnetCIDR2 is the CIDR Block for subnet 2 within the VPC.
-	PrivateSubnetCIDR2 string `json:"private-subnet-cidr-2,omitempty"`
-	// PublicSubnetIDs is the list of all public subnets in the VPC.
-	PublicSubnetIDs []string `json:"public-subnet-ids" read-only:"true"`
-	// PrivateSubnetIDs is the list of all private subnets in the VPC.
-	PrivateSubnetIDs []string `json:"private-subnet-ids" read-only:"true"`
-
-	// DHCPOptionsDomainName is used to complete unqualified DNS hostnames for VPC.
-	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-dhcp-options.html
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html
-	DHCPOptionsDomainName string `json:"dhcp-options-domain-name"`
-	// DHCPOptionsDomainNameServers is a list of strings.
-	// The IPv4 addresses of up to four domain name servers, or AmazonProvidedDNS, for VPC.
-	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-dhcp-options.html
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html
-	DHCPOptionsDomainNameServers []string `json:"dhcp-options-domain-name-servers"`
-
-	// SecurityGroupID is the security group ID for the VPC.
-	SecurityGroupID string `json:"security-group-id" read-only:"true"`
+	S3   *S3   `json:"s3"`
+	Role *Role `json:"role"`
+	VPC  *VPC  `json:"vpc"`
 
 	// RemoteAccessKeyCreate is true to create the remote SSH access private key.
 	RemoteAccessKeyCreate bool `json:"remote-access-key-create"`
@@ -199,6 +136,130 @@ type Config struct {
 
 	// TotalNodes is the total number of nodes from all ASGs.
 	TotalNodes int32 `json:"total-nodes" read-only:"true"`
+}
+
+type S3 struct {
+	// BucketCreate is true to auto-create S3 bucket.
+	BucketCreate bool `json:"bucket-create"`
+	// BucketCreateKeep is true to not delete auto-created S3 bucket.
+	// The created S3 bucket is kept.
+	BucketCreateKeep bool `json:"bucket-create-keep"`
+	// BucketName is the name of cluster S3.
+	BucketName string `json:"bucket-name"`
+	// BucketLifecycleExpirationDays is expiration in days for the lifecycle of the object.
+	BucketLifecycleExpirationDays int64 `json:"bucket-lifecycle-expiration-days"`
+	// Dir is the S3 directory to store all test results.
+	// It is under the bucket "eksconfig.Config.S3BucketName".
+	Dir string `json:"dir"`
+}
+
+func getDefaultS3() *S3 {
+	return &S3{
+		BucketName:                    "",
+		BucketCreate:                  true,
+		BucketCreateKeep:              true,
+		BucketLifecycleExpirationDays: 0,
+	}
+}
+
+type Role struct {
+	// Name is the name of cluster role.
+	Name string `json:"name"`
+	// Create is true to auto-create and delete cluster role.
+	Create bool `json:"create"`
+	// ARN is the role ARN that EKS uses to create AWS resources for Kubernetes.
+	// By default, it's empty which triggers tester to create one.
+	ARN string `json:"arn"`
+
+	// ServicePrincipals is the EKS Role Service Principals
+	ServicePrincipals []string `json:"service-principals"`
+	// ManagedPolicyARNs is EKS Role managed policy ARNs.
+	ManagedPolicyARNs []string `json:"managed-policy-arns"`
+
+	// PolicyName is the name of the policy.
+	PolicyName string `json:"policy-name" read-only:"true"`
+	// PolicyARN is the attached policy ARN.
+	PolicyARN string `json:"policy-arn" read-only:"true"`
+
+	// InstanceProfileName is the instance profile name for the node group.
+	InstanceProfileName string `json:"instance-profile-name" read-only:"true"`
+	// InstanceProfileARN is the instance profile ARN for the node group.
+	InstanceProfileARN string `json:"instance-profile-arn" read-only:"true"`
+}
+
+func getDefaultRole() *Role {
+	return &Role{
+		Create: true,
+		ServicePrincipals: []string{
+			"ec2.amazonaws.com",
+		},
+		ManagedPolicyARNs: []string{
+			"arn:aws:iam::aws:policy/AmazonEC2FullAccess",
+			"arn:aws:iam::aws:policy/AmazonSSMFullAccess",
+			"arn:aws:iam::aws:policy/AmazonS3FullAccess",
+		},
+	}
+}
+
+type VPC struct {
+	// Create is true to auto-create and delete VPC.
+	Create bool `json:"create"`
+	// ID is the VPC ID for cluster creation.
+	// If not empty, VPC is reused and not deleted.
+	// If empty, VPC is created anew and deleted on cluster deletion.
+	ID              string `json:"id"`
+	SecurityGroupID string `json:"security-group-id" read-only:"true"`
+
+	// CIDRs is the list of CIDR blocks with IP range (CIDR notation) for the primary VPC Block.
+	// Must be a valid RFC 1918 CIDR range.
+	CIDRs []string `json:"cidrs"`
+
+	// PublicSubnetCIDRs is the CIDR blocks for public subnets.
+	PublicSubnetCIDRs                    []string `json:"public-subnet-cidrs"`
+	PublicSubnetIDs                      []string `json:"public-subnet-ids" read-only:"true"`
+	InternetGatewayID                    string   `json:"internet-gateway-id" read-only:"true"`
+	PublicRouteTableID                   string   `json:"public-route-table-id" read-only:"true"`
+	PublicSubnetRouteTableAssociationIDs []string `json:"public-subnet-route-table-association-ids" read-only:"true"`
+	EIPAllocationIDs                     []string `json:"eip-allocation-ids" read-only:"true"`
+	NATGatewayIDs                        []string `json:"nat-gateway-ids" read-only:"true"`
+
+	// PrivateSubnetCIDRs is the CIDR blocks for private subnets.
+	PrivateSubnetCIDRs                    []string `json:"private-subnet-cidrs,omitempty"`
+	PrivateSubnetIDs                      []string `json:"private-subnet-ids" read-only:"true"`
+	PrivateRouteTableIDs                  []string `json:"private-route-table-ids" read-only:"true"`
+	PrivateSubnetRouteTableAssociationIDs []string `json:"private-subnet-route-table-association-ids" read-only:"true"`
+
+	// DHCPOptionsDomainName is used to complete unqualified DNS hostnames for VPC.
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-dhcp-options.html
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html
+	DHCPOptionsDomainName string `json:"dhcp-options-domain-name,omitempty"`
+	// DHCPOptionsDomainNameServers is a list of strings.
+	// The IPv4 addresses of up to four domain name servers, or AmazonProvidedDNS, for VPC.
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ec2-dhcp-options.html
+	// ref. https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html
+	DHCPOptionsDomainNameServers []string `json:"dhcp-options-domain-name-servers,omitempty"`
+	DHCPOptionsID                string   `json:"dhcp-options-id,omitempty" read-only:"true"`
+}
+
+func getDefaultVPC() *VPC {
+	return &VPC{
+		Create: true,
+		CIDRs: []string{
+			"10.0.0.0/16",
+			"10.1.0.0/16",
+			"10.2.0.0/16",
+			"10.3.0.0/16",
+		},
+		PublicSubnetCIDRs: []string{
+			"10.0.0.0/16",
+			"10.1.0.0/16",
+			"10.2.0.0/16",
+		},
+		PrivateSubnetCIDRs: []string{
+			"10.3.0.0/17",
+			"10.3.128.0/17",
+		},
+	}
 }
 
 func (c Config) Colorize(input string) string {

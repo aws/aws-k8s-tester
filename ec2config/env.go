@@ -31,6 +31,45 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *Config, got %T", vv)
 	}
 
+	if cfg.S3 == nil {
+		cfg.S3 = &S3{}
+	}
+	vv, err = parseEnvs(AWS_K8S_TESTER_EC2_PREFIX+"S3_", cfg.S3)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*S3); ok {
+		cfg.S3 = av
+	} else {
+		return fmt.Errorf("expected *S3, got %T", vv)
+	}
+
+	if cfg.Role == nil {
+		cfg.Role = &Role{}
+	}
+	vv, err = parseEnvs(AWS_K8S_TESTER_EC2_PREFIX+"ROLE_", cfg.Role)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*Role); ok {
+		cfg.Role = av
+	} else {
+		return fmt.Errorf("expected *Role, got %T", vv)
+	}
+
+	if cfg.VPC == nil {
+		cfg.VPC = &VPC{}
+	}
+	vv, err = parseEnvs(AWS_K8S_TESTER_EC2_PREFIX+"VPC_", cfg.VPC)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*VPC); ok {
+		cfg.VPC = av
+	} else {
+		return fmt.Errorf("expected *VPC, got %T", vv)
+	}
+
 	return nil
 }
 
@@ -49,7 +88,7 @@ func parseEnvs(pfx string, addOn interface{}) (interface{}, error) {
 			continue
 		}
 		if tp.Field(i).Tag.Get("read-only") == "true" { // error when read-only field is set for update
-			return nil, fmt.Errorf("'%s=%s' is 'read-only' field; should not be set!", env, sv)
+			return nil, fmt.Errorf("'%s=%s' is 'read-only' field; should not be set", env, sv)
 		}
 		fieldName := tp.Field(i).Name
 
