@@ -1064,6 +1064,7 @@ func (ts *tester) deletePublicNATGateways() (err error) {
 			continue
 		}
 
+		ts.cfg.Logger.Info("requesting to delete NAT gateway", zap.String("nat-gateway-id", id))
 		_, err := ts.cfg.EC2APIV2.DeleteNatGateway(
 			context.Background(),
 			&aws_ec2_v2.DeleteNatGatewayInput{
@@ -1071,7 +1072,7 @@ func (ts *tester) deletePublicNATGateways() (err error) {
 			},
 		)
 		if err != nil {
-			ts.cfg.Logger.Warn("failed to delete public NAT gateway", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to delete NAT gateway", zap.Error(err))
 			var apiErr smithy.APIError
 			if errors.As(err, &apiErr) {
 				if strings.Contains(apiErr.ErrorCode(), "NotFound") {
@@ -1093,6 +1094,7 @@ func (ts *tester) deletePublicNATGateways() (err error) {
 					NatGatewayId: aws_v2.String(id),
 				},
 			)
+			ts.cfg.Logger.Info("retried deleting NAT gateway", zap.String("nat-gateway-id", id), zap.Error(err1))
 			dout, err2 := ts.cfg.EC2APIV2.DescribeNatGateways(
 				context.Background(),
 				&aws_ec2_v2.DescribeNatGatewaysInput{
@@ -1100,13 +1102,17 @@ func (ts *tester) deletePublicNATGateways() (err error) {
 				},
 			)
 			if err2 == nil {
-				ts.cfg.Logger.Warn("described NAT gateways", zap.Int("nat-gateways", len(dout.NatGateways)))
+				if len(dout.NatGateways) == 1 {
+					ts.cfg.Logger.Warn("described NAT gateways", zap.String("nat-gateway-id", id), zap.String("nat-gateway-state", string(dout.NatGateways[0].State)))
+				}
 				if len(dout.NatGateways) == 0 {
+					ts.cfg.Logger.Warn("no NAT gateway found", zap.String("nat-gateway-id", id))
 					break
 				}
 				continue
 			}
 			ts.cfg.Logger.Warn("failed to describe NAT gateway during deletion",
+				zap.String("nat-gateway-id", id),
 				zap.String("delete-error", fmt.Sprintf("%v", err1)),
 				zap.Error(err2),
 			)
