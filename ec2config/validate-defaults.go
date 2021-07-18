@@ -388,18 +388,20 @@ func (cfg *Config) validateASGs() error {
 			return fmt.Errorf("ASGs[%q].ASGDesiredCapacity %d > ASGMaxLimit %d", k, cur.ASGDesiredCapacity, ASGMaxLimit)
 		}
 
-		switch cur.SSM.DocumentCreate {
-		case true: // need create one, or already created
-			if cur.SSM.DocumentName == "" {
-				cur.SSM.DocumentName = cur.Name + "SSMDocument"
-			}
-			cur.SSM.DocumentName = strings.ReplaceAll(cur.SSM.DocumentName, "GetRef.Name", cfg.Name)
-			cur.SSM.DocumentName = ssmDocNameRegex.ReplaceAllString(cur.SSM.DocumentName, "")
-			if cur.SSM.DocumentExecutionTimeoutSeconds == 0 {
-				cur.SSM.DocumentExecutionTimeoutSeconds = 3600
-			}
+		if cur.SSM != nil {
+			switch cur.SSM.DocumentCreate {
+			case true: // need create one, or already created
+				if cur.SSM.DocumentName == "" {
+					cur.SSM.DocumentName = cur.Name + "SSMDocument"
+				}
+				cur.SSM.DocumentName = strings.ReplaceAll(cur.SSM.DocumentName, "GetRef.Name", cfg.Name)
+				cur.SSM.DocumentName = ssmDocNameRegex.ReplaceAllString(cur.SSM.DocumentName, "")
+				if cur.SSM.DocumentExecutionTimeoutSeconds == 0 {
+					cur.SSM.DocumentExecutionTimeoutSeconds = 3600
+				}
 
-		case false: // use existing one, or don't run any SSM
+			case false: // use existing one, or don't run any SSM
+			}
 		}
 
 		expectedN := cur.ASGDesiredCapacity
