@@ -247,6 +247,9 @@ func (cfg *Config) validateConfig() error {
 	if cfg.Role.PolicyName == "" {
 		cfg.Role.PolicyName = cfg.Name + "-policy"
 	}
+	if cfg.Role.InstanceProfileName == "" {
+		cfg.Role.InstanceProfileName = cfg.Name + "-instance-profile"
+	}
 
 	switch cfg.VPC.Create {
 	case true: // need create one, or already created
