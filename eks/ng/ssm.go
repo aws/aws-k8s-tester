@@ -183,7 +183,6 @@ func (ts *tester) sendSSMDocumentCommand() error {
 		if cur.SSM == nil {
 			continue
 		}
-
 		if cur.SSM.DocumentName == "" {
 			ts.cfg.Logger.Info("skipping SSM document send",
 				zap.String("asg-name", asgName),
@@ -192,8 +191,9 @@ func (ts *tester) sendSSMDocumentCommand() error {
 			continue
 		}
 		if len(cur.Instances) == 0 {
-			return fmt.Errorf("no instance found for SSM document %q", cur.SSM.DocumentName)
+			return fmt.Errorf("no instance found to run SSM document %q (asg name %q)", cur.SSM.DocumentName, asgName)
 		}
+
 		ids := make([]string, 0)
 		for id := range cur.Instances {
 			ids = append(ids, id)
