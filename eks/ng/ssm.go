@@ -202,7 +202,7 @@ func (ts *tester) sendSSMDocumentCommand() error {
 
 		// batch by 50
 		// e.g. 'instanceIds' failed to satisfy constraint: Member must have length less than or equal to 50
-		ts.cfg.Logger.Info("sending SSM document",
+		ts.cfg.Logger.Info("start sending SSM document",
 			zap.String("asg-name", asgName),
 			zap.String("ssm-document-name", cur.SSM.DocumentName),
 			zap.Strings("instance-ids", ids),
@@ -220,6 +220,7 @@ func (ts *tester) sendSSMDocumentCommand() error {
 				batch = append(batch, left[:50]...)
 				left = left[50:]
 			}
+			ts.cfg.Logger.Info("batching SSM document", zap.Strings("batch", batch))
 			ssmInput := &aws_ssm_v2.SendCommandInput{
 				DocumentName:   aws_v2.String(cur.SSM.DocumentName),
 				Comment:        aws_v2.String(cur.SSM.DocumentName + "-" + randutil.String(10)),
@@ -227,12 +228,10 @@ func (ts *tester) sendSSMDocumentCommand() error {
 				MaxConcurrency: aws_v2.String(fmt.Sprintf("%d", len(batch))),
 				Parameters: map[string][]string{
 					"executionTimeoutSeconds": {fmt.Sprintf("%d", cur.SSM.DocumentExecutionTimeoutSeconds)},
+					"commands":                {cur.SSM.DocumentCommands},
 				},
 				OutputS3BucketName: aws_v2.String(ts.cfg.EKSConfig.S3.BucketName),
 				OutputS3KeyPrefix:  aws_v2.String(path.Join(ts.cfg.EKSConfig.Name, "ssm-outputs")),
-			}
-			if len(cur.SSM.DocumentCommands) > 0 {
-				ssmInput.Parameters["commands"] = []string{cur.SSM.DocumentCommands}
 			}
 			cmd, err := ts.cfg.SSMAPIV2.SendCommand(
 				context.Background(),

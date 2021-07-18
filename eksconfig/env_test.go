@@ -1674,7 +1674,7 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34, "instance-type":"type-2", "image-id":"my-ami",  "ssm":{"document-create":true,    "document-name":"GetRef.Name-document"}, "kubelet-extra-args":"aaa aa", "cluster-autoscaler": {"enable" : true}, "volume-size":500}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34, "instance-type":"type-2", "image-id":"my-ami",  "ssm":{"document-create":true,    "document-name":"GetRef.Name-document", "document-commands":"echo 1"}, "kubelet-extra-args":"aaa aa", "cluster-autoscaler": {"enable" : true}, "volume-size":500}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
@@ -1699,6 +1699,7 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 					DocumentName:                    regex.ReplaceAllString(cfg.Name+"-document", ""),
 					DocumentExecutionTimeoutSeconds: 3600,
 					DocumentCreate:                  true,
+					DocumentCommands:                "echo 1",
 				},
 				ImageID:            "my-ami",
 				AMIType:            eks.AMITypesAl2X8664,
@@ -1721,12 +1722,10 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 	}
 
 	v := cfg.AddOnNodeGroups.ASGs[cfg.Name+"-ng-for-cni"]
-	v.SSM = nil
 	v.ClusterAutoscaler = nil
 	cfg.AddOnNodeGroups.ASGs[cfg.Name+"-ng-for-cni"] = v
 
 	v2 := expectedNGs[cfg.Name+"-ng-for-cni"]
-	v2.SSM = nil
 	v2.ClusterAutoscaler = nil
 	expectedNGs[cfg.Name+"-ng-for-cni"] = v2
 
@@ -1764,7 +1763,7 @@ func TestEnvAddOnConformance(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"instance-types":["type-2"],"asg-desired-capacity":34,"image-id":"my-ami",  "ssm":{"document-create":true,  "document-name":"GetRef.Name-document"}, "cluster-autoscaler": {"enable" : false}, "kubelet-extra-args":"aaa aa",  "volume-size":500}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"instance-types":["type-2"],"asg-desired-capacity":34,"image-id":"my-ami",  "ssm":{"document-create":true,  "document-name":"GetRef.Name-document", "document-commands":"echo 1"}, "cluster-autoscaler": {"enable" : false}, "kubelet-extra-args":"aaa aa",  "volume-size":500}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CONFORMANCE_ENABLE", "true")

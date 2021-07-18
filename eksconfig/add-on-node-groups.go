@@ -304,6 +304,9 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 				if cur.SSM.DocumentExecutionTimeoutSeconds == 0 {
 					cur.SSM.DocumentExecutionTimeoutSeconds = 3600
 				}
+				if cur.SSM.DocumentCommands == "" {
+					return errors.New("empty SSM.DocumentCommands")
+				}
 
 			case false: // use existing one, or don't run any SSM
 			}
