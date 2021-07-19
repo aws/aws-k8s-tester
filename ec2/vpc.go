@@ -1099,7 +1099,11 @@ func (ts *Tester) deletePublicNATGateways() (err error) {
 			)
 			if err2 == nil {
 				if len(dout.NatGateways) == 1 {
-					ts.lg.Warn("described NAT gateways", zap.String("nat-gateway-id", id), zap.String("nat-gateway-state", string(dout.NatGateways[0].State)))
+					state := dout.NatGateways[0].State
+					ts.lg.Warn("described NAT gateways", zap.String("nat-gateway-id", id), zap.String("nat-gateway-state", string(state)))
+					if state == aws_ec2_v2_types.NatGatewayStateDeleted {
+						break
+					}
 				}
 				if len(dout.NatGateways) == 0 {
 					ts.lg.Warn("no NAT gateway found", zap.String("nat-gateway-id", id))
