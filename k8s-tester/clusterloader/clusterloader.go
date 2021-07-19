@@ -19,10 +19,10 @@ import (
 )
 
 var (
-	defaultClusterloaderVersion = "v1.6.0"
+	defaultClusterloaderVersion = "v1.6.1"
 	defaultClusterloaderPath    = fmt.Sprintf("/tmp/clusterloader2-%s", defaultClusterloaderVersion)
 	// ref. https://github.com/aws/aws-k8s-tester/releases
-	// e.g. https://github.com/aws/aws-k8s-tester/releases/download/v1.6.0/clusterloader2-darwin-arm64
+	// e.g. https://github.com/aws/aws-k8s-tester/releases/download/v1.6.1/clusterloader2-darwin-arm64
 	defaultClusterloaderDownloadURL = fmt.Sprintf(
 		"https://github.com/aws/aws-k8s-tester/releases/download/%s/clusterloader2-%s-%s",
 		defaultClusterloaderVersion,
