@@ -35,6 +35,17 @@
 *-------------------------------------------------------*-------------------*--------------------------------------------------*--------------------------*
 
 
+*--------------------------------------------------------*-------------------*---------------------------------------------*---------*
+|                 ENVIRONMENTAL VARIABLE                 |     READ ONLY     |                    TYPE                     | GO TYPE |
+*--------------------------------------------------------*-------------------*---------------------------------------------*---------*
+| AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE                    | read-only "false" | *ec2config.S3.BucketCreate                  | bool    |
+| AWS_K8S_TESTER_EC2_S3_BUCKET_CREATE_KEEP               | read-only "false" | *ec2config.S3.BucketCreateKeep              | bool    |
+| AWS_K8S_TESTER_EC2_S3_BUCKET_NAME                      | read-only "false" | *ec2config.S3.BucketName                    | string  |
+| AWS_K8S_TESTER_EC2_S3_BUCKET_LIFECYCLE_EXPIRATION_DAYS | read-only "false" | *ec2config.S3.BucketLifecycleExpirationDays | int64   |
+| AWS_K8S_TESTER_EC2_S3_DIR                              | read-only "false" | *ec2config.S3.Dir                           | string  |
+*--------------------------------------------------------*-------------------*---------------------------------------------*---------*
+
+
 *-----------------------------------------------*-------------------*-------------------------------------*----------*
 |            ENVIRONMENTAL VARIABLE             |     READ ONLY     |                TYPE                 | GO TYPE  |
 *-----------------------------------------------*-------------------*-------------------------------------*----------*

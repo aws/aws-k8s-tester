@@ -30,15 +30,15 @@ log-outputs:
 - /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.log
 metadata:
   creationTimestamp: null
-name: eks-2021071718-maria7emzmyn
+name: eks-2021071900-linuxofc4nfc
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 partition: aws
 region: us-west-2
 remote-access-commands-output-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: eks-2021071718-maria7emzmyn-remote-access-key
-remote-access-private-key-path: /var/folders/xt/szh_n5x154x2hyhj0zkpd3qr0000gn/T/applefxyyqayta3.insecure.key
+remote-access-key-name: eks-2021071900-linuxofc4nfc-remote-access-key
+remote-access-private-key-path: /var/folders/xt/szh_n5x154x2hyhj0zkpd3qr0000gn/T/grandbe6kijrm63.insecure.key
 request-header-key: ""
 request-header-value: ""
 resolver-url: ""
@@ -56,9 +56,9 @@ role:
   - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
   - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
   - arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy
-  name: eks-2021071718-maria7emzmyn-role
+  name: eks-2021071900-linuxofc4nfc-role
   policy-arn: ""
-  policy-name: eks-2021071718-maria7emzmyn-policy
+  policy-name: eks-2021071900-linuxofc4nfc-policy
   service-principals:
   - ec2.amazonaws.com
   - eks.amazonaws.com
@@ -67,7 +67,7 @@ s3:
   bucket-create: true
   bucket-create-keep: true
   bucket-lifecycle-expiration-days: 0
-  bucket-name: eks-2021071718-maria7emzmyn-s3-bucket
+  bucket-name: eks-2021071900-linuxofc4nfc-s3-bucket
 signing-name: eks
 skip-delete-cluster-and-nodes: false
 spec: {}
@@ -131,7 +131,7 @@ vpc:
   internet-gateway-id: ""
   nat-gateway-ids: null
   node-group-security-group-id: ""
-  node-group-security-group-name: eks-2021071718-maria7emzmyn-node-group-security-group
+  node-group-security-group-name: eks-2021071900-linuxofc4nfc-node-group-security-group
   private-route-table-ids: null
   private-subnet-cidrs:
   - 10.3.0.0/17

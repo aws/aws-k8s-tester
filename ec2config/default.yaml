@@ -1,5 +1,5 @@
 asgs:
-  ec2-2021071718-wind8mffgayn-asg:
+  ec2-2021071900-wanderingk2o-asg:
     ami-type: AL2_x86_64
     asg-desired-capacity: 1
     asg-max-size: 1
@@ -8,9 +8,9 @@ asgs:
     image-id-ssm-parameter: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
     instanaces: null
     instance-type: c5.xlarge
-    launch-template-name: ""
+    launch-template-name: ec2-2021071900-wanderingk2o-asg-launch-template
     logs: null
-    name: ec2-2021071718-wind8mffgayn-asg
+    name: ec2-2021071900-wanderingk2o-asg
     remote-access-user-name: ec2-user
     ssm:
       document-command-ids: null
@@ -34,7 +34,7 @@ asgs:
       took-string: ""
     volume-size: 40
 asgs-fetch-logs: true
-asgs-logs-dir: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/ec2-2021071718-wind8mffgayn-logs-remote
+asgs-logs-dir: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/ec2-2021071900-wanderingk2o-logs-remote
 aws-account-id: ""
 aws-credential-path: ""
 aws-iam-role-arn: ""
@@ -47,35 +47,35 @@ log-level: info
 log-outputs:
 - stderr
 - /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.yaml.log
-name: ec2-2021071718-wind8mffgayn
+name: ec2-2021071900-wanderingk2o
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 partition: aws
 region: us-west-2
 remote-access-commands-output-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/ec2config/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: ec2-2021071718-wind8mffgayn-key
-remote-access-private-key-path: /var/folders/xt/szh_n5x154x2hyhj0zkpd3qr0000gn/T/breezemy7r.insecure.key
+remote-access-key-name: ec2-2021071900-wanderingk2o-key
+remote-access-private-key-path: /var/folders/xt/szh_n5x154x2hyhj0zkpd3qr0000gn/T/goodfxmfpz.insecure.key
 role:
   arn: ""
   create: true
   instance-profile-arn: ""
-  instance-profile-name: ""
+  instance-profile-name: ec2-2021071900-wanderingk2o-instance-profile
   managed-policy-arns:
   - arn:aws:iam::aws:policy/AmazonEC2FullAccess
   - arn:aws:iam::aws:policy/AmazonSSMFullAccess
   - arn:aws:iam::aws:policy/AmazonS3FullAccess
-  name: ec2-2021071718-wind8mffgayn-role
+  name: ec2-2021071900-wanderingk2o-role
   policy-arn: ""
-  policy-name: ""
+  policy-name: ec2-2021071900-wanderingk2o-policy
   service-principals:
   - ec2.amazonaws.com
 s3:
   bucket-create: true
   bucket-create-keep: true
   bucket-lifecycle-expiration-days: 0
-  bucket-name: ec2-2021071718-wind8mffgayn-s3-bucket
-  dir: ec2-2021071718-wind8mffgayn
+  bucket-name: ec2-2021071900-wanderingk2o-s3-bucket
+  dir: ec2-2021071900-wanderingk2o
 status: null
 status-current: ""
 time-frame-create:
