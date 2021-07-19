@@ -243,6 +243,10 @@ func (ts *tester) waitForMNGs(now time.Time, tss tupleTimes) (err error) {
 		}
 		timeEnd = time.Now()
 
+		cur, ok = ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName]
+		if !ok {
+			return fmt.Errorf("MNGs[%q] not found after creation", mngName)
+		}
 		cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, timeEnd)
 		ts.cfg.EKSConfig.AddOnManagedNodeGroups.MNGs[mngName] = cur
 		ts.cfg.EKSConfig.Sync()

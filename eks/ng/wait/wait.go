@@ -110,6 +110,7 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 			time.Sleep(5 * time.Second)
 			return ts.waitForNodes(asgName, retriesLeft-1)
 		}
+		return fmt.Errorf("not enough instances in ASG; expected %d, got %d", cur.ASGDesiredCapacity, len(instanceIDs))
 	}
 
 	checkN := time.Duration(cur.ASGDesiredCapacity)

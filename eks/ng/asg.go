@@ -185,6 +185,8 @@ func (ts *tester) _createASGs() (tss tupleTimes, err error) {
 			return nil, fmt.Errorf("failed to create ASG for %q (%v)", asgName, err)
 		}
 
+		cur.Instances = make(map[string]ec2config.Instance)
+		cur.Logs = make(map[string][]string)
 		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 		ts.cfg.EKSConfig.AddOnNodeGroups.Created = true
 		ts.cfg.EKSConfig.Sync()
@@ -338,6 +340,10 @@ func (ts *tester) waitForASGs(tss tupleTimes) (err error) {
 		}
 		timeEnd := time.Now()
 
+		cur, ok = ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName]
+		if !ok {
+			return fmt.Errorf("ASG name %q not found after creation", asgName)
+		}
 		cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, timeEnd)
 		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 		ts.cfg.EKSConfig.Sync()

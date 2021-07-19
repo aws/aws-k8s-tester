@@ -83,6 +83,12 @@ func WaitUntilRunning(
 		}
 		zap.L().Warn("failed to poll instance status; retrying", zap.Error(err))
 	}
+
+	zap.L().Info("polled ASG until all EC2 instances are running",
+		zap.String("asg-name", asgName),
+		zap.Int("total-ec2-instances", len(ec2Instances)),
+		zap.String("ctx-time-left", ctxutil.TimeLeftTillDeadline(ctx)),
+	)
 	return ec2Instances, err
 }
 
@@ -161,5 +167,9 @@ func pollUntilRunning(
 		}
 	}
 
+	zap.L().Info("checked ec2 instances",
+		zap.Int("running-instances-so-far", len(ec2Instances)),
+		zap.Int("target-total", targetN),
+	)
 	return ec2Instances, err
 }
