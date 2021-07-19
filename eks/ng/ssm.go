@@ -18,9 +18,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// NOT WORKING...
-// invalid document content
-
 func (ts *tester) createSSM() error {
 	if err := ts.createSSMDocument(); err != nil {
 		return err
@@ -45,7 +42,6 @@ func (ts *tester) createSSMDocument() error {
 		if cur.SSM == nil {
 			continue
 		}
-
 		if !cur.SSM.DocumentCreate {
 			ts.cfg.Logger.Info("skipping SSM document create",
 				zap.String("asg-name", asgName),
@@ -124,7 +120,6 @@ func (ts *tester) deleteSSMDocument() (err error) {
 		if cur.SSM == nil {
 			continue
 		}
-
 		if !cur.SSM.DocumentCreate {
 			ts.cfg.Logger.Info("skipping SSM document delete",
 				zap.String("asg-name", asgName),
@@ -132,6 +127,7 @@ func (ts *tester) deleteSSMDocument() (err error) {
 			)
 			continue
 		}
+
 		ts.cfg.Logger.Info("deleting SSM document",
 			zap.String("asg-name", cur.Name),
 			zap.String("ssm-document-name", cur.SSM.DocumentName),
@@ -193,6 +189,14 @@ func (ts *tester) sendSSMDocumentCommand() error {
 		}
 		if len(cur.Instances) == 0 {
 			return fmt.Errorf("no instance found to run SSM document %q (asg name %q)", cur.SSM.DocumentName, asgName)
+		}
+
+		// TODO: remove this after fixing invalid instance ID error
+		ts.cfg.Logger.Info("waiting before sending SSM document")
+		select {
+		case <-ts.cfg.Stopc:
+			return errors.New("stopped")
+		case <-time.After(2 * time.Minute):
 		}
 
 		ids := make([]string, 0)

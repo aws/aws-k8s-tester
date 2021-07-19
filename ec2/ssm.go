@@ -45,7 +45,6 @@ func (ts *Tester) createSSMDocument() error {
 		if cur.SSM == nil {
 			continue
 		}
-
 		if !cur.SSM.DocumentCreate {
 			ts.lg.Info("skipping SSM document create",
 				zap.String("asg-name", asgName),
@@ -124,7 +123,6 @@ func (ts *Tester) deleteSSMDocument() (err error) {
 		if cur.SSM == nil {
 			continue
 		}
-
 		if !cur.SSM.DocumentCreate {
 			ts.lg.Info("skipping SSM document delete",
 				zap.String("asg-name", asgName),
@@ -132,6 +130,7 @@ func (ts *Tester) deleteSSMDocument() (err error) {
 			)
 			continue
 		}
+
 		ts.lg.Info("deleting SSM document",
 			zap.String("asg-name", cur.Name),
 			zap.String("ssm-document-name", cur.SSM.DocumentName),
@@ -193,6 +192,14 @@ func (ts *Tester) sendSSMDocumentCommand() error {
 		}
 		if len(cur.Instances) == 0 {
 			return fmt.Errorf("no instance found to run SSM document %q (asg name %q)", cur.SSM.DocumentName, asgName)
+		}
+
+		// TODO: remove this after fixing invalid instance ID error
+		ts.lg.Info("waiting before sending SSM document")
+		select {
+		case <-ts.stopCreationCh:
+			return errors.New("stopped")
+		case <-time.After(2 * time.Minute):
 		}
 
 		ids := make([]string, 0)
