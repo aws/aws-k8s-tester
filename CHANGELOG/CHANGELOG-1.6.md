@@ -2,7 +2,7 @@
 
 <hr>
 
-## [v1.6.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.1) (2021-06)
+## [v1.6.1](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.1) (2021-07-19)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.0...v1.6.1).
 
@@ -32,7 +32,7 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.0...v1.6.1
 
 ### Go
 
-- Compile with [*Go 1.16.5*](https://golang.org/doc/devel/release.html#go1.16).
+- Compile with [*Go 1.16.6*](https://golang.org/doc/devel/release.html#go1.16).
 
 
 <hr>
