@@ -402,6 +402,8 @@ func (ts *Tester) generateUserData(region string, amiType string) (d string, err
 	d = fmt.Sprintf(`#!/bin/bash
 set -xeu
 
+sudo yum install -y https://s3.%s.amazonaws.com/amazon-ssm-%s/latest/linux_%s/amazon-ssm-agent.rpm
+
 sudo yum update -y \
   && sudo yum install -y \
   gcc \
@@ -422,8 +424,6 @@ sudo yum update -y \
   conntrack \
   nfs-utils \
   socat
-
-sudo yum install -y https://s3.%s.amazonaws.com/amazon-ssm-%s/latest/linux_%s/amazon-ssm-agent.rpm
 
 # Make sure Amazon Time Sync Service starts on boot.
 sudo chkconfig chronyd on
