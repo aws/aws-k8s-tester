@@ -347,8 +347,6 @@ func (ts *tester) waitForASGs(tss tupleTimes) (err error) {
 		cur.TimeFrameCreate = timeutil.NewTimeFrame(timeStart, timeEnd)
 		ts.cfg.EKSConfig.AddOnNodeGroups.ASGs[asgName] = cur
 		ts.cfg.EKSConfig.Sync()
-
-		ts.cfg.Logger.Info("waited for ASG", zap.String("asg-name", asgName))
 	}
 
 	ts.cfg.Logger.Info("waited for ASGs")
