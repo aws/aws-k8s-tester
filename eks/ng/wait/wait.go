@@ -16,7 +16,9 @@ import (
 	aws_ec2 "github.com/aws/aws-k8s-tester/pkg/aws/ec2"
 	k8s_client "github.com/aws/aws-k8s-tester/pkg/k8s-client"
 	k8s_object "github.com/aws/aws-k8s-tester/pkg/k8s-object"
+	aws_v2 "github.com/aws/aws-sdk-go-v2/aws"
 	aws_asg_v2 "github.com/aws/aws-sdk-go-v2/service/autoscaling"
+	aws_asg_v2_types "github.com/aws/aws-sdk-go-v2/service/autoscaling/types"
 	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
 	"go.uber.org/zap"
 	certificatesv1beta1 "k8s.io/api/certificates/v1beta1"
@@ -80,6 +82,34 @@ func (ts *tester) waitForNodes(asgName string, retriesLeft int) error {
 			return ts.waitForNodes(asgName, retriesLeft-1)
 		}
 		return fmt.Errorf("%q expected only 1 ASG, got %+v", cur.Name, aout.AutoScalingGroups)
+	}
+	av := aout.AutoScalingGroups[0]
+	instanceIDs := make([]string, 0)
+	for _, iv := range av.Instances {
+		lv := iv.LifecycleState
+		switch lv {
+		case aws_asg_v2_types.LifecycleStatePending,
+			aws_asg_v2_types.LifecycleStatePendingWait,
+			aws_asg_v2_types.LifecycleStatePendingProceed,
+			aws_asg_v2_types.LifecycleStateInService:
+			instanceIDs = append(instanceIDs, aws_v2.ToString(iv.InstanceId))
+		default:
+			zap.L().Warn("skipping instance due to lifecycle state",
+				zap.String("instance-id", aws_v2.ToString(iv.InstanceId)),
+				zap.String("lifecycle-state", fmt.Sprint(lv)),
+			)
+		}
+	}
+	if len(instanceIDs) != int(cur.ASGDesiredCapacity) {
+		if retriesLeft > 0 {
+			ts.cfg.Logger.Warn("not enough instances in desired state; retrying",
+				zap.Int("instances", len(instanceIDs)),
+				zap.String("asg-name", cur.Name),
+				zap.Int("retries-left", retriesLeft),
+			)
+			time.Sleep(5 * time.Second)
+			return ts.waitForNodes(asgName, retriesLeft-1)
+		}
 	}
 
 	checkN := time.Duration(cur.ASGDesiredCapacity)
