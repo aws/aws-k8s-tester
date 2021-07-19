@@ -191,12 +191,11 @@ func (ts *tester) sendSSMDocumentCommand() error {
 			return fmt.Errorf("no instance found to run SSM document %q (asg name %q)", cur.SSM.DocumentName, asgName)
 		}
 
-		// TODO: remove this after fixing invalid instance ID error
 		ts.cfg.Logger.Info("waiting before sending SSM document")
 		select {
 		case <-ts.cfg.Stopc:
 			return errors.New("stopped")
-		case <-time.After(2 * time.Minute):
+		case <-time.After(15 * time.Second):
 		}
 
 		ids := make([]string, 0)

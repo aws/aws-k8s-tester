@@ -385,6 +385,7 @@ NGName = "%s"`,
 		)
 
 	case fmt.Sprint(aws_eks_v2_types.AMITypesAl2X8664),
+		fmt.Sprint(aws_eks_v2_types.AMITypesAl2Arm64),
 		fmt.Sprint(aws_eks_v2_types.AMITypesAl2X8664Gpu):
 		d = fmt.Sprintf(`#!/bin/bash
 set -xeu

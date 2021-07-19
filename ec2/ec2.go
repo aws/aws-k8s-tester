@@ -20,13 +20,11 @@ import (
 	"github.com/aws/aws-k8s-tester/version"
 	aws_v2 "github.com/aws/aws-sdk-go-v2/aws"
 	aws_asg_v2 "github.com/aws/aws-sdk-go-v2/service/autoscaling"
-	aws_cw_v2 "github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
 	aws_elbv2_v2 "github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2"
 	aws_iam_v2 "github.com/aws/aws-sdk-go-v2/service/iam"
 	aws_kms_v2 "github.com/aws/aws-sdk-go-v2/service/kms"
 	aws_ssm_v2 "github.com/aws/aws-sdk-go-v2/service/ssm"
-	aws_sts_v2 "github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -57,13 +55,11 @@ type Tester struct {
 
 	awsSession *session.Session
 
-	stsAPIV2   *aws_sts_v2.Client
 	iamAPIV2   *aws_iam_v2.Client
 	kmsAPIV2   *aws_kms_v2.Client
 	ssmAPIV2   *aws_ssm_v2.Client
 	ec2APIV2   *aws_ec2_v2.Client
 	s3API      s3iface.S3API
-	cwAPIV2    *aws_cw_v2.Client
 	asgAPIV2   *aws_asg_v2.Client
 	elbv2APIV2 *aws_elbv2_v2.Client
 }

@@ -64,7 +64,7 @@ func (ts *Tester) _createASGs() (tss tupleTimes, err error) {
 			zap.String("image-id", imgID),
 		)
 
-		userData, err := ts.generateUserData(asgName, cur.AMIType)
+		userData, err := ts.generateUserData(ts.cfg.Region, cur.AMIType)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create user data for %q (%v)", asgName, err)
 		}
@@ -392,9 +392,16 @@ func (ts *Tester) fetchImageID(ssmParam string) (img string, err error) {
 	return aws_v2.ToString(out.Parameter.Value), nil
 }
 
-func (ts *Tester) generateUserData(asgName string, amiType string) (d string, err error) {
-	d = `#!/bin/bash
+// MUST install SSM agent, otherwise, it will "InvalidInstanceId:"
+// ref. https://docs.aws.amazon.com/systems-manager/latest/userguide/agent-install-al2.html
+func (ts *Tester) generateUserData(region string, amiType string) (d string, err error) {
+	arch := "amd64"
+	if amiType == ec2config.AMITypeAL2ARM64 {
+		arch = "arm64"
+	}
+	d = fmt.Sprintf(`#!/bin/bash
 set -xeu
+
 sudo yum update -y \
   && sudo yum install -y \
   gcc \
@@ -415,6 +422,8 @@ sudo yum update -y \
   conntrack \
   nfs-utils \
   socat
+
+sudo yum install -y https://s3.%s.amazonaws.com/amazon-ssm-%s/latest/linux_%s/amazon-ssm-agent.rpm
 
 # Make sure Amazon Time Sync Service starts on boot.
 sudo chkconfig chronyd on
@@ -444,6 +453,6 @@ sudo usermod -aG docker ec2-user || true
 id -nG
 sudo docker version
 sudo docker info
-`
+`, region, region, arch)
 	return d, nil
 }
