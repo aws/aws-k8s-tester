@@ -64,68 +64,68 @@ func (ts *Tester) _createASGs() (tss tupleTimes, err error) {
 			zap.String("image-id", imgID),
 		)
 
+		input := &aws_ec2_v2.CreateLaunchTemplateInput{
+			LaunchTemplateName: aws_v2.String(cur.LaunchTemplateName),
+
+			LaunchTemplateData: &aws_ec2_v2_types.RequestLaunchTemplateData{
+				IamInstanceProfile: &aws_ec2_v2_types.LaunchTemplateIamInstanceProfileSpecificationRequest{
+					Arn: aws_v2.String(ts.cfg.Role.InstanceProfileARN),
+				},
+
+				KeyName: aws_v2.String(ts.cfg.RemoteAccessKeyName),
+
+				ImageId:      aws_v2.String(imgID),
+				InstanceType: aws_ec2_v2_types.InstanceType(cur.InstanceType),
+
+				BlockDeviceMappings: []aws_ec2_v2_types.LaunchTemplateBlockDeviceMappingRequest{
+					{
+						DeviceName: aws_v2.String("/dev/xvda"),
+						Ebs: &aws_ec2_v2_types.LaunchTemplateEbsBlockDeviceRequest{
+							DeleteOnTermination: aws_v2.Bool(true),
+							Encrypted:           aws_v2.Bool(true),
+							VolumeType:          aws_ec2_v2_types.VolumeTypeGp3,
+							VolumeSize:          aws_v2.Int32(cur.VolumeSize),
+						},
+					},
+				},
+
+				// for public DNS + SSH access
+				NetworkInterfaces: []aws_ec2_v2_types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest{
+					{
+						AssociatePublicIpAddress: aws_v2.Bool(true),
+						DeleteOnTermination:      aws_v2.Bool(true),
+						DeviceIndex:              aws_v2.Int32(0),
+						Groups:                   []string{ts.cfg.VPC.SecurityGroupID},
+					},
+				},
+
+				Monitoring:                        &aws_ec2_v2_types.LaunchTemplatesMonitoringRequest{Enabled: aws_v2.Bool(true)},
+				InstanceInitiatedShutdownBehavior: aws_ec2_v2_types.ShutdownBehaviorTerminate,
+			},
+
+			TagSpecifications: []aws_ec2_v2_types.TagSpecification{
+				{
+					ResourceType: aws_ec2_v2_types.ResourceTypeLaunchTemplate,
+					Tags: []aws_ec2_v2_types.Tag{
+						{
+							Key:   aws_v2.String("Name"),
+							Value: aws_v2.String(fmt.Sprintf("%s-instance-launch-template", cur.Name)),
+						},
+					},
+				},
+			},
+		}
+
 		userData, err := ts.generateUserData(ts.cfg.Region, cur.AMIType)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create user data for %q (%v)", asgName, err)
 		}
 		userData = base64.StdEncoding.EncodeToString([]byte(userData))
+		if len(userData) > 0 {
+			input.LaunchTemplateData.UserData = aws_v2.String(userData)
+		}
 
-		_, err = ts.ec2APIV2.CreateLaunchTemplate(
-			context.Background(),
-			&aws_ec2_v2.CreateLaunchTemplateInput{
-				LaunchTemplateName: aws_v2.String(cur.LaunchTemplateName),
-
-				LaunchTemplateData: &aws_ec2_v2_types.RequestLaunchTemplateData{
-					IamInstanceProfile: &aws_ec2_v2_types.LaunchTemplateIamInstanceProfileSpecificationRequest{
-						Arn: aws_v2.String(ts.cfg.Role.InstanceProfileARN),
-					},
-
-					KeyName: aws_v2.String(ts.cfg.RemoteAccessKeyName),
-
-					ImageId:      aws_v2.String(imgID),
-					InstanceType: aws_ec2_v2_types.InstanceType(cur.InstanceType),
-
-					BlockDeviceMappings: []aws_ec2_v2_types.LaunchTemplateBlockDeviceMappingRequest{
-						{
-							DeviceName: aws_v2.String("/dev/xvda"),
-							Ebs: &aws_ec2_v2_types.LaunchTemplateEbsBlockDeviceRequest{
-								DeleteOnTermination: aws_v2.Bool(true),
-								Encrypted:           aws_v2.Bool(true),
-								VolumeType:          aws_ec2_v2_types.VolumeTypeGp3,
-								VolumeSize:          aws_v2.Int32(cur.VolumeSize),
-							},
-						},
-					},
-
-					// for public DNS + SSH access
-					NetworkInterfaces: []aws_ec2_v2_types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest{
-						{
-							AssociatePublicIpAddress: aws_v2.Bool(true),
-							DeleteOnTermination:      aws_v2.Bool(true),
-							DeviceIndex:              aws_v2.Int32(0),
-							Groups:                   []string{ts.cfg.VPC.SecurityGroupID},
-						},
-					},
-
-					UserData: aws_v2.String(userData),
-
-					Monitoring:                        &aws_ec2_v2_types.LaunchTemplatesMonitoringRequest{Enabled: aws_v2.Bool(true)},
-					InstanceInitiatedShutdownBehavior: aws_ec2_v2_types.ShutdownBehaviorTerminate,
-				},
-
-				TagSpecifications: []aws_ec2_v2_types.TagSpecification{
-					{
-						ResourceType: aws_ec2_v2_types.ResourceTypeLaunchTemplate,
-						Tags: []aws_ec2_v2_types.Tag{
-							{
-								Key:   aws_v2.String("Name"),
-								Value: aws_v2.String(fmt.Sprintf("%s-instance-launch-template", cur.Name)),
-							},
-						},
-					},
-				},
-			},
-		)
+		_, err = ts.ec2APIV2.CreateLaunchTemplate(context.Background(), input)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create launch template for %q (%v)", asgName, err)
 		}
@@ -395,6 +395,11 @@ func (ts *Tester) fetchImageID(ssmParam string) (img string, err error) {
 // MUST install SSM agent, otherwise, it will "InvalidInstanceId:"
 // ref. https://docs.aws.amazon.com/systems-manager/latest/userguide/agent-install-al2.html
 func (ts *Tester) generateUserData(region string, amiType string) (d string, err error) {
+	if amiType == ec2config.AMITypeBottleRocketCPU {
+		// BottleRocket comes with SSM agent
+		return "", nil
+	}
+
 	arch := "amd64"
 	if amiType == ec2config.AMITypeAL2ARM64 {
 		arch = "arm64"
