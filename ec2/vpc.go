@@ -18,9 +18,6 @@ import (
 // see https://github.com/aws/aws-k8s-tester/blob/v1.6.0/eks/cluster/vpc.go for CloudFormation based workflow
 
 func (ts *Tester) createVPC() error {
-	fmt.Print(ts.cfg.Colorize("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.cfg.Colorize("[light_green]createVPC [default](%q)\n"), ts.cfg.ConfigPath)
-
 	if ts.cfg.VPC.ID != "" {
 		ts.lg.Info("querying ELBv2", zap.String("vpc-id", ts.cfg.VPC.ID))
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -215,9 +212,6 @@ func (ts *Tester) createVPC() error {
 
 // e.g. DependencyViolation: The vpc 'vpc-0127f6d18bd98836a' has dependencies and cannot be deleted
 func (ts *Tester) deleteVPC() error {
-	fmt.Print(ts.cfg.Colorize("\n\n[yellow]*********************************\n"))
-	fmt.Printf(ts.cfg.Colorize("[light_blue]deleteVPC [default](%q)\n"), ts.cfg.ConfigPath)
-
 	if !ts.cfg.VPC.Create {
 		ts.lg.Info("VPC.Create false; skipping deletion")
 		return nil

@@ -30,7 +30,9 @@ func (ts *Tester) createASGs() (err error) {
 	if err = ts.waitForASGs(tss); err != nil {
 		return err
 	}
-	return nil
+
+	ts.cfg.Up = true
+	return ts.cfg.Sync()
 }
 
 func (ts *Tester) deleteASGs() error {

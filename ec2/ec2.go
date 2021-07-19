@@ -77,7 +77,7 @@ func New(cfg *ec2config.Config) (*Tester, error) {
 	lg.Info("set up log writer and file", zap.Strings("outputs", cfg.LogOutputs), zap.Bool("is-color", cfg.LogColor))
 	cfg.Sync()
 
-	fmt.Fprintf(logWriter, cfg.Colorize("\n\n[yellow]*********************************\n"))
+	fmt.Fprint(logWriter, cfg.Colorize("\n\n[yellow]*********************************\n"))
 	fmt.Fprintln(logWriter, "😎 🙏 🚶 ✔️ 👍")
 	fmt.Fprintf(logWriter, cfg.Colorize("[light_green]New %q [default](%q)\n"), cfg.ConfigPath, version.Version())
 
@@ -224,7 +224,7 @@ func (ts *Tester) Up() (err error) {
 					zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
 				)
 				fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-				fmt.Fprintf(ts.logWriter, ts.color("\n\n💯 😁 👍 :) [light_green]Up success\n\n\n"))
+				fmt.Fprint(ts.logWriter, ts.color("\n\n💯 😁 👍 :) [light_green]Up success\n\n\n"))
 
 				ts.lg.Sugar().Infof("Up.defer end (%s)", ts.cfg.ConfigPath)
 				fmt.Fprintf(ts.logWriter, "\n\n💯 😁 👍 :) Up success\n\n\n")
@@ -418,7 +418,7 @@ func (ts *Tester) down() (err error) {
 		if err == nil {
 			fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 			fmt.Fprintf(ts.logWriter, ts.color("[light_blue]DOWN DEFER START [default](%q)\n"), ts.cfg.ConfigPath)
-			fmt.Fprintf(ts.logWriter, ts.color("\n\n💯 😁 👍 :)  [light_blue]DOWN SUCCESS\n\n\n"))
+			fmt.Fprint(ts.logWriter, ts.color("\n\n💯 😁 👍 :)  [light_blue]DOWN SUCCESS\n\n\n"))
 
 			ts.lg.Info("successfully finished Down",
 				zap.String("started", humanize.RelTime(now, time.Now(), "ago", "from now")),
