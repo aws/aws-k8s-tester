@@ -90,7 +90,7 @@ steps:
             MemoryRequest: {{ $POD_MEMORY_MB }}Mi
 
 - name: wait-for-scale-up-complete
-- measurements:
+  measurements:
     - Identifier: WaitingForPods
       Method: WaitForRunningPods
       Params:
@@ -99,7 +99,7 @@ steps:
         timeout: 4h
 
 - name: stop-timing-for-scale-up
-- measurements:
+  measurements:
     - Identifier: ScaleUpTimer
       Method: Timer
       Params:
@@ -111,7 +111,7 @@ steps:
         action: gather
 
 - name: start-timing-for-scale-down
-- measurements:
+  measurements:
     - Identifier: ScaleDownTimer
       Method: Timer
       Params:
@@ -130,7 +130,7 @@ steps:
           objectTemplatePath: deployment.yaml
 
 - name: wait-for-scale-down-complete
-- measurements:
+  measurements:
     - Identifier: WaitingForPods
       Method: WaitForRunningPods
       Params:
@@ -139,7 +139,7 @@ steps:
         timeout: 4h
 
 - name: stop-measurements
-- measurements:
+  measurements:
     - Identifier: ScaleDownTimer
       Method: Timer
       Params:
