@@ -125,6 +125,21 @@ func TestEnvAddOnMetricsServer(t *testing.T) {
 	}
 }
 
+func TestEnvAddOnCNI(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("K8S_TESTER_ADD_ON_CNI_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CNI_ENABLE")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if !cfg.AddOnCNI.Enable {
+		t.Fatalf("unexpected cfg.AddOnCNI.Enable %v", cfg.AddOnCNI.Enable)
+	}
+}
+
 func TestEnvAddOnConformance(t *testing.T) {
 	cfg := NewDefault()
 
