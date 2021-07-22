@@ -154,7 +154,7 @@ func NewDefault() *Config {
 		SonobuoyRunE2ESkip:              "",
 		SonobuoyRunKubeConformanceImage: DefaultSonobuoyRunKubeConformanceImage,
 		SonobuoyRunE2ERepoConfig:        "",
-		SonobuoyRunImage:                "",
+		SonobuoyRunImage:                "public.ecr.aws/v3f2w6a4/sonobuoy:v0.52",
 		SonobuoyRunSystemdLogsImage:     "",
 
 		SonobuoyResultsTarGzPath:    file.GetTempFilePath("sonobuoy_results") + ".tar.gz",
