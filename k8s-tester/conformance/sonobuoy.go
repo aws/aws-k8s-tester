@@ -21,7 +21,7 @@ import (
 
 var (
 	// ref. https://github.com/vmware-tanzu/sonobuoy/releases
-	defaultSonobuoyVersion = "0.50.0"
+	defaultSonobuoyVersion = "0.52.0"
 	defaultSonobuoyPath    = fmt.Sprintf("/tmp/sonobuoy-%s", defaultSonobuoyVersion)
 	// ref. https://github.com/vmware-tanzu/sonobuoy/releases
 	// e.g., https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.50.0/sonobuoy_0.50.0_linux_arm64.tar.gz
