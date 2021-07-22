@@ -18,6 +18,9 @@ gofmt -s -w ./cmd/k8s-tester
 goimports -w ./cmd/readme-gen
 gofmt -s -w ./cmd/readme-gen
 
+goimports -w ./cni
+gofmt -s -w ./cni
+
 goimports -w ./configmaps
 gofmt -s -w ./configmaps
 

@@ -3,16 +3,32 @@ package client
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"strings"
 	"time"
 
+	"github.com/onsi/ginkgo"
 	"go.uber.org/zap"
 	core_v1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	k8s_client "k8s.io/client-go/kubernetes"
+)
+
+var errPodCompleted = fmt.Errorf("pod ran to completion")
+
+type podCondition func(pod *v1.Pod) (bool, error)
+
+const (
+	// poll is how often to poll pods, nodes and claims.
+	poll = 2 * time.Second
+
+	// podStartTimeout is how long to wait for the pod to be started.
+	podStartTimeout = 2 * time.Minute
 )
 
 func ListPods(
@@ -146,4 +162,107 @@ func DeletePod(lg *zap.Logger, c k8s_client.Interface, namespace string, Name st
 	// requires "k8s_errors.IsNotFound"
 	// ref. https://github.com/aws/aws-k8s-tester/issues/79
 	return RetryWithExponentialBackOff(RetryFunction(deleteFunc, Allow(k8s_errors.IsNotFound)))
+}
+
+// 3
+func PodRunning(c k8s_client.Interface, podName, namespace string) wait.ConditionFunc {
+	return func() (bool, error) {
+		pod, err := c.CoreV1().Pods(namespace).Get(context.TODO(), podName, meta_v1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+		switch pod.Status.Phase {
+		case v1.PodRunning:
+			return true, nil
+		case v1.PodFailed, v1.PodSucceeded:
+			return false, errPodCompleted
+		}
+		return false, nil
+	}
+}
+
+// 2
+// WaitTimeoutForPodRunningInNamespace waits the given timeout duration for the specified pod to become running.
+func WaitTimeoutForPodRunningInNamespace(c k8s_client.Interface, podName, namespace string, timeout time.Duration) error {
+	return wait.PollImmediate(poll, timeout, PodRunning(c, podName, namespace))
+}
+
+// 1
+// WaitForPodRunningInNamespace waits default amount of time (podStartTimeout) for the specified pod to become running.
+// Returns an error if timeout occurs first, or pod goes in to failed state.
+func WaitForPodRunningInNamespace(c k8s_client.Interface, pod *v1.Pod) error {
+	if pod.Status.Phase == v1.PodRunning {
+		return nil
+	}
+	return WaitTimeoutForPodRunningInNamespace(c, pod.Name, pod.Namespace, podStartTimeout)
+}
+
+// WaitForPodCondition waits a pods to be matched to the given condition.
+func WaitForPodCondition(lg *zap.Logger, c k8s_client.Interface, ns, podName, desc string, timeout time.Duration, condition podCondition) error {
+	lg.Info("Waiting for pod namespace to be desired condition",
+		zap.Any("timeout", timeout),
+		zap.String("Podname", podName),
+		zap.String("namespace", ns),
+	)
+	var lastPodError error
+	for start := time.Now(); time.Since(start) < timeout; time.Sleep(poll) {
+		pod, err := c.CoreV1().Pods(ns).Get(context.TODO(), podName, meta_v1.GetOptions{})
+		lastPodError = err
+		if err != nil {
+			lg.Warn("Pod in namespace not found. Error", zap.String("podname", podName), zap.String("namespace", ns))
+			return fmt.Errorf("Pod in namespace not found. Error", timeout, podName, desc)
+		}
+		phase := pod.Status.Phase
+		switch phase {
+		case "Succeeded":
+			return nil
+		case "Failed":
+			return nil
+		default:
+			lg.Warn("Pod condition Succeeded/Failed not satisfied yet for", zap.String("podname", podName))
+			continue
+		}
+	}
+	if apierrors.IsNotFound(lastPodError) {
+		// return for compatbility with other functions testing for IsNotFound
+		return lastPodError
+	}
+	return fmt.Errorf("Gave up after waiting %v for pod %q to be %q", timeout, podName, desc)
+}
+
+// WaitForPodSuccessInNamespaceTimeout returns nil if the pod reached state success, or an error if it reached failure or ran too long.
+func WaitForPodSuccessInNamespaceTimeout(lg *zap.Logger, c k8s_client.Interface, podName, namespace string, timeout time.Duration) error {
+	return WaitForPodCondition(lg, c, namespace, podName, fmt.Sprintf("%s or %s", v1.PodSucceeded, v1.PodFailed), timeout, func(pod *v1.Pod) (bool, error) {
+		if pod.Spec.RestartPolicy == v1.RestartPolicyAlways {
+			return true, fmt.Errorf("pod %q will never terminate with a succeeded state since its restart policy is Always", podName)
+		}
+		switch pod.Status.Phase {
+		case v1.PodSucceeded:
+			ginkgo.By("Saw pod success")
+			return true, nil
+		case v1.PodFailed:
+			return true, fmt.Errorf("pod %q failed with status: %+v", podName, pod.Status)
+		default:
+			return false, nil
+		}
+	})
+}
+
+func NewBusyBoxPod(name, command string) *v1.Pod {
+	return &v1.Pod{
+		ObjectMeta: meta_v1.ObjectMeta{
+			Name: name,
+		},
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{
+				{
+					Name:    name,
+					Image:   "public.ecr.aws/hudsonbay/busybox:latest",
+					Command: []string{"/bin/sh"},
+					Args:    []string{"-c", command},
+				},
+			},
+			RestartPolicy: v1.RestartPolicyNever,
+		},
+	}
 }

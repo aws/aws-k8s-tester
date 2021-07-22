@@ -47,7 +47,7 @@ See example commits:
 
 ### Environmental variables
 
-Total 20 test cases!
+Total 21 test cases!
 
 ```
 *----------------------------------*----------------------*----------------------------------------*---------------*
@@ -98,6 +98,15 @@ Total 20 test cases!
 | K8S_TESTER_ADD_ON_METRICS_SERVER_MINIMUM_NODES | SETTABLE VIA ENV VAR | *metrics_server.Config.MinimumNodes | int     |
 *------------------------------------------------*----------------------*-------------------------------------*---------*
 
+*-------------------------------------*----------------------*--------------------------*---------*
+|       ENVIRONMENTAL VARIABLE        |      FIELD TYPE      |           TYPE           | GO TYPE |
+*-------------------------------------*----------------------*--------------------------*---------*
+| K8S_TESTER_ADD_ON_CNI_ENABLE        | SETTABLE VIA ENV VAR | *cni.Config.Enable       | bool    |
+| K8S_TESTER_ADD_ON_CNI_MINIMUM_NODES | SETTABLE VIA ENV VAR | *cni.Config.MinimumNodes | int     |
+| K8S_TESTER_ADD_ON_CNI_NAMESPACE     | SETTABLE VIA ENV VAR | *cni.Config.Namespace    | string  |
+| K8S_TESTER_ADD_ON_CNI_CNI_NAMESPACE | SETTABLE VIA ENV VAR | *cni.Config.CNINamespace | string  |
+*-------------------------------------*----------------------*--------------------------*---------*
+
 *-------------------------------------------------------------------*----------------------*-----------------------------------------------------*---------------*
 |                      ENVIRONMENTAL VARIABLE                       |      FIELD TYPE      |                        TYPE                         |    GO TYPE    |
 *-------------------------------------------------------------------*----------------------*-----------------------------------------------------*---------------*
@@ -128,6 +137,7 @@ Total 20 test cases!
 *-----------------------------------------------*----------------------*----------------------------------*---------*
 | K8S_TESTER_ADD_ON_CSI_EBS_ENABLE              | SETTABLE VIA ENV VAR | *csi_ebs.Config.Enable           | bool    |
 | K8S_TESTER_ADD_ON_CSI_EBS_MINIMUM_NODES       | SETTABLE VIA ENV VAR | *csi_ebs.Config.MinimumNodes     | int     |
+| K8S_TESTER_ADD_ON_CSI_EBS_NAMESPACE           | SETTABLE VIA ENV VAR | *csi_ebs.Config.Namespace        | string  |
 | K8S_TESTER_ADD_ON_CSI_EBS_HELM_CHART_REPO_URL | SETTABLE VIA ENV VAR | *csi_ebs.Config.HelmChartRepoURL | string  |
 *-----------------------------------------------*----------------------*----------------------------------*---------*
 

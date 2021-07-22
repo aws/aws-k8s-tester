@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-k8s-tester/client"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
 	"github.com/aws/aws-k8s-tester/k8s-tester/clusterloader"
+	cni "github.com/aws/aws-k8s-tester/k8s-tester/cni"
 	"github.com/aws/aws-k8s-tester/k8s-tester/configmaps"
 	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
@@ -137,6 +138,13 @@ func (ts *tester) createTesters() {
 		ts.cfg.AddOnMetricsServer.LogWriter = ts.logWriter
 		ts.cfg.AddOnMetricsServer.Client = ts.cli
 		ts.testers = append(ts.testers, metrics_server.New(ts.cfg.AddOnMetricsServer))
+	}
+	if ts.cfg.AddOnCNI != nil && ts.cfg.AddOnCNI.Enable {
+		ts.cfg.AddOnCNI.Stopc = ts.stopCreationCh
+		ts.cfg.AddOnCNI.Logger = ts.logger
+		ts.cfg.AddOnCNI.LogWriter = ts.logWriter
+		ts.cfg.AddOnCNI.Client = ts.cli
+		ts.testers = append(ts.testers, cni.New(ts.cfg.AddOnCNI))
 	}
 	if ts.cfg.AddOnConformance != nil && ts.cfg.AddOnConformance.Enable {
 		ts.cfg.AddOnConformance.Stopc = ts.stopCreationCh

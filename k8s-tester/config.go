@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-k8s-tester/client"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
 	"github.com/aws/aws-k8s-tester/k8s-tester/clusterloader"
+	cni "github.com/aws/aws-k8s-tester/k8s-tester/cni"
 	"github.com/aws/aws-k8s-tester/k8s-tester/configmaps"
 	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
@@ -130,6 +131,7 @@ type Config struct {
 	AddOnFluentBit           *fluent_bit.Config           `json:"add_on_fluent_bit"`
 	AddOnMetricsServer       *metrics_server.Config       `json:"add_on_metrics_server"`
 	AddOnConformance         *conformance.Config          `json:"add_on_conformance"`
+	AddOnCNI                 *cni.Config                  `json:"add_on_cni"`
 	AddOnCSIEBS              *csi_ebs.Config              `json:"add_on_csi_ebs"`
 	AddOnKubernetesDashboard *kubernetes_dashboard.Config `json:"add_on_kubernetes_dashboard"`
 	AddOnFalco               *falco.Config                `json:"add_on_falco"`
@@ -203,6 +205,7 @@ func NewDefault() *Config {
 		AddOnCloudwatchAgent:     cloudwatch_agent.NewDefault(),
 		AddOnFluentBit:           fluent_bit.NewDefault(),
 		AddOnMetricsServer:       metrics_server.NewDefault(),
+		AddOnCNI:                 cni.NewDefault(),
 		AddOnConformance:         conformance.NewDefault(),
 		AddOnCSIEBS:              csi_ebs.NewDefault(),
 		AddOnKubernetesDashboard: kubernetes_dashboard.NewDefault(),
@@ -255,6 +258,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.AddOnMetricsServer != nil && cfg.AddOnMetricsServer.Enable {
 		if err := cfg.AddOnMetricsServer.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnCNI != nil && cfg.AddOnCNI.Enable {
+		if err := cfg.AddOnCNI.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}
@@ -526,6 +534,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnMetricsServer = av
 	} else {
 		return fmt.Errorf("expected *metrics_server.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+cni.Env()+"_", cfg.AddOnCNI)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*cni.Config); ok {
+		cfg.AddOnCNI = av
+	} else {
+		return fmt.Errorf("expected *cni.Config, got %T", vv)
 	}
 
 	vv, err = parseEnvs(ENV_PREFIX+conformance.Env()+"_", cfg.AddOnConformance)
