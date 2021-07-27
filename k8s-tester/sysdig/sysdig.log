@@ -1,0 +1,79 @@
+{"level":"info","msg":"downloading","download-url":"https://dl.k8s.io/release/stable.txt","content-length":"7 B"}
+	7 B / 7 B
+{"level":"info","msg":"downloaded","download-url":"https://dl.k8s.io/release/stable.txt","size":"7 B"}
+{"level":"info","msg":"successfully fetched the latest Kubernetes release version","version":"v1.21.3"}
+{"level":"info","ts":"2021-07-27T15:36:23.915-0500","caller":"client/kubectl.go:59","msg":"mkdir","kubectl-path-dir":"/usr/local/bin"}
+{"level":"info","ts":"2021-07-27T15:36:23.915-0500","caller":"client/kubectl.go:76","msg":"skipping kubectl download; already exist","kubectl-path":"/usr/local/bin/kubectl"}
+
+'/usr/local/bin/kubectl version' output:
+
+Client Version: version.Info{Major:"1", Minor:"21", GitVersion:"v1.21.0", GitCommit:"cb303e613a121a29364f75cc67d3d580833a7479", GitTreeState:"clean", BuildDate:"2021-04-08T21:16:14Z", GoVersion:"go1.16.3", Compiler:"gc", Platform:"darwin/amd64"}
+
+{"level":"info","ts":"2021-07-27T15:36:24.175-0500","caller":"client/client.go:314","msg":"creating config from KUBECONFIG","kubeconfig":"/Users/jonahjo/go/src/github.com/eks-anywhere/jonahjo2.kubeconfig"}
+{"level":"info","ts":"2021-07-27T15:36:24.177-0500","caller":"client/client.go:279","msg":"successfully created config","host":"https://kubernetes:6443","server-name":"","user-name":""}
+✔ Yes, let's "apply"!
+{"level":"info","ts":"2021-07-27T15:36:44.071-0500","caller":"client/namespaces.go:38","msg":"creating namespace","namespace":"test-namespace"}
+{"level":"info","ts":"2021-07-27T15:36:44.135-0500","caller":"client/namespaces.go:43","msg":"created namespace","namespace":"test-namespace"}
+{"level":"info","ts":"2021-07-27T15:36:44.136-0500","caller":"helm/helm.go:142","msg":"installing chart","namespace":"test-namespace","chart-repo-url":"https://github.com/sysdiglabs/charts/releases/download/sysdig-1.12.9/sysdig-1.12.9.tgz","chart-name":"sysdig","release-name":"sysdig"}
+{"level":"info","ts":"2021-07-27T15:36:45.037-0500","caller":"http/http.go:125","msg":"downloading","download-url":"https://github.com/sysdiglabs/charts/releases/download/sysdig-1.12.9/sysdig-1.12.9.tgz","content-length":"24 kB"}
+	24 kB / 24 kB
+{"level":"info","ts":"2021-07-27T15:36:45.174-0500","caller":"http/http.go:104","msg":"downloaded","download-url":"https://github.com/sysdiglabs/charts/releases/download/sysdig-1.12.9/sysdig-1.12.9.tgz","download-path":"/var/folders/mw/6v1v_1916bb5rytwz_1rtt180000gs/T/ebs-csi-driver1695c03bf68c2f00101442766.tgz","size":"24 kB"}
+{"level":"info","ts":"2021-07-27T15:36:45.174-0500","caller":"helm/helm.go:201","msg":"loading downloaded chart .tgz","path":"/var/folders/mw/6v1v_1916bb5rytwz_1rtt180000gs/T/ebs-csi-driver1695c03bf68c2f00101442766.tgz"}
+{"level":"info","ts":"2021-07-27T15:36:45.178-0500","caller":"helm/helm.go:207","msg":"loaded chart via .tgz","namespace":"test-namespace","chart-repo":"https://github.com/sysdiglabs/charts/releases/download/sysdig-1.12.9/sysdig-1.12.9.tgz","chart-name":"sysdig","release-name":"sysdig","chart-full-path":"sysdig","chart-name":"sysdig","chart-app-version":"11.3.0"}
+{"level":"info","ts":"2021-07-27T15:36:45.178-0500","caller":"helm/helm.go:273","msg":"starting query function for-loop","interval":"30s"}
+{"level":"info","ts":"2021-07-27T15:36:49.206-0500","caller":"sysdig/tester.go:230","msg":"[install] creating 11 resource(s)"}
+{"level":"info","ts":"2021-07-27T15:36:49.659-0500","caller":"sysdig/tester.go:230","msg":"[install] beginning wait for 11 resources with timeout of 10m0s"}
+{"level":"info","ts":"2021-07-27T15:36:49.759-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig-node-analyzer. 1 out of 3 expected pods have been scheduled"}
+{"level":"info","ts":"2021-07-27T15:36:51.959-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:36:53.964-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:36:55.946-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:36:57.961-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:36:59.957-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:01.949-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:03.954-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:05.952-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:07.954-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:09.957-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:11.950-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:13.954-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:16.476-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:17.961-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:19.955-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:21.953-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:23.952-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:25.950-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:27.983-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:29.954-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:31.980-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:33.964-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:35.957-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:37.955-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:39.953-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:41.955-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:43.948-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:45.949-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:47.951-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:49.954-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:51.956-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:53.957-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:55.949-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:57.952-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:37:59.949-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:38:01.955-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:38:03.957-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:38:05.951-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:38:07.955-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:38:09.953-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:38:11.954-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:38:13.955-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:38:15.961-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:38:17.957-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:38:19.950-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 0 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:38:21.953-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 1 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:38:23.959-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 1 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:38:25.952-0500","caller":"sysdig/tester.go:230","msg":"[install] DaemonSet is not ready: test-namespace/sysdig. 1 out of 2 expected pods are ready"}
+{"level":"info","ts":"2021-07-27T15:38:28.223-0500","caller":"helm/helm.go:296","msg":"installed chart","namespace":"test-namespace","name":"sysdig","version":"1"}
+{"level":"warn","ts":"2021-07-27T15:38:28.223-0500","caller":"helm/helm.go:277","msg":"closing goroutine"}
+
+*********************************
+'k8s-tester-sysdig apply' success
