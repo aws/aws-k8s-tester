@@ -112,6 +112,7 @@ func getDefaultAddOnNodeGroups(name string) *AddOnNodeGroups {
 					ImageIDSSMParameter:  "/aws/service/eks/optimized-ami/1.20/amazon-linux-2/recommended/image_id",
 					InstanceType:         DefaultNodeInstanceTypeCPU,
 					VolumeSize:           DefaultNodeVolumeSize,
+					VolumeType:           DefaultNodeVolumeType,
 					ASGMinSize:           1,
 					ASGMaxSize:           1,
 					ASGDesiredCapacity:   1,
@@ -195,6 +196,9 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 
 		if cur.VolumeSize == 0 {
 			cur.VolumeSize = DefaultNodeVolumeSize
+		}
+		if cur.VolumeType == "" {
+			cur.VolumeType = DefaultNodeVolumeType
 		}
 		if cur.RemoteAccessUserName == "" {
 			cur.RemoteAccessUserName = "ec2-user"

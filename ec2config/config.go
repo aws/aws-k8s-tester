@@ -353,6 +353,10 @@ type ASG struct {
 	// a volume size, the default is the snapshot size.
 	VolumeSize int32 `json:"volume-size"`
 
+	// VolumeType is the type of volume for the underlying EBS volume.
+	// See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volume-types.html
+	VolumeType aws_ec2_v2_types.VolumeType `json:"volume-type"`
+
 	// ASGMinSize is the minimum size of ASG.
 	ASGMinSize int32 `json:"asg-min-size,omitempty"`
 	// ASGMaxSize is the maximum size of ASG.

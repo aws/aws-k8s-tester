@@ -23,6 +23,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/aws/aws-k8s-tester/pkg/randutil"
 	"github.com/aws/aws-k8s-tester/pkg/terminal"
+	aws_ec2_v2_types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/mitchellh/colorstring"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml" // must use "sigs.k8s.io/yaml"
@@ -843,6 +844,9 @@ const (
 
 	// DefaultNodeVolumeSize is the default EC2 instance volume size for a worker node.
 	DefaultNodeVolumeSize = 40
+
+	// DefaultNodeVolumeType is the default EC2 instance volume type for a worker node.
+	DefaultNodeVolumeType = aws_ec2_v2_types.VolumeTypeGp3
 
 	// NGsMaxLimit is the maximum number of "Node Group"s per a EKS cluster.
 	NGsMaxLimit = 10
