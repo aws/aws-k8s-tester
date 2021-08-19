@@ -91,7 +91,7 @@ func (ts *tester) _createASGs() (tss tupleTimes, err error) {
 							Ebs: &aws_ec2_v2_types.LaunchTemplateEbsBlockDeviceRequest{
 								DeleteOnTermination: aws_v2.Bool(true),
 								Encrypted:           aws_v2.Bool(true),
-								VolumeType:          aws_ec2_v2_types.VolumeTypeGp3,
+								VolumeType:          cur.VolumeType,
 								VolumeSize:          aws_v2.Int32(cur.VolumeSize),
 							},
 						},

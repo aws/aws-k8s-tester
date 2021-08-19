@@ -48,7 +48,7 @@ func TestEnv(t *testing.T) {
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS_FETCH_LOGS")
 	os.Setenv("AWS_K8S_TESTER_EC2_ASGS_LOGS_DIR", "hello")
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS_LOGS_DIR")
-	os.Setenv("AWS_K8S_TESTER_EC2_ASGS", `{"test-asg":{"name":"test-asg","ssm":{"document-create":true,"document-name":"my-doc","document-commands":"echo 123; echo 456;","document-execution-timeout-in-seconds":10},"remote-access-user-name":"my-user","image-id":"123","image-id-ssm-parameter":"777","asg-launch-configuration-cfn-stack-id":"none","asg-cfn-stack-id":"bbb","ami-type":"BOTTLEROCKET_x86_64","asg-min-size":30,"asg-max-size":30,"asg-desired-capacity":30,"volume-size":120,"instance-type":"c5.xlarge"}}`)
+	os.Setenv("AWS_K8S_TESTER_EC2_ASGS", `{"test-asg":{"name":"test-asg","ssm":{"document-create":true,"document-name":"my-doc","document-commands":"echo 123; echo 456;","document-execution-timeout-in-seconds":10},"remote-access-user-name":"my-user","image-id":"123","image-id-ssm-parameter":"777","asg-launch-configuration-cfn-stack-id":"none","asg-cfn-stack-id":"bbb","ami-type":"BOTTLEROCKET_x86_64","asg-min-size":30,"asg-max-size":30,"asg-desired-capacity":30,"volume-size":120,"volume-type":"io1","instance-type":"c5.xlarge"}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EC2_ASGS")
 
 	if err := cfg.UpdateFromEnvs(); err != nil {
@@ -127,6 +127,7 @@ func TestEnv(t *testing.T) {
 			ASGDesiredCapacity:  30,
 			InstanceType:        "c5.xlarge",
 			VolumeSize:          120,
+			VolumeType:          "io1",
 		},
 	}
 	if !reflect.DeepEqual(cfg.ASGs, expectedASGs) {

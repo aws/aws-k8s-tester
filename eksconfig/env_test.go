@@ -152,7 +152,7 @@ spec:
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_FETCH_LOGS", "false")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_FETCH_LOGS")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"ng-test-name-cpu":{"name":"ng-test-name-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id-ssm-parameter":"/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id","asg-min-size":17,"kubelet-extra-args":"bbb qq","bootstrap-args":"--pause-container-account 012345678901", "cluster-autoscaler" : {"enable" : false}, "asg-max-size":99,"asg-desired-capacity":77,"instance-type":"type-cpu-2","volume-size":40},"ng-test-name-gpu":{"name":"ng-test-name-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-type":"type-gpu-2","image-id":"my-gpu-ami","volume-size":500, "cluster-autoscaler": {"enable":false},"kubelet-extra-args":"aaa aa"}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"ng-test-name-cpu":{"name":"ng-test-name-cpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","image-id-ssm-parameter":"/aws/service/eks/optimized-ami/1.30/amazon-linux-2/recommended/image_id","asg-min-size":17,"kubelet-extra-args":"bbb qq","bootstrap-args":"--pause-container-account 012345678901", "cluster-autoscaler" : {"enable" : false}, "asg-max-size":99,"asg-desired-capacity":77,"instance-type":"type-cpu-2","volume-size":40,"volume-type":"gp2"},"ng-test-name-gpu":{"name":"ng-test-name-gpu","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64_GPU","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34,"instance-type":"type-gpu-2","image-id":"my-gpu-ami","volume-size":500,"volume-type":"gp3","cluster-autoscaler": {"enable":false},"kubelet-extra-args":"aaa aa"}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_NAME", "a")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ROLE_NAME")
@@ -831,6 +831,7 @@ spec:
 				ASGDesiredCapacity:   77,
 				InstanceType:         "type-cpu-2",
 				VolumeSize:           40,
+				VolumeType:           "gp2",
 			},
 			BootstrapArgs:     "--pause-container-account 012345678901",
 			KubeletExtraArgs:  "bbb qq",
@@ -847,6 +848,7 @@ spec:
 				ASGDesiredCapacity:   34,
 				InstanceType:         "type-gpu-2",
 				VolumeSize:           500,
+				VolumeType:           "gp3",
 			},
 			KubeletExtraArgs:  "aaa aa",
 			ClusterAutoscaler: &NGClusterAutoscaler{Enable: false},
@@ -1674,7 +1676,7 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34, "instance-type":"type-2", "image-id":"my-ami",  "ssm":{"document-create":true,    "document-name":"GetRef.Name-document", "document-commands":"echo 1"}, "kubelet-extra-args":"aaa aa", "cluster-autoscaler": {"enable" : true}, "volume-size":500}}`)
+	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS", `{"GetRef.Name-ng-for-cni":{"name":"GetRef.Name-ng-for-cni","remote-access-user-name":"ec2-user","ami-type":"AL2_x86_64","asg-min-size":30,"asg-max-size":35,"asg-desired-capacity":34, "instance-type":"type-2", "image-id":"my-ami",  "ssm":{"document-create":true,    "document-name":"GetRef.Name-document", "document-commands":"echo 1"}, "kubelet-extra-args":"aaa aa", "cluster-autoscaler": {"enable" : true}, "volume-size":500, "volume-type":"gp3"}}`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_NODE_GROUPS_ASGS")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE", `true`)
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_MANAGED_NODE_GROUPS_ENABLE")
@@ -1705,6 +1707,7 @@ func TestEnvAddOnNodeGroupsGetRef(t *testing.T) {
 				AMIType:            eks.AMITypesAl2X8664,
 				InstanceType:       "type-2",
 				VolumeSize:         500,
+				VolumeType:         "gp3",
 				ASGMinSize:         30,
 				ASGMaxSize:         35,
 				ASGDesiredCapacity: 34,
