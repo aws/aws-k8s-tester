@@ -2,8 +2,8 @@
 # How we added/built stand-alone tests for Splunk
 
 - git clone 
-- `mkdir/falco`
-- `cd falco/`
+- `mkdir/splunk`
+- `cd splunk/`
 - `go mod init github.com/aws/aws-k8s-tester/k8s-tester/splunk`
 - Create a file to implement the Tester Interface.   `touch tester.go`
 - copy a vend file from another package    `cp ../vend.sh .`
