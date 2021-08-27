@@ -83,6 +83,7 @@ import (
 	aws_cfn_v2 "github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	aws_cw_v2 "github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	aws_ec2_v2 "github.com/aws/aws-sdk-go-v2/service/ec2"
+	aws_ec2_v2_types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	aws_ecr_v2 "github.com/aws/aws-sdk-go-v2/service/ecr"
 	aws_eks_v2 "github.com/aws/aws-sdk-go-v2/service/eks"
 	aws_elbv2_v2 "github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2"
@@ -430,6 +431,12 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		&aws_ec2_v2.DescribeAvailabilityZonesInput{
 			// TODO: include opt-in zones?
 			AllAvailabilityZones: aws_v2.Bool(false),
+			Filters: []aws_ec2_v2_types.Filter{
+				{
+					Name:   aws_v2.String("zone-type"),
+					Values: []string{"availability-zone"},
+				},
+			},
 		},
 	)
 	cancel()
