@@ -124,6 +124,12 @@ import (
 	"k8s.io/utils/exec"
 )
 
+var useTwoAZs = map[string]bool{
+	"cn-north-1":     true,
+	"us-isob-east-1": true,
+	"us-west-1":      true,
+}
+
 // Tester implements "kubetest2" Deployer.
 // ref. https://pkg.go.dev/k8s.io/test-infra/kubetest2/pkg/types?tab=doc
 type Tester struct {
@@ -424,37 +430,37 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		zap.String("opt-in-status", aws_v2.ToString(rout.Regions[0].OptInStatus)),
 	)
 
-	fmt.Fprintln(ts.logWriter, "checking availability zones...")
+	fmt.Fprintln(ts.logWriter, "checking availability zones from default subnets...")
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-	dout, err := ts.ec2APIV2.DescribeAvailabilityZones(
+	dout, err := ts.ec2APIV2.DescribeSubnets(
 		ctx,
-		&aws_ec2_v2.DescribeAvailabilityZonesInput{
-			// TODO: include opt-in zones?
-			AllAvailabilityZones: aws_v2.Bool(false),
+		&aws_ec2_v2.DescribeSubnetsInput{
 			Filters: []aws_ec2_v2_types.Filter{
 				{
-					Name:   aws_v2.String("zone-type"),
-					Values: []string{"availability-zone"},
+					Name:   aws_v2.String("default-for-az"),
+					Values: []string{"true"},
 				},
 			},
 		},
 	)
 	cancel()
 	if err != nil {
-		return nil, fmt.Errorf("failed to describe availability zones using EC2 API v2 (%v)", err)
+		return nil, fmt.Errorf("failed to describe default subnets using EC2 API v2 (%v)", err)
 	}
-	for _, z := range dout.AvailabilityZones {
-		ts.lg.Info("availability zone",
-			zap.String("zone-name", aws_v2.ToString(z.ZoneName)),
-			zap.String("zone-id", aws_v2.ToString(z.ZoneId)),
-			zap.String("zone-type", aws_v2.ToString(z.ZoneType)),
-			zap.String("zone-opt-in-status", fmt.Sprintf("%+v", z.OptInStatus)),
+	for _, subnet := range dout.Subnets {
+		ts.lg.Info("availability zones for default subnets",
+			zap.String("zone-name", aws_v2.ToString(subnet.AvailabilityZone)),
+			zap.String("zone-id", aws_v2.ToString(subnet.AvailabilityZoneId)),
 		)
-		ts.cfg.AvailabilityZoneNames = append(ts.cfg.AvailabilityZoneNames, aws_v2.ToString(z.ZoneName))
+		ts.cfg.AvailabilityZoneNames = append(ts.cfg.AvailabilityZoneNames, aws_v2.ToString(subnet.AvailabilityZone))
 	}
 	sort.Strings(ts.cfg.AvailabilityZoneNames)
-	if len(ts.cfg.AvailabilityZoneNames) > len(ts.cfg.VPC.PublicSubnetCIDRs) {
-		ts.cfg.AvailabilityZoneNames = ts.cfg.AvailabilityZoneNames[:len(ts.cfg.VPC.PublicSubnetCIDRs)]
+	numAZLimit := len(ts.cfg.VPC.PublicSubnetCIDRs)
+	if useTwoAZs[ts.cfg.Region] && numAZLimit > 2 {
+		numAZLimit = 2
+	}
+	if len(ts.cfg.AvailabilityZoneNames) > numAZLimit {
+		ts.cfg.AvailabilityZoneNames = ts.cfg.AvailabilityZoneNames[:numAZLimit]
 	}
 	ts.cfg.Sync()
 	if len(ts.cfg.AvailabilityZoneNames) < 2 {
