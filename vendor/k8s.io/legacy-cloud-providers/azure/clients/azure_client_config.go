@@ -26,12 +26,14 @@ import (
 
 // ClientConfig contains all essential information to create an Azure client.
 type ClientConfig struct {
+	CloudName               string
 	Location                string
 	SubscriptionID          string
 	ResourceManagerEndpoint string
 	Authorizer              autorest.Authorizer
 	RateLimitConfig         *RateLimitConfig
 	Backoff                 *retry.Backoff
+	UserAgent               string
 }
 
 // WithRateLimiter returns a new ClientConfig with rateLimitConfig set.

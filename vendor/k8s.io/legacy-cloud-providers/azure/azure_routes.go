@@ -29,9 +29,11 @@ import (
 	"github.com/Azure/go-autorest/autorest/to"
 
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	cloudprovider "k8s.io/cloud-provider"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	azcache "k8s.io/legacy-cloud-providers/azure/cache"
+	"k8s.io/legacy-cloud-providers/azure/metrics"
 	utilnet "k8s.io/utils/net"
 )
 
@@ -50,15 +52,17 @@ const (
 	routeNameSeparator = "____"
 
 	// Route operations.
-	routeOperationAdd    routeOperation = "add"
-	routeOperationDelete routeOperation = "delete"
+	routeOperationAdd             routeOperation = "add"
+	routeOperationDelete          routeOperation = "delete"
+	routeTableOperationUpdateTags routeOperation = "updateRouteTableTags"
 )
 
 // delayedRouteOperation defines a delayed route operation which is used in delayedRouteUpdater.
 type delayedRouteOperation struct {
-	route     network.Route
-	operation routeOperation
-	result    chan error
+	route          network.Route
+	routeTableTags map[string]*string
+	operation      routeOperation
+	result         chan error
 }
 
 // wait waits for the operation completion and returns the result.
@@ -90,9 +94,12 @@ func newDelayedRouteUpdater(az *Cloud, interval time.Duration) *delayedRouteUpda
 
 // run starts the updater reconciling loop.
 func (d *delayedRouteUpdater) run() {
-	for {
+	err := wait.PollImmediateInfinite(d.interval, func() (bool, error) {
 		d.updateRoutes()
-		time.Sleep(d.interval)
+		return false, nil
+	})
+	if err != nil { // this should never happen, if it does, panic
+		panic(err)
 	}
 }
 
@@ -116,8 +123,10 @@ func (d *delayedRouteUpdater) updateRoutes() {
 		d.routesToUpdate = make([]*delayedRouteOperation, 0)
 	}()
 
-	var routeTable network.RouteTable
-	var existsRouteTable bool
+	var (
+		routeTable       network.RouteTable
+		existsRouteTable bool
+	)
 	routeTable, existsRouteTable, err = d.az.getRouteTable(azcache.CacheReadTypeDefault)
 	if err != nil {
 		klog.Errorf("getRouteTable() failed with error: %v", err)
@@ -145,8 +154,16 @@ func (d *delayedRouteUpdater) updateRoutes() {
 	if routeTable.Routes != nil {
 		routes = *routeTable.Routes
 	}
+	onlyUpdateTags := true
 	for _, rt := range d.routesToUpdate {
+		if rt.operation == routeTableOperationUpdateTags {
+			routeTable.Tags = rt.routeTableTags
+			dirty = true
+			continue
+		}
+
 		routeMatch := false
+		onlyUpdateTags = false
 		for i, existingRoute := range routes {
 			if strings.EqualFold(to.String(existingRoute.Name), to.String(rt.route.Name)) {
 				// delete the name-matched routes here (missing routes would be added later if the operation is add).
@@ -175,7 +192,10 @@ func (d *delayedRouteUpdater) updateRoutes() {
 	}
 
 	if dirty {
-		routeTable.Routes = &routes
+		if !onlyUpdateTags {
+			klog.V(2).Infof("updateRoutes: updating routes")
+			routeTable.Routes = &routes
+		}
 		err = d.az.CreateOrUpdateRouteTable(routeTable)
 		if err != nil {
 			klog.Errorf("CreateOrUpdateRouteTable() failed with error: %v", err)
@@ -193,6 +213,20 @@ func (d *delayedRouteUpdater) addRouteOperation(operation routeOperation, route 
 		route:     route,
 		operation: operation,
 		result:    make(chan error),
+	}
+	d.routesToUpdate = append(d.routesToUpdate, op)
+	return op, nil
+}
+
+// addUpdateRouteTableTagsOperation adds a update route table tags operation to delayedRouteUpdater and returns a delayedRouteOperation.
+func (d *delayedRouteUpdater) addUpdateRouteTableTagsOperation(operation routeOperation, tags map[string]*string) (*delayedRouteOperation, error) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+
+	op := &delayedRouteOperation{
+		routeTableTags: tags,
+		operation:      operation,
+		result:         make(chan error),
 	}
 	d.routesToUpdate = append(d.routesToUpdate, op)
 	return op, nil
@@ -221,6 +255,24 @@ func (az *Cloud) ListRoutes(ctx context.Context, clusterName string) ([]*cloudpr
 				TargetNode:      mapRouteNameToNodeName(az.ipv6DualStackEnabled, nodeName),
 				DestinationCIDR: cidr,
 			})
+		}
+	}
+
+	// ensure the route table is tagged as configured
+	tags, changed := az.ensureRouteTableTagged(&routeTable)
+	if changed {
+		klog.V(2).Infof("ListRoutes: updating tags on route table %s", to.String(routeTable.Name))
+		op, err := az.routeUpdater.addUpdateRouteTableTagsOperation(routeTableOperationUpdateTags, tags)
+		if err != nil {
+			klog.Errorf("ListRoutes: failed to add route table operation with error: %v", err)
+			return nil, err
+		}
+
+		// Wait for operation complete.
+		err = op.wait()
+		if err != nil {
+			klog.Errorf("ListRoutes: failed to update route table tags with error: %v", err)
+			return nil, err
 		}
 	}
 
@@ -278,6 +330,12 @@ func (az *Cloud) createRouteTable() error {
 // route.Name will be ignored, although the cloud-provider may use nameHint
 // to create a more user-meaningful name.
 func (az *Cloud) CreateRoute(ctx context.Context, clusterName string, nameHint string, kubeRoute *cloudprovider.Route) error {
+	mc := metrics.NewMetricContext("routes", "create_route", az.ResourceGroup, az.SubscriptionID, "")
+	isOperationSucceeded := false
+	defer func() {
+		mc.ObserveOperationWithResult(isOperationSucceeded)
+	}()
+
 	// Returns  for unmanaged nodes because azure cloud provider couldn't fetch information for them.
 	var targetIP string
 	nodeName := string(kubeRoute.TargetNode)
@@ -347,12 +405,20 @@ func (az *Cloud) CreateRoute(ctx context.Context, clusterName string, nameHint s
 	}
 
 	klog.V(2).Infof("CreateRoute: route created. clusterName=%q instance=%q cidr=%q", clusterName, kubeRoute.TargetNode, kubeRoute.DestinationCIDR)
+	isOperationSucceeded = true
+
 	return nil
 }
 
 // DeleteRoute deletes the specified managed route
 // Route should be as returned by ListRoutes
 func (az *Cloud) DeleteRoute(ctx context.Context, clusterName string, kubeRoute *cloudprovider.Route) error {
+	mc := metrics.NewMetricContext("routes", "delete_route", az.ResourceGroup, az.SubscriptionID, "")
+	isOperationSucceeded := false
+	defer func() {
+		mc.ObserveOperationWithResult(isOperationSucceeded)
+	}()
+
 	// Returns  for unmanaged nodes because azure cloud provider couldn't fetch information for them.
 	nodeName := string(kubeRoute.TargetNode)
 	unmanaged, err := az.IsNodeUnmanaged(nodeName)
@@ -388,6 +454,8 @@ func (az *Cloud) DeleteRoute(ctx context.Context, clusterName string, kubeRoute 
 	}
 
 	klog.V(2).Infof("DeleteRoute: route deleted. clusterName=%q instance=%q cidr=%q", clusterName, kubeRoute.TargetNode, kubeRoute.DestinationCIDR)
+	isOperationSucceeded = true
+
 	return nil
 }
 
@@ -405,7 +473,7 @@ func mapNodeNameToRouteName(ipv6DualStackEnabled bool, nodeName types.NodeName, 
 // Used with mapNodeNameToRouteName. See comment on mapNodeNameToRouteName.
 func mapRouteNameToNodeName(ipv6DualStackEnabled bool, routeName string) types.NodeName {
 	if !ipv6DualStackEnabled {
-		return types.NodeName(fmt.Sprintf("%s", routeName))
+		return types.NodeName(routeName)
 	}
 	parts := strings.Split(routeName, routeNameSeparator)
 	nodeName := parts[0]
@@ -433,4 +501,23 @@ func cidrtoRfc1035(cidr string) string {
 	cidr = strings.ReplaceAll(cidr, ".", "")
 	cidr = strings.ReplaceAll(cidr, "/", "")
 	return cidr
+}
+
+//  ensureRouteTableTagged ensures the route table is tagged as configured
+func (az *Cloud) ensureRouteTableTagged(rt *network.RouteTable) (map[string]*string, bool) {
+	if az.Tags == "" {
+		return nil, false
+	}
+	changed := false
+	tags := parseTags(az.Tags)
+	if rt.Tags == nil {
+		rt.Tags = make(map[string]*string)
+	}
+	for k, v := range tags {
+		if vv, ok := rt.Tags[k]; !ok || !strings.EqualFold(to.String(v), to.String(vv)) {
+			rt.Tags[k] = v
+			changed = true
+		}
+	}
+	return rt.Tags, changed
 }

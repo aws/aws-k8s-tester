@@ -27,7 +27,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 	cloudprovider "k8s.io/cloud-provider"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	azcache "k8s.io/legacy-cloud-providers/azure/cache"
 )
 
@@ -87,7 +87,7 @@ func (az *Cloud) GetZone(ctx context.Context) (cloudprovider.Zone, error) {
 	if err != nil {
 		return cloudprovider.Zone{}, fmt.Errorf("failure getting hostname from kernel")
 	}
-	return az.vmSet.GetZoneByNodeName(strings.ToLower(hostname))
+	return az.VMSet.GetZoneByNodeName(strings.ToLower(hostname))
 }
 
 // GetZoneByProviderID implements Zones.GetZoneByProviderID
@@ -104,7 +104,7 @@ func (az *Cloud) GetZoneByProviderID(ctx context.Context, providerID string) (cl
 		return cloudprovider.Zone{}, nil
 	}
 
-	nodeName, err := az.vmSet.GetNodeNameByProviderID(providerID)
+	nodeName, err := az.VMSet.GetNodeNameByProviderID(providerID)
 	if err != nil {
 		return cloudprovider.Zone{}, err
 	}
@@ -126,5 +126,5 @@ func (az *Cloud) GetZoneByNodeName(ctx context.Context, nodeName types.NodeName)
 		return cloudprovider.Zone{}, nil
 	}
 
-	return az.vmSet.GetZoneByNodeName(string(nodeName))
+	return az.VMSet.GetZoneByNodeName(string(nodeName))
 }

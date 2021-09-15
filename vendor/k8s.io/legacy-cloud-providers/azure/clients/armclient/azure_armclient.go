@@ -34,7 +34,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 
 	"k8s.io/client-go/pkg/version"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"k8s.io/legacy-cloud-providers/azure/retry"
 )
 
@@ -64,10 +64,11 @@ func New(authorizer autorest.Authorizer, baseURI, userAgent, apiVersion, clientR
 
 	backoff := clientBackoff
 	if backoff == nil {
+		backoff = &retry.Backoff{}
+	}
+	if backoff.Steps == 0 {
 		// 1 steps means no retry.
-		backoff = &retry.Backoff{
-			Steps: 1,
-		}
+		backoff.Steps = 1
 	}
 
 	return &Client{
@@ -109,6 +110,11 @@ func (c *Client) sendRequest(ctx context.Context, request *http.Request) (*http.
 		request,
 		retry.DoExponentialBackoffRetry(&sendBackoff),
 	)
+
+	if response == nil && err == nil {
+		return response, retry.NewError(false, fmt.Errorf("Empty response and no HTTP code"))
+	}
+
 	return response, retry.GetError(response, err)
 }
 
@@ -161,7 +167,7 @@ func (c *Client) Send(ctx context.Context, request *http.Request) (*http.Respons
 
 	// only use the result if the regional request actually goes through and returns 2xx status code, for two reasons:
 	// 1. the retry on regional ARM host approach is a hack.
-	// 2. the concatted regional uri could be wrong as the rule is not officially declared by ARM.
+	// 2. the concatenated regional uri could be wrong as the rule is not officially declared by ARM.
 	if regionalResponse == nil || regionalResponse.StatusCode > 299 {
 		regionalErrStr := ""
 		if regionalError != nil {
@@ -285,7 +291,7 @@ func (c *Client) SendAsync(ctx context.Context, request *http.Request) (*azure.F
 
 	future, err := azure.NewFutureFromResponse(asyncResponse)
 	if err != nil {
-		klog.V(5).Infof("Received error in %s: resourceID: %s, error: %s", "sendAsync.responed", request.URL.String(), err)
+		klog.V(5).Infof("Received error in %s: resourceID: %s, error: %s", "sendAsync.respond", request.URL.String(), err)
 		return nil, asyncResponse, retry.GetError(asyncResponse, err)
 	}
 
@@ -337,7 +343,7 @@ func (c *Client) PutResource(ctx context.Context, resourceID string, parameters 
 }
 
 // PutResources puts a list of resources from resources map[resourceID]parameters.
-// Those resources sync requests are sequential while async requests are concurent. It 's especially
+// Those resources sync requests are sequential while async requests are concurrent. It's especially
 // useful when the ARM API doesn't support concurrent requests.
 func (c *Client) PutResources(ctx context.Context, resources map[string]interface{}) map[string]*PutResourcesResponse {
 	if len(resources) == 0 {

@@ -26,7 +26,7 @@ import (
 
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/mocks"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // Ensure package autorest/mocks is imported and vendored.
@@ -144,7 +144,7 @@ func jitter(duration time.Duration, maxFactor float64) time.Duration {
 	return wait
 }
 
-// DoExponentialBackoffRetry reprents an autorest.SendDecorator with backoff retry.
+// DoExponentialBackoffRetry represents an autorest.SendDecorator with backoff retry.
 func DoExponentialBackoffRetry(backoff *Backoff) autorest.SendDecorator {
 	return func(s autorest.Sender) autorest.Sender {
 		return autorest.SenderFunc(func(r *http.Request) (*http.Response, error) {

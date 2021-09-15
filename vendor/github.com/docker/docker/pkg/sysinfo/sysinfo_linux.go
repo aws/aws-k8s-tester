@@ -53,15 +53,11 @@ func New(quiet bool) *SysInfo {
 		applyNetworkingInfo,
 		applyAppArmorInfo,
 		applySeccompInfo,
-		applyCgroupNsInfo,
 	}...)
 
 	for _, o := range ops {
 		w := o(sysInfo, cgMounts)
 		warnings = append(warnings, w...)
-	}
-	if cgroups.IsCgroup2UnifiedMode() {
-		warnings = append(warnings, "Your system is running cgroup v2 (unsupported)")
 	}
 	if !quiet {
 		for _, w := range warnings {
@@ -73,15 +69,6 @@ func New(quiet bool) *SysInfo {
 
 // applyMemoryCgroupInfo reads the memory information from the memory cgroup mount point.
 func applyMemoryCgroupInfo(info *SysInfo, cgMounts map[string]string) []string {
-	if cgroups.IsCgroup2UnifiedMode() {
-		// TODO: check cgroup2 info correctly
-		info.MemoryLimit = true
-		info.SwapLimit = true
-		info.MemoryReservation = true
-		info.OomKillDisable = true
-		info.MemorySwappiness = true
-		return nil
-	}
 	var warnings []string
 	mountPoint, ok := cgMounts["memory"]
 	if !ok {
@@ -120,15 +107,6 @@ func applyMemoryCgroupInfo(info *SysInfo, cgMounts map[string]string) []string {
 
 // applyCPUCgroupInfo reads the cpu information from the cpu cgroup mount point.
 func applyCPUCgroupInfo(info *SysInfo, cgMounts map[string]string) []string {
-	if cgroups.IsCgroup2UnifiedMode() {
-		// TODO: check cgroup2 info correctly
-		info.CPUShares = true
-		info.CPUCfsPeriod = true
-		info.CPUCfsQuota = true
-		info.CPURealtimePeriod = true
-		info.CPURealtimeRuntime = true
-		return nil
-	}
 	var warnings []string
 	mountPoint, ok := cgMounts["cpu"]
 	if !ok {
@@ -166,15 +144,6 @@ func applyCPUCgroupInfo(info *SysInfo, cgMounts map[string]string) []string {
 
 // applyBlkioCgroupInfo reads the blkio information from the blkio cgroup mount point.
 func applyBlkioCgroupInfo(info *SysInfo, cgMounts map[string]string) []string {
-	if cgroups.IsCgroup2UnifiedMode() {
-		// TODO: check cgroup2 info correctly
-		info.BlkioWeight = true
-		info.BlkioReadBpsDevice = true
-		info.BlkioWriteBpsDevice = true
-		info.BlkioReadIOpsDevice = true
-		info.BlkioWriteIOpsDevice = true
-		return nil
-	}
 	var warnings []string
 	mountPoint, ok := cgMounts["blkio"]
 	if !ok {
@@ -216,11 +185,6 @@ func applyBlkioCgroupInfo(info *SysInfo, cgMounts map[string]string) []string {
 
 // applyCPUSetCgroupInfo reads the cpuset information from the cpuset cgroup mount point.
 func applyCPUSetCgroupInfo(info *SysInfo, cgMounts map[string]string) []string {
-	if cgroups.IsCgroup2UnifiedMode() {
-		// TODO: check cgroup2 info correctly
-		info.Cpuset = true
-		return nil
-	}
 	var warnings []string
 	mountPoint, ok := cgMounts["cpuset"]
 	if !ok {
@@ -248,11 +212,6 @@ func applyCPUSetCgroupInfo(info *SysInfo, cgMounts map[string]string) []string {
 
 // applyPIDSCgroupInfo reads the pids information from the pids cgroup mount point.
 func applyPIDSCgroupInfo(info *SysInfo, _ map[string]string) []string {
-	if cgroups.IsCgroup2UnifiedMode() {
-		// TODO: check cgroup2 info correctly
-		info.PidsLimit = true
-		return nil
-	}
 	var warnings []string
 	_, err := cgroups.FindCgroupMountpoint("", "pids")
 	if err != nil {
@@ -265,11 +224,6 @@ func applyPIDSCgroupInfo(info *SysInfo, _ map[string]string) []string {
 
 // applyDevicesCgroupInfo reads the pids information from the devices cgroup mount point.
 func applyDevicesCgroupInfo(info *SysInfo, cgMounts map[string]string) []string {
-	if cgroups.IsCgroup2UnifiedMode() {
-		// TODO: check cgroup2 info correctly
-		info.CgroupDevicesEnabled = true
-		return nil
-	}
 	var warnings []string
 	_, ok := cgMounts["devices"]
 	info.CgroupDevicesEnabled = ok
@@ -292,15 +246,6 @@ func applyAppArmorInfo(info *SysInfo, _ map[string]string) []string {
 		if _, err := ioutil.ReadFile("/sys/kernel/security/apparmor/profiles"); err == nil {
 			info.AppArmor = true
 		}
-	}
-	return warnings
-}
-
-// applyCgroupNsInfo adds cgroup namespace information to the info.
-func applyCgroupNsInfo(info *SysInfo, _ map[string]string) []string {
-	var warnings []string
-	if _, err := os.Stat("/proc/self/ns/cgroup"); !os.IsNotExist(err) {
-		info.CgroupNamespaces = true
 	}
 	return warnings
 }

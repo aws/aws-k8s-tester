@@ -116,6 +116,8 @@ type KubeProxyConfiguration struct {
 	// metricsBindAddress is the IP address and port for the metrics server to serve on,
 	// defaulting to 127.0.0.1:10249 (set to 0.0.0.0 for all interfaces)
 	MetricsBindAddress string `json:"metricsBindAddress"`
+	// bindAddressHardFail, if true, kube-proxy will treat failure to bind to a port as fatal and exit
+	BindAddressHardFail bool `json:"bindAddressHardFail"`
 	// enableProfiling enables profiling via web interface on /debug/pprof handler.
 	// Profiling handlers will be handled by metrics server.
 	EnableProfiling bool `json:"enableProfiling"`
@@ -164,6 +166,8 @@ type KubeProxyConfiguration struct {
 	DetectLocalMode LocalMode `json:"detectLocalMode"`
 }
 
+// ProxyMode represents modes used by the Kubernetes proxy server.
+//
 // Currently, three modes of proxy are available in Linux platform: 'userspace' (older, going to be EOL), 'iptables'
 // (newer, faster), 'ipvs'(newest, better in performance and scalability).
 //
@@ -173,7 +177,7 @@ type KubeProxyConfiguration struct {
 // future). If the iptables proxy is selected, regardless of how, but the system's kernel or iptables versions are
 // insufficient, this always falls back to the userspace proxy. IPVS mode will be enabled when proxy mode is set to 'ipvs',
 // and the fall back path is firstly iptables and then userspace.
-
+//
 // In Windows platform, if proxy mode is blank, use the best-available proxy (currently userspace, but may change in the
 // future). If winkernel proxy is selected, regardless of how, but the Windows kernel can't support this mode of proxy,
 // this always falls back to the userspace proxy.
