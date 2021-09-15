@@ -26,9 +26,9 @@ func (spec *OverprovisioningSpec) Validate(cfg *Config) error {
 
 // Default installs the addon
 func (spec *OverprovisioningSpec) Default(cfg *Config) {
-	if cfg.AddOnHollowNodesRemote.Enable {
-		spec.KubemarkEnabled = true
-	}
+	// if cfg.AddOnHollowNodesRemote.Enable {
+	// 	spec.KubemarkEnabled = true
+	// }
 	if spec.Namespace == "" {
 		spec.Namespace = "overprovisioning"
 	}

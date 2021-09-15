@@ -91,17 +91,17 @@ func (c *ClusterAutoscaler) buildCommand() string {
 
 func (c *ClusterAutoscaler) buildNodeGroupArguments() (args []string) {
 	spec := c.Config.Spec.ClusterAutoscaler
-	if spec.CloudProvider == eksconfig.CloudProviderKubemark {
-		for i := 0; i < c.Config.AddOnHollowNodesRemote.NodeGroups; i++ {
-			name := fmt.Sprintf(NodeGroupFormatter, c.Config.AddOnHollowNodesRemote.NodeLabelPrefix, i)
-			args = append(args, fmt.Sprintf(
-				NodeGroupArgumentFormatter,
-				spec.MinNodes,
-				spec.MaxNodes,
-				name,
-			))
-		}
-	}
+	// if spec.CloudProvider == eksconfig.CloudProviderKubemark {
+	// for i := 0; i < c.Config.AddOnHollowNodesRemote.NodeGroups; i++ {
+	// 	name := fmt.Sprintf(NodeGroupFormatter, c.Config.AddOnHollowNodesRemote.NodeLabelPrefix, i)
+	// 	args = append(args, fmt.Sprintf(
+	// 		NodeGroupArgumentFormatter,
+	// 		spec.MinNodes,
+	// 		spec.MaxNodes,
+	// 		name,
+	// 	))
+	// }
+	// }
 	if spec.CloudProvider == eksconfig.CloudProviderAWS {
 		if c.Config.AddOnNodeGroups != nil {
 			for _, asg := range c.Config.AddOnNodeGroups.ASGs {

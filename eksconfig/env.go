@@ -563,32 +563,6 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *AddOnClusterLoaderRemote, got %T", vv)
 	}
 
-	if cfg.AddOnHollowNodesLocal == nil {
-		cfg.AddOnHollowNodesLocal = &AddOnHollowNodesLocal{}
-	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnHollowNodesLocal, cfg.AddOnHollowNodesLocal)
-	if err != nil {
-		return err
-	}
-	if av, ok := vv.(*AddOnHollowNodesLocal); ok {
-		cfg.AddOnHollowNodesLocal = av
-	} else {
-		return fmt.Errorf("expected *AddOnHollowNodesLocal, got %T", vv)
-	}
-
-	if cfg.AddOnHollowNodesRemote == nil {
-		cfg.AddOnHollowNodesRemote = &AddOnHollowNodesRemote{}
-	}
-	vv, err = parseEnvs(EnvironmentVariablePrefixAddOnHollowNodesRemote, cfg.AddOnHollowNodesRemote)
-	if err != nil {
-		return err
-	}
-	if av, ok := vv.(*AddOnHollowNodesRemote); ok {
-		cfg.AddOnHollowNodesRemote = av
-	} else {
-		return fmt.Errorf("expected *AddOnHollowNodesRemote, got %T", vv)
-	}
-
 	if cfg.AddOnStresserLocal == nil {
 		cfg.AddOnStresserLocal = &AddOnStresserLocal{}
 	}

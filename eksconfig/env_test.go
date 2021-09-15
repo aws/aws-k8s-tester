@@ -464,28 +464,6 @@ spec:
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CUDA_VECTOR_ADD_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CUDA_VECTOR_ADD_ENABLE")
 
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODE_LABEL_PREFIX", "hollow-prefix")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_NODE_LABEL_PREFIX")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_MAX_OPEN_FILES", "333")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_LOCAL_MAX_OPEN_FILES")
-
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE", "true")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_ENABLE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE", "test-hollow-nodes-namespace")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NAMESPACE")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES", "333")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_NODES")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_ACCOUNT_ID", "uri")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_ACCOUNT_ID")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME", "hollow-nodes-repo-name")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_NAME")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_URI", "hollow-nodes-repo-uri")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_URI")
-	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG", "hollow-nodes-repo-image-tag")
-	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_HOLLOW_NODES_REMOTE_REPOSITORY_IMAGE_TAG")
-
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE", "true")
 	defer os.Unsetenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_ENABLE")
 	os.Setenv("AWS_K8S_TESTER_EKS_ADD_ON_CLUSTER_LOADER_LOCAL_TEST_CONFIG_PATH", "artifacts/clusterloader2-testing-load-config.yaml")
@@ -1381,35 +1359,6 @@ spec:
 	}
 	if cfg.AddOnIRSAFargate.RepositoryImageTag != "irsa-fargate-repo-image-tag" {
 		t.Fatalf("unexpected cfg.AddOnIRSAFargate.RepositoryImageTag %v", cfg.AddOnIRSAFargate.RepositoryImageTag)
-	}
-
-	if !cfg.AddOnHollowNodesLocal.Enable {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesLocal.Enable %v", cfg.AddOnHollowNodesLocal.Enable)
-	}
-	if cfg.AddOnHollowNodesLocal.NodeLabelPrefix != "hollow-prefix" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesLocal.NodeLabelPrefix %q", cfg.AddOnHollowNodesLocal.NodeLabelPrefix)
-	}
-	if cfg.AddOnHollowNodesLocal.MaxOpenFiles != 333 {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesLocal.MaxOpenFiles %v", cfg.AddOnHollowNodesLocal.MaxOpenFiles)
-	}
-
-	if !cfg.AddOnHollowNodesRemote.Enable {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.Enable %v", cfg.AddOnHollowNodesRemote.Enable)
-	}
-	if cfg.AddOnHollowNodesRemote.Nodes != 333 {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.Nodes %v", cfg.AddOnHollowNodesRemote.Nodes)
-	}
-	if cfg.AddOnHollowNodesRemote.Namespace != "test-hollow-nodes-namespace" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.Namespace %v", cfg.AddOnHollowNodesRemote.Namespace)
-	}
-	if cfg.AddOnHollowNodesRemote.RepositoryAccountID != "uri" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryAccountID %v", cfg.AddOnHollowNodesRemote.RepositoryAccountID)
-	}
-	if cfg.AddOnHollowNodesRemote.RepositoryName != "hollow-nodes-repo-name" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryName %v", cfg.AddOnHollowNodesRemote.RepositoryName)
-	}
-	if cfg.AddOnHollowNodesRemote.RepositoryImageTag != "hollow-nodes-repo-image-tag" {
-		t.Fatalf("unexpected cfg.AddOnHollowNodesRemote.RepositoryImageTag %v", cfg.AddOnHollowNodesRemote.RepositoryImageTag)
 	}
 
 	if !cfg.AddOnJupyterHub.Enable {

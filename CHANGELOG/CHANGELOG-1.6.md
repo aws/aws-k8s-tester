@@ -12,6 +12,11 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.1...v1.6.2
   - https://github.com/helm/helm/releases/tag/v3.6.3
   - https://github.com/aws/aws-k8s-tester/pull/240
 
+### `eks`
+
+- Remove `eks/hollow-nodes`.
+  - To avoid vendoring the whole `kubernetes/kubernetes` dependencies.
+
 ### `k8s-tester`
 
 - Update `helm` and `kubernetes` dependency.

@@ -188,14 +188,6 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnHollowNodesLocal, &eksconfig.AddOnHollowNodesLocal{}))
-
-	b.WriteByte('\n')
-	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnHollowNodesRemote, &eksconfig.AddOnHollowNodesRemote{}))
-
-	b.WriteByte('\n')
-	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(eksconfig.EnvironmentVariablePrefixAddOnStresserLocal, &eksconfig.AddOnStresserLocal{}))
 
 	b.WriteByte('\n')

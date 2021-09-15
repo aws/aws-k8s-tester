@@ -10,7 +10,6 @@ func newCreate() *cobra.Command {
 	ac.AddCommand(
 		newCreateConfig(),
 		newCreateCluster(),
-		newCreateHollowNodes(),
 		newCreateCSRs(),
 		newCreateConfigMaps(),
 		newCreateSecrets(),

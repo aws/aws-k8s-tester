@@ -45,8 +45,6 @@ import (
 	"github.com/aws/aws-k8s-tester/eks/fargate"
 	"github.com/aws/aws-k8s-tester/eks/fluentd"
 	"github.com/aws/aws-k8s-tester/eks/gpu"
-	hollow_nodes_local "github.com/aws/aws-k8s-tester/eks/hollow-nodes/local"
-	hollow_nodes_remote "github.com/aws/aws-k8s-tester/eks/hollow-nodes/remote"
 	"github.com/aws/aws-k8s-tester/eks/irsa"
 	irsa_fargate "github.com/aws/aws-k8s-tester/eks/irsa-fargate"
 	jobs_echo "github.com/aws/aws-k8s-tester/eks/jobs-echo"
@@ -988,21 +986,6 @@ func (ts *Tester) createTesters() (err error) {
 			S3API:     ts.s3API,
 			CWAPI:     ts.cwAPI,
 			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnClusterLoaderRemoteRepositoryRegion())),
-		}),
-		hollow_nodes_local.New(hollow_nodes_local.Config{
-			Logger:    ts.lg,
-			LogWriter: ts.logWriter,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-		}),
-		hollow_nodes_remote.New(hollow_nodes_remote.Config{
-			Logger:    ts.lg,
-			LogWriter: ts.logWriter,
-			Stopc:     ts.stopCreationCh,
-			EKSConfig: ts.cfg,
-			K8SClient: ts.k8sClient,
-			ECRAPI:    ecr.New(ts.awsSession, aws.NewConfig().WithRegion(ts.cfg.GetAddOnHollowNodesRemoteRepositoryRegion())),
 		}),
 		stresser_local.New(stresser_local.Config{
 			Logger:    ts.lg,

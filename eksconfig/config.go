@@ -255,8 +255,7 @@ type Config struct {
 	AddOnManagedNodeGroups *AddOnManagedNodeGroups `json:"add-on-managed-node-groups,omitempty"`
 
 	// TotalNodes is the total number of nodes from all node groups.
-	TotalNodes       int32 `json:"total-nodes" read-only:"true"`
-	TotalHollowNodes int32 `json:"total-hollow-nodes" read-only:"true"`
+	TotalNodes int32 `json:"total-nodes" read-only:"true"`
 
 	// AddOnCWAgent defines parameters for EKS cluster
 	// add-on Fluentd.
@@ -367,15 +366,6 @@ type Config struct {
 	// It generates loads from the remote host machine.
 	// ref. https://github.com/kubernetes/perf-tests/tree/master/clusterloader2
 	AddOnClusterLoaderRemote *AddOnClusterLoaderRemote `json:"add-on-cluster-loader-remote,omitempty"`
-
-	// AddOnHollowNodesLocal defines parameters for EKS cluster
-	// add-on hollow nodes local.
-	// It generates loads from the local host machine.
-	AddOnHollowNodesLocal *AddOnHollowNodesLocal `json:"add-on-hollow-nodes-local,omitempty"`
-	// AddOnHollowNodesRemote defines parameters for EKS cluster
-	// add-on hollow nodes remote.
-	// It generates loads from the remote workers (Pod) in the cluster.
-	AddOnHollowNodesRemote *AddOnHollowNodesRemote `json:"add-on-hollow-nodes-remote,omitempty"`
 
 	// AddOnStresserLocal defines parameters for EKS cluster
 	// add-on cluster loader local.
@@ -965,8 +955,6 @@ func NewDefault() *Config {
 		AddOnCUDAVectorAdd:         getDefaultAddOnCUDAVectorAdd(),
 		AddOnClusterLoaderLocal:    getDefaultAddOnClusterLoaderLocal(),
 		AddOnClusterLoaderRemote:   getDefaultAddOnClusterLoaderRemote(),
-		AddOnHollowNodesLocal:      getDefaultAddOnHollowNodesLocal(),
-		AddOnHollowNodesRemote:     getDefaultAddOnHollowNodesRemote(),
 		AddOnStresserLocal:         getDefaultAddOnStresserLocal(),
 		AddOnStresserRemote:        getDefaultAddOnStresserRemote(),
 		AddOnStresserRemoteV2:      getDefaultAddOnStresserRemoteV2(),
@@ -1051,15 +1039,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 		}
 	}
 	cfg.TotalNodes = total
-
-	totalHollowNodes := int32(0)
-	if cfg.IsEnabledAddOnHollowNodesLocal() {
-		totalHollowNodes += int32(cfg.AddOnHollowNodesLocal.Nodes)
-	}
-	if cfg.IsEnabledAddOnHollowNodesRemote() {
-		totalHollowNodes += int32(cfg.AddOnHollowNodesRemote.Nodes) * int32(cfg.AddOnHollowNodesRemote.NodeGroups)
-	}
-	cfg.TotalHollowNodes = totalHollowNodes
 
 	if err := cfg.validateAddOnCWAgent(); err != nil {
 		return fmt.Errorf("validateAddOnCWAgent failed [%v]", err)
@@ -1158,13 +1137,6 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if err := cfg.validateAddOnClusterLoaderRemote(); err != nil {
 		return fmt.Errorf("validateAddOnClusterLoaderRemote failed [%v]", err)
-	}
-
-	if err := cfg.validateAddOnHollowNodesLocal(); err != nil {
-		return fmt.Errorf("validateAddOnHollowNodesLocal failed [%v]", err)
-	}
-	if err := cfg.validateAddOnHollowNodesRemote(); err != nil {
-		return fmt.Errorf("validateAddOnHollowNodesRemote failed [%v]", err)
 	}
 
 	if err := cfg.validateAddOnStresserLocal(); err != nil {

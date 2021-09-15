@@ -1,44 +1,45 @@
 add-on-cni-vpc: null
+aws-cli-path: /home/leegyuho/.local/bin/aws
 client-burst: 20
 client-qps: 10
 client-timeout: 15000000000
 client-timeout-string: 15s
 clients: 2
 command-after-create-add-ons: ""
-command-after-create-add-ons-output-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.after-create-add-ons.out.log
+command-after-create-add-ons-output-path: /home/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.after-create-add-ons.out.log
 command-after-create-add-ons-timeout: 180000000000
 command-after-create-add-ons-timeout-string: 3m0s
 command-after-create-cluster: ""
-command-after-create-cluster-output-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.after-create-cluster.out.log
+command-after-create-cluster-output-path: /home/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.after-create-cluster.out.log
 command-after-create-cluster-timeout: 180000000000
 command-after-create-cluster-timeout-string: 3m0s
-config-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.yaml
+config-path: /home/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.yaml
 cw-namespace: aws-k8s-tester-eks
 encryption:
   cmk-arn: ""
   cmk-create: true
 kube-apiserver-max-requests-inflight: ""
-kubeconfig-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.kubeconfig.yaml
-kubectl-commands-output-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.kubectl.sh
-kubectl-download-url: https://storage.googleapis.com/kubernetes-release/release/v1.20.7/bin/darwin/amd64/kubectl
+kubeconfig-path: /home/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.kubeconfig.yaml
+kubectl-commands-output-path: /home/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.kubectl.sh
+kubectl-download-url: https://storage.googleapis.com/kubernetes-release/release/v1.20.7/bin/linux/amd64/kubectl
 kubectl-path: /tmp/kubectl-test-v1.20.7
 log-color: true
 log-color-override: ""
 log-level: info
 log-outputs:
 - stderr
-- /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.log
+- /home/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.log
 metadata:
   creationTimestamp: null
-name: eks-2021071900-linuxofc4nfc
+name: eks-2021091520-tropical1f5d
 on-failure-delete: true
 on-failure-delete-wait-seconds: 120
 partition: aws
 region: us-west-2
-remote-access-commands-output-path: /Users/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.ssh.sh
+remote-access-commands-output-path: /home/leegyuho/go/src/github.com/aws/aws-k8s-tester/eksconfig/default.ssh.sh
 remote-access-key-create: true
-remote-access-key-name: eks-2021071900-linuxofc4nfc-remote-access-key
-remote-access-private-key-path: /var/folders/xt/szh_n5x154x2hyhj0zkpd3qr0000gn/T/grandbe6kijrm63.insecure.key
+remote-access-key-name: eks-2021091520-tropical1f5d-remote-access-key
+remote-access-private-key-path: /tmp/atlasubjsfmv0hb.insecure.key
 request-header-key: ""
 request-header-value: ""
 resolver-url: ""
@@ -56,9 +57,9 @@ role:
   - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
   - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
   - arn:aws:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy
-  name: eks-2021071900-linuxofc4nfc-role
+  name: eks-2021091520-tropical1f5d-role
   policy-arn: ""
-  policy-name: eks-2021071900-linuxofc4nfc-policy
+  policy-name: eks-2021091520-tropical1f5d-policy
   service-principals:
   - ec2.amazonaws.com
   - eks.amazonaws.com
@@ -67,7 +68,7 @@ s3:
   bucket-create: true
   bucket-create-keep: true
   bucket-lifecycle-expiration-days: 0
-  bucket-name: eks-2021071900-linuxofc4nfc-s3-bucket
+  bucket-name: eks-2021091520-tropical1f5d-s3-bucket
 signing-name: eks
 skip-delete-cluster-and-nodes: false
 spec: {}
@@ -115,7 +116,6 @@ status:
     took-string: ""
   up: false
 tags: null
-total-hollow-nodes: 0
 total-nodes: 0
 version: "1.20"
 version-value: 1.2
@@ -131,7 +131,7 @@ vpc:
   internet-gateway-id: ""
   nat-gateway-ids: null
   node-group-security-group-id: ""
-  node-group-security-group-name: eks-2021071900-linuxofc4nfc-node-group-security-group
+  node-group-security-group-name: eks-2021091520-tropical1f5d-node-group-security-group
   private-route-table-ids: null
   private-subnet-cidrs:
   - 10.3.0.0/17
