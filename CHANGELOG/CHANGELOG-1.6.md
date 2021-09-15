@@ -1,4 +1,28 @@
 
+<hr>
+
+## [v1.6.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.2) (2021-09)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.1...v1.6.2).
+
+### `aws-k8s-tester`
+
+- Update `helm` and `kubernetes` dependency
+  - https://github.com/kubernetes/kubernetes/releases/tag/v1.21.1
+  - https://github.com/helm/helm/releases/tag/v3.6.3
+  - https://github.com/aws/aws-k8s-tester/pull/240
+
+### `k8s-tester`
+
+- Update `helm` and `kubernetes` dependency
+  - https://github.com/kubernetes/kubernetes/releases/tag/v1.21.1
+  - https://github.com/helm/helm/releases/tag/v3.6.3
+  - https://github.com/aws/aws-k8s-tester/pull/240
+
+### Go
+
+- Compile with [*Go 1.17.1*](https://golang.org/doc/devel/release.html#go1.17).
+
 
 <hr>
 
