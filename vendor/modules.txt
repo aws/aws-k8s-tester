@@ -288,7 +288,7 @@ github.com/cihub/seelog/archive/zip
 # github.com/containerd/cgroups v0.0.0-20200531161412-0dbf7f05ba59
 ## explicit; go 1.13
 github.com/containerd/cgroups/stats/v1
-# github.com/containerd/containerd v1.4.4 => github.com/containerd/containerd v1.3.4
+# github.com/containerd/containerd v1.4.8 => github.com/containerd/containerd v1.3.4
 ## explicit
 github.com/containerd/containerd/archive/compression
 github.com/containerd/containerd/content
