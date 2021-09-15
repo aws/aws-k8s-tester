@@ -6,6 +6,12 @@ set -e
 goimports -w .
 gofmt -s -w .
 
+goimports -w ./aqua
+gofmt -s -w ./aqua
+
+goimports -w ./armory
+gofmt -s -w ./armory
+
 goimports -w ./cloudwatch-agent
 gofmt -s -w ./cloudwatch-agent
 
@@ -66,14 +72,23 @@ gofmt -s -w ./php-apache
 goimports -w ./secrets
 gofmt -s -w ./secrets
 
+goimports -w ./splunk
+gofmt -s -w ./splunk
+
 goimports -w ./stress
 gofmt -s -w ./stress
+
+goimports -w ./sysdig
+gofmt -s -w ./sysdig
 
 goimports -w ./tester
 gofmt -s -w ./tester
 
-goimports -w ./version
-gofmt -s -w ./version
+goimports -w ./vault
+gofmt -s -w ./vault
+
+goimports -w ./tester
+gofmt -s -w ./tester
 
 goimports -w ./wordpress
 gofmt -s -w ./wordpress

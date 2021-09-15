@@ -43,7 +43,7 @@ import (
 	volumes_v2 "github.com/gophercloud/gophercloud/openstack/blockstorage/v2/volumes"
 	volumes_v3 "github.com/gophercloud/gophercloud/openstack/blockstorage/v3/volumes"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/volumeattach"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 type volumeService interface {
@@ -419,7 +419,12 @@ func (os *OpenStack) ExpandVolume(volumeID string, oldSize resource.Quantity, ne
 	}
 	if volume.Status != volumeAvailableStatus {
 		// cinder volume can not be expanded if its status is not available
-		return oldSize, fmt.Errorf("volume in %s status can not be expanded, it must be available and not attached to a node", volume.Status)
+		if volume.Status == volumeInUseStatus {
+			// Send a nice event when the volume is used
+			return oldSize, fmt.Errorf("PVC used by a Pod can not be expanded, please ensure the PVC is not used by any Pod and is fully detached from a node")
+		}
+		// Send not so nice event when the volume is in any other state (deleted, error)
+		return oldSize, fmt.Errorf("volume in state %q can not be expanded, it must be \"available\"", volume.Status)
 	}
 
 	// Cinder works with gigabytes, convert to GiB with rounding up
@@ -486,11 +491,14 @@ func (os *OpenStack) CreateVolume(name string, size int, vtype, availability str
 func (os *OpenStack) GetDevicePathBySerialID(volumeID string) string {
 	// Build a list of candidate device paths.
 	// Certain Nova drivers will set the disk serial ID, including the Cinder volume id.
+	// Newer OpenStacks may not truncate the volumeID to 20 chars.
 	candidateDeviceNodes := []string{
 		// KVM
 		fmt.Sprintf("virtio-%s", volumeID[:20]),
+		fmt.Sprintf("virtio-%s", volumeID),
 		// KVM virtio-scsi
 		fmt.Sprintf("scsi-0QEMU_QEMU_HARDDISK_%s", volumeID[:20]),
+		fmt.Sprintf("scsi-0QEMU_QEMU_HARDDISK_%s", volumeID),
 		// ESXi
 		fmt.Sprintf("wwn-0x%s", strings.Replace(volumeID, "-", "", -1)),
 	}
@@ -739,8 +747,12 @@ func (os *OpenStack) GetLabelsForVolume(ctx context.Context, pv *v1.PersistentVo
 
 	// Construct Volume Labels
 	labels := make(map[string]string)
-	labels[v1.LabelZoneFailureDomain] = volume.AvailabilityZone
-	labels[v1.LabelZoneRegion] = os.region
+	if volume.AvailabilityZone != "" {
+		labels[v1.LabelTopologyZone] = volume.AvailabilityZone
+	}
+	if os.region != "" {
+		labels[v1.LabelTopologyRegion] = os.region
+	}
 	klog.V(4).Infof("The Volume %s has labels %v", pv.Spec.Cinder.VolumeID, labels)
 
 	return labels, nil

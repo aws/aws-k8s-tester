@@ -16,6 +16,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/client"
+	"github.com/aws/aws-k8s-tester/k8s-tester/aqua"
+	"github.com/aws/aws-k8s-tester/k8s-tester/armory"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
 	"github.com/aws/aws-k8s-tester/k8s-tester/clusterloader"
 	cni "github.com/aws/aws-k8s-tester/k8s-tester/cni"
@@ -23,18 +25,23 @@ import (
 	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
 	"github.com/aws/aws-k8s-tester/k8s-tester/csrs"
+	"github.com/aws/aws-k8s-tester/k8s-tester/epsagon"
 	falco "github.com/aws/aws-k8s-tester/k8s-tester/falco"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
+	"github.com/aws/aws-k8s-tester/k8s-tester/kubecost"
 	kubernetes_dashboard "github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard"
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
 	nlb_guestbook "github.com/aws/aws-k8s-tester/k8s-tester/nlb-guestbook"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
+	"github.com/aws/aws-k8s-tester/k8s-tester/splunk"
 	"github.com/aws/aws-k8s-tester/k8s-tester/stress"
 	stress_in_cluster "github.com/aws/aws-k8s-tester/k8s-tester/stress/in-cluster"
+	"github.com/aws/aws-k8s-tester/k8s-tester/sysdig"
+	"github.com/aws/aws-k8s-tester/k8s-tester/vault"
 	"github.com/aws/aws-k8s-tester/k8s-tester/wordpress"
 	aws_v1_ecr "github.com/aws/aws-k8s-tester/utils/aws/v1/ecr"
 	"github.com/aws/aws-k8s-tester/utils/file"
@@ -130,6 +137,7 @@ type Config struct {
 	AddOnCloudwatchAgent     *cloudwatch_agent.Config     `json:"add_on_cloudwatch_agent"`
 	AddOnFluentBit           *fluent_bit.Config           `json:"add_on_fluent_bit"`
 	AddOnMetricsServer       *metrics_server.Config       `json:"add_on_metrics_server"`
+	AddOnKubecost            *kubecost.Config             `json:"add_on_kubecost"`
 	AddOnConformance         *conformance.Config          `json:"add_on_conformance"`
 	AddOnCNI                 *cni.Config                  `json:"add_on_cni"`
 	AddOnCSIEBS              *csi_ebs.Config              `json:"add_on_csi_ebs"`
@@ -139,6 +147,7 @@ type Config struct {
 	AddOnNLBGuestbook        *nlb_guestbook.Config        `json:"add_on_nlb_guestbook"`
 	AddOnNLBHelloWorld       *nlb_hello_world.Config      `json:"add_on_nlb_hello_world"`
 	AddOnWordpress           *wordpress.Config            `json:"add_on_wordpress"`
+	AddOnVault               *vault.Config                `json:"add_on_vault"`
 	AddOnJobsPi              *jobs_pi.Config              `json:"add_on_jobs_pi"`
 	AddOnJobsEcho            *jobs_echo.Config            `json:"add_on_jobs_echo"`
 	AddOnCronJobsEcho        *jobs_echo.Config            `json:"add_on_cron_jobs_echo"`
@@ -148,6 +157,11 @@ type Config struct {
 	AddOnClusterloader       *clusterloader.Config        `json:"add_on_clusterloader"`
 	AddOnStress              *stress.Config               `json:"add_on_stress"`
 	AddOnStressInCluster     *stress_in_cluster.Config    `json:"add_on_stress_in_cluster"`
+	AddOnAqua                *aqua.Config                 `json:"add_on_aqua"`
+	AddOnArmory              *armory.Config               `json:"add_on_armory"`
+	AddOnEpsagon             *epsagon.Config              `json:"add_on_epsagon"`
+	AddOnSysdig              *sysdig.Config               `json:"add_on_sysdig"`
+	AddOnSplunk              *splunk.Config               `json:"add_on_splunk"`
 }
 
 const (
@@ -205,6 +219,7 @@ func NewDefault() *Config {
 		AddOnCloudwatchAgent:     cloudwatch_agent.NewDefault(),
 		AddOnFluentBit:           fluent_bit.NewDefault(),
 		AddOnMetricsServer:       metrics_server.NewDefault(),
+		AddOnKubecost:            kubecost.NewDefault(),
 		AddOnCNI:                 cni.NewDefault(),
 		AddOnConformance:         conformance.NewDefault(),
 		AddOnCSIEBS:              csi_ebs.NewDefault(),
@@ -214,6 +229,7 @@ func NewDefault() *Config {
 		AddOnNLBGuestbook:        nlb_guestbook.NewDefault(),
 		AddOnNLBHelloWorld:       nlb_hello_world.NewDefault(),
 		AddOnWordpress:           wordpress.NewDefault(),
+		AddOnVault:               vault.NewDefault(),
 		AddOnJobsPi:              jobs_pi.NewDefault(),
 		AddOnJobsEcho:            jobs_echo.NewDefault("Job"),
 		AddOnCronJobsEcho:        jobs_echo.NewDefault("CronJob"),
@@ -223,6 +239,11 @@ func NewDefault() *Config {
 		AddOnClusterloader:       clusterloader.NewDefault(),
 		AddOnStress:              stress.NewDefault(),
 		AddOnStressInCluster:     stress_in_cluster.NewDefault(),
+		AddOnAqua:                aqua.NewDefault(),
+		AddOnArmory:              armory.NewDefault(),
+		AddOnEpsagon:             epsagon.NewDefault(),
+		AddOnSysdig:              sysdig.NewDefault(),
+		AddOnSplunk:              splunk.NewDefault(),
 	}
 }
 
@@ -258,6 +279,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.AddOnMetricsServer != nil && cfg.AddOnMetricsServer.Enable {
 		if err := cfg.AddOnMetricsServer.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnKubecost != nil && cfg.AddOnKubecost.Enable {
+		if err := cfg.AddOnKubecost.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}
@@ -306,6 +332,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 			return err
 		}
 	}
+	if cfg.AddOnVault != nil && cfg.AddOnVault.Enable {
+		if err := cfg.AddOnVault.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
 	if cfg.AddOnJobsPi != nil && cfg.AddOnJobsPi.Enable {
 		if err := cfg.AddOnJobsPi.ValidateAndSetDefaults(); err != nil {
 			return err
@@ -348,6 +379,31 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.AddOnStressInCluster != nil && cfg.AddOnStressInCluster.Enable {
 		if err := cfg.AddOnStressInCluster.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnAqua != nil && cfg.AddOnAqua.Enable {
+		if err := cfg.AddOnAqua.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnArmory != nil && cfg.AddOnArmory.Enable {
+		if err := cfg.AddOnArmory.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnEpsagon != nil && cfg.AddOnEpsagon.Enable {
+		if err := cfg.AddOnEpsagon.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnSysdig != nil && cfg.AddOnSysdig.Enable {
+		if err := cfg.AddOnSysdig.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnSplunk != nil && cfg.AddOnSplunk.Enable {
+		if err := cfg.AddOnSplunk.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}
@@ -536,6 +592,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		return fmt.Errorf("expected *metrics_server.Config, got %T", vv)
 	}
 
+	vv, err = parseEnvs(ENV_PREFIX+kubecost.Env()+"_", cfg.AddOnKubecost)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*kubecost.Config); ok {
+		cfg.AddOnKubecost = av
+	} else {
+		return fmt.Errorf("expected *kubecost.Config, got %T", vv)
+	}
+
 	vv, err = parseEnvs(ENV_PREFIX+cni.Env()+"_", cfg.AddOnCNI)
 	if err != nil {
 		return err
@@ -574,6 +640,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnKubernetesDashboard = av
 	} else {
 		return fmt.Errorf("expected *kubernetes_dashboard.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+falco.Env()+"_", cfg.AddOnFalco)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*falco.Config); ok {
+		cfg.AddOnFalco = av
+	} else {
+		return fmt.Errorf("expected *falco.Config, got %T", vv)
 	}
 
 	vv, err = parseEnvs(ENV_PREFIX+php_apache.Env()+"_", cfg.AddOnPHPApache)
@@ -625,6 +701,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnWordpress = av
 	} else {
 		return fmt.Errorf("expected *wordpress.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+vault.Env()+"_", cfg.AddOnVault)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*vault.Config); ok {
+		cfg.AddOnVault = av
+	} else {
+		return fmt.Errorf("expected *vault.Config, got %T", vv)
 	}
 
 	vv, err = parseEnvs(ENV_PREFIX+jobs_pi.Env()+"_", cfg.AddOnJobsPi)
@@ -792,14 +878,54 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		}
 	}
 
-	vv, err = parseEnvs(ENV_PREFIX+falco.Env()+"_", cfg.AddOnFalco)
+	vv, err = parseEnvs(ENV_PREFIX+aqua.Env()+"_", cfg.AddOnAqua)
 	if err != nil {
 		return err
 	}
-	if av, ok := vv.(*falco.Config); ok {
-		cfg.AddOnFalco = av
+	if av, ok := vv.(*aqua.Config); ok {
+		cfg.AddOnAqua = av
 	} else {
-		return fmt.Errorf("expected *falco.Config, got %T", vv)
+		return fmt.Errorf("expected *aqua.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+armory.Env()+"_", cfg.AddOnArmory)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*armory.Config); ok {
+		cfg.AddOnArmory = av
+	} else {
+		return fmt.Errorf("expected *armory.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+epsagon.Env()+"_", cfg.AddOnEpsagon)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*epsagon.Config); ok {
+		cfg.AddOnEpsagon = av
+	} else {
+		return fmt.Errorf("expected *epsagon.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+sysdig.Env()+"_", cfg.AddOnSysdig)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*sysdig.Config); ok {
+		cfg.AddOnSysdig = av
+	} else {
+		return fmt.Errorf("expected *sysdig.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+splunk.Env()+"_", cfg.AddOnSplunk)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*splunk.Config); ok {
+		cfg.AddOnSplunk = av
+	} else {
+		return fmt.Errorf("expected *splunk.Config, got %T", vv)
 	}
 
 	return err

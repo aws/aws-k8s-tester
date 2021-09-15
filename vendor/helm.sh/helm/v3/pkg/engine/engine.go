@@ -33,14 +33,14 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 
-// Engine is an implementation of 'cmd/tiller/environment'.Engine that uses Go templates.
+// Engine is an implementation of the Helm rendering implementation for templates.
 type Engine struct {
 	// If strict is enabled, template rendering will fail if a template references
 	// a value that was not passed in.
 	Strict bool
 	// In LintMode, some 'required' template values may be missing, so don't fail
 	LintMode bool
-	// the rest config to connect to te kubernetes api
+	// the rest config to connect to the kubernetes api
 	config *rest.Config
 }
 
@@ -173,6 +173,16 @@ func (e Engine) initFunMap(t *template.Template, referenceTpls map[string]render
 		return val, nil
 	}
 
+	// Override sprig fail function for linting and wrapping message
+	funcMap["fail"] = func(msg string) (string, error) {
+		if e.LintMode {
+			// Don't fail when linting
+			log.Printf("[INFO] Fail: %s", msg)
+			return "", nil
+		}
+		return "", errors.New(warnWrap(msg))
+	}
+
 	// If we are not linting and have a cluster connection, provide a Kubernetes-backed
 	// implementation.
 	if !e.LintMode && e.config != nil {
@@ -216,6 +226,7 @@ func (e Engine) renderWithReferences(tpls, referenceTpls map[string]renderable) 
 	// We want to parse the templates in a predictable order. The order favors
 	// higher-level (in file system) templates over deeply nested templates.
 	keys := sortTemplates(tpls)
+	referenceKeys := sortTemplates(referenceTpls)
 
 	for _, filename := range keys {
 		r := tpls[filename]
@@ -226,8 +237,9 @@ func (e Engine) renderWithReferences(tpls, referenceTpls map[string]renderable) 
 
 	// Adding the reference templates to the template context
 	// so they can be referenced in the tpl function
-	for filename, r := range referenceTpls {
+	for _, filename := range referenceKeys {
 		if t.Lookup(filename) == nil {
+			r := referenceTpls[filename]
 			if _, err := t.New(filename).Parse(r.tpl); err != nil {
 				return map[string]string{}, cleanupParseError(filename, err)
 			}

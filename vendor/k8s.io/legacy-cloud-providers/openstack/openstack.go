@@ -52,7 +52,7 @@ import (
 	certutil "k8s.io/client-go/util/cert"
 	cloudprovider "k8s.io/cloud-provider"
 	nodehelpers "k8s.io/cloud-provider/node/helpers"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -158,7 +158,7 @@ type Config struct {
 		AuthURL         string `gcfg:"auth-url"`
 		Username        string
 		UserID          string `gcfg:"user-id"`
-		Password        string
+		Password        string `datapolicy:"password"`
 		TenantID        string `gcfg:"tenant-id"`
 		TenantName      string `gcfg:"tenant-name"`
 		TrustID         string `gcfg:"trust-id"`

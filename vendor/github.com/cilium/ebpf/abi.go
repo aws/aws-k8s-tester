@@ -8,6 +8,8 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/cilium/ebpf/internal"
+
 	"github.com/pkg/errors"
 )
 
@@ -30,7 +32,7 @@ func newMapABIFromSpec(spec *MapSpec) *MapABI {
 	}
 }
 
-func newMapABIFromFd(fd *bpfFD) (string, *MapABI, error) {
+func newMapABIFromFd(fd *internal.FD) (string, *MapABI, error) {
 	info, err := bpfGetMapInfoByFD(fd)
 	if err != nil {
 		if errors.Cause(err) == syscall.EINVAL {
@@ -49,7 +51,7 @@ func newMapABIFromFd(fd *bpfFD) (string, *MapABI, error) {
 	}, nil
 }
 
-func newMapABIFromProc(fd *bpfFD) (*MapABI, error) {
+func newMapABIFromProc(fd *internal.FD) (*MapABI, error) {
 	var abi MapABI
 	err := scanFdInfo(fd, map[string]interface{}{
 		"map_type":    &abi.Type,
@@ -93,7 +95,7 @@ func newProgramABIFromSpec(spec *ProgramSpec) *ProgramABI {
 	}
 }
 
-func newProgramABIFromFd(fd *bpfFD) (string, *ProgramABI, error) {
+func newProgramABIFromFd(fd *internal.FD) (string, *ProgramABI, error) {
 	info, err := bpfGetProgInfoByFD(fd)
 	if err != nil {
 		if errors.Cause(err) == syscall.EINVAL {
@@ -104,10 +106,10 @@ func newProgramABIFromFd(fd *bpfFD) (string, *ProgramABI, error) {
 	}
 
 	var name string
-	if bpfName := convertCString(info.name[:]); bpfName != "" {
+	if bpfName := internal.CString(info.name[:]); bpfName != "" {
 		name = bpfName
 	} else {
-		name = convertCString(info.tag[:])
+		name = internal.CString(info.tag[:])
 	}
 
 	return name, &ProgramABI{
@@ -115,7 +117,7 @@ func newProgramABIFromFd(fd *bpfFD) (string, *ProgramABI, error) {
 	}, nil
 }
 
-func newProgramABIFromProc(fd *bpfFD) (string, *ProgramABI, error) {
+func newProgramABIFromProc(fd *internal.FD) (string, *ProgramABI, error) {
 	var (
 		abi  ProgramABI
 		name string
@@ -125,6 +127,12 @@ func newProgramABIFromProc(fd *bpfFD) (string, *ProgramABI, error) {
 		"prog_type": &abi.Type,
 		"prog_tag":  &name,
 	})
+	if errors.Cause(err) == errMissingFields {
+		return "", nil, &internal.UnsupportedFeatureError{
+			Name:           "reading ABI from /proc/self/fdinfo",
+			MinimumVersion: internal.Version{4, 11, 0},
+		}
+	}
 	if err != nil {
 		return "", nil, err
 	}
@@ -132,8 +140,8 @@ func newProgramABIFromProc(fd *bpfFD) (string, *ProgramABI, error) {
 	return name, &abi, nil
 }
 
-func scanFdInfo(fd *bpfFD, fields map[string]interface{}) error {
-	raw, err := fd.value()
+func scanFdInfo(fd *internal.FD, fields map[string]interface{}) error {
+	raw, err := fd.Value()
 	if err != nil {
 		return err
 	}
@@ -146,6 +154,8 @@ func scanFdInfo(fd *bpfFD, fields map[string]interface{}) error {
 
 	return errors.Wrap(scanFdInfoReader(fh, fields), fh.Name())
 }
+
+var errMissingFields = errors.New("missing fields")
 
 func scanFdInfoReader(r io.Reader, fields map[string]interface{}) error {
 	var (
@@ -177,7 +187,7 @@ func scanFdInfoReader(r io.Reader, fields map[string]interface{}) error {
 	}
 
 	if scanned != len(fields) {
-		return errors.Errorf("parsed %d instead of %d fields", scanned, len(fields))
+		return errMissingFields
 	}
 
 	return nil

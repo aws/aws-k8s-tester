@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester"
+	"github.com/aws/aws-k8s-tester/k8s-tester/aqua"
+	"github.com/aws/aws-k8s-tester/k8s-tester/armory"
 	cloudwatch_agent "github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent"
 	"github.com/aws/aws-k8s-tester/k8s-tester/clusterloader"
 	"github.com/aws/aws-k8s-tester/k8s-tester/cni"
@@ -19,18 +21,23 @@ import (
 	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
 	"github.com/aws/aws-k8s-tester/k8s-tester/csrs"
+	"github.com/aws/aws-k8s-tester/k8s-tester/epsagon"
 	"github.com/aws/aws-k8s-tester/k8s-tester/falco"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
+	"github.com/aws/aws-k8s-tester/k8s-tester/kubecost"
 	kubernetes_dashboard "github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard"
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
 	nlb_guestbook "github.com/aws/aws-k8s-tester/k8s-tester/nlb-guestbook"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
+	"github.com/aws/aws-k8s-tester/k8s-tester/splunk"
 	"github.com/aws/aws-k8s-tester/k8s-tester/stress"
 	stress_in_cluster "github.com/aws/aws-k8s-tester/k8s-tester/stress/in-cluster"
+	"github.com/aws/aws-k8s-tester/k8s-tester/sysdig"
+	"github.com/aws/aws-k8s-tester/k8s-tester/vault"
 	"github.com/aws/aws-k8s-tester/k8s-tester/wordpress"
 	aws_v1_ecr "github.com/aws/aws-k8s-tester/utils/aws/v1/ecr"
 	"github.com/olekukonko/tablewriter"
@@ -83,6 +90,10 @@ func createDoc() string {
 	totalTestCases++
 
 	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+kubecost.Env()+"_", &kubecost.Config{}))
+	totalTestCases++
+
+	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+cni.Env()+"_", &cni.Config{}))
 	totalTestCases++
 
@@ -118,6 +129,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+wordpress.Env()+"_", &wordpress.Config{}))
+	totalTestCases++
+
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+vault.Env()+"_", &vault.Config{}))
 	totalTestCases++
 
 	b.WriteByte('\n')
@@ -168,6 +183,26 @@ func createDoc() string {
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+stress_in_cluster.EnvK8sTesterStressCLI()+"_", &stress_in_cluster.K8sTesterStressCLI{}))
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+stress_in_cluster.EnvK8sTesterStressCLIBusyboxRepository()+"_", &aws_v1_ecr.Repository{}))
+	totalTestCases++
+
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+aqua.Env()+"_", &aqua.Config{}))
+	totalTestCases++
+
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+armory.Env()+"_", &armory.Config{}))
+	totalTestCases++
+
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+epsagon.Env()+"_", &epsagon.Config{}))
+	totalTestCases++
+
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+sysdig.Env()+"_", &sysdig.Config{}))
+	totalTestCases++
+
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+splunk.Env()+"_", &splunk.Config{}))
 	totalTestCases++
 
 	return header + fmt.Sprintf("\n\nTotal %d test cases!\n\n", totalTestCases) + "```\n" + b.String() + "```\n"

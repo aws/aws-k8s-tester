@@ -22,11 +22,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-12-01/compute"
 	"github.com/Azure/go-autorest/autorest/to"
 
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	azcache "k8s.io/legacy-cloud-providers/azure/cache"
 )
 
@@ -85,7 +85,6 @@ func (as *availabilitySet) AttachDisk(isManagedDisk bool, diskName, diskURI stri
 
 	newVM := compute.VirtualMachineUpdate{
 		VirtualMachineProperties: &compute.VirtualMachineProperties{
-			HardwareProfile: vm.HardwareProfile,
 			StorageProfile: &compute.StorageProfile{
 				DataDisks: &disks,
 			},
@@ -142,7 +141,11 @@ func (as *availabilitySet) DetachDisk(diskName, diskURI string, nodeName types.N
 			(disk.ManagedDisk != nil && diskURI != "" && strings.EqualFold(*disk.ManagedDisk.ID, diskURI)) {
 			// found the disk
 			klog.V(2).Infof("azureDisk - detach disk: name %q uri %q", diskName, diskURI)
-			disks[i].ToBeDetached = to.BoolPtr(true)
+			if strings.EqualFold(as.cloud.Environment.Name, AzureStackCloudName) {
+				disks = append(disks[:i], disks[i+1:]...)
+			} else {
+				disks[i].ToBeDetached = to.BoolPtr(true)
+			}
 			bFoundDisk = true
 			break
 		}
@@ -155,7 +158,6 @@ func (as *availabilitySet) DetachDisk(diskName, diskURI string, nodeName types.N
 
 	newVM := compute.VirtualMachineUpdate{
 		VirtualMachineProperties: &compute.VirtualMachineProperties{
-			HardwareProfile: vm.HardwareProfile,
 			StorageProfile: &compute.StorageProfile{
 				DataDisks: &disks,
 			},

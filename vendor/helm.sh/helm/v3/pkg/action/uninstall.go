@@ -22,6 +22,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/releaseutil"
 	helmtime "helm.sh/helm/v3/pkg/time"
@@ -62,7 +63,7 @@ func (u *Uninstall) Run(name string) (*release.UninstallReleaseResponse, error) 
 		return &release.UninstallReleaseResponse{Release: r}, nil
 	}
 
-	if err := validateReleaseName(name); err != nil {
+	if err := chartutil.ValidateReleaseName(name); err != nil {
 		return nil, errors.Errorf("uninstall: Release name is invalid: %s", name)
 	}
 
@@ -110,6 +111,10 @@ func (u *Uninstall) Run(name string) (*release.UninstallReleaseResponse, error) 
 	}
 
 	kept, errs := u.deleteRelease(rel)
+
+	if kept != "" {
+		kept = "These resources were kept due to the resource policy:\n" + kept
+	}
 	res.Info = kept
 
 	if !u.DisableHooks {
@@ -188,7 +193,7 @@ func (u *Uninstall) deleteRelease(rel *release.Release) (string, []error) {
 	filesToKeep, filesToDelete := filterManifestsToKeep(files)
 	var kept string
 	for _, f := range filesToKeep {
-		kept += f.Name + "\n"
+		kept += "[" + f.Head.Kind + "] " + f.Head.Metadata.Name + "\n"
 	}
 
 	var builder strings.Builder
