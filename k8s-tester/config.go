@@ -35,6 +35,7 @@ import (
 	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
 	"github.com/aws/aws-k8s-tester/k8s-tester/stress"
 	stress_in_cluster "github.com/aws/aws-k8s-tester/k8s-tester/stress/in-cluster"
+	"github.com/aws/aws-k8s-tester/k8s-tester/vault"
 	"github.com/aws/aws-k8s-tester/k8s-tester/wordpress"
 	aws_v1_ecr "github.com/aws/aws-k8s-tester/utils/aws/v1/ecr"
 	"github.com/aws/aws-k8s-tester/utils/file"
@@ -139,6 +140,7 @@ type Config struct {
 	AddOnNLBGuestbook        *nlb_guestbook.Config        `json:"add_on_nlb_guestbook"`
 	AddOnNLBHelloWorld       *nlb_hello_world.Config      `json:"add_on_nlb_hello_world"`
 	AddOnWordpress           *wordpress.Config            `json:"add_on_wordpress"`
+	AddOnVault               *vault.Config                `json:"add_on_vault"`
 	AddOnJobsPi              *jobs_pi.Config              `json:"add_on_jobs_pi"`
 	AddOnJobsEcho            *jobs_echo.Config            `json:"add_on_jobs_echo"`
 	AddOnCronJobsEcho        *jobs_echo.Config            `json:"add_on_cron_jobs_echo"`
@@ -214,6 +216,7 @@ func NewDefault() *Config {
 		AddOnNLBGuestbook:        nlb_guestbook.NewDefault(),
 		AddOnNLBHelloWorld:       nlb_hello_world.NewDefault(),
 		AddOnWordpress:           wordpress.NewDefault(),
+		AddOnVault:               vault.NewDefault(),
 		AddOnJobsPi:              jobs_pi.NewDefault(),
 		AddOnJobsEcho:            jobs_echo.NewDefault("Job"),
 		AddOnCronJobsEcho:        jobs_echo.NewDefault("CronJob"),
@@ -303,6 +306,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.AddOnWordpress != nil && cfg.AddOnWordpress.Enable {
 		if err := cfg.AddOnWordpress.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnVault != nil && cfg.AddOnVault.Enable {
+		if err := cfg.AddOnVault.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}
@@ -625,6 +633,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnWordpress = av
 	} else {
 		return fmt.Errorf("expected *wordpress.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+vault.Env()+"_", cfg.AddOnVault)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*vault.Config); ok {
+		cfg.AddOnVault = av
+	} else {
+		return fmt.Errorf("expected *vault.Config, got %T", vv)
 	}
 
 	vv, err = parseEnvs(ENV_PREFIX+jobs_pi.Env()+"_", cfg.AddOnJobsPi)
