@@ -1309,7 +1309,7 @@ k8s.io/kubectl/pkg/util/openapi/validation
 k8s.io/kubectl/pkg/util/templates
 k8s.io/kubectl/pkg/util/term
 k8s.io/kubectl/pkg/validation
-# k8s.io/kubernetes v1.18.0
+# k8s.io/kubernetes v1.18.9
 ## explicit; go 1.13
 k8s.io/kubernetes/pkg/ssh
 # k8s.io/perf-tests/clusterloader2 v0.0.0-20200615121956-f3cf096d4378
