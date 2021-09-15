@@ -1,7 +1,7 @@
 
 <hr>
 
-## [v1.6.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.2) (2021-09)
+## [v1.6.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.2) (2021-09-15)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.1...v1.6.2).
 
