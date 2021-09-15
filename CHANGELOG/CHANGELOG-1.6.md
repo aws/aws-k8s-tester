@@ -7,17 +7,26 @@ See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.1...v1.6.2
 
 ### `aws-k8s-tester`
 
-- Update `helm` and `kubernetes` dependency
+- Update `helm` and `kubernetes` dependency.
   - https://github.com/kubernetes/kubernetes/releases/tag/v1.21.1
   - https://github.com/helm/helm/releases/tag/v3.6.3
   - https://github.com/aws/aws-k8s-tester/pull/240
 
 ### `k8s-tester`
 
-- Update `helm` and `kubernetes` dependency
+- Update `helm` and `kubernetes` dependency.
   - https://github.com/kubernetes/kubernetes/releases/tag/v1.21.1
   - https://github.com/helm/helm/releases/tag/v3.6.3
   - https://github.com/aws/aws-k8s-tester/pull/240
+- Add [`k8s-tester/aqua`](https://github.com/aws/aws-k8s-tester/tree/v1.6.2/k8s-tester/aqua).
+- Add [`k8s-tester/armory`](https://github.com/aws/aws-k8s-tester/tree/v1.6.2/k8s-tester/armory).
+- Add [`k8s-tester/cni`](https://github.com/aws/aws-k8s-tester/tree/v1.6.2/k8s-tester/cni).
+- Add [`k8s-tester/epsagon`](https://github.com/aws/aws-k8s-tester/tree/v1.6.2/k8s-tester/epsagon).
+- Add [`k8s-tester/kubecost`](https://github.com/aws/aws-k8s-tester/tree/v1.6.2/k8s-tester/kubecost).
+- Add [`k8s-tester/splunk`](https://github.com/aws/aws-k8s-tester/tree/v1.6.2/k8s-tester/splunk).
+- Add [`k8s-tester/sysdig`](https://github.com/aws/aws-k8s-tester/tree/v1.6.2/k8s-tester/sysdig).
+- Add [`k8s-tester/vault`](https://github.com/aws/aws-k8s-tester/tree/v1.6.2/k8s-tester/vault).
+- See https://github.com/aws/aws-k8s-tester/blob/v1.6.2/k8s-tester/README.md.
 
 ### Go
 

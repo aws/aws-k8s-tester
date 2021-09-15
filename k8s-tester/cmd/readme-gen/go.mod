@@ -18,6 +18,7 @@ require (
 	github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/kubecost v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/metrics-server v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-guestbook v0.0.0-00010101000000-000000000000
@@ -214,6 +215,7 @@ replace (
 	github.com/aws/aws-k8s-tester/k8s-tester/helm => ../../helm
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo => ../../jobs-echo
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi => ../../jobs-pi
+	github.com/aws/aws-k8s-tester/k8s-tester/kubecost => ../../kubecost
 	github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard => ../../kubernetes-dashboard
 	github.com/aws/aws-k8s-tester/k8s-tester/metrics-server => ../../metrics-server
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-guestbook => ../../nlb-guestbook

@@ -4,6 +4,8 @@ go 1.17
 
 require (
 	github.com/aws/aws-k8s-tester/client v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/aqua v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/armory v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/clusterloader v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/cni v0.0.0-00010101000000-000000000000
@@ -11,17 +13,21 @@ require (
 	github.com/aws/aws-k8s-tester/k8s-tester/conformance v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/csrs v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/epsagon v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/falco v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/kubecost v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/metrics-server v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-guestbook v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/php-apache v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/secrets v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/splunk v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/stress v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/sysdig v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/tester v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/vault v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/wordpress v0.0.0-00010101000000-000000000000
@@ -81,10 +87,10 @@ require (
 	github.com/gofrs/flock v0.8.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
-	github.com/golang/protobuf v1.4.3 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/btree v1.0.0 // indirect
-	github.com/google/go-cmp v0.5.4 // indirect
+	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.1.2 // indirect
@@ -98,7 +104,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmoiron/sqlx v1.3.1 // indirect
-	github.com/json-iterator/go v1.1.10 // indirect
+	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/juju/ansiterm v0.0.0-20180109212912-720a0952cc2a // indirect
 	github.com/klauspost/compress v1.10.10 // indirect
 	github.com/klauspost/pgzip v1.2.4 // indirect
@@ -143,7 +149,7 @@ require (
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
-	github.com/spf13/cobra v1.1.3 // indirect
+	github.com/spf13/cobra v1.2.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/ulikunitz/xz v0.5.7 // indirect
@@ -152,7 +158,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
-	go.opencensus.io v0.22.4 // indirect
+	go.opencensus.io v0.23.0 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
@@ -162,12 +168,12 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20210510120138-977fb7262007 // indirect
 	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d // indirect
-	golang.org/x/text v0.3.4 // indirect
+	golang.org/x/text v0.3.5 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
-	google.golang.org/appengine v1.6.6 // indirect
-	google.golang.org/genproto v0.0.0-20201110150050-8816d57aaa9a // indirect
-	google.golang.org/grpc v1.31.0 // indirect
-	google.golang.org/protobuf v1.25.0 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
+	google.golang.org/grpc v1.38.0 // indirect
+	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/gorp.v1 v1.7.2 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
@@ -184,7 +190,7 @@ require (
 	k8s.io/klog/v2 v2.8.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20210305001622-591a79e4bda7 // indirect
 	k8s.io/kubectl v0.21.0 // indirect
-	k8s.io/utils v0.0.0-20210527160623-6fdb442a123b // indirect
+	k8s.io/utils v0.0.0-20210802155522-efc7438f0176 // indirect
 	sigs.k8s.io/kustomize/api v0.8.8 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.10.17 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.1.0 // indirect
@@ -192,6 +198,8 @@ require (
 
 replace (
 	github.com/aws/aws-k8s-tester/client => ../client
+	github.com/aws/aws-k8s-tester/k8s-tester/aqua => ./aqua
+	github.com/aws/aws-k8s-tester/k8s-tester/armory => ./armory
 	github.com/aws/aws-k8s-tester/k8s-tester/cloudwatch-agent => ./cloudwatch-agent
 	github.com/aws/aws-k8s-tester/k8s-tester/clusterloader => ./clusterloader
 	github.com/aws/aws-k8s-tester/k8s-tester/cni => ./cni
@@ -199,21 +207,25 @@ replace (
 	github.com/aws/aws-k8s-tester/k8s-tester/conformance => ./conformance
 	github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs => ./csi-ebs
 	github.com/aws/aws-k8s-tester/k8s-tester/csrs => ./csrs
+	github.com/aws/aws-k8s-tester/k8s-tester/epsagon => ./epsagon
 	github.com/aws/aws-k8s-tester/k8s-tester/falco => ./falco
 	github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit => ./fluent-bit
 	github.com/aws/aws-k8s-tester/k8s-tester/helm => ./helm
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo => ./jobs-echo
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi => ./jobs-pi
+	github.com/aws/aws-k8s-tester/k8s-tester/kubecost => ./kubecost
 	github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard => ./kubernetes-dashboard
 	github.com/aws/aws-k8s-tester/k8s-tester/metrics-server => ./metrics-server
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-guestbook => ./nlb-guestbook
 	github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world => ./nlb-hello-world
 	github.com/aws/aws-k8s-tester/k8s-tester/php-apache => ./php-apache
 	github.com/aws/aws-k8s-tester/k8s-tester/secrets => ./secrets
+	github.com/aws/aws-k8s-tester/k8s-tester/splunk => ./splunk
 	github.com/aws/aws-k8s-tester/k8s-tester/stress => ./stress
+	github.com/aws/aws-k8s-tester/k8s-tester/sysdig => ./sysdig
 	github.com/aws/aws-k8s-tester/k8s-tester/tester => ./tester
-	github.com/aws/aws-k8s-tester/k8s-tester/version => ./version
 	github.com/aws/aws-k8s-tester/k8s-tester/vault => ./vault
+	github.com/aws/aws-k8s-tester/k8s-tester/version => ./version
 	github.com/aws/aws-k8s-tester/k8s-tester/wordpress => ./wordpress
 	github.com/aws/aws-k8s-tester/utils => ../utils
 )

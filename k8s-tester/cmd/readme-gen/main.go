@@ -26,6 +26,7 @@ import (
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
+	"github.com/aws/aws-k8s-tester/k8s-tester/kubecost"
 	kubernetes_dashboard "github.com/aws/aws-k8s-tester/k8s-tester/kubernetes-dashboard"
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
 	nlb_guestbook "github.com/aws/aws-k8s-tester/k8s-tester/nlb-guestbook"
@@ -77,14 +78,6 @@ func createDoc() string {
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX, &k8s_tester.Config{}))
 
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+aqua.Env()+"_", &aqua.Config{}))
-	totalTestCases++
-
-	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+armory.Env()+"_", &armory.Config{}))
-	totalTestCases++
-
-	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+cloudwatch_agent.Env()+"_", &cloudwatch_agent.Config{}))
 	totalTestCases++
 
@@ -94,6 +87,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+metrics_server.Env()+"_", &metrics_server.Config{}))
+	totalTestCases++
+
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+kubecost.Env()+"_", &kubecost.Config{}))
 	totalTestCases++
 
 	b.WriteByte('\n')
@@ -110,10 +107,6 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+kubernetes_dashboard.Env()+"_", &kubernetes_dashboard.Config{}))
-	totalTestCases++
-
-	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+epsagon.Env()+"_", &epsagon.Config{}))
 	totalTestCases++
 
 	b.WriteByte('\n')
@@ -136,6 +129,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+wordpress.Env()+"_", &wordpress.Config{}))
+	totalTestCases++
+
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+vault.Env()+"_", &vault.Config{}))
 	totalTestCases++
 
 	b.WriteByte('\n')
@@ -189,7 +186,15 @@ func createDoc() string {
 	totalTestCases++
 
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+splunk.Env()+"_", &splunk.Config{}))
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+aqua.Env()+"_", &aqua.Config{}))
+	totalTestCases++
+
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+armory.Env()+"_", &armory.Config{}))
+	totalTestCases++
+
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+epsagon.Env()+"_", &epsagon.Config{}))
 	totalTestCases++
 
 	b.WriteByte('\n')
@@ -197,11 +202,7 @@ func createDoc() string {
 	totalTestCases++
 
 	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+vault.Env()+"_", &vault.Config{}))
-	totalTestCases++
-
-	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+wordpress.Env()+"_", &wordpress.Config{}))
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+splunk.Env()+"_", &splunk.Config{}))
 	totalTestCases++
 
 	return header + fmt.Sprintf("\n\nTotal %d test cases!\n\n", totalTestCases) + "```\n" + b.String() + "```\n"
