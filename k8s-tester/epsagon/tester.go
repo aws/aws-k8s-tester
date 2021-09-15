@@ -1,6 +1,5 @@
-// package armory installs armory operator.
-// ref https://docs.armory.io/docs/installation/armory-operator/op-quickstart/
-package armory
+// package epsagon installs epsagon operator.
+package epsagon
 
 import (
 	"context"

@@ -47,7 +47,7 @@ See example commits:
 
 ### Environmental variables
 
-Total 21 test cases!
+Total 28 test cases!
 
 ```
 *----------------------------------*----------------------*----------------------------------------*---------------*
@@ -72,6 +72,27 @@ Total 21 test cases!
 | K8S_TESTER_MINIMUM_NODES         | SETTABLE VIA ENV VAR | *k8s_tester.Config.MinimumNodes        | int           |
 | K8S_TESTER_TOTAL_NODES           | READ-ONLY            | *k8s_tester.Config.TotalNodes          | int           |
 *----------------------------------*----------------------*----------------------------------------*---------------*
+
+*--------------------------------------------*----------------------*-------------------------------*---------*
+|           ENVIRONMENTAL VARIABLE           |      FIELD TYPE      |             TYPE              | GO TYPE |
+*--------------------------------------------*----------------------*-------------------------------*---------*
+| K8S_TESTER_ADD_ON_AQUA_ENABLE              | SETTABLE VIA ENV VAR | *aqua.Config.Enable           | bool    |
+| K8S_TESTER_ADD_ON_AQUA_MINIMUM_NODES       | SETTABLE VIA ENV VAR | *aqua.Config.MinimumNodes     | int     |
+| K8S_TESTER_ADD_ON_AQUA_HELM_CHART_REPO_URL | SETTABLE VIA ENV VAR | *aqua.Config.HelmChartRepoURL | string  |
+| K8S_TESTER_ADD_ON_AQUA_NAMESPACE           | SETTABLE VIA ENV VAR | *aqua.Config.Namespace        | string  |
+| K8S_TESTER_ADD_ON_AQUA_AQUA_LICENSE        | SETTABLE VIA ENV VAR | *aqua.Config.AquaLicense      | string  |
+| K8S_TESTER_ADD_ON_AQUA_AQUA_USERNAME       | SETTABLE VIA ENV VAR | *aqua.Config.AquaUsername     | string  |
+| K8S_TESTER_ADD_ON_AQUA_AQUA_PASSWORD       | SETTABLE VIA ENV VAR | *aqua.Config.AquaPassword     | string  |
+*--------------------------------------------*----------------------*-------------------------------*---------*
+
+*----------------------------------------------*----------------------*---------------------------------*---------*
+|            ENVIRONMENTAL VARIABLE            |      FIELD TYPE      |              TYPE               | GO TYPE |
+*----------------------------------------------*----------------------*---------------------------------*---------*
+| K8S_TESTER_ADD_ON_ARMORY_ENABLE              | SETTABLE VIA ENV VAR | *armory.Config.Enable           | bool    |
+| K8S_TESTER_ADD_ON_ARMORY_MINIMUM_NODES       | SETTABLE VIA ENV VAR | *armory.Config.MinimumNodes     | int     |
+| K8S_TESTER_ADD_ON_ARMORY_HELM_CHART_REPO_URL | SETTABLE VIA ENV VAR | *armory.Config.HelmChartRepoURL | string  |
+| K8S_TESTER_ADD_ON_ARMORY_NAMESPACE           | SETTABLE VIA ENV VAR | *armory.Config.Namespace        | string  |
+*----------------------------------------------*----------------------*---------------------------------*---------*
 
 *--------------------------------------------------*----------------------*---------------------------------------*---------*
 |              ENVIRONMENTAL VARIABLE              |      FIELD TYPE      |                 TYPE                  | GO TYPE |
@@ -147,6 +168,18 @@ Total 21 test cases!
 | K8S_TESTER_ADD_ON_KUBERNETES_DASHBOARD_ENABLE        | SETTABLE VIA ENV VAR | *kubernetes_dashboard.Config.Enable       | bool    |
 | K8S_TESTER_ADD_ON_KUBERNETES_DASHBOARD_MINIMUM_NODES | SETTABLE VIA ENV VAR | *kubernetes_dashboard.Config.MinimumNodes | int     |
 *------------------------------------------------------*----------------------*-------------------------------------------*---------*
+
+*-----------------------------------------------*----------------------*-----------------------------------*---------*
+|            ENVIRONMENTAL VARIABLE             |      FIELD TYPE      |               TYPE                | GO TYPE |
+*-----------------------------------------------*----------------------*-----------------------------------*---------*
+| K8S_TESTER_ADD_ON_EPSAGON_ENABLE              | SETTABLE VIA ENV VAR | *epsagon.Config.Enable            | bool    |
+| K8S_TESTER_ADD_ON_EPSAGON_MINIMUM_NODES       | SETTABLE VIA ENV VAR | *epsagon.Config.MinimumNodes      | int     |
+| K8S_TESTER_ADD_ON_EPSAGON_HELM_CHART_REPO_URL | SETTABLE VIA ENV VAR | *epsagon.Config.HelmChartRepoURL  | string  |
+| K8S_TESTER_ADD_ON_EPSAGON_NAMESPACE           | SETTABLE VIA ENV VAR | *epsagon.Config.Namespace         | string  |
+| K8S_TESTER_ADD_ON_EPSAGON_COLLECTOR_ENDPOINT  | SETTABLE VIA ENV VAR | *epsagon.Config.CollectorEndpoint | string  |
+| K8S_TESTER_ADD_ON_EPSAGON_API_TOKEN           | SETTABLE VIA ENV VAR | *epsagon.Config.APIToken          | string  |
+| K8S_TESTER_ADD_ON_EPSAGON_CLUSTER_NAME        | SETTABLE VIA ENV VAR | *epsagon.Config.ClusterName       | string  |
+*-----------------------------------------------*----------------------*-----------------------------------*---------*
 
 *---------------------------------------------*----------------------*--------------------------------*---------*
 |           ENVIRONMENTAL VARIABLE            |      FIELD TYPE      |              TYPE              | GO TYPE |
@@ -432,4 +465,51 @@ Total 21 test cases!
 | K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_BUSYBOX_REPOSITORY_NAME       | SETTABLE VIA ENV VAR | *ecr.Repository.Name      | string  |
 | K8S_TESTER_ADD_ON_STRESS_IN_CLUSTER_K8S_TESTER_STRESS_CLI_BUSYBOX_REPOSITORY_IMAGE_TAG  | SETTABLE VIA ENV VAR | *ecr.Repository.ImageTag  | string  |
 *-----------------------------------------------------------------------------------------*----------------------*---------------------------*---------*
+
+*----------------------------------------------*----------------------*---------------------------------*---------*
+|            ENVIRONMENTAL VARIABLE            |      FIELD TYPE      |              TYPE               | GO TYPE |
+*----------------------------------------------*----------------------*---------------------------------*---------*
+| K8S_TESTER_ADD_ON_SPLUNK_ENABLE              | SETTABLE VIA ENV VAR | *splunk.Config.Enable           | bool    |
+| K8S_TESTER_ADD_ON_SPLUNK_MINIMUM_NODES       | SETTABLE VIA ENV VAR | *splunk.Config.MinimumNodes     | int     |
+| K8S_TESTER_ADD_ON_SPLUNK_HELM_CHART_REPO_URL | SETTABLE VIA ENV VAR | *splunk.Config.HelmChartRepoURL | string  |
+| K8S_TESTER_ADD_ON_SPLUNK_NAMESPACE           | SETTABLE VIA ENV VAR | *splunk.Config.Namespace        | string  |
+| K8S_TESTER_ADD_ON_SPLUNK_ACCESS_KEY          | SETTABLE VIA ENV VAR | *splunk.Config.AccessKey        | string  |
+| K8S_TESTER_ADD_ON_SPLUNK_SPLUNK_REALM        | SETTABLE VIA ENV VAR | *splunk.Config.SplunkRealm      | string  |
+*----------------------------------------------*----------------------*---------------------------------*---------*
+
+*----------------------------------------------*----------------------*----------------------------------*---------*
+|            ENVIRONMENTAL VARIABLE            |      FIELD TYPE      |               TYPE               | GO TYPE |
+*----------------------------------------------*----------------------*----------------------------------*---------*
+| K8S_TESTER_ADD_ON_SYSDIG_ENABLE              | SETTABLE VIA ENV VAR | *sysdig.Config.Enable            | bool    |
+| K8S_TESTER_ADD_ON_SYSDIG_MINIMUM_NODES       | SETTABLE VIA ENV VAR | *sysdig.Config.MinimumNodes      | int     |
+| K8S_TESTER_ADD_ON_SYSDIG_HELM_CHART_REPO_URL | SETTABLE VIA ENV VAR | *sysdig.Config.HelmChartRepoURL  | string  |
+| K8S_TESTER_ADD_ON_SYSDIG_NAMESPACE           | SETTABLE VIA ENV VAR | *sysdig.Config.Namespace         | string  |
+| K8S_TESTER_ADD_ON_SYSDIG_ACCESS_KEY          | SETTABLE VIA ENV VAR | *sysdig.Config.AccessKey         | string  |
+| K8S_TESTER_ADD_ON_SYSDIG_COLLECTOR_ENDPOINT  | SETTABLE VIA ENV VAR | *sysdig.Config.CollectorEndpoint | string  |
+*----------------------------------------------*----------------------*----------------------------------*---------*
+
+*---------------------------------------------*----------------------*--------------------------------*---------*
+|           ENVIRONMENTAL VARIABLE            |      FIELD TYPE      |              TYPE              | GO TYPE |
+*---------------------------------------------*----------------------*--------------------------------*---------*
+| K8S_TESTER_ADD_ON_VAULT_ENABLE              | SETTABLE VIA ENV VAR | *vault.Config.Enable           | bool    |
+| K8S_TESTER_ADD_ON_VAULT_MINIMUM_NODES       | SETTABLE VIA ENV VAR | *vault.Config.MinimumNodes     | int     |
+| K8S_TESTER_ADD_ON_VAULT_HELM_CHART_REPO_URL | SETTABLE VIA ENV VAR | *vault.Config.HelmChartRepoURL | string  |
+| K8S_TESTER_ADD_ON_VAULT_NAMESPACE           | SETTABLE VIA ENV VAR | *vault.Config.Namespace        | string  |
+*---------------------------------------------*----------------------*--------------------------------*---------*
+
+*-------------------------------------------*----------------------*--------------------------------*---------*
+|          ENVIRONMENTAL VARIABLE           |      FIELD TYPE      |              TYPE              | GO TYPE |
+*-------------------------------------------*----------------------*--------------------------------*---------*
+| K8S_TESTER_ADD_ON_WORDPRESS_ENABLE        | SETTABLE VIA ENV VAR | *wordpress.Config.Enable       | bool    |
+| K8S_TESTER_ADD_ON_WORDPRESS_ACCOUNT_ID    | READ-ONLY            | *wordpress.Config.AccountID    | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_PARTITION     | SETTABLE VIA ENV VAR | *wordpress.Config.Partition    | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_REGION        | SETTABLE VIA ENV VAR | *wordpress.Config.Region       | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_MINIMUM_NODES | SETTABLE VIA ENV VAR | *wordpress.Config.MinimumNodes | int     |
+| K8S_TESTER_ADD_ON_WORDPRESS_NAMESPACE     | SETTABLE VIA ENV VAR | *wordpress.Config.Namespace    | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_USER_NAME     | SETTABLE VIA ENV VAR | *wordpress.Config.UserName     | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_PASSWORD      | SETTABLE VIA ENV VAR | *wordpress.Config.Password     | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_ELB_ARN       | READ-ONLY            | *wordpress.Config.ELBARN       | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_ELB_NAME      | READ-ONLY            | *wordpress.Config.ELBName      | string  |
+| K8S_TESTER_ADD_ON_WORDPRESS_ELB_URL       | READ-ONLY            | *wordpress.Config.ELBURL       | string  |
+*-------------------------------------------*----------------------*--------------------------------*---------*
 ```
