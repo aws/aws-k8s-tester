@@ -1,6 +1,23 @@
 
 <hr>
 
+## [v1.6.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.3) (2021-09-15)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.2...v1.6.3).
+
+### `k8s-tester`
+
+- Add [`k8s-tester/csi-efs`](https://github.com/aws/aws-k8s-tester/tree/v1.6.3/k8s-tester/csi-efs).
+- Add [`k8s-tester/efs-app`](https://github.com/aws/aws-k8s-tester/tree/v1.6.3/k8s-tester/efs-app).
+
+### Go
+
+- Compile with [*Go 1.17.1*](https://golang.org/doc/devel/release.html#go1.17).
+
+
+<hr>
+
+
 ## [v1.6.2](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.2) (2021-09-15)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.1...v1.6.2).

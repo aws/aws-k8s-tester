@@ -567,7 +567,7 @@ func (ts *tester) deletevolumePods() error {
 	if err != nil {
 		return fmt.Errorf("failed to delete Pod (%v)", err)
 	}
-	ts.cfg.Logger.Info("deleted a Pod for EBS Tests")
+	ts.cfg.Logger.Info("deleted a Pod for EBS tests")
 	return nil
 }
 
