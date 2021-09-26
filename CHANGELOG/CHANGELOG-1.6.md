@@ -1,14 +1,13 @@
 
 <hr>
 
-## [v1.6.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.3) (2021-09-15)
+## [v1.6.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.3) (2021-10)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.2...v1.6.3).
 
 ### `k8s-tester`
 
 - Add [`k8s-tester/csi-efs`](https://github.com/aws/aws-k8s-tester/tree/v1.6.3/k8s-tester/csi-efs).
-- Add [`k8s-tester/efs-app`](https://github.com/aws/aws-k8s-tester/tree/v1.6.3/k8s-tester/efs-app).
 
 ### Go
 
