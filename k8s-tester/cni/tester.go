@@ -29,7 +29,7 @@ type Config struct {
 	Client    client.Client `json:"-"`
 
 	// MinimumNodes is the minimum number of Kubernetes nodes required for installing this addon.
-	MinimumNodes int `json:"minimum-nodes"`
+	MinimumNodes int `json:"minimum_nodes"`
 	// Namespace to create test resources.
 	Namespace string `json:"namespace"`
 	// CNINamespace is the namespace the CNI daemonset is deployed to

@@ -235,6 +235,21 @@ func TestEnvAddOnConformance(t *testing.T) {
 	}
 }
 
+func TestEnvAddOnCSIEFS(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("K8S_TESTER_ADD_ON_CSI_EFS_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_CSI_EFS_ENABLE")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if !cfg.AddOnCSIEFS.Enable {
+		t.Fatalf("unexpected cfg.AddOnCSIEFS.Enable %v", cfg.AddOnCSIEFS.Enable)
+	}
+}
+
 func TestEnvAddOnCSIEBS(t *testing.T) {
 	cfg := NewDefault()
 

@@ -24,6 +24,7 @@ import (
 	"github.com/aws/aws-k8s-tester/k8s-tester/configmaps"
 	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
+	csi_efs "github.com/aws/aws-k8s-tester/k8s-tester/csi-efs"
 	"github.com/aws/aws-k8s-tester/k8s-tester/csrs"
 	"github.com/aws/aws-k8s-tester/k8s-tester/epsagon"
 	falco "github.com/aws/aws-k8s-tester/k8s-tester/falco"
@@ -141,6 +142,7 @@ type Config struct {
 	AddOnConformance         *conformance.Config          `json:"add_on_conformance"`
 	AddOnCNI                 *cni.Config                  `json:"add_on_cni"`
 	AddOnCSIEBS              *csi_ebs.Config              `json:"add_on_csi_ebs"`
+	AddOnCSIEFS              *csi_efs.Config              `json:"add_on_csi_efs"`
 	AddOnKubernetesDashboard *kubernetes_dashboard.Config `json:"add_on_kubernetes_dashboard"`
 	AddOnFalco               *falco.Config                `json:"add_on_falco"`
 	AddOnPHPApache           *php_apache.Config           `json:"add_on_php_apache"`
@@ -223,6 +225,7 @@ func NewDefault() *Config {
 		AddOnCNI:                 cni.NewDefault(),
 		AddOnConformance:         conformance.NewDefault(),
 		AddOnCSIEBS:              csi_ebs.NewDefault(),
+		AddOnCSIEFS:              csi_efs.NewDefault(),
 		AddOnKubernetesDashboard: kubernetes_dashboard.NewDefault(),
 		AddOnFalco:               falco.NewDefault(),
 		AddOnPHPApache:           php_apache.NewDefault(),
@@ -299,6 +302,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.AddOnCSIEBS != nil && cfg.AddOnCSIEBS.Enable {
 		if err := cfg.AddOnCSIEBS.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnCSIEFS != nil && cfg.AddOnCSIEFS.Enable {
+		if err := cfg.AddOnCSIEFS.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}
@@ -630,6 +638,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnCSIEBS = av
 	} else {
 		return fmt.Errorf("expected *csi_ebs.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+csi_efs.Env()+"_", cfg.AddOnCSIEFS)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*csi_efs.Config); ok {
+		cfg.AddOnCSIEFS = av
+	} else {
+		return fmt.Errorf("expected *csi_efs.Config, got %T", vv)
 	}
 
 	vv, err = parseEnvs(ENV_PREFIX+kubernetes_dashboard.Env()+"_", cfg.AddOnKubernetesDashboard)

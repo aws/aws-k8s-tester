@@ -20,6 +20,7 @@ import (
 	"github.com/aws/aws-k8s-tester/k8s-tester/configmaps"
 	"github.com/aws/aws-k8s-tester/k8s-tester/conformance"
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
+	csi_efs "github.com/aws/aws-k8s-tester/k8s-tester/csi-efs"
 	"github.com/aws/aws-k8s-tester/k8s-tester/csrs"
 	"github.com/aws/aws-k8s-tester/k8s-tester/epsagon"
 	"github.com/aws/aws-k8s-tester/k8s-tester/falco"
@@ -103,6 +104,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+csi_ebs.Env()+"_", &csi_ebs.Config{}))
+	totalTestCases++
+
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+csi_efs.Env()+"_", &csi_efs.Config{}))
 	totalTestCases++
 
 	b.WriteByte('\n')

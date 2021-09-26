@@ -33,6 +33,9 @@ gofmt -s -w ./configmaps
 goimports -w ./conformance
 gofmt -s -w ./conformance
 
+goimports -w ./csi-efs
+gofmt -s -w ./csi-efs
+
 goimports -w ./csi-ebs
 gofmt -s -w ./csi-ebs
 

@@ -31,6 +31,7 @@ require (
 	github.com/aws/aws-k8s-tester/k8s-tester/configmaps v0.0.0-00010101000000-000000000000 // indirect
 	github.com/aws/aws-k8s-tester/k8s-tester/conformance v0.0.0-00010101000000-000000000000 // indirect
 	github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs v0.0.0-00010101000000-000000000000 // indirect
+	github.com/aws/aws-k8s-tester/k8s-tester/csi-efs v0.0.0-00010101000000-000000000000 // indirect
 	github.com/aws/aws-k8s-tester/k8s-tester/csrs v0.0.0-00010101000000-000000000000 // indirect
 	github.com/aws/aws-k8s-tester/k8s-tester/epsagon v0.0.0-00010101000000-000000000000 // indirect
 	github.com/aws/aws-k8s-tester/k8s-tester/falco v0.0.0-00010101000000-000000000000 // indirect
@@ -205,6 +206,7 @@ replace (
 	github.com/aws/aws-k8s-tester/k8s-tester/configmaps => ../../configmaps
 	github.com/aws/aws-k8s-tester/k8s-tester/conformance => ../../conformance
 	github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs => ../../csi-ebs
+	github.com/aws/aws-k8s-tester/k8s-tester/csi-efs => ../../csi-efs
 	github.com/aws/aws-k8s-tester/k8s-tester/csrs => ../../csrs
 	github.com/aws/aws-k8s-tester/k8s-tester/epsagon => ../../epsagon
 	github.com/aws/aws-k8s-tester/k8s-tester/falco => ../../falco

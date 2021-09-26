@@ -47,7 +47,7 @@ See example commits:
 
 ### Environmental variables
 
-Total 28 test cases!
+Total 29 test cases!
 
 ```
 *----------------------------------*----------------------*----------------------------------------*---------------*
@@ -148,6 +148,15 @@ Total 28 test cases!
 | K8S_TESTER_ADD_ON_CSI_EBS_MINIMUM_NODES       | SETTABLE VIA ENV VAR | *csi_ebs.Config.MinimumNodes     | int     |
 | K8S_TESTER_ADD_ON_CSI_EBS_NAMESPACE           | SETTABLE VIA ENV VAR | *csi_ebs.Config.Namespace        | string  |
 | K8S_TESTER_ADD_ON_CSI_EBS_HELM_CHART_REPO_URL | SETTABLE VIA ENV VAR | *csi_ebs.Config.HelmChartRepoURL | string  |
+*-----------------------------------------------*----------------------*----------------------------------*---------*
+
+*-----------------------------------------------*----------------------*----------------------------------*---------*
+|            ENVIRONMENTAL VARIABLE             |      FIELD TYPE      |               TYPE               | GO TYPE |
+*-----------------------------------------------*----------------------*----------------------------------*---------*
+| K8S_TESTER_ADD_ON_CSI_EFS_ENABLE              | SETTABLE VIA ENV VAR | *csi_efs.Config.Enable           | bool    |
+| K8S_TESTER_ADD_ON_CSI_EFS_MINIMUM_NODES       | SETTABLE VIA ENV VAR | *csi_efs.Config.MinimumNodes     | int     |
+| K8S_TESTER_ADD_ON_CSI_EFS_NAMESPACE           | SETTABLE VIA ENV VAR | *csi_efs.Config.Namespace        | string  |
+| K8S_TESTER_ADD_ON_CSI_EFS_HELM_CHART_REPO_URL | SETTABLE VIA ENV VAR | *csi_efs.Config.HelmChartRepoURL | string  |
 *-----------------------------------------------*----------------------*----------------------------------*---------*
 
 *------------------------------------------------------*----------------------*-------------------------------------------*---------*
