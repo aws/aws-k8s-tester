@@ -454,6 +454,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		ts.cfg.AvailabilityZoneNames = append(ts.cfg.AvailabilityZoneNames, aws_v2.ToString(subnet.AvailabilityZone))
 	}
 	if len(ts.cfg.AvailabilityZoneNames) == 0 {
+		ts.lg.Warn("describe subnet returned empty AZ information, falling back to describe AZ API")
 		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 		aout, err := ts.ec2APIV2.DescribeAvailabilityZones(
 			ctx,
