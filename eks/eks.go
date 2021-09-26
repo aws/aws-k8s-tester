@@ -428,6 +428,7 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		zap.String("opt-in-status", aws_v2.ToString(rout.Regions[0].OptInStatus)),
 	)
 
+	// ref. https://github.com/aws/aws-k8s-tester/pull/239
 	fmt.Fprintln(ts.logWriter, "checking availability zones from default subnets...")
 	ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
 	dout, err := ts.ec2APIV2.DescribeSubnets(
@@ -452,6 +453,38 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		)
 		ts.cfg.AvailabilityZoneNames = append(ts.cfg.AvailabilityZoneNames, aws_v2.ToString(subnet.AvailabilityZone))
 	}
+	if len(ts.cfg.AvailabilityZoneNames) == 0 {
+		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
+		aout, err := ts.ec2APIV2.DescribeAvailabilityZones(
+			ctx,
+			&aws_ec2_v2.DescribeAvailabilityZonesInput{
+				AllAvailabilityZones: aws_v2.Bool(false),
+				Filters: []aws_ec2_v2_types.Filter{
+					{
+						Name:   aws_v2.String("zone-type"),
+						Values: []string{"availability-zone"},
+					},
+				},
+			},
+		)
+		cancel()
+		if err != nil {
+			return nil, fmt.Errorf("failed to describe default availability zones using EC2 API v2 (%v)", err)
+		}
+		for _, z := range aout.AvailabilityZones {
+			ts.lg.Info("availability zone from ec2:DescribeAvailabilityZones",
+				zap.String("zone-name", aws_v2.ToString(z.ZoneName)),
+				zap.String("zone-id", aws_v2.ToString(z.ZoneId)),
+				zap.String("zone-type", aws_v2.ToString(z.ZoneType)),
+				zap.String("zone-opt-in-status", fmt.Sprintf("%+v", z.OptInStatus)),
+			)
+			ts.cfg.AvailabilityZoneNames = append(ts.cfg.AvailabilityZoneNames, aws_v2.ToString(z.ZoneName))
+		}
+	}
+	if len(ts.cfg.AvailabilityZoneNames) < 2 {
+		return nil, fmt.Errorf("too few availability zone %v (expected at least two)", ts.cfg.AvailabilityZoneNames)
+	}
+
 	sort.Strings(ts.cfg.AvailabilityZoneNames)
 	numAZLimit := len(ts.cfg.VPC.PublicSubnetCIDRs)
 	if useTwoAZs[ts.cfg.Region] && numAZLimit > 2 {
@@ -461,9 +494,6 @@ func New(cfg *eksconfig.Config) (ts *Tester, err error) {
 		ts.cfg.AvailabilityZoneNames = ts.cfg.AvailabilityZoneNames[:numAZLimit]
 	}
 	ts.cfg.Sync()
-	if len(ts.cfg.AvailabilityZoneNames) < 2 {
-		return nil, fmt.Errorf("too few availability zone %v (expected at least two)", ts.cfg.AvailabilityZoneNames)
-	}
 
 	ts.s3API = s3.New(ts.awsSession)
 	ts.s3APIV2 = aws_s3_v2.NewFromConfig(awsCfgV2)
