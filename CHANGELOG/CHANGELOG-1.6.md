@@ -1,9 +1,14 @@
 
 <hr>
 
-## [v1.6.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.3) (2021-10)
+## [v1.6.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.3) (2021-10-06)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.2...v1.6.3).
+
+### `eks`
+
+- Add [fallback to `DescribeSubnets` calls with `DescribeAvailabilityZones`](https://github.com/aws/aws-k8s-tester/commit/d66aaa2013897d23e0b86fe40666a256d327f880).
+- [Tag subnets with cluster names](https://github.com/aws/aws-k8s-tester/commit/41beff1d9d605a22b26597f00f039602cafd57d2).
 
 ### `k8s-tester`
 
