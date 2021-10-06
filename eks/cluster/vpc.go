@@ -643,6 +643,11 @@ func (ts *tester) createPublicSubnets() error {
 								Key:   aws_v2.String("kubernetes.io/role/internal-elb"),
 								Value: aws_v2.String("1"),
 							},
+							{
+								// https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.htmls
+								Key:   aws_v2.String(fmt.Sprintf("kubernetes.io/cluster/%s", ts.cfg.EKSConfig.Name)),
+								Value: aws_v2.String("owned"),
+							},
 						},
 					},
 				},
@@ -1170,6 +1175,11 @@ func (ts *tester) createPrivateSubnets() error {
 							{
 								Key:   aws_v2.String("Network"),
 								Value: aws_v2.String("Private"),
+							},
+							{
+								// https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.htmls
+								Key:   aws_v2.String(fmt.Sprintf("kubernetes.io/cluster/%s", ts.cfg.EKSConfig.Name)),
+								Value: aws_v2.String("owned"),
 							},
 						},
 					},
