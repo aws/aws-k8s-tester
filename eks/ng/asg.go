@@ -371,6 +371,19 @@ func (ts *tester) fetchImageID(ssmParam string) (img string, err error) {
 
 func (ts *tester) generateUserData(asgName string, amiType string, kubeletExtraArgs string, bootstrapArgs string) (d string, err error) {
 	switch amiType {
+	case ec2config.AMITypeWindowsServerCore2019X8664:
+		d = fmt.Sprintf(`
+<powershell>
+[string]$EKSBinDir = "$env:ProgramFiles\Amazon\EKS"
+[string]$EKSBootstrapScriptName = 'Start-EKSBootstrap.ps1'
+[string]$EKSBootstrapScriptFile = "$EKSBinDir\$EKSBootstrapScriptName"
+& $EKSBootstrapScriptFile -EKSClusterName %s -Base64ClusterCA %s -APIServerEndpoint %s -KubeletExtraArgs %s 3>&1 4>&1 5>&1 6>&1
+</powershell>`,
+			ts.cfg.EKSConfig.Name,
+			ts.cfg.EKSConfig.Status.ClusterCA,
+			ts.cfg.EKSConfig.Status.ClusterAPIServerEndpoint,
+			fmt.Sprintf(`"--node-labels=NodeType=regular,AMIType=%s,NGType=custom,NGName=%s %s"`, amiType, asgName, kubeletExtraArgs))
+
 	case ec2config.AMITypeBottleRocketCPU:
 		d = fmt.Sprintf(`[settings.kubernetes]
 cluster-name = "%s"
