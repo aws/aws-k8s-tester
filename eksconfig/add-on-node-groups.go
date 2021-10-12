@@ -240,6 +240,10 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			if cur.RemoteAccessUserName != "ec2-user" {
 				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
 			}
+		case ec2config.AMITypeWindowsServerCore2019X8664:
+			if cur.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
+			}
 		default:
 			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, cur.AMIType)
 		}
@@ -249,7 +253,7 @@ func (cfg *Config) validateAddOnNodeGroups() error {
 			if cur.InstanceType == "" {
 				cur.InstanceType = DefaultNodeInstanceTypeCPU
 			}
-		case fmt.Sprint(aws_eks_v2_types.AMITypesAl2X8664):
+		case fmt.Sprint(aws_eks_v2_types.AMITypesAl2X8664), ec2config.AMITypeWindowsServerCore2019X8664:
 			if cur.InstanceType == "" {
 				cur.InstanceType = DefaultNodeInstanceTypeCPU
 			}

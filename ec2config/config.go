@@ -31,6 +31,8 @@ const (
 	// AMITypeAL2X8664GPU is the AMI type for Amazon Linux 2 AMI with GPU.
 	AMITypeAL2X8664GPU = "AL2_x86_64_GPU"
 
+	AMITypeWindowsServerCore2019X8664 = "WINDOWS_SERVER_CORE_2019_x86_64"
+
 	// DefaultNodeInstanceTypeCPUARM is the default EC2 instance type for CPU worker node.
 	// https://aws.amazon.com/ec2/instance-types/m6/
 	DefaultNodeInstanceTypeCPUARM = "m6g.xlarge"
