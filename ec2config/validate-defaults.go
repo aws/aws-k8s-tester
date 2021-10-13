@@ -349,6 +349,7 @@ func (cfg *Config) validateASGs() error {
 			if cur.RemoteAccessUserName != "ec2-user" {
 				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
 			}
+		case AMITypeOther:
 		default:
 			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, cur.AMIType)
 		}
@@ -370,6 +371,7 @@ func (cfg *Config) validateASGs() error {
 			if cur.InstanceType == "" {
 				cur.InstanceType = DefaultNodeInstanceTypeGPU
 			}
+		case AMITypeOther:
 		default:
 			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, cur.AMIType)
 		}

@@ -1,6 +1,22 @@
 
 <hr>
 
+## [v1.6.4](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.4) (2021-10-13)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.3...v1.6.4).
+
+### `eksconfig`
+
+- Support [Windows node group](https://github.com/aws/aws-k8s-tester/pull/241).
+
+### Go
+
+- Compile with [*Go 1.17.2*](https://golang.org/doc/devel/release.html#go1.17).
+
+
+<hr>
+
+
 ## [v1.6.3](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.3) (2021-10-06)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.2...v1.6.3).
