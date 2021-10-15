@@ -9,6 +9,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/ec2config"
 	"github.com/aws/aws-k8s-tester/pkg/fileutil"
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
@@ -20,7 +21,7 @@ func (ts *tester) createConfigMap() error {
 	}
 
 	ts.cfg.Logger.Info("writing ConfigMap", zap.String("instance-role-arn", ts.cfg.EKSConfig.AddOnNodeGroups.Role.ARN))
-	body, p, err := writeConfigMapAuth(ts.cfg.EKSConfig.AddOnNodeGroups.Role.ARN)
+	body, p, err := ts.writeConfigMapAuth(ts.cfg.EKSConfig.AddOnNodeGroups.Role.ARN)
 	if err != nil {
 		return err
 	}
@@ -83,23 +84,44 @@ data:
     - rolearn: {{.NGInstanceRoleARN}}
       %s
       groups:
-      - system:bootstrappers
+      %s
+`
+
+const LinuxInstanceRBACGroups = `- system:bootstrappers
       - system:nodes
 `
+
+const WindowsInstanceAdditionalRBACGroups = `      - eks:kube-proxy-windows`
 
 type configMapAuth struct {
 	NGInstanceRoleARN string
 }
 
-func writeConfigMapAuth(instanceRoleARN string) (body string, fpath string, err error) {
+func (ts *tester) writeConfigMapAuth(instanceRoleARN string) (body string, fpath string, err error) {
 	kc := configMapAuth{NGInstanceRoleARN: instanceRoleARN}
+	nodeRoleRBACGroupList := LinuxInstanceRBACGroups
+	// If Windows nodes are present then add additional kube-proxy role
+	if ts.hasWindowsNode() {
+		nodeRoleRBACGroupList += WindowsInstanceAdditionalRBACGroups
+	}
+
 	tpl := template.Must(template.New("configMapAuthTempl").Parse(configMapAuthTempl))
 	buf := bytes.NewBuffer(nil)
 	if err = tpl.Execute(buf, kc); err != nil {
 		return "", "", err
 	}
 	// avoid '{{' conflicts with Go
-	body = fmt.Sprintf(buf.String(), `username: system:node:{{EC2PrivateDNSName}}`)
+	body = fmt.Sprintf(buf.String(), `username: system:node:{{EC2PrivateDNSName}}`, nodeRoleRBACGroupList)
 	fpath, err = fileutil.WriteTempFile([]byte(body))
 	return body, fpath, err
+}
+
+// hasWindowsNode returns true if any Windows AMI is present in the the ASG to be created
+func (ts *tester) hasWindowsNode() bool {
+	for _, cur := range ts.cfg.EKSConfig.AddOnNodeGroups.ASGs {
+		if cur.AMIType == ec2config.AMITypeWindowsServerCore2019X8664 {
+			return true
+		}
+	}
+	return false
 }
