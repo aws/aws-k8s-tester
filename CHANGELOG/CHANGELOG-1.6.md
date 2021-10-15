@@ -1,6 +1,21 @@
 
 <hr>
 
+## [v1.6.5](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.5) (2021-10-15)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.4...v1.6.5).
+
+### `eks`
+
+- Fix [Missing Role eks:kube-proxy for Windows Node Group in aws-auth ConfigMap](https://github.com/aws/aws-k8s-tester/pull/242).
+
+### Go
+
+- Compile with [*Go 1.17.2*](https://golang.org/doc/devel/release.html#go1.17).
+
+
+<hr>
+
 ## [v1.6.4](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.4) (2021-10-13)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.3...v1.6.4).
