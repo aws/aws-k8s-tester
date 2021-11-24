@@ -27,6 +27,7 @@ import (
 	"github.com/aws/aws-k8s-tester/k8s-tester/falcon"
 	securecn "github.com/aws/aws-k8s-tester/k8s-tester/secureCN"
 	"github.com/aws/aws-k8s-tester/k8s-tester/falcon"
+	securecn "github.com/aws/aws-k8s-tester/k8s-tester/secureCN"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
@@ -288,6 +289,13 @@ func (ts *tester) createTesters() {
 		ts.cfg.AddOnFalcon.LogWriter = ts.logWriter
 		ts.cfg.AddOnFalcon.Client = ts.cli
 		ts.testers = append(ts.testers, falcon.New(ts.cfg.AddOnFalcon))
+	}
+	if ts.cfg.AddOnSecureCN != nil && ts.cfg.AddOnSecureCN.Enable {
+		ts.cfg.AddOnSecureCN.Stopc = ts.stopCreationCh
+		ts.cfg.AddOnSecureCN.Logger = ts.logger
+		ts.cfg.AddOnSecureCN.LogWriter = ts.logWriter
+		ts.cfg.AddOnSecureCN.Client = ts.cli
+		ts.testers = append(ts.testers, securecn.New(ts.cfg.AddOnSecureCN))
 	}
 }
 

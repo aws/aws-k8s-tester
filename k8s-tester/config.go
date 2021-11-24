@@ -150,6 +150,7 @@ type Config struct {
 	AddOnFalcon              *falcon.Config               `json:"add_on_falcon"`
 	AddOnSecureCN            *securecn.Config              `json:"add_on_securecn"`
 	AddOnFalcon              *falcon.Config               `json:"add_on_falcon"`
+	AddOnSecureCN            *securecn.Config              `json:"add_on_securecn"`
 	AddOnPHPApache           *php_apache.Config           `json:"add_on_php_apache"`
 	AddOnNLBGuestbook        *nlb_guestbook.Config        `json:"add_on_nlb_guestbook"`
 	AddOnNLBHelloWorld       *nlb_hello_world.Config      `json:"add_on_nlb_hello_world"`
@@ -236,6 +237,7 @@ func NewDefault() *Config {
 		AddOnFalcon:              falcon.NewDefault(),
 		AddOnSecureCN:            securecn.NewDefault(),
 		AddOnFalcon:              falcon.NewDefault(),
+		AddOnSecureCN:            securecn.NewDefault(),
 		AddOnPHPApache:           php_apache.NewDefault(),
 		AddOnNLBGuestbook:        nlb_guestbook.NewDefault(),
 		AddOnNLBHelloWorld:       nlb_hello_world.NewDefault(),
@@ -339,6 +341,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.AddOnFalcon != nil && cfg.AddOnFalcon.Enable {
 		if err := cfg.AddOnFalcon.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnSecureCN != nil && cfg.AddOnSecureCN.Enable {
+		if err := cfg.AddOnSecureCN.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}
@@ -718,6 +725,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnFalcon = av
 	} else {
 		return fmt.Errorf("expected *falcon.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+securecn.Env()+"_", cfg.AddOnSecureCN)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*securecn.Config); ok {
+		cfg.AddOnSecureCN = av
+	} else {
+		return fmt.Errorf("expected *securecn.Config, got %T", vv)
 	}
 
 	vv, err = parseEnvs(ENV_PREFIX+php_apache.Env()+"_", cfg.AddOnPHPApache)
