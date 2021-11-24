@@ -305,6 +305,41 @@ func TestEnvAddOnFalco(t *testing.T) {
 	}
 }
 
+func TestEnvAddOnSecureCN(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("K8S_TESTER_ADD_ON_SECURECN_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_SECURECN_ENABLE")
+	os.Setenv("K8S_TESTER_ADD_ON_SECURECN_ACCESS_KEY", "foo")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_SECURECN_ACCESS_KEY")
+	os.Setenv("K8S_TESTER_ADD_ON_SECURECN_SECRET_KEY", "bar")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_SECURECN_SECRET_KEY")
+	os.Setenv("K8S_TESTER_ADD_ON_SECURECN_URL", "url.example")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_SECURECN_URL")
+	os.Setenv("K8S_TESTER_ADD_ON_SECURECN_CLUSTER_NAME", "cluster-name")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_SECURECN_CLUSTER_NAME")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if !cfg.AddOnSecureCN.Enable {
+		t.Fatalf("unexpected cfg.AddOnSecureCN.Enable %v", cfg.AddOnSecureCN.Enable)
+	}
+	if cfg.AddOnSecureCN.AccessKey != "foo" {
+		t.Fatalf("unexpected cfg.AddOnSecureCN.AccessKey %v", cfg.AddOnSecureCN.AccessKey)
+	}
+	if cfg.AddOnSecureCN.SecretKey != "bar" {
+		t.Fatalf("unexpected cfg.AddOnSecureCN.SecretKey %v", cfg.AddOnSecureCN.SecretKey)
+	}
+	if cfg.AddOnSecureCN.URL != "url.example" {
+		t.Fatalf("unexpected cfg.AddOnSecureCN.URL %v", cfg.AddOnSecureCN.URL)
+	}
+	if cfg.AddOnSecureCN.ClusterName != "cluster-name" {
+		t.Fatalf("unexpected cfg.AddOnSecureCN.ClusterName %v", cfg.AddOnSecureCN.ClusterName)
+	}
+}
+
 func TestEnvAddOnPHPApache(t *testing.T) {
 	cfg := NewDefault()
 

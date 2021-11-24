@@ -39,6 +39,7 @@ import (
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
+	securecn "github.com/aws/aws-k8s-tester/k8s-tester/secureCN"
 	"github.com/aws/aws-k8s-tester/k8s-tester/splunk"
 	"github.com/aws/aws-k8s-tester/k8s-tester/stress"
 	stress_in_cluster "github.com/aws/aws-k8s-tester/k8s-tester/stress/in-cluster"
@@ -147,6 +148,7 @@ type Config struct {
 	AddOnKubernetesDashboard *kubernetes_dashboard.Config `json:"add_on_kubernetes_dashboard"`
 	AddOnFalco               *falco.Config                `json:"add_on_falco"`
 	AddOnFalcon              *falcon.Config               `json:"add_on_falcon"`
+	AddOnSecureCN            *securecn.Config              `json:"add_on_securecn"`
 	AddOnPHPApache           *php_apache.Config           `json:"add_on_php_apache"`
 	AddOnNLBGuestbook        *nlb_guestbook.Config        `json:"add_on_nlb_guestbook"`
 	AddOnNLBHelloWorld       *nlb_hello_world.Config      `json:"add_on_nlb_hello_world"`
@@ -231,6 +233,7 @@ func NewDefault() *Config {
 		AddOnKubernetesDashboard: kubernetes_dashboard.NewDefault(),
 		AddOnFalco:               falco.NewDefault(),
 		AddOnFalcon:              falcon.NewDefault(),
+		AddOnSecureCN:            securecn.NewDefault(),
 		AddOnPHPApache:           php_apache.NewDefault(),
 		AddOnNLBGuestbook:        nlb_guestbook.NewDefault(),
 		AddOnNLBHelloWorld:       nlb_hello_world.NewDefault(),
@@ -325,6 +328,10 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.AddOnFalcon != nil && cfg.AddOnFalcon.Enable {
 		if err := cfg.AddOnFalcon.ValidateAndSetDefaults(); err != nil {
+		}
+	}
+	if cfg.AddOnSecureCN != nil && cfg.AddOnSecureCN.Enable {
+		if err := cfg.AddOnSecureCN.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}
@@ -686,6 +693,15 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnFalcon = av
 	} else {
 		return fmt.Errorf("expected *falcon.Config, got %T", vv)
+	}
+	vv, err = parseEnvs(ENV_PREFIX+securecn.Env()+"_", cfg.AddOnSecureCN)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*securecn.Config); ok {
+		cfg.AddOnSecureCN = av
+	} else {
+		return fmt.Errorf("expected *securecn.Config, got %T", vv)
 	}
 
 	vv, err = parseEnvs(ENV_PREFIX+php_apache.Env()+"_", cfg.AddOnPHPApache)
