@@ -47,7 +47,7 @@ See example commits:
 
 ### Environmental variables
 
-Total 29 test cases!
+Total 30 test cases!
 
 ```
 *----------------------------------*----------------------*----------------------------------------*---------------*
@@ -174,6 +174,12 @@ Total 29 test cases!
 | K8S_TESTER_ADD_ON_FALCO_HELM_CHART_REPO_URL | SETTABLE VIA ENV VAR | *falco.Config.HelmChartRepoURL | string  |
 | K8S_TESTER_ADD_ON_FALCO_NAMESPACE           | SETTABLE VIA ENV VAR | *falco.Config.Namespace        | string  |
 *---------------------------------------------*----------------------*--------------------------------*---------*
+
+*---------------------------------*----------------------*-----------------------*---------*
+|     ENVIRONMENTAL VARIABLE      |      FIELD TYPE      |         TYPE          | GO TYPE |
+*---------------------------------*----------------------*-----------------------*---------*
+| K8S_TESTER_ADD_ON_FALCON_ENABLE | SETTABLE VIA ENV VAR | *falcon.Config.Enable | bool    |
+*---------------------------------*----------------------*-----------------------*---------*
 
 *-------------------------------------------------------*----------------------*-------------------------------------------*-------------------*
 |                ENVIRONMENTAL VARIABLE                 |      FIELD TYPE      |                   TYPE                    |      GO TYPE      |
