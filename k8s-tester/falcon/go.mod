@@ -9,6 +9,7 @@ require (
 	github.com/manifoldco/promptui v0.9.0
 	github.com/spf13/cobra v1.2.1
 	go.uber.org/zap v1.19.1
+	k8s.io/apimachinery v0.21.1
 	k8s.io/utils v0.0.0-20210527160623-6fdb442a123b
 )
 

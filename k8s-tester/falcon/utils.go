@@ -9,8 +9,23 @@ import (
 	"github.com/aws/aws-k8s-tester/client"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/api/errors"
+	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 )
+
+func (ts *tester) deploymentExists(ctx context.Context, ns, deploymentName string) (bool, error) {
+	inCtx, cancel := context.WithTimeout(ctx, time.Minute)
+	_, err := ts.cfg.Client.KubernetesClient().
+		AppsV1().
+		Deployments(ns).
+		Get(inCtx, deploymentName, meta_v1.GetOptions{})
+	cancel()
+	if errors.IsNotFound(err) {
+		return false, nil
+	}
+	return true, err
+}
 
 func (ts *tester) waitForDeployment(ctx context.Context, ns, deploymentName string, timeout time.Duration) error {
 	inCtx, cancel := context.WithTimeout(context.Background(), timeout)

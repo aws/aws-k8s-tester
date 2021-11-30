@@ -101,7 +101,11 @@ func (ts *tester) deployOperator(ctx context.Context) error {
 func (ts tester) deleteOperator(ctx context.Context) error {
 	ts.cfg.Logger.Info("uninstalling: ", zap.String("Operator", "falcon-operator"))
 
+	if exists, err := ts.deploymentExists(ctx, operatorNamespace, operatorDeployment); err != nil || !exists {
+		return err
+	}
 	return ts.kubectl(ctx, "delete", operatorSpecUri, time.Minute)
+
 }
 
 func (ts *tester) waitForOperatorRunning(ctx context.Context) error {
