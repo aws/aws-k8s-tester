@@ -6,10 +6,28 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/client"
 	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
 	"k8s.io/utils/exec"
 )
+
+func (ts *tester) waitForDeployment(ctx context.Context, ns, deploymentName string, timeout time.Duration) error {
+	inCtx, cancel := context.WithTimeout(context.Background(), timeout)
+	deployment, err := client.WaitForDeploymentAvailables(inCtx, ts.cfg.Logger, ts.cfg.LogWriter, ts.cfg.Stopc, ts.cfg.Client.KubernetesClient(),
+		0, 5*time.Second,
+		ns,
+		deploymentName,
+		1,
+	)
+
+	cancel()
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(ts.cfg.LogWriter, "%v", deployment.Status)
+	return nil
+}
 
 func (ts *tester) kubectl(ctx context.Context, operation, file string, timeout time.Duration) error {
 	args := []string{

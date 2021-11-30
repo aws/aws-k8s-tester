@@ -72,6 +72,9 @@ func (ts *tester) Apply() error {
 	if err := ts.deployOperator(ctx); err != nil {
 		return err
 	}
+	if err := ts.waitForOperatorRunning(ctx); err != nil {
+		return err
+	}
 
 	return fmt.Errorf("NOT IMPLEMENTED")
 }
@@ -85,6 +88,7 @@ func (ts *tester) Delete() error {
 	if err := ts.deleteOperator(ctx); err != nil {
 		return err
 	}
+
 	return fmt.Errorf("NOT IMPLEMENTED")
 }
 
@@ -100,7 +104,15 @@ func (ts tester) deleteOperator(ctx context.Context) error {
 	return ts.kubectl(ctx, "delete", operatorSpecUri, time.Minute)
 }
 
-const operatorSpecUri string = "https://raw.githubusercontent.com/CrowdStrike/falcon-operator/main/deploy/falcon-operator.yaml"
+func (ts *tester) waitForOperatorRunning(ctx context.Context) error {
+	return ts.waitForDeployment(ctx, operatorNamespace, operatorDeployment, time.Second*180)
+}
+
+const (
+	operatorNamespace  string = "falcon-operator"
+	operatorDeployment string = "falcon-operator-controller-manager"
+	operatorSpecUri    string = "https://raw.githubusercontent.com/CrowdStrike/falcon-operator/main/deploy/falcon-operator.yaml"
+)
 
 func operatorSpecData() ([]byte, error) {
 	resp, err := http.Get(operatorSpecUri)
