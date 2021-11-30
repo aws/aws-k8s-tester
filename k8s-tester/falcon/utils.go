@@ -44,24 +44,30 @@ func (ts *tester) waitForDeployment(ctx context.Context, ns, deploymentName stri
 	return nil
 }
 
-func (ts *tester) kubectl(ctx context.Context, operation, file string, timeout time.Duration) error {
+func (ts *tester) kubectlFile(ctx context.Context, operation, file string, timeout time.Duration) error {
 	args := []string{
-		ts.cfg.Client.Config().KubectlPath,
-		"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
 		operation,
 		"--filename=" + file,
 	}
+	return ts.kubectl(ctx, args, timeout)
+}
+
+func (ts *tester) kubectl(ctx context.Context, cargs []string, timeout time.Duration) error {
+	args := append([]string{
+		ts.cfg.Client.Config().KubectlPath,
+		"--kubeconfig=" + ts.cfg.Client.Config().KubeconfigPath,
+	}, cargs...)
 
 	context, cancel := context.WithTimeout(ctx, timeout)
 	output, err := exec.New().CommandContext(context, args[0], args[1:]...).CombinedOutput()
 	cancel()
 	out := strings.TrimSpace(string(output))
+	fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", strings.Join(args, " "), out)
 	if err != nil {
-		ts.cfg.Logger.Warn(fmt.Sprintf("'kubectl %s' failed", operation), zap.Error(err))
+		ts.cfg.Logger.Warn("'kubectl'", zap.Error(err))
 		ts.cfg.Logger.Warn("Spinnaker Tests::", zap.String("TEST", "FAILED"))
 		return err
 	}
-	fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", strings.Join(args, " "), out)
 	return nil
 
 }

@@ -29,6 +29,8 @@ var (
 	kubectlDownloadURL string
 	kubectlPath        string
 	kubeconfigPath     string
+	falconClientId     string
+	falconClientSecret string
 )
 
 func init() {
@@ -38,6 +40,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&kubectlDownloadURL, "kubectl-download-url", client.DefaultKubectlDownloadURL(), "kubectl download URL")
 	rootCmd.PersistentFlags().StringVar(&kubectlPath, "kubectl-path", client.DefaultKubectlPath(), "kubectl path")
 	rootCmd.PersistentFlags().StringVar(&kubeconfigPath, "kubeconfig-path", "", "KUBECONFIG path")
+	rootCmd.PersistentFlags().StringVar(&falconClientId, "falcon-client-id", os.Getenv("FALCON_CLIENT_ID"), "Client ID for accessing CrowdStrike Falcon Platform")
+	rootCmd.PersistentFlags().StringVar(&falconClientSecret, "falcon-client-secret", os.Getenv("FALCON_CLIENT_SECRET"), "Client Secret for accessing CrowdStrike Falcon Platform")
 
 	rootCmd.AddCommand(
 		newApply(),
@@ -81,10 +85,12 @@ func createApplyFunc(cmd *cobra.Command, args []string) {
 	}
 
 	cfg := &falcon_tester.Config{
-		Prompt:    prompt,
-		Logger:    lg,
-		LogWriter: logWriter,
-		Client:    cli,
+		Prompt:             prompt,
+		Logger:             lg,
+		LogWriter:          logWriter,
+		Client:             cli,
+		FalconClientId:     falconClientId,
+		FalconClientSecret: falconClientSecret,
 	}
 
 	ts := falcon_tester.New(cfg)
@@ -124,10 +130,12 @@ func createDeleteFunc(cmd *cobra.Command, args []string) {
 	}
 
 	cfg := &falcon_tester.Config{
-		Prompt:    prompt,
-		Logger:    lg,
-		LogWriter: logWriter,
-		Client:    cli,
+		Prompt:             prompt,
+		Logger:             lg,
+		LogWriter:          logWriter,
+		Client:             cli,
+		FalconClientId:     falconClientId,
+		FalconClientSecret: falconClientSecret,
 	}
 
 	ts := falcon_tester.New(cfg)
