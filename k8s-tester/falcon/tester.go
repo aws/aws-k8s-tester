@@ -2,16 +2,18 @@
 package falcon
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"path"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-k8s-tester/client"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
-	"github.com/manifoldco/promptui"
 	"go.uber.org/zap"
 )
 
@@ -32,8 +34,8 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 
 func NewDefault() *Config {
 	return &Config{
-		Enable:       false,
-		Prompt:       false,
+		Enable: false,
+		Prompt: false,
 	}
 }
 
@@ -58,38 +60,53 @@ func (ts *tester) Name() string { return pkgName }
 func (ts *tester) Enabled() bool { return ts.cfg.Enable }
 
 func (ts *tester) Apply() error {
+	ctx := context.TODO()
 
 	if ok := ts.runPrompt("apply"); !ok {
 		return errors.New("cancelled")
 	}
+	if nodes, err := client.ListNodes(ts.cfg.Client.KubernetesClient()); err != nil || len(nodes) == 0 {
+		return fmt.Errorf("failed to validate minimum nodes requirement (nodes %v, error %v)", len(nodes), err)
+
+	}
+	if err := ts.deployOperator(ctx); err != nil {
+		return err
+	}
+
 	return fmt.Errorf("NOT IMPLEMENTED")
 }
 
 func (ts *tester) Delete() error {
+	ctx := context.TODO()
+
 	if ok := ts.runPrompt("delete"); !ok {
 		return errors.New("cancelled")
+	}
+	if err := ts.deleteOperator(ctx); err != nil {
+		return err
 	}
 	return fmt.Errorf("NOT IMPLEMENTED")
 }
 
-func (ts *tester) runPrompt(action string) (ok bool) {
-	if ts.cfg.Prompt {
-		msg := fmt.Sprintf("Ready to %q resources, should we continue?", action)
-		prompt := promptui.Select{
-			Label: msg,
-			Items: []string{
-				"No, cancel it!",
-				fmt.Sprintf("Yes, let's %q!", action),
-			},
-		}
-		idx, answer, err := prompt.Run()
-		if err != nil {
-			panic(err)
-		}
-		if idx != 1 {
-			fmt.Printf("cancelled %q [index %d, answer %q]\n", action, idx, answer)
-			return false
-		}
+func (ts *tester) deployOperator(ctx context.Context) error {
+	ts.cfg.Logger.Info("deploying: ", zap.String("Operator", "falcon-operator"))
+
+	return ts.kubectl(ctx, "apply", operatorSpecUri, time.Minute)
+}
+
+func (ts tester) deleteOperator(ctx context.Context) error {
+	ts.cfg.Logger.Info("uninstalling: ", zap.String("Operator", "falcon-operator"))
+
+	return ts.kubectl(ctx, "delete", operatorSpecUri, time.Minute)
+}
+
+const operatorSpecUri string = "https://raw.githubusercontent.com/CrowdStrike/falcon-operator/main/deploy/falcon-operator.yaml"
+
+func operatorSpecData() ([]byte, error) {
+	resp, err := http.Get(operatorSpecUri)
+	if err != nil {
+		return nil, err
 	}
-	return true
+	defer resp.Body.Close()
+	return io.ReadAll(resp.Body)
 }
