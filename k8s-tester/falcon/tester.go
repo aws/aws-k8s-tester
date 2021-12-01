@@ -89,8 +89,11 @@ func (ts *tester) Apply() error {
 	if err := ts.deployFalconContainer(ctx); err != nil {
 		return err
 	}
+	if err := ts.waitForInstallerJobCompletion(ctx); err != nil {
+		return err
+	}
 
-	return fmt.Errorf("NOT IMPLEMENTED")
+	return ts.waitForInjectorRunning(ctx)
 }
 
 func (ts *tester) Delete() error {
@@ -122,6 +125,23 @@ func (ts tester) deleteOperator(ctx context.Context) error {
 
 func (ts *tester) waitForOperatorRunning(ctx context.Context) error {
 	return ts.waitForDeployment(ctx, operatorNamespace, operatorDeployment, time.Second*180)
+}
+
+func (ts *tester) waitForInstallerJobCompletion(ctx context.Context) error {
+	return ts.waitForJob(ctx, installerNamespace, installerJob, time.Second*210)
+}
+
+func (ts *tester) waitForInjectorRunning(ctx context.Context) error {
+	err := ts.waitForDeployment(ctx, injectorNamespace, injectorDeployment, time.Second*180)
+	if err == nil {
+		return err
+	}
+	select {
+	case <-ctx.Done():
+		return errors.New("context expired while waiting for falcon injector")
+	case <-time.After(10 * time.Second):
+		return ts.waitForDeployment(ctx, injectorNamespace, injectorDeployment, time.Second*180)
+	}
 }
 
 func (ts *tester) deployFalconContainer(ctx context.Context) error {
@@ -177,6 +197,8 @@ const (
 	operatorSpecUri    string = "https://raw.githubusercontent.com/CrowdStrike/falcon-operator/main/deploy/falcon-operator.yaml"
 	injectorNamespace  string = "falcon-system"
 	injectorDeployment string = "injector"
+	installerNamespace string = "falcon-system-configure"
+	installerJob       string = "falcon-configure"
 )
 
 func operatorSpecData() ([]byte, error) {

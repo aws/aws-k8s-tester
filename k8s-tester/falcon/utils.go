@@ -27,9 +27,19 @@ func (ts *tester) deploymentExists(ctx context.Context, ns, deploymentName strin
 	return true, err
 }
 
+func (ts *tester) waitForJob(ctx context.Context, ns, jobName string, timeout time.Duration) error {
+	inCtx, cancel := context.WithTimeout(ctx, timeout)
+	_, _, err := client.WaitForJobCompletes(inCtx, ts.cfg.Logger, ts.cfg.LogWriter, ts.cfg.Stopc, ts.cfg.Client.KubernetesClient(),
+		15*time.Second, 5*time.Second,
+		ns, jobName,
+		1,
+	)
+	cancel()
+	return err
+}
 func (ts *tester) waitForDeployment(ctx context.Context, ns, deploymentName string, timeout time.Duration) error {
 	inCtx, cancel := context.WithTimeout(context.Background(), timeout)
-	deployment, err := client.WaitForDeploymentAvailables(inCtx, ts.cfg.Logger, ts.cfg.LogWriter, ts.cfg.Stopc, ts.cfg.Client.KubernetesClient(),
+	_, err := client.WaitForDeploymentAvailables(inCtx, ts.cfg.Logger, ts.cfg.LogWriter, ts.cfg.Stopc, ts.cfg.Client.KubernetesClient(),
 		0, 5*time.Second,
 		ns,
 		deploymentName,
@@ -37,11 +47,7 @@ func (ts *tester) waitForDeployment(ctx context.Context, ns, deploymentName stri
 	)
 
 	cancel()
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(ts.cfg.LogWriter, "%v", deployment.Status)
-	return nil
+	return err
 }
 
 func (ts *tester) kubectlFile(ctx context.Context, operation, file string, timeout time.Duration) error {
