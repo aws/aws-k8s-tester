@@ -78,9 +78,9 @@ type MNG struct {
 	ReleaseVersionValue float64 `json:"release-version-value" read-only:"true"`
 
 	// AMIType is the AMI type for the node group.
-	// Allowed values are AL2_x86_64 and AL2_x86_64_GPU.
+	// Allowed values are AL2_x86_64, AL2_x86_64_GPU and AL2_ARM_64.
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/create-managed-node-group.html
-	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html
+	// ref. https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-eks-nodegroup.html#cfn-eks-nodegroup-amitype
 	AMIType string `json:"ami-type,omitempty"`
 
 	// InstanceTypes is the EC2 instance types for the node instances.
@@ -404,6 +404,10 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 			if cur.RemoteAccessUserName != "ec2-user" {
 				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
 			}
+		case eks.AMITypesAl2Arm64:
+			if cur.RemoteAccessUserName != "ec2-user" {
+				return fmt.Errorf("AMIType %q but unexpected RemoteAccessUserName %q", cur.AMIType, cur.RemoteAccessUserName)
+			}
 		default:
 			return fmt.Errorf("unknown ASGs[%q].AMIType %q", k, cur.AMIType)
 		}
@@ -416,6 +420,10 @@ func (cfg *Config) validateAddOnManagedNodeGroups() error {
 		case eks.AMITypesAl2X8664Gpu:
 			if len(cur.InstanceTypes) == 0 {
 				cur.InstanceTypes = []string{DefaultNodeInstanceTypeGPU}
+			}
+		case eks.AMITypesAl2Arm64:
+			if len(cur.InstanceTypes) == 0 {
+				cur.InstanceTypes = []string{DefaultNodeInstanceTypeARMCPU}
 			}
 		default:
 			return fmt.Errorf("unknown AddOnManagedNodeGroups.MNGs[%q].AMIType %q", k, cur.AMIType)
