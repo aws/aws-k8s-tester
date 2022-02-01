@@ -1,6 +1,15 @@
 
 <hr>
 
+## [v1.6.6](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.6) (2022-02-01)
+
+See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.5...v1.6.6).
+
+### `eks`
+
+- Validate ARM AMI type for MNG config [Add support for ARM AMI type in managed node group](https://github.com/aws/aws-k8s-tester/pull/246)
+
+<hr>
 ## [v1.6.5](https://github.com/aws/aws-k8s-tester/releases/tag/v1.6.5) (2021-10-15)
 
 See [code changes](https://github.com/aws/aws-k8s-tester/compare/v1.6.4...v1.6.5).
