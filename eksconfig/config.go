@@ -829,6 +829,8 @@ const (
 
 	// DefaultNodeInstanceTypeCPU is the default EC2 instance type for CPU worker node.
 	DefaultNodeInstanceTypeCPU = "c5.xlarge"
+	// DefaultNodeInstanceTypeARMCPU is the default EC2 instance type for ARM CPU worker node.
+	DefaultNodeInstanceTypeARMCPU = "c6g.xlarge"
 	// DefaultNodeInstanceTypeGPU is the default EC2 instance type for GPU worker node.
 	DefaultNodeInstanceTypeGPU = "p3.8xlarge"
 
