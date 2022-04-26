@@ -463,6 +463,7 @@ type kubeconfig struct {
 	ClusterCA                string
 	AWSIAMAuthenticatorPath  string
 	ClusterName              string
+	AuthenticationAPIVersion string
 }
 
 const tmplKUBECONFIG = `
@@ -484,7 +485,7 @@ users:
 - name: aws
   user:
     exec:
-      apiVersion: client.authentication.k8s.io/v1alpha1
+      apiVersion: {{ .AuthenticationAPIVersion }}
       command: {{ .AWSIAMAuthenticatorPath }}
       args:
       - token
@@ -498,6 +499,7 @@ users:
 func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 	fmt.Print(ts.cfg.EKSConfig.Colorize("\n\n[yellow]*********************************\n"))
 	fmt.Printf(ts.cfg.EKSConfig.Colorize("[light_green]createClient [default](%q)\n"), ts.cfg.EKSConfig.ConfigPath)
+	ts.cfg.EKSConfig.AuthenticationAPIVersion ="client.authentication.k8s.io/v1alpha1"
 
 	if ts.cfg.EKSConfig.AWSIAMAuthenticatorPath != "" && ts.cfg.EKSConfig.AWSIAMAuthenticatorDownloadURL != "" {
 		tpl := template.Must(template.New("tmplKUBECONFIG").Parse(tmplKUBECONFIG))
@@ -507,6 +509,7 @@ func (ts *tester) createClient() (cli k8s_client.EKS, err error) {
 			ClusterCA:                ts.cfg.EKSConfig.Status.ClusterCA,
 			AWSIAMAuthenticatorPath:  ts.cfg.EKSConfig.AWSIAMAuthenticatorPath,
 			ClusterName:              ts.cfg.EKSConfig.Name,
+			AuthenticationAPIVersion: ts.cfg.EKSConfig.AuthenticationAPIVersion,
 		}); err != nil {
 			return nil, err
 		}
