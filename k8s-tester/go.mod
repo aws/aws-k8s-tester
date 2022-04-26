@@ -16,6 +16,7 @@ require (
 	github.com/aws/aws-k8s-tester/k8s-tester/csrs v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/epsagon v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/falco v0.0.0-00010101000000-000000000000
+	github.com/aws/aws-k8s-tester/k8s-tester/falcon v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo v0.0.0-00010101000000-000000000000
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi v0.0.0-00010101000000-000000000000
@@ -208,6 +209,7 @@ replace (
 	github.com/aws/aws-k8s-tester/k8s-tester/csrs => ./csrs
 	github.com/aws/aws-k8s-tester/k8s-tester/epsagon => ./epsagon
 	github.com/aws/aws-k8s-tester/k8s-tester/falco => ./falco
+	github.com/aws/aws-k8s-tester/k8s-tester/falcon => ./falcon
 	github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit => ./fluent-bit
 	github.com/aws/aws-k8s-tester/k8s-tester/helm => ./helm
 	github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo => ./jobs-echo
