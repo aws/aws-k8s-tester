@@ -150,7 +150,7 @@ type Config struct {
 	AddOnFalcon              *falcon.Config               `json:"add_on_falcon"`
 	AddOnSecureCN            *securecn.Config              `json:"add_on_securecn"`
 	AddOnFalcon              *falcon.Config               `json:"add_on_falcon"`
-	AddOnSecureCN            *securecn.Config              `json:"add_on_securecn"`
+	AddOnSecureCN            *securecn.Config             `json:"add_on_securecn"`
 	AddOnPHPApache           *php_apache.Config           `json:"add_on_php_apache"`
 	AddOnNLBGuestbook        *nlb_guestbook.Config        `json:"add_on_nlb_guestbook"`
 	AddOnNLBHelloWorld       *nlb_hello_world.Config      `json:"add_on_nlb_hello_world"`

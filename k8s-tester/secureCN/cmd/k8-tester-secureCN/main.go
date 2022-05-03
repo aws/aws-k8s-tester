@@ -3,8 +3,9 @@ package main
 
 import (
 	"fmt"
-	"go.uber.org/zap"
 	"os"
+
+	"go.uber.org/zap"
 
 	"github.com/spf13/cobra"
 

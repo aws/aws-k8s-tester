@@ -47,7 +47,7 @@ See example commits:
 
 ### Environmental variables
 
-Total 30 test cases!
+Total 31 test cases!
 
 ```
 *----------------------------------*----------------------*----------------------------------------*---------------*
@@ -174,6 +174,16 @@ Total 30 test cases!
 | K8S_TESTER_ADD_ON_FALCO_HELM_CHART_REPO_URL | SETTABLE VIA ENV VAR | *falco.Config.HelmChartRepoURL | string  |
 | K8S_TESTER_ADD_ON_FALCO_NAMESPACE           | SETTABLE VIA ENV VAR | *falco.Config.Namespace        | string  |
 *---------------------------------------------*----------------------*--------------------------------*---------*
+
+*-----------------------------------------*----------------------*------------------------------*---------*
+|         ENVIRONMENTAL VARIABLE          |      FIELD TYPE      |             TYPE             | GO TYPE |
+*-----------------------------------------*----------------------*------------------------------*---------*
+| K8S_TESTER_ADD_ON_SECURECN_ENABLE       | SETTABLE VIA ENV VAR | *secureCN.Config.Enable      | bool    |
+| K8S_TESTER_ADD_ON_SECURECN_ACCESS_KEY   | SETTABLE VIA ENV VAR | *secureCN.Config.AccessKey   | string  |
+| K8S_TESTER_ADD_ON_SECURECN_SECRET_KEY   | SETTABLE VIA ENV VAR | *secureCN.Config.SecretKey   | string  |
+| K8S_TESTER_ADD_ON_SECURECN_URL          | SETTABLE VIA ENV VAR | *secureCN.Config.URL         | string  |
+| K8S_TESTER_ADD_ON_SECURECN_CLUSTER_NAME | SETTABLE VIA ENV VAR | *secureCN.Config.ClusterName | string  |
+*-----------------------------------------*----------------------*------------------------------*---------*
 
 *-----------------------------------------------*----------------------*-----------------------------------*---------*
 |            ENVIRONMENTAL VARIABLE             |      FIELD TYPE      |               TYPE                | GO TYPE |

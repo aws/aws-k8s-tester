@@ -5,14 +5,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"go.uber.org/zap"
 	"io"
-	"k8s.io/utils/exec"
 	"os"
 	"path"
 	"reflect"
 	"strings"
 	"time"
+
+	"go.uber.org/zap"
+	"k8s.io/utils/exec"
 
 	"github.com/go-openapi/strfmt"
 
