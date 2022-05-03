@@ -175,6 +175,14 @@ Total 31 test cases!
 | K8S_TESTER_ADD_ON_FALCO_NAMESPACE           | SETTABLE VIA ENV VAR | *falco.Config.Namespace        | string  |
 *---------------------------------------------*----------------------*--------------------------------*---------*
 
+*-----------------------------------------------*----------------------*-----------------------------------*---------*
+|            ENVIRONMENTAL VARIABLE             |      FIELD TYPE      |               TYPE                | GO TYPE |
+*-----------------------------------------------*----------------------*-----------------------------------*---------*
+| K8S_TESTER_ADD_ON_FALCON_ENABLE               | SETTABLE VIA ENV VAR | *falcon.Config.Enable             | bool    |
+| K8S_TESTER_ADD_ON_FALCON_FALCON_CLIENT_ID     | SETTABLE VIA ENV VAR | *falcon.Config.FalconClientId     | string  |
+| K8S_TESTER_ADD_ON_FALCON_FALCON_CLIENT_SECRET | SETTABLE VIA ENV VAR | *falcon.Config.FalconClientSecret | string  |
+*-----------------------------------------------*----------------------*-----------------------------------*---------*
+
 *-----------------------------------------*----------------------*------------------------------*---------*
 |         ENVIRONMENTAL VARIABLE          |      FIELD TYPE      |             TYPE             | GO TYPE |
 *-----------------------------------------*----------------------*------------------------------*---------*
@@ -184,14 +192,6 @@ Total 31 test cases!
 | K8S_TESTER_ADD_ON_SECURECN_URL          | SETTABLE VIA ENV VAR | *secureCN.Config.URL         | string  |
 | K8S_TESTER_ADD_ON_SECURECN_CLUSTER_NAME | SETTABLE VIA ENV VAR | *secureCN.Config.ClusterName | string  |
 *-----------------------------------------*----------------------*------------------------------*---------*
-
-*-----------------------------------------------*----------------------*-----------------------------------*---------*
-|            ENVIRONMENTAL VARIABLE             |      FIELD TYPE      |               TYPE                | GO TYPE |
-*-----------------------------------------------*----------------------*-----------------------------------*---------*
-| K8S_TESTER_ADD_ON_FALCON_ENABLE               | SETTABLE VIA ENV VAR | *falcon.Config.Enable             | bool    |
-| K8S_TESTER_ADD_ON_FALCON_FALCON_CLIENT_ID     | SETTABLE VIA ENV VAR | *falcon.Config.FalconClientId     | string  |
-| K8S_TESTER_ADD_ON_FALCON_FALCON_CLIENT_SECRET | SETTABLE VIA ENV VAR | *falcon.Config.FalconClientSecret | string  |
-*-----------------------------------------------*----------------------*-----------------------------------*---------*
 
 *-------------------------------------------------------*----------------------*-------------------------------------------*-------------------*
 |                ENVIRONMENTAL VARIABLE                 |      FIELD TYPE      |                   TYPE                    |      GO TYPE      |
