@@ -72,6 +72,9 @@ gofmt -s -w ./nlb-guestbook
 goimports -w ./nlb-hello-world
 gofmt -s -w ./nlb-hello-world
 
+goimports -w ./ondat
+gofmt -s -w ./ondat
+
 goimports -w ./php-apache
 gofmt -s -w ./php-apache
 

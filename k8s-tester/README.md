@@ -47,7 +47,7 @@ See example commits:
 
 ### Environmental variables
 
-Total 30 test cases!
+Total 31 test cases!
 
 ```
 *----------------------------------*----------------------*----------------------------------------*---------------*
@@ -234,6 +234,20 @@ Total 30 test cases!
 | K8S_TESTER_ADD_ON_NLB_HELLO_WORLD_ELB_NAME                 | READ-ONLY            | *nlb_hello_world.Config.ELBName                | string            |
 | K8S_TESTER_ADD_ON_NLB_HELLO_WORLD_ELB_URL                  | READ-ONLY            | *nlb_hello_world.Config.ELBURL                 | string            |
 *------------------------------------------------------------*----------------------*------------------------------------------------*-------------------*
+
+*---------------------------------------------*----------------------*--------------------------------*---------*
+|           ENVIRONMENTAL VARIABLE            |      FIELD TYPE      |              TYPE              | GO TYPE |
+*---------------------------------------------*----------------------*--------------------------------*---------*
+| K8S_TESTER_ADD_ON_ONDAT_ENABLE              | SETTABLE VIA ENV VAR | *ondat.Config.Enable           | bool    |
+| K8S_TESTER_ADD_ON_ONDAT_MINIMUM_NODES       | SETTABLE VIA ENV VAR | *ondat.Config.MinimumNodes     | int     |
+| K8S_TESTER_ADD_ON_ONDAT_HELM_CHART_REPO_URL | SETTABLE VIA ENV VAR | *ondat.Config.HelmChartRepoURL | string  |
+| K8S_TESTER_ADD_ON_ONDAT_NAMESPACE           | SETTABLE VIA ENV VAR | *ondat.Config.Namespace        | string  |
+| K8S_TESTER_ADD_ON_ONDAT_ONDAT_NAMESPACE     | SETTABLE VIA ENV VAR | *ondat.Config.OndatNamespace   | string  |
+| K8S_TESTER_ADD_ON_ONDAT_ETCD_NAMESPACE      | SETTABLE VIA ENV VAR | *ondat.Config.EtcdNamespace    | string  |
+| K8S_TESTER_ADD_ON_ONDAT_ETCD_REPLICAS       | SETTABLE VIA ENV VAR | *ondat.Config.EtcdReplicas     | int     |
+| K8S_TESTER_ADD_ON_ONDAT_ETCD_STORAGE        | SETTABLE VIA ENV VAR | *ondat.Config.EtcdStorage      | int     |
+| K8S_TESTER_ADD_ON_ONDAT_ETCD_STORAGECLASS   | SETTABLE VIA ENV VAR | *ondat.Config.EtcdStorageClass | string  |
+*---------------------------------------------*----------------------*--------------------------------*---------*
 
 *-------------------------------------------*----------------------*--------------------------------*---------*
 |          ENVIRONMENTAL VARIABLE           |      FIELD TYPE      |              TYPE              | GO TYPE |

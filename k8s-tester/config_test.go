@@ -305,6 +305,26 @@ func TestEnvAddOnFalco(t *testing.T) {
 	}
 }
 
+func TestEnvAddOnOndat(t *testing.T) {
+	cfg := NewDefault()
+
+	os.Setenv("K8S_TESTER_ADD_ON_ONDAT_ENABLE", "true")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_ONDAT_ENABLE")
+	os.Setenv("K8S_TESTER_ADD_ON_ONDAT_NAMESPACE", "hello")
+	defer os.Unsetenv("K8S_TESTER_ADD_ON_ONDAT_NAMESPACE")
+
+	if err := cfg.UpdateFromEnvs(); err != nil {
+		t.Fatal(err)
+	}
+
+	if !cfg.AddOnOndat.Enable {
+		t.Fatalf("unexpected cfg.AddOnOndat.Enable %v", cfg.AddOnOndat.Enable)
+	}
+	if cfg.AddOnOndat.Namespace != "hello" {
+		t.Fatalf("unexpected cfg.AddOnOndat.Namespace %v", cfg.AddOnOndat.Namespace)
+	}
+}
+
 func TestEnvAddOnPHPApache(t *testing.T) {
 	cfg := NewDefault()
 

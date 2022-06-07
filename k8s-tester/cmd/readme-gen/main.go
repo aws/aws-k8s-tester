@@ -33,6 +33,7 @@ import (
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
 	nlb_guestbook "github.com/aws/aws-k8s-tester/k8s-tester/nlb-guestbook"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
+	"github.com/aws/aws-k8s-tester/k8s-tester/ondat"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
 	"github.com/aws/aws-k8s-tester/k8s-tester/splunk"
@@ -135,6 +136,10 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+nlb_hello_world.Env()+"_", &nlb_hello_world.Config{}))
+	totalTestCases++
+
+	b.WriteByte('\n')
+	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+ondat.Env()+"_", &ondat.Config{}))
 	totalTestCases++
 
 	b.WriteByte('\n')

@@ -37,6 +37,7 @@ import (
 	metrics_server "github.com/aws/aws-k8s-tester/k8s-tester/metrics-server"
 	nlb_guestbook "github.com/aws/aws-k8s-tester/k8s-tester/nlb-guestbook"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/k8s-tester/nlb-hello-world"
+	"github.com/aws/aws-k8s-tester/k8s-tester/ondat"
 	php_apache "github.com/aws/aws-k8s-tester/k8s-tester/php-apache"
 	"github.com/aws/aws-k8s-tester/k8s-tester/secrets"
 	"github.com/aws/aws-k8s-tester/k8s-tester/splunk"
@@ -150,6 +151,7 @@ type Config struct {
 	AddOnPHPApache           *php_apache.Config           `json:"add_on_php_apache"`
 	AddOnNLBGuestbook        *nlb_guestbook.Config        `json:"add_on_nlb_guestbook"`
 	AddOnNLBHelloWorld       *nlb_hello_world.Config      `json:"add_on_nlb_hello_world"`
+	AddOnOndat               *ondat.Config                `json:"add_on_ondat"`
 	AddOnWordpress           *wordpress.Config            `json:"add_on_wordpress"`
 	AddOnVault               *vault.Config                `json:"add_on_vault"`
 	AddOnJobsPi              *jobs_pi.Config              `json:"add_on_jobs_pi"`
@@ -234,6 +236,7 @@ func NewDefault() *Config {
 		AddOnPHPApache:           php_apache.NewDefault(),
 		AddOnNLBGuestbook:        nlb_guestbook.NewDefault(),
 		AddOnNLBHelloWorld:       nlb_hello_world.NewDefault(),
+		AddOnOndat:               ondat.NewDefault(),
 		AddOnWordpress:           wordpress.NewDefault(),
 		AddOnVault:               vault.NewDefault(),
 		AddOnJobsPi:              jobs_pi.NewDefault(),
@@ -340,6 +343,11 @@ func (cfg *Config) ValidateAndSetDefaults() error {
 	}
 	if cfg.AddOnNLBHelloWorld != nil && cfg.AddOnNLBHelloWorld.Enable {
 		if err := cfg.AddOnNLBHelloWorld.ValidateAndSetDefaults(); err != nil {
+			return err
+		}
+	}
+	if cfg.AddOnOndat != nil && cfg.AddOnOndat.Enable {
+		if err := cfg.AddOnOndat.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
 	}
@@ -962,6 +970,16 @@ func (cfg *Config) UpdateFromEnvs() (err error) {
 		cfg.AddOnSplunk = av
 	} else {
 		return fmt.Errorf("expected *splunk.Config, got %T", vv)
+	}
+
+	vv, err = parseEnvs(ENV_PREFIX+ondat.Env()+"_", cfg.AddOnOndat)
+	if err != nil {
+		return err
+	}
+	if av, ok := vv.(*ondat.Config); ok {
+		cfg.AddOnOndat = av
+	} else {
+		return fmt.Errorf("expected *ondat.Config, got %T", vv)
 	}
 
 	return err
