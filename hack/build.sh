@@ -39,7 +39,7 @@ for arch in ${ARCHS}; do
         GOARCH=${arch} \
         GOOS=${os} \
         go build \
-        -mod=vendor -v \
+        -mod=mod -v \
         -ldflags "-s -w \
         -X ${PACKAGE_NAME}/version.GitCommit=${GIT_COMMIT} \
         -X ${PACKAGE_NAME}/version.ReleaseVersion=${RELEASE_VERSION} \
