@@ -607,12 +607,12 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 							{
 								MatchExpressions: []v1.NodeSelectorRequirement{
 									{
-										Key:      "beta.kubernetes.io/os",
+										Key:      "kubernetes.io/os",
 										Operator: v1.NodeSelectorOpIn,
 										Values:   []string{"linux"},
 									},
 									{
-										Key:      "beta.kubernetes.io/arch",
+										Key:      "kubernetes.io/arch",
 										Operator: v1.NodeSelectorOpIn,
 										Values:   []string{"amd64"},
 									},
