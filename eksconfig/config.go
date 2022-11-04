@@ -93,6 +93,8 @@ type Config struct {
 	AWSIAMAuthenticatorPath string `json:"aws-iam-authenticator-path,omitempty"`
 	// AWSIAMAuthenticatorDownloadURL is the download URL to download "aws-iam-authenticator" binary from.
 	AWSIAMAuthenticatorDownloadURL string `json:"aws-iam-authenticator-download-url,omitempty"`
+	// AuthenticationAPIVersion is the API version used for authenticating the client.
+	AuthenticationAPIVersion string `json:"authentication-api-version,omitempty"`
 
 	// OnFailureDelete is true to delete all resources on creation fail.
 	OnFailureDelete bool `json:"on-failure-delete"`
@@ -566,9 +568,9 @@ func getDefaultVPC() *VPC {
 //
 // Example usage:
 //
-//  import "github.com/aws/aws-k8s-tester/eksconfig"
-//  cfg := eksconfig.Load("test.yaml")
-//  err := cfg.ValidateAndSetDefaults()
+//	import "github.com/aws/aws-k8s-tester/eksconfig"
+//	cfg := eksconfig.Load("test.yaml")
+//	err := cfg.ValidateAndSetDefaults()
 //
 // Do not set default values in this function.
 // "ValidateAndSetDefaults" must be called separately,
@@ -852,9 +854,9 @@ const (
 )
 
 // NewDefault returns a default configuration.
-//  - empty string creates a non-nil object for pointer-type field
-//  - omitting an entire field returns nil value
-//  - make sure to check both
+//   - empty string creates a non-nil object for pointer-type field
+//   - omitting an entire field returns nil value
+//   - make sure to check both
 func NewDefault() *Config {
 	name := fmt.Sprintf("eks-%s-%s", getTS()[:10], randutil.String(12))
 	if v := os.Getenv(AWS_K8S_TESTER_EKS_PREFIX + "NAME"); v != "" {

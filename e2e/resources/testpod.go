@@ -76,7 +76,7 @@ func NewTestpodResources(ns, serviceAccountName, nodeName string, replicas int32
 							},
 							ImagePullPolicy: corev1.PullAlways,
 							ReadinessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: "/healthz",
 										Port: intstr.FromInt(8080),

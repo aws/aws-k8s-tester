@@ -690,7 +690,7 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 					},
 
 					ReadinessProbe: &v1.Probe{
-						Handler: v1.Handler{
+						ProbeHandler: v1.ProbeHandler{
 							Exec: &v1.ExecAction{
 								Command: []string{
 									"/app/grpc-health-probe",
@@ -701,7 +701,7 @@ func (ts *tester) updateCNIDaemonSet() (err error) {
 						InitialDelaySeconds: 1,
 					},
 					LivenessProbe: &v1.Probe{
-						Handler: v1.Handler{
+						ProbeHandler: v1.ProbeHandler{
 							Exec: &v1.ExecAction{
 								Command: []string{
 									"/app/grpc-health-probe",
