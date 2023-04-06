@@ -3,7 +3,7 @@ module github.com/aws/aws-k8s-tester
 go 1.17
 
 require (
-	github.com/aws/aws-sdk-go v1.38.49
+	github.com/aws/aws-sdk-go v1.43.16
 	github.com/aws/aws-sdk-go-v2 v1.7.0
 	github.com/aws/aws-sdk-go-v2/config v1.0.0
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.1.0 // indirect
@@ -57,8 +57,11 @@ require (
 	k8s.io/klog v1.0.0
 	k8s.io/perf-tests/clusterloader2 v0.0.0-20220805114947-bdcf75fa01d0
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
+	sigs.k8s.io/kubetest2 v0.0.0-20220728001911-c76fb417aa01
 	sigs.k8s.io/yaml v1.3.0
 )
+
+require github.com/octago/sflags v0.2.0
 
 require (
 	cloud.google.com/go v0.99.0 // indirect
@@ -132,6 +135,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/juju/ansiterm v0.0.0-20180109212912-720a0952cc2a // indirect
+	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/klauspost/pgzip v1.2.1 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
