@@ -83,7 +83,10 @@ func bindFlags(d *deployer) *pflag.FlagSet {
 
 func newEKSTester() (*eks.Tester, error) {
 	cfg := eksconfig.NewDefault()
-	path := filepath.Join(os.TempDir(), cfg.Name+".yaml")
+	path := os.Getenv("AWS_K8S_TESTER_EKS_CONFIG_INPUT")
+	if path == "" {
+		path = filepath.Join(os.TempDir(), cfg.Name+".yaml")
+	}
 	cfg.ConfigPath = path
 
 	err := cfg.UpdateFromEnvs()

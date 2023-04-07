@@ -5,6 +5,12 @@ ACCOUNT_ID ?= $(shell aws sts get-caller-identity --query Account --output text)
 REGION ?= us-west-2
 ECR_HOST ?= amazonaws.com
 
+INSTALL?=cp
+# make install will place binaries here
+INSTALL_DIR?=$(GOPATH)/bin
+
+DEPLOYER_BIN=kubetest2-aws
+
 # build custom "busybox" image
 ORIGINAL_BUSYBOX_IMG ?= gcr.io/google-containers/busybox:latest
 ECR_BUSYBOX_IMG_NAME ?= busybox
@@ -33,7 +39,14 @@ k8s-tester-stress:
 	eval $$(aws ecr get-login --registry-ids $(ACCOUNT_ID) --no-include-email --region $(REGION))
 	docker push $(ACCOUNT_ID).dkr.ecr.$(REGION).$(ECR_HOST)/$(ECR_K8S_TESTER_STRESS_IMG_NAME):$(ECR_K8S_TESTER_STRESS_TAG);
 
+# build deployer for kubtest2
+deployer:
+	mkdir -p bin
+	go mod tidy -compat=1.17
+	go build -v -o bin/$(DEPLOYER_BIN) cmd/kubetest2-aws/main.go
 
+install: deployer
+	$(INSTALL) bin/$(DEPLOYER_BIN) $(INSTALL_DIR)/$(BINARY_NAME)
 
 
 
