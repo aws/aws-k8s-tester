@@ -903,7 +903,7 @@ func NewDefault() *Config {
 		VPC:        getDefaultVPC(),
 
 		SigningName: "eks",
-		Version:     "1.20",
+		Version:     "1.27",
 
 		RemoteAccessKeyCreate: true,
 		// keep in-sync with the default value in https://pkg.go.dev/k8s.io/kubernetes/test/e2e/framework#GetSigner

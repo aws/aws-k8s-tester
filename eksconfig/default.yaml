@@ -117,8 +117,8 @@ status:
   up: false
 tags: null
 total-nodes: 0
-version: "1.20"
-version-value: 1.2
+version: "1.27"
+version-value: 1.27
 vpc:
   cidrs:
   - 10.0.0.0/16
