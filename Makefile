@@ -73,14 +73,18 @@ install: deployer
 #
 #
 # old targets
+GO_VERSION ?= 1.17
+AL_VERSION ?= 2023
+K8S_VERSION ?= v1.27.3
+AKT_OS ?= linux
+AKT_ARCH ?= amd64
 AKT_IMG_NAME ?= aws/aws-k8s-tester
 AKT_TAG ?= latest
 AKT_AWS_ACCOUNT_ID ?= $(shell aws sts get-caller-identity --query Account --output text)
 AKT_AWS_REGION ?= us-west-2
-AKT_DISTRIBUTION = linux-amd64
 AKT_S3_BUCKET = s3://eks-prow
 AKT_S3_PREFIX ?= $(AKT_S3_BUCKET)/bin/aws-k8s-tester
-AKT_S3_PATH ?= $(AKT_S3_PREFIX)/aws-k8s-tester-$(AKT_TAG)-$(AKT_DISTRIBUTION)
+AKT_S3_PATH ?= $(AKT_S3_PREFIX)/aws-k8s-tester-$(AKT_TAG)-$(AKT_OS)-$(AKT_ARCH)
 AKT_ECR_HOST ?= amazonaws.com
 
 WHAT ?= aws-k8s-tester
@@ -100,12 +104,8 @@ publish: s3-release docker-release
 docker-publish: docker-build docker-push
 
 docker-build:
-	@if [ ! -f "./_tmp/clusterloader2" ]; then echo "downloading clusterloader2"; aws s3 cp --region us-west-2 s3://aws-k8s-tester-public/clusterloader2-linux-amd64 ./_tmp/clusterloader2; else echo "skipping downloading clusterloader2"; fi;
-	@if [ ! -d "${HOME}/go/src/k8s.io/perf-tests" ]; then echo "cloning perf-tests"; mkdir -p ${HOME}/go/src/k8s.io; pushd ${HOME}/go/src/k8s.io; git clone https://github.com/kubernetes/perf-tests.git; popd; else echo "skipping cloning perf-tests"; fi
-	@if [ ! -d "./_tmp/clusterloader2-testing-load" ]; then echo "copying clusterloader2/testing/load"; cp -rf ${HOME}/go/src/k8s.io/perf-tests/clusterloader2/testing/load ./_tmp/clusterloader2-testing-load; else echo "skipping copying clusterloader2/testing/load"; fi
-	docker build --network host -t $(AKT_IMG_NAME):$(AKT_TAG) --build-arg RELEASE_VERSION=$(AKT_TAG) .
+	docker build --network host -t $(AKT_IMG_NAME):$(AKT_TAG) --build-arg GOPROXY=$(GOPROXY) --build-arg GO_VERSION=$(GO_VERSION) --build-arg AL_VERSION=$(AL_VERSION) --build-arg K8S_VERSION=$(K8S_VERSION) --build-arg RELEASE_VERSION=$(AKT_TAG) --build-arg OS_TARGET=$(AKT_OS) --build-arg OS_ARCH=$(AKT_ARCH) .
 	docker tag $(AKT_IMG_NAME):$(AKT_TAG) $(AKT_AWS_ACCOUNT_ID).dkr.ecr.$(AKT_AWS_REGION).$(AKT_ECR_HOST)/$(AKT_IMG_NAME):$(AKT_TAG)
-	docker run --rm -it $(AKT_IMG_NAME):$(AKT_TAG) aws --version
 
 # release latest aws-k8s-tester to ECR
 docker-push:
