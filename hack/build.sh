@@ -35,6 +35,7 @@ for arch in ${ARCHS}; do
   for os in ${TARGETS}; do
     for bin in ${WHAT}; do
       echo "=== Building arch=${arch}, os=${os}, target=${bin} ==="
+      go mod tidy -compat=1.17
       CGO_ENABLED=0 \
         GOARCH=${arch} \
         GOOS=${os} \
@@ -58,6 +59,7 @@ for arch in ${ARCHS}; do
     for bin in ${WHAT}; do
       echo "=== Building arch=${arch}, os=${os}, target=${bin} ==="
       pwd
+      go mod tidy -compat=1.17
       CGO_ENABLED=0 \
         GOARCH=${arch} \
         GOOS=${os} \
@@ -76,4 +78,4 @@ popd
 
 echo ""
 echo "Success! Your shiny new binaries are ready."
-echo "find ./bin -type f"
+echo $(find ./bin -type f)
