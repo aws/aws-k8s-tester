@@ -2,9 +2,11 @@
 package gpu
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"html/template"
 	"io"
 	"reflect"
 	"strings"
@@ -17,7 +19,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/eks"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/exec"
 )
@@ -35,6 +36,7 @@ type Config struct {
 type Tester interface {
 	// Name returns the name of the tester.
 	Name() string
+	DeployMPIOperator() error
 	// InstallNvidiaDriver installs the Nvidia device plugin for Kubernetes.
 	// After GPU worker nodes join the cluster, one must apply the Nvidia
 	// device plugin for Kubernetes as a DaemonSet.
@@ -42,10 +44,12 @@ type Tester interface {
 	// ref. https://docs.aws.amazon.com/eks/latest/userguide/gpu-ami.html
 	// ref. https://github.com/NVIDIA/k8s-device-plugin
 	InstallNvidiaDriver() error
-	// CreateNvidiaSMI launches a pod manifest that launches a Cuda container that
-	// runs "nvidia-smi" on a GPU worker node.
-	// ref. https://docs.aws.amazon.com/eks/latest/userguide/gpu-ami.html
-	CreateNvidiaSMI() error
+	// Horovod
+	//# https://github.com/horovod/horovod
+	// A sample horovod MPIJob that trains some model using an Nvidia GPU
+	// MPI operator creates pods according to the MPIJob
+	// https://github.com/horovod/horovod/blob/master/examples/tensorflow2/tensorflow2_mnist.py
+	CreateMPIJob() error
 }
 
 var pkgName = reflect.TypeOf(tester{}).PkgPath()
@@ -62,29 +66,90 @@ type tester struct {
 	cfg Config
 }
 
-// https://github.com/NVIDIA/k8s-device-plugin/blob/master/nvidia-device-plugin.yml
-// https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta5/nvidia-device-plugin.yml
-// kubectl apply -f apply -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/1.0.0-beta5/nvidia-device-plugin.yml
-const nvidiaDriverTemplate = `
-# Copyright (c) 2019, NVIDIA CORPORATION.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+func (ts *tester) DeployMPIOperator() error {
+	ts.cfg.Logger.Info("starting tester.DeployMPIOperator", zap.String("tester", pkgName))
+	applyArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"apply",
+		"-f",
+		"https://raw.githubusercontent.com/kubeflow/mpi-operator/v0.4.0/deploy/v2beta1/mpi-operator.yaml",
+	}
+	applyCmd := strings.Join(applyArgs, " ")
 
+	applied := false
+	retryStart, waitDur := time.Now(), 5*time.Minute
+	for time.Since(retryStart) < waitDur {
+		select {
+		case <-ts.cfg.Stopc:
+			ts.cfg.Logger.Warn("deploy MPI operator stopped")
+			return nil
+		case <-time.After(5 * time.Second):
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		output, err := exec.New().CommandContext(ctx, applyArgs[0], applyArgs[1:]...).CombinedOutput()
+		cancel()
+		out := strings.TrimSpace(string(output))
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", applyCmd, out)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to deploy MPI operator", zap.Error(err))
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		applied = true
+		ts.cfg.Logger.Info("deployed MPI operator")
+		break
+	}
+	if !applied {
+		return errors.New("failed to deploy MPI operator")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	k8s_client.WaitForDeploymentCompletes(
+		ctx,
+		ts.cfg.Logger,
+		ts.cfg.LogWriter,
+		ts.cfg.Stopc,
+		ts.cfg.K8SClient,
+		time.Minute,
+		20*time.Second,
+		"mpi-operator",
+		"mpi-operator",
+		1,
+		k8s_client.WithQueryFunc(func() {
+			descArgs := []string{
+				ts.cfg.EKSConfig.KubectlPath,
+				"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+				"--namespace=mpi-operator",
+				"describe",
+				"deployment",
+				"mpi-operator",
+			}
+			descCmd := strings.Join(descArgs, " ")
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			output, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
+			cancel()
+			if err != nil {
+				ts.cfg.Logger.Warn("'kubectl describe deployment' failed", zap.Error(err))
+			}
+			out := string(output)
+			fmt.Fprintf(ts.cfg.LogWriter, "\n\n\"%s\" output:\n%s\n\n", descCmd, out)
+		}),
+	)
+	cancel()
+	return ts.cfg.EKSConfig.Sync()
+}
+
+// https://github.com/NVIDIA/k8s-device-plugin/blob/main/nvidia-device-plugin.yml
+const nvidiaDriverTemplate = `
+# nvidia device plugin needed to allow test nodes to request a GPU resource
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: nvidia-device-plugin-daemonset
-  namespace: kube-system
+  namespace: mpi-operator
 spec:
   selector:
     matchLabels:
@@ -93,29 +158,26 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      # This annotation is deprecated. Kept here for backward compatibility
-      # See https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
+      # Mark this pod as a critical add-on; when enabled, the critical add-on scheduler
+      # reserves resources for critical add-on pods so that they can be rescheduled after
+      # a failure.  This annotation works in tandem with the toleration below.
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ""
       labels:
         name: nvidia-device-plugin-ds
     spec:
       tolerations:
-      # This toleration is deprecated. Kept here for backward compatibility
-      # See https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
+      # Allow this pod to be rescheduled while the node is in "critical add-ons only" mode.
+      # This, along with the annotation above marks this pod as a critical add-on.
       - key: CriticalAddonsOnly
         operator: Exists
       - key: nvidia.com/gpu
         operator: Exists
         effect: NoSchedule
-      # Mark this pod as a critical add-on; when enabled, the critical add-on
-      # scheduler reserves resources for critical add-on pods so that they can
-      # be rescheduled after a failure.
-      # See https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
-      priorityClassName: "system-node-critical"
       containers:
-      - image: nvidia/k8s-device-plugin:1.0.0-beta5
+      - image: nvcr.io/nvidia/k8s-device-plugin:v0.14.1
         name: nvidia-device-plugin-ctr
+        args: ["--fail-on-init-error=false"]
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -150,6 +212,7 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 	applyArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=mpi-operator",
 		"apply",
 		"-f",
 		fpath,
@@ -356,159 +419,149 @@ func (ts *tester) InstallNvidiaDriver() (err error) {
 	return nil
 }
 
-/*
-https://docs.aws.amazon.com/eks/latest/userguide/gpu-ami.html
-takes about 1-min to finish
+const mpiJobTemplate = `
+apiVersion: kubeflow.org/v2beta1
+kind: MPIJob
+metadata:
+  name: gpu-test
+  namespace: mpi-operator
+spec:
+  slotsPerWorker: 4
+  runPolicy:
+    cleanPodPolicy: Running
+  mpiImplementation: OpenMPI
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+         spec:
+           restartPolicy: OnFailure
+           containers:
+           - image: {{ .Account }}.dkr.ecr.{{ .Region }}.amazonaws.com/pytorch-training:1.9.1-gpu-py38-cu111-ubuntu20.04-v1.7
+             name: gpu-test
+             command:
+              - mpirun
+              - --allow-run-as-root
+              - -np
+              - "1"
+              - -mca
+              - btl_tcp_if_exclude
+              - lo
+              - -mca
+              - pml
+              - ob1
+              - -mca
+              - btl
+              - ^openib
+              - --bind-to
+              - none
+              - -map-by
+              - slot
+              - -x
+              - LD_LIBRARY_PATH
+              - -x
+              - PATH
+              - -x
+              - NCCL_SOCKET_IFNAME=eth0
+              - -x
+              - NCCL_DEBUG=INFO
+              - -x
+              - MXNET_CUDNN_AUTOTUNE_DEFAULT=0
+              - python
+              - -c
+              - import os; os.system("git clone https://github.com/pytorch/examples.git /pytorch-examples"); os.system("git -C pytorch-examples checkout 0f0c9131ca5c79d1332dce1f4c06fe942fbdc665"); os.system("python /pytorch-examples/mnist/main.py --epochs 3")
+             resources:
+               limits:
+                 nvidia.com/gpu: 1
+`
 
-kubectl apply -f nvidia-smi.yaml
-kubectl logs nvidia-smi
-
-+-----------------------------------------------------------------------------+
-| NVIDIA-SMI 418.87.00    Driver Version: 418.87.00    CUDA Version: 10.1     |
-|-------------------------------+----------------------+----------------------+
-| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
-|===============================+======================+======================|
-|   0  Tesla V100-SXM2...  On   | 00000000:00:1D.0 Off |                    0 |
-| N/A   43C    P0    41W / 300W |      0MiB / 16130MiB |      1%      Default |
-+-------------------------------+----------------------+----------------------+
-
-+-----------------------------------------------------------------------------+
-| Processes:                                                       GPU Memory |
-|  GPU       PID   Type   Process name                             Usage      |
-|=============================================================================|
-|  No running processes found                                                 |
-+-----------------------------------------------------------------------------+
-*/
-func (ts *tester) CreateNvidiaSMI() error {
-	ts.cfg.Logger.Info("starting tester.CreateNvidiaSMI", zap.String("tester", pkgName))
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	_, err := ts.cfg.K8SClient.
-		KubernetesClientSet().
-		CoreV1().
-		Pods("default").
-		Create(
-			ctx,
-			&v1.Pod{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "v1",
-					Kind:       "Pod",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "nvidia-smi",
-				},
-				Spec: v1.PodSpec{
-					RestartPolicy: v1.RestartPolicyOnFailure,
-					Containers: []v1.Container{
-						{
-							Name:  "nvidia-smi",
-							Image: "nvidia/cuda:9.2-devel",
-							Args:  []string{"nvidia-smi"},
-							Resources: v1.ResourceRequirements{
-								Limits: map[v1.ResourceName]resource.Quantity{
-									v1.ResourceName("nvidia.com/gpu"): resource.MustParse("1"),
-								},
-							},
-						},
-					},
-
-					// DO NOT SET node selector, it fails with
-					// "Warning  FailedScheduling  20s (x2 over 91s)  default-scheduler  0/5 nodes are available: 3 node(s) didn't match node selector, 5 Insufficient nvidia.com/gpu."
-					// NodeSelector: map[string]string{
-					// 	"AMIType": ec2config.AMITypeAL2X8664GPU,
-					// },
-				},
-			},
-			metav1.CreateOptions{},
-		)
-	cancel()
+func (ts *tester) CreateMPIJob() error {
+	ts.cfg.Logger.Info("starting tester.CreateMPIJob", zap.String("tester", pkgName))
+	tpl := template.Must(template.New("tmplMPIJobTemplate").Parse(mpiJobTemplate))
+	buf := bytes.NewBuffer(nil)
+	if err := tpl.Execute(buf, struct {
+		Account string
+		Region  string
+	}{
+		Account: ts.cfg.EKSConfig.Status.AWSAccountID,
+		Region:  ts.cfg.EKSConfig.Region,
+	}); err != nil {
+		return err
+	}
+	fpath, err := fileutil.WriteTempFile(buf.Bytes())
 	if err != nil {
 		return err
 	}
-
-	ts.cfg.Logger.Info("checking nvidia-smi")
-	select {
-	case <-ts.cfg.Stopc:
-		return errors.New("nvidia-smi install aborted")
-	case <-time.After(time.Minute):
-	}
-
-	descDsArgs := []string{
+	applyArgs := []string{
 		ts.cfg.EKSConfig.KubectlPath,
 		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=kube-system",
-		"describe",
-		"daemonset.apps/nvidia-device-plugin-daemonset",
+		"apply",
+		"-f",
+		fpath,
 	}
-	descDsCmd := strings.Join(descDsArgs, " ")
+	applyCmd := strings.Join(applyArgs, " ")
 
-	descPoArgs := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=default",
-		"describe",
-		"pod/nvidia-smi",
-	}
-	descPoCmd := strings.Join(descPoArgs, " ")
-
-	logsArgs := []string{
-		ts.cfg.EKSConfig.KubectlPath,
-		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
-		"--namespace=default",
-		"logs",
-		"nvidia-smi",
-		"--timestamps",
-	}
-	logsCmd := strings.Join(logsArgs, " ")
-
-	installed := false
-	retryStart, waitDur := time.Now(), 3*time.Minute
+	applied := false
+	retryStart, waitDur := time.Now(), 10*time.Minute
 	for time.Since(retryStart) < waitDur {
 		select {
 		case <-ts.cfg.Stopc:
-			return errors.New("nvidia-smi check aborted")
+			ts.cfg.Logger.Warn("create MPI job stopped")
+			return nil
 		case <-time.After(5 * time.Second):
 		}
-		ts.cfg.Logger.Info("querying nvidia-smi")
 
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		out, err := exec.New().CommandContext(ctx, descDsArgs[0], descDsArgs[1:]...).CombinedOutput()
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		output, err := exec.New().CommandContext(ctx, applyArgs[0], applyArgs[1:]...).CombinedOutput()
+		cancel()
+		out := strings.TrimSpace(string(output))
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", applyCmd, out)
+		if err != nil {
+			ts.cfg.Logger.Warn("failed to create MPI job", zap.Error(err))
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		applied = true
+		ts.cfg.Logger.Info("created MPI job")
+		break
+	}
+	if !applied {
+		return errors.New("failed to create MPI job")
+	}
+
+	ts.cfg.Logger.Info("checking MPI job")
+
+	descArgs := []string{
+		ts.cfg.EKSConfig.KubectlPath,
+		"--kubeconfig=" + ts.cfg.EKSConfig.KubeConfigPath,
+		"--namespace=mpi-operator",
+		"describe",
+		"mpijob/gpu-test",
+	}
+	descCmd := strings.Join(descArgs, " ")
+
+	installed := false
+	for time.Since(retryStart) < waitDur {
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		out, err := exec.New().CommandContext(ctx, descArgs[0], descArgs[1:]...).CombinedOutput()
 		cancel()
 		output := strings.TrimSpace(string(out))
 		if err != nil {
-			ts.cfg.Logger.Warn("failed to kubectl describe daemonset.apps/nvidia-device-plugin-daemonset", zap.Error(err))
+			ts.cfg.Logger.Warn("failed to kubectl describe mpijob/gpu-test", zap.Error(err))
 		}
-		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descDsCmd, output)
+		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descCmd, output)
 
-		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-		out, err = exec.New().CommandContext(ctx, descPoArgs[0], descPoArgs[1:]...).CombinedOutput()
-		cancel()
-		output = strings.TrimSpace(string(out))
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to kubectl describe pod/nvidia-smi", zap.Error(err))
-		}
-		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", descPoCmd, output)
-
-		ctx, cancel = context.WithTimeout(context.Background(), 15*time.Second)
-		out, err = exec.New().CommandContext(ctx, logsArgs[0], logsArgs[1:]...).CombinedOutput()
-		cancel()
-		output = strings.TrimSpace(string(out))
-		if err != nil {
-			ts.cfg.Logger.Warn("failed to kubectl logs", zap.Error(err))
-		}
-		fmt.Fprintf(ts.cfg.LogWriter, "\n\n'%s' output:\n\n%s\n\n", logsCmd, output)
-
-		if strings.Contains(output, "NVIDIA-SMI") && strings.Contains(output, "GPU-Util") {
+		if strings.Contains(output, "MPIJobSucceeded") {
 			installed = true
 			break
 		}
 	}
 
 	if installed {
-		ts.cfg.Logger.Info("checked nvidia-smi")
-		ts.cfg.EKSConfig.Sync()
-		return nil
+		ts.cfg.Logger.Info("checked MPI job")
+		return ts.cfg.EKSConfig.Sync()
 	}
-	ts.cfg.Logger.Warn("failed to test nvidia-smi")
-	return errors.New("nvidia-smi failed")
+	ts.cfg.Logger.Warn("failed to test MPI job")
+	return errors.New("MPI job failed")
 }
