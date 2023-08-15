@@ -1376,6 +1376,20 @@ func (ts *Tester) Up() (err error) {
 	}
 	if needGPU {
 		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]gpuTester.DeployMPIOperator [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.gpuTester.DeployMPIOperator,
+			ts.gpuTester.Name(),
+		); err != nil {
+			ts.lg.Warn("failed to deploy MPI", zap.Error(err))
+			return err
+		}
+
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
 		fmt.Fprintf(ts.logWriter, ts.color("[light_green]gpuTester.InstallNvidiaDriver [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
@@ -1390,16 +1404,16 @@ func (ts *Tester) Up() (err error) {
 		}
 
 		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
-		fmt.Fprintf(ts.logWriter, ts.color("[light_green]gpuTester.CreateNvidiaSMI [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]gpuTester.CreateMPIJob [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
 		if err := catchInterrupt(
 			ts.lg,
 			ts.stopCreationCh,
 			ts.stopCreationChOnce,
 			ts.osSig,
-			ts.gpuTester.CreateNvidiaSMI,
+			ts.gpuTester.CreateMPIJob,
 			ts.gpuTester.Name(),
 		); err != nil {
-			ts.lg.Warn("failed to create nvidia-smi", zap.Error(err))
+			ts.lg.Warn("failed to create MPI job", zap.Error(err))
 			return err
 		}
 	}
