@@ -54,6 +54,7 @@ import (
 	kubernetes_dashboard "github.com/aws/aws-k8s-tester/eks/kubernetes-dashboard"
 	metrics_server "github.com/aws/aws-k8s-tester/eks/metrics-server"
 	"github.com/aws/aws-k8s-tester/eks/mng"
+	"github.com/aws/aws-k8s-tester/eks/neuron"
 	"github.com/aws/aws-k8s-tester/eks/ng"
 	nlb_guestbook "github.com/aws/aws-k8s-tester/eks/nlb-guestbook"
 	nlb_hello_world "github.com/aws/aws-k8s-tester/eks/nlb-hello-world"
@@ -194,9 +195,10 @@ type Tester struct {
 	// only create/install, no need delete
 	cniTester eks_tester.Tester
 
-	ngTester  ng.Tester
-	mngTester mng.Tester
-	gpuTester gpu.Tester
+	ngTester     ng.Tester
+	mngTester    mng.Tester
+	gpuTester    gpu.Tester
+	neuronTester neuron.Tester
 
 	// TODO, Shift to "Addon" api for ordered installation
 	testers []eks_tester.Tester
@@ -732,6 +734,13 @@ func (ts *Tester) createTesters() (err error) {
 		CFNAPI: ts.cfnAPI,
 	})
 	ts.gpuTester = gpu.New(gpu.Config{
+		Logger:    ts.lg,
+		LogWriter: ts.logWriter,
+		Stopc:     ts.stopCreationCh,
+		EKSConfig: ts.cfg,
+		K8SClient: ts.k8sClient,
+	})
+	ts.neuronTester = neuron.New(neuron.Config{
 		Logger:    ts.lg,
 		LogWriter: ts.logWriter,
 		Stopc:     ts.stopCreationCh,
@@ -1414,6 +1423,48 @@ func (ts *Tester) Up() (err error) {
 			ts.gpuTester.Name(),
 		); err != nil {
 			ts.lg.Warn("failed to create MPI job", zap.Error(err))
+			return err
+		}
+
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]neuronTester.InstallNeuronDriver [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.neuronTester.InstallNeuronDriver,
+			ts.neuronTester.Name(),
+		); err != nil {
+			ts.lg.Warn("failed to install neuron driver", zap.Error(err))
+			return err
+		}
+
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]neuronTester.InstallBertService [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.neuronTester.InstallBertService,
+			ts.neuronTester.Name(),
+		); err != nil {
+			ts.lg.Warn("failed to install bert service", zap.Error(err))
+			return err
+		}
+
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]neuronTester.CreateBertJob [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.neuronTester.CreateBertJob,
+			ts.neuronTester.Name(),
+		); err != nil {
+			ts.lg.Warn("failed to create bert job", zap.Error(err))
 			return err
 		}
 	}
