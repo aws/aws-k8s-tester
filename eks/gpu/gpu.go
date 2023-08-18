@@ -107,7 +107,7 @@ func (ts *tester) DeployMPIOperator() error {
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	k8s_client.WaitForDeploymentCompletes(
+	_, err := k8s_client.WaitForDeploymentCompletes(
 		ctx,
 		ts.cfg.Logger,
 		ts.cfg.LogWriter,
@@ -139,6 +139,9 @@ func (ts *tester) DeployMPIOperator() error {
 		}),
 	)
 	cancel()
+  if err != nil {
+    return errors.New("failed to deploy MPI operator")
+  }
 	return ts.cfg.EKSConfig.Sync()
 }
 
