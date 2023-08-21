@@ -67,6 +67,7 @@ import (
 	stresser_remote "github.com/aws/aws-k8s-tester/eks/stresser/remote"
 	stresser_remote_v2 "github.com/aws/aws-k8s-tester/eks/stresser2"
 	eks_tester "github.com/aws/aws-k8s-tester/eks/tester"
+	"github.com/aws/aws-k8s-tester/eks/trainium"
 	"github.com/aws/aws-k8s-tester/eks/wordpress"
 	"github.com/aws/aws-k8s-tester/eksconfig"
 	pkg_aws "github.com/aws/aws-k8s-tester/pkg/aws"
@@ -195,10 +196,11 @@ type Tester struct {
 	// only create/install, no need delete
 	cniTester eks_tester.Tester
 
-	ngTester     ng.Tester
-	mngTester    mng.Tester
-	gpuTester    gpu.Tester
-	neuronTester neuron.Tester
+	ngTester       ng.Tester
+	mngTester      mng.Tester
+	gpuTester      gpu.Tester
+	neuronTester   neuron.Tester
+	trainiumTester trainium.Tester
 
 	// TODO, Shift to "Addon" api for ordered installation
 	testers []eks_tester.Tester
@@ -741,6 +743,13 @@ func (ts *Tester) createTesters() (err error) {
 		K8SClient: ts.k8sClient,
 	})
 	ts.neuronTester = neuron.New(neuron.Config{
+		Logger:    ts.lg,
+		LogWriter: ts.logWriter,
+		Stopc:     ts.stopCreationCh,
+		EKSConfig: ts.cfg,
+		K8SClient: ts.k8sClient,
+	})
+	ts.trainiumTester = trainium.New(trainium.Config{
 		Logger:    ts.lg,
 		LogWriter: ts.logWriter,
 		Stopc:     ts.stopCreationCh,
@@ -1465,6 +1474,34 @@ func (ts *Tester) Up() (err error) {
 			ts.neuronTester.Name(),
 		); err != nil {
 			ts.lg.Warn("failed to create bert job", zap.Error(err))
+			return err
+		}
+
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]trainiumTester.InstallNeuronDriver [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.trainiumTester.InstallNeuronDriver,
+			ts.trainiumTester.Name(),
+		); err != nil {
+			ts.lg.Warn("failed to install neuron driver", zap.Error(err))
+			return err
+		}
+
+		fmt.Fprint(ts.logWriter, ts.color("\n\n[yellow]*********************************\n"))
+		fmt.Fprintf(ts.logWriter, ts.color("[light_green]trainiumTester.CreateTrainiumJob [default](%q, %q)\n"), ts.cfg.ConfigPath, ts.cfg.KubectlCommand())
+		if err := catchInterrupt(
+			ts.lg,
+			ts.stopCreationCh,
+			ts.stopCreationChOnce,
+			ts.osSig,
+			ts.trainiumTester.CreateTrainiumJob,
+			ts.trainiumTester.Name(),
+		); err != nil {
+			ts.lg.Warn("failed to create trainium job", zap.Error(err))
 			return err
 		}
 	}
