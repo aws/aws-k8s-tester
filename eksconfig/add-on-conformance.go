@@ -89,8 +89,8 @@ func (cfg *Config) IsEnabledAddOnConformance() bool {
 func getDefaultAddOnConformance() *AddOnConformance {
 	addOn := &AddOnConformance{
 		Enable:                false,
-		SonobuoyPath:          "/tmp/sonobuoy-v0.19.0",
-		SonobuoyDownloadURL:   "https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.19.0/sonobuoy_0.19.0_linux_amd64.tar.gz",
+		SonobuoyPath:          "/tmp/sonobuoy",
+		SonobuoyDownloadURL:   "https://github.com/vmware-tanzu/sonobuoy/releases/download/v0.56.16/sonobuoy_0.56.16_linux_amd64.tar.gz",
 		SonobuoyImage:         "",
 		SystemdLogsImage:      "",
 		SonobuoyE2eRepoConfig: "",
