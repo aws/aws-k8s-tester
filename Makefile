@@ -76,6 +76,7 @@ install: deployer
 GO_VERSION ?= 1.17
 AL_VERSION ?= 2023
 K8S_VERSION ?= v1.27.3
+SONOBUOY_VERSION ?= v0.56.16
 AKT_OS ?= linux
 AKT_ARCH ?= amd64
 AKT_IMG_NAME ?= aws/aws-k8s-tester
@@ -104,7 +105,7 @@ publish: s3-release docker-release
 docker-publish: docker-build docker-push
 
 docker-build:
-	docker build --network host -t $(AKT_IMG_NAME):$(AKT_TAG) --build-arg GOPROXY=$(GOPROXY) --build-arg GO_VERSION=$(GO_VERSION) --build-arg AL_VERSION=$(AL_VERSION) --build-arg K8S_VERSION=$(K8S_VERSION) --build-arg RELEASE_VERSION=$(AKT_TAG) --build-arg OS_TARGET=$(AKT_OS) --build-arg OS_ARCH=$(AKT_ARCH) .
+	docker build --network host -t $(AKT_IMG_NAME):$(AKT_TAG) --build-arg GOPROXY=$(GOPROXY) --build-arg GO_VERSION=$(GO_VERSION) --build-arg AL_VERSION=$(AL_VERSION) --build-arg K8S_VERSION=$(K8S_VERSION) --build-arg SONOBUOY_VERSION=$(SONOBUOY_VERSION) --build-arg RELEASE_VERSION=$(AKT_TAG) --build-arg OS_TARGET=$(AKT_OS) --build-arg OS_ARCH=$(AKT_ARCH) .
 	docker tag $(AKT_IMG_NAME):$(AKT_TAG) $(AKT_AWS_ACCOUNT_ID).dkr.ecr.$(AKT_AWS_REGION).$(AKT_ECR_HOST)/$(AKT_IMG_NAME):$(AKT_TAG)
 
 # release latest aws-k8s-tester to ECR

@@ -18,6 +18,14 @@ RUN git clone https://github.com/kubernetes/perf-tests.git /perf-tests
 WORKDIR /perf-tests/clusterloader2
 RUN GOPROXY=${GOPROXY} GOOS=${OS_TARGET} GOARCH=${OS_ARCH} go mod tidy && go build -o ./clusterloader2 ./cmd
 
+FROM amazonlinux:${AL_VERSION} AS sonobuoy-builder
+ARG SONOBUOY_VERSION
+ARG OS_TARGET
+ARG OS_ARCH
+RUN yum update -y && yum install -y tar gzip
+RUN curl -o /sonobuoy.tar.gz -LO https://github.com/vmware-tanzu/sonobuoy/releases/download/${SONOBUOY_VERSION}/sonobuoy_${SONOBUOY_VERSION:1}_${OS_TARGET}_${OS_ARCH}.tar.gz
+RUN tar zxvf /sonobuoy.tar.gz
+
 FROM amazonlinux:${AL_VERSION}
 ARG K8S_VERSION
 ARG RELEASE_VERSION
@@ -47,6 +55,7 @@ RUN rm -rf /go/src/github.com/aws/aws-k8s-tester
 RUN chmod +x /aws-k8s-tester /cw-utils /ec2-utils /eks-utils /etcd-utils /s3-utils /sts-utils /clusterloader2
 WORKDIR /
 
+COPY --from=sonobuoy-builder /sonobuoy /tmp/sonobuoy
 RUN curl -o /kubectl -LO https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/${OS_TARGET}/${OS_ARCH}/kubectl && chmod +x /kubectl && cp /kubectl /usr/local/bin/kubectl
 RUN ls /
 RUN ls /*.yaml
