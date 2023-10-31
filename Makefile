@@ -73,7 +73,7 @@ install: deployer
 #
 #
 # old targets
-GO_VERSION ?= 1.17
+GO_VERSION ?= 1.20
 AL_VERSION ?= 2023
 K8S_VERSION ?= v1.27.3
 SONOBUOY_VERSION ?= v0.56.16
