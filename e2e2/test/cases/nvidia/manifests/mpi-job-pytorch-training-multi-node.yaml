@@ -1,0 +1,110 @@
+apiVersion: kubeflow.org/v2beta1
+kind: MPIJob
+metadata:
+  name: pytorch-training-multi-node
+spec:
+  slotsPerWorker: 8
+  runPolicy:
+    cleanPodPolicy: Running
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+         spec:
+          restartPolicy: OnFailure
+          initContainers:
+          - image: public.ecr.aws/w6p6i9i7/aws-efa-nccl-rdma:22.03-pt-py3
+            name: init
+            command: ["sh", "-c", "sleep 5"]
+          containers:
+          - image: public.ecr.aws/w6p6i9i7/aws-efa-nccl-rdma:22.03-pt-py3
+            imagePullPolicy: Always
+            name: nccl-test-launcher
+            env:
+             - name: LD_LIBRARY_PATH
+               value: /opt/amazon/openmpi/lib:/opt/nccl/build/lib:/opt/amazon/efa/lib:/opt/aws-ofi-nccl/install/lib:/usr/local/nvidia/lib:$LD_LIBRARY_PATH
+             - name: PATH
+               value: $PATH:/opt/amazon/efa/bin:/usr/sbin:/usr/bin:/usr/local/bin
+             - name: XLA_FLAGS
+               value: "--xla_gpu_cuda_data_dir=/usr/local/cuda"
+             - name: TF_XLA_FLAGS
+               value: "--tf_xla_cpu_global_jit"
+            command:
+            - /opt/amazon/openmpi/bin/mpirun
+            - --allow-run-as-root
+            - --tag-output
+            - -np
+            - "16"
+            - -bind-to
+            - none
+            - -map-by
+            - slot
+            - -x
+            - PATH
+            - -x
+            - LD_LIBRARY_PATH
+            - -x
+            - XLA_FLAGS
+            - -x
+            - TF_XLA_FLAGS
+            - -x
+            - NCCL_DEBUG=INFO
+            - -x
+            - NCCL_ALGO=RING
+            - -x
+            - RDMAV_FORK_SAFE=1
+            - -x
+            - NCCL_PROTO=simple
+            - -x 
+            - FI_LOG_LEVEL=warn
+            - -x
+            - FI_EFA_USE_DEVICE_RDMA=1
+            - -x
+            - NCCL_PROTO=simple
+            - --mca
+            - pml
+            - ^cm
+            - --oversubscribe
+            - /opt/nccl-tests/build/all_reduce_perf
+            - -b
+            - "8"
+            - -e
+            - 2G
+            - -f
+            - "2"
+            - -t
+            - "1"
+            - -g
+            - "1"
+            - -c
+            - "1"
+            - -n
+            - "100"
+    Worker:
+      replicas: 2
+      template:
+        spec:
+          volumes:
+          - name: dshm
+            emptyDir:
+              medium: Memory
+          nodeSelector:
+            beta.kubernetes.io/instance-type: p4d.24xlarge
+          containers:
+          - image: public.ecr.aws/w6p6i9i7/aws-efa-nccl-rdma:22.03-pt-py3
+            imagePullPolicy: Always
+            name: nccl-worker
+            volumeMounts:
+            - mountPath: /dev/shm
+              name: dshm
+            resources:
+              limits:
+                nvidia.com/gpu: 8
+                hugepages-2Mi: 5120Mi
+                vpc.amazonaws.com/efa: 4
+                memory: 8000Mi
+              requests:
+                nvidia.com/gpu: 8
+                hugepages-2Mi: 5120Mi
+                vpc.amazonaws.com/efa: 4
+                memory: 8000Mi
