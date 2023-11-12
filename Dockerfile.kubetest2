@@ -2,10 +2,14 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:2
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /workdir
-RUN yum install -y git tar gzip make unzip gcc rsync wget jq aws-cli && amazon-linux-extras install python3.8
+RUN yum install -y git tar gzip make unzip gcc rsync wget jq && amazon-linux-extras install python3.8
 
 RUN mkdir /info
 ENV PATH=$PATH:/info
+
+RUN wget -O awscli.zip https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && \
+    unzip awscli.zip && \
+    ./aws/install
 
 ARG GO_MINOR_VERSION="1.21"
 RUN curl https://go.dev/dl/?mode=json | jq -r .[].version | grep "^go${GO_MINOR_VERSION}" | head -n1 > go-version.txt
@@ -52,5 +56,8 @@ RUN ls -la
 RUN go install ./kubetest2-eksctl
 
 RUN rm -rf /workdir
+
+WORKDIR $GOPATH/src/github.com/aws/aws-k8s-tester
+COPY . .
 
 ENTRYPOINT ["kubetest2"]
