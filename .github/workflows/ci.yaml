@@ -11,3 +11,13 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - run: make build
+  build-kubetest2:
+    runs-on: ubuntu-latest
+    strategy:
+      # don't bail out of all sub-tasks if one fails
+      fail-fast: false
+      matrix:
+        k8s_version: ["1.23", "1.24", "1.25", "1.26", "1.27", "1.28"]
+    steps:
+    - uses: actions/checkout@v3
+    - run: docker build --build-arg=KUBERNETES_MINOR_VERSION=${{ matrix.k8s_version }} --file Dockerfile.kubetest2 .
