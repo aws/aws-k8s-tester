@@ -1,6 +1,7 @@
 go 1.21
 
 use (
+	.
 	./e2e2
 	./kubetest2
 )
