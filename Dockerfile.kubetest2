@@ -59,5 +59,6 @@ RUN rm -rf /workdir
 
 WORKDIR $GOPATH/src/github.com/aws/aws-k8s-tester
 COPY . .
+RUN go mod download
 
 ENTRYPOINT ["kubetest2"]
