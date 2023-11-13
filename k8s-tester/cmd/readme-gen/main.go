@@ -24,7 +24,6 @@ import (
 	"github.com/aws/aws-k8s-tester/k8s-tester/csrs"
 	"github.com/aws/aws-k8s-tester/k8s-tester/epsagon"
 	"github.com/aws/aws-k8s-tester/k8s-tester/falco"
-	"github.com/aws/aws-k8s-tester/k8s-tester/falcon"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
@@ -117,10 +116,6 @@ func createDoc() string {
 
 	b.WriteByte('\n')
 	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+falco.Env()+"_", &falco.Config{}))
-	totalTestCases++
-
-	b.WriteByte('\n')
-	b.WriteString(es.writeDoc(k8s_tester.ENV_PREFIX+falcon.Env()+"_", &falcon.Config{}))
 	totalTestCases++
 
 	b.WriteByte('\n')

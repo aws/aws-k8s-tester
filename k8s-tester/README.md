@@ -175,14 +175,6 @@ Total 30 test cases!
 | K8S_TESTER_ADD_ON_FALCO_NAMESPACE           | SETTABLE VIA ENV VAR | *falco.Config.Namespace        | string  |
 *---------------------------------------------*----------------------*--------------------------------*---------*
 
-*-----------------------------------------------*----------------------*-----------------------------------*---------*
-|            ENVIRONMENTAL VARIABLE             |      FIELD TYPE      |               TYPE                | GO TYPE |
-*-----------------------------------------------*----------------------*-----------------------------------*---------*
-| K8S_TESTER_ADD_ON_FALCON_ENABLE               | SETTABLE VIA ENV VAR | *falcon.Config.Enable             | bool    |
-| K8S_TESTER_ADD_ON_FALCON_FALCON_CLIENT_ID     | SETTABLE VIA ENV VAR | *falcon.Config.FalconClientId     | string  |
-| K8S_TESTER_ADD_ON_FALCON_FALCON_CLIENT_SECRET | SETTABLE VIA ENV VAR | *falcon.Config.FalconClientSecret | string  |
-*-----------------------------------------------*----------------------*-----------------------------------*---------*
-
 *-------------------------------------------------------*----------------------*-------------------------------------------*-------------------*
 |                ENVIRONMENTAL VARIABLE                 |      FIELD TYPE      |                   TYPE                    |      GO TYPE      |
 *-------------------------------------------------------*----------------------*-------------------------------------------*-------------------*

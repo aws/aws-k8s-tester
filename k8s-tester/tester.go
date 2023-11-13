@@ -24,7 +24,6 @@ import (
 	csi_ebs "github.com/aws/aws-k8s-tester/k8s-tester/csi-ebs"
 	"github.com/aws/aws-k8s-tester/k8s-tester/csrs"
 	falco "github.com/aws/aws-k8s-tester/k8s-tester/falco"
-	"github.com/aws/aws-k8s-tester/k8s-tester/falcon"
 	fluent_bit "github.com/aws/aws-k8s-tester/k8s-tester/fluent-bit"
 	jobs_echo "github.com/aws/aws-k8s-tester/k8s-tester/jobs-echo"
 	jobs_pi "github.com/aws/aws-k8s-tester/k8s-tester/jobs-pi"
@@ -265,13 +264,6 @@ func (ts *tester) createTesters() {
 		ts.cfg.AddOnFalco.LogWriter = ts.logWriter
 		ts.cfg.AddOnFalco.Client = ts.cli
 		ts.testers = append(ts.testers, falco.New(ts.cfg.AddOnFalco))
-	}
-	if ts.cfg.AddOnFalcon != nil && ts.cfg.AddOnFalcon.Enable {
-		ts.cfg.AddOnFalcon.Stopc = ts.stopCreationCh
-		ts.cfg.AddOnFalcon.Logger = ts.logger
-		ts.cfg.AddOnFalcon.LogWriter = ts.logWriter
-		ts.cfg.AddOnFalcon.Client = ts.cli
-		ts.testers = append(ts.testers, falcon.New(ts.cfg.AddOnFalcon))
 	}
 }
 
