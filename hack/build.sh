@@ -38,8 +38,9 @@ for arch in ${ARCHS}; do
       CGO_ENABLED=0 \
         GOARCH=${arch} \
         GOOS=${os} \
+        GOWORK=off \
         go build \
-        -mod=mod -v \
+        -v \
         -ldflags "-s -w \
         -X ${PACKAGE_NAME}/version.GitCommit=${GIT_COMMIT} \
         -X ${PACKAGE_NAME}/version.ReleaseVersion=${RELEASE_VERSION} \
