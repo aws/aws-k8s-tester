@@ -61,6 +61,7 @@ for arch in ${ARCHS}; do
       CGO_ENABLED=0 \
         GOARCH=${arch} \
         GOOS=${os} \
+        GOWORK=off \
         go build \
         -v \
         -ldflags "-s -w \
