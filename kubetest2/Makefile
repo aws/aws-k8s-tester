@@ -30,18 +30,21 @@ SHELL:=env PATH=$(subst $(SPACE),\$(SPACE),$(PATH)) $(SHELL)
 BUILD_FLAGS ?= -trimpath -ldflags="-buildid= -X=sigs.k8s.io/cloud-provider-aws/kubetest2-eks/deployer.GitTag=$(COMMIT)"
 
 .PHONY: deployers
-deployers: deployer-eksctl
+deployers: deployer-eksctl deployer-eksapi
 
 deployer-eksctl:
 	CGO_ENABLED=1 go build -v $(BUILD_FLAGS) -o $(OUT_DIR)/kubetest2-eksctl kubetest2-eksctl/main.go
+
+deployer-eksapi:
+	CGO_ENABLED=1 go build -v $(BUILD_FLAGS) -o $(OUT_DIR)/kubetest2-eksapi kubetest2-eksapi/main.go
 
 .PHONY: install
 install:
 	$(INSTALL) -d $(INSTALL_DIR)
 	$(INSTALL) $(OUT_DIR)/* $(INSTALL_DIR)/
 
-.PHONY: install-deployer
-install-deployer: deployer install
+.PHONY: install-deployers
+install-deployers: deployers install
 
 .PHONY: clean
 clean:
