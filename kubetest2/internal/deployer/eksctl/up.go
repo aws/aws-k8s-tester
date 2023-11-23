@@ -1,12 +1,14 @@
 package eksctl
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/util"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/eks"
+	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"k8s.io/klog"
 )
 
@@ -77,20 +79,19 @@ func (d *deployer) Up() error {
 }
 
 func (d *deployer) IsUp() (up bool, err error) {
-	result, err := d.eksClient.DescribeCluster(&eks.DescribeClusterInput{
+	result, err := d.eksClient.DescribeCluster(context.TODO(), &eks.DescribeClusterInput{
 		Name: aws.String(d.commonOptions.RunID()),
 	})
 	if err != nil {
 		return false, err
 	}
-	status := aws.StringValue(result.Cluster.Status)
-	switch status {
-	case eks.ClusterStatusActive:
+	switch result.Cluster.Status {
+	case ekstypes.ClusterStatusActive:
 		return true, nil
-	case eks.ClusterStatusCreating:
+	case ekstypes.ClusterStatusCreating:
 		return false, nil
 	default:
-		return false, fmt.Errorf("cluster status is: %v", status)
+		return false, fmt.Errorf("cluster status is: %v", result.Cluster.Status)
 	}
 }
 

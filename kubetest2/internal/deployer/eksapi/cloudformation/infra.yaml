@@ -1,0 +1,547 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "kubetest2-eksapi infrastructure"
+
+Parameters:
+  VpcBlock:
+    Type: String
+    Default: 192.168.0.0/16
+    Description: The CIDR range for the VPC. This should be a valid private (RFC 1918) CIDR range.
+
+  PublicSubnet01Block:
+    Type: String
+    Default: 192.168.0.0/18
+    Description: CidrBlock for public subnet 01 within the VPC
+
+  PublicSubnet02Block:
+    Type: String
+    Default: 192.168.64.0/18
+    Description: CidrBlock for public subnet 02 within the VPC
+
+  PrivateSubnet01Block:
+    Type: String
+    Default: 192.168.128.0/18
+    Description: CidrBlock for private subnet 01 within the VPC
+
+  PrivateSubnet02Block:
+    Type: String
+    Default: 192.168.192.0/18
+    Description: CidrBlock for private subnet 02 within the VPC
+
+  AdditionalClusterRoleServicePrincipal:
+    Type: String
+    Default: ""
+    Description: Additional service principal with sts:AssumeRole permissions on the ClusterRole
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Worker Network Configuration"
+        Parameters:
+          - VpcBlock
+          - PublicSubnet01Block
+          - PublicSubnet02Block
+          - PrivateSubnet01Block
+          - PrivateSubnet02Block
+
+Conditions:
+  HasAdditionalClusterRoleServicePrincipal:
+    Fn::Not:
+      - Fn::Equals:
+        - ""
+        - !Ref AdditionalClusterRoleServicePrincipal
+
+Resources:
+  #
+  # Public VPC
+  #
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcBlock
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/VPC"
+  IPv6CidrBlock:
+    Type: AWS::EC2::VPCCidrBlock
+    Properties:
+      AmazonProvidedIpv6CidrBlock: true
+      VpcId:
+        Ref: VPC
+
+  #
+  # Internet gateways (ipv4, and egress for ipv6)
+  #
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/InternetGateway"
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId:
+        Ref: InternetGateway
+      VpcId:
+        Ref: VPC
+  EgressOnlyInternetGateway:
+    Type: AWS::EC2::EgressOnlyInternetGateway
+    Properties:
+      VpcId:
+        Ref: VPC
+
+  #
+  # Nat gateways
+  #
+  NATGateway01:
+    Type: AWS::EC2::NatGateway
+    DependsOn:
+      - NatGatewayEIP1
+      - SubnetPublic01
+      - VPCGatewayAttachment
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - NatGatewayEIP1
+          - AllocationId
+      SubnetId:
+        Ref: SubnetPublic01
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/NATGateway01"
+  NATGateway02:
+    Type: AWS::EC2::NatGateway
+    DependsOn:
+      - NatGatewayEIP2
+      - SubnetPublic02
+      - VPCGatewayAttachment
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - NatGatewayEIP2
+          - AllocationId
+      SubnetId:
+        Ref: SubnetPublic02
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/NATGateway02"
+  #
+  # Nat Gateway IPs
+  #
+  NatGatewayEIP1:
+    Type: AWS::EC2::EIP
+    DependsOn:
+      - VPCGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/NatGatewayEIP1"
+  NatGatewayEIP2:
+    Type: AWS::EC2::EIP
+    DependsOn:
+      - VPCGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/NatGatewayEIP2"
+
+  #
+  # Routing - public subnets
+  #
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/PublicRouteTable"
+  PublicSubnetDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn:
+      - VPCGatewayAttachment
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: InternetGateway
+      RouteTableId:
+        Ref: PublicRouteTable
+  PublicSubnetDefaultIpv6Route:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationIpv6CidrBlock: ::/0
+      GatewayId:
+        Ref: InternetGateway
+      RouteTableId:
+        Ref: PublicRouteTable
+
+  #
+  # Routing - private subnets
+  # Route tables
+  #
+  PrivateRouteTable01:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/PrivateRouteTable01"
+  PrivateRouteTable02:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/PrivateRouteTable02"
+  #
+  # Nat IPv4 Private Routes
+  #
+  PrivateSubnetDefaultRoute01:
+    Type: AWS::EC2::Route
+    DependsOn:
+      - VPCGatewayAttachment
+      - NATGateway01
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NATGateway01
+      RouteTableId:
+        Ref: PrivateRouteTable01
+  PrivateSubnetDefaultRoute02:
+    Type: AWS::EC2::Route
+    DependsOn:
+      - VPCGatewayAttachment
+      - NATGateway02
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NATGateway02
+      RouteTableId:
+        Ref: PrivateRouteTable02
+
+  #
+  # EOIG IPv6 Private Routes
+  #
+  PrivateSubnetDefaultIpv6Route01:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationIpv6CidrBlock: ::/0
+      EgressOnlyInternetGatewayId:
+        Ref: EgressOnlyInternetGateway
+      RouteTableId:
+        Ref: PrivateRouteTable01
+  PrivateSubnetDefaultIpv6Route02:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationIpv6CidrBlock: ::/0
+      EgressOnlyInternetGatewayId:
+        Ref: EgressOnlyInternetGateway
+      RouteTableId:
+        Ref: PrivateRouteTable02
+
+  #
+  # Public subnets
+  # Note: AssignIpv6AddressOnCreation: true is required but a CFN limitation right now, need to add this manually
+  SubnetPublic01:
+    Type: AWS::EC2::Subnet
+    Metadata:
+      Comment: Subnet 01
+    DependsOn: IPv6CidrBlock
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - "0"
+          - Fn::GetAZs:
+              Ref: AWS::Region
+      CidrBlock:
+        Ref: PublicSubnet01Block
+      Ipv6CidrBlock:
+        !Select [0, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 8, 64]]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: kubernetes.io/role/elb
+          Value: "1"
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/SubnetPublic01"
+      VpcId:
+        Ref: VPC
+  SubnetPublic02:
+    Type: AWS::EC2::Subnet
+    DependsOn: IPv6CidrBlock
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - "1"
+          - Fn::GetAZs:
+              Ref: AWS::Region
+      CidrBlock:
+        Ref: PublicSubnet02Block
+      Ipv6CidrBlock:
+        !Select [1, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 8, 64]]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: kubernetes.io/role/elb
+          Value: "1"
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/SubnetPublic02"
+      VpcId:
+        Ref: VPC
+
+  #
+  # Public route table associations
+  #
+  RouteTableAssociationPublic01:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: SubnetPublic01
+  RouteTableAssociationPublic02:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: SubnetPublic02
+
+  #
+  # Private subnets
+  #
+  SubnetPrivate01:
+    Type: AWS::EC2::Subnet
+    DependsOn: IPv6CidrBlock
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - "0"
+          - Fn::GetAZs:
+              Ref: AWS::Region
+      CidrBlock:
+        Ref: PrivateSubnet01Block
+      Ipv6CidrBlock:
+        !Select [2, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 8, 64]]
+      AssignIpv6AddressOnCreation: true
+      Tags:
+        - Key: kubernetes.io/role/internal-elb
+          Value: "1"
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/SubnetPrivate01"
+      VpcId:
+        Ref: VPC
+  SubnetPrivate02:
+    Type: AWS::EC2::Subnet
+    DependsOn: IPv6CidrBlock
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - "1"
+          - Fn::GetAZs:
+              Ref: AWS::Region
+      CidrBlock:
+        Ref: PrivateSubnet02Block
+      Ipv6CidrBlock:
+        !Select [3, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 8, 64]]
+      AssignIpv6AddressOnCreation: true
+      Tags:
+        - Key: kubernetes.io/role/internal-elb
+          Value: "1"
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/SubnetPrivate02"
+      VpcId:
+        Ref: VPC
+
+  #
+  # Private route table associations
+  #
+  RouteTableAssociationPrivate01:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable01
+      SubnetId:
+        Ref: SubnetPrivate01
+  RouteTableAssociationPrivate02:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable02
+      SubnetId:
+        Ref: SubnetPrivate02
+
+  ControlPlaneSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Cluster communication with worker nodes
+      VpcId: !Ref VPC
+
+  ClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: Allow
+            Principal:
+              Service:
+                Fn::If:
+                  - HasAdditionalClusterRoleServicePrincipal
+                  - - "eks.amazonaws.com"
+                    - !Ref AdditionalClusterRoleServicePrincipal
+                  - - "eks.amazonaws.com"
+      ManagedPolicyArns:
+        - !Join
+          - ""
+          - - "arn:"
+            - !Ref "AWS::Partition"
+            - ":iam::aws:policy/AmazonEKSClusterPolicy"
+
+  NodeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+      ManagedPolicyArns:
+        - !Join
+          - ""
+          - - "arn:"
+            - !Ref "AWS::Partition"
+            - ":iam::aws:policy/AmazonEKSWorkerNodePolicy"
+        - !Join
+          - ""
+          - - "arn:"
+            - !Ref "AWS::Partition"
+            - ":iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+        - !Join
+          - ""
+          - - "arn:"
+            - !Ref "AWS::Partition"
+            - ":iam::aws:policy/AmazonEKS_CNI_Policy"
+        - !Join
+          - ""
+          - - "arn:"
+            - !Ref "AWS::Partition"
+            - ":iam::aws:policy/AmazonSSMManagedInstanceCore"
+
+  VPCCNIIPv6Policy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument: |
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+              {
+                  "Effect": "Allow",
+                  "Action": [
+                      "ec2:AssignIpv6Addresses",
+                      "ec2:DescribeInstances",
+                      "ec2:DescribeTags",
+                      "ec2:DescribeNetworkInterfaces",
+                      "ec2:DescribeInstanceTypes"
+                  ],
+                  "Resource": "*"
+              },
+              {
+                  "Effect": "Allow",
+                  "Action": [
+                      "ec2:CreateTags"
+                  ],
+                  "Resource": [
+                      "arn:aws:ec2:*:*:network-interface/*"
+                  ]
+              }
+          ]
+        }
+      PolicyName: AmazonEKS_CNI_IPv6_Policy
+      Roles:
+        - !Ref NodeRole
+
+Outputs:
+  SubnetsPrivate:
+    Value:
+      Fn::Join:
+        - ","
+        - - Ref: SubnetPrivate01
+          - Ref: SubnetPrivate02
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}::SubnetsPrivate"
+
+  SubnetsPublic:
+    Value:
+      Fn::Join:
+        - ","
+        - - Ref: SubnetPublic01
+          - Ref: SubnetPublic02
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}::SubnetsPublic"
+
+  SecurityGroups:
+    Description: Security group for the cluster control plane communication with worker nodes
+    Value: !Join [",", [!Ref ControlPlaneSecurityGroup]]
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}::SecurityGroups"
+
+  VPC:
+    Value:
+      Ref: VPC
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}::VPC"
+
+  ClusterRole:
+    Value:
+      Fn::Join:
+        - ""
+        - - "arn:"
+          - !Ref "AWS::Partition"
+          - ":iam::"
+          - !Ref "AWS::AccountId"
+          - ":role/"
+          - !Ref ClusterRole
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}::ClusterRole"
+
+  NodeRole:
+    Value:
+      Fn::Join:
+        - ""
+        - - "arn:"
+          - !Ref "AWS::Partition"
+          - ":iam::"
+          - !Ref "AWS::AccountId"
+          - ":role/"
+          - !Ref NodeRole
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}::NodeRole"

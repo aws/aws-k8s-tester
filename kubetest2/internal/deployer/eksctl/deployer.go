@@ -5,7 +5,8 @@ import (
 	"path/filepath"
 
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/awssdk"
-	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/eks"
 	"github.com/octago/sflags/gen/gpflag"
 	"github.com/spf13/pflag"
 	"k8s.io/klog"
@@ -23,16 +24,19 @@ type deployer struct {
 	// generic parts
 	commonOptions types.Options
 	*UpOptions
-	eksClient      *eks.EKS
+	awsConfig      aws.Config
+	eksClient      *eks.Client
 	KubeconfigPath string `flag:"kubeconfig" desc:"Path to kubeconfig"`
 }
 
 // NewDeployer implements deployer.New for EKS using eksctl
 func NewDeployer(opts types.Options) (types.Deployer, *pflag.FlagSet) {
 	// create a deployer object and set fields that are not flag controlled
+	awsConfig := awssdk.NewConfig()
 	d := &deployer{
 		commonOptions: opts,
-		eksClient:     eks.New(awssdk.NewSession()),
+		awsConfig:     awsConfig,
+		eksClient:     eks.NewFromConfig(awsConfig),
 	}
 	// register flags and return
 	return d, bindFlags(d)

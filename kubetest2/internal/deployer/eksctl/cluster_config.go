@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"log"
 	"text/template"
-
-	"github.com/aws/aws-sdk-go/aws"
 )
 
 const configYAMLTemplate = `
@@ -53,7 +51,7 @@ func (d *deployer) RenderClusterConfig() ([]byte, error) {
 	templateParams := clusterConfigTemplateParams{
 		UpOptions:   *d.UpOptions,
 		ClusterName: d.commonOptions.RunID(),
-		Region:      aws.StringValue(d.eksClient.Config.Region),
+		Region:      d.awsConfig.Region,
 	}
 	log.Printf("rendering cluster config template with params: %+v", templateParams)
 	t, err := template.New("configYAML").Parse(configYAMLTemplate)

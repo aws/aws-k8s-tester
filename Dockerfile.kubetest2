@@ -48,17 +48,17 @@ RUN wget -O eksctl.tar.gz "https://github.com/eksctl-io/eksctl/releases/${EKSCTL
     tar xzf eksctl.tar.gz -C /bin/ && \
     rm eksctl.tar.gz
 
-ARG KUBETEST2_VERSION=v0.0.0-20231014151303-89f09b65e8dd
+ARG KUBETEST2_VERSION=v0.0.0-20231113220322-d7fcb799ce84
 RUN go install sigs.k8s.io/kubetest2/...@${KUBETEST2_VERSION}
 
 COPY kubetest2/ .
 RUN ls -la
 RUN go install ./kubetest2-eksctl
+RUN go install ./kubetest2-eksapi
+RUN go install ./kubetest2-eksapi-janitor
 
 RUN rm -rf /workdir
 
 WORKDIR $GOPATH/src/github.com/aws/aws-k8s-tester
 COPY . .
 RUN go mod download
-
-ENTRYPOINT ["kubetest2"]
