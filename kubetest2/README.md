@@ -1,4 +1,4 @@
-# `kubetest2` deployers for EKS
+# `kubetest2` deployers and testers for EKS
 
 ### Installation
 
@@ -16,7 +16,7 @@ The `--kubernetes-version` flag can be omitted if this file exists.
 
 ---
 
-#### `eksctl` deployer
+### `eksctl` deployer
 
 This deployer is a thin wrapper around `eksctl`.
 
@@ -40,7 +40,7 @@ kubetest2 \
 
 ---
 
-#### `eksapi` deployer
+### `eksapi` deployer
 
 This deployer calls the EKS API directly, instead of using CloudFormation for EKS resources.
 
@@ -63,3 +63,28 @@ kubetest2 \
 - `--region` - AWS region
 - `--endpoint-url` - Override the EKS endpoint URL
 - `--cluster-role-service-principal` - Additional service principal that can assume the cluster IAM role.
+
+---
+
+### `multi` tester
+
+This tester wraps multiple executions of other testers.
+
+Tester argument groups are separated by `--`, with the first group being passed to the `multi` tester itself.
+
+The first positional argument of each subsequent group should be the name of a tester.
+
+```
+kubetest2 \
+  noop \
+  --test=multi \
+  -- \
+  --fail-fast=true \
+  -- \
+  ginkgo \
+  --focus-regex='\[Conformance\]' \
+  --parallel=4 \
+  -- \
+  exec \
+  go test ./my/test/package
+```
