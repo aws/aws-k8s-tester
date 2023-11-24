@@ -101,19 +101,16 @@ func (d *deployer) DumpClusterLogs() error {
 }
 
 func (d *deployer) Kubeconfig() (string, error) {
-	if d.KubeconfigPath != "" {
-		return d.KubeconfigPath, nil
+	if d.KubeconfigPath == "" {
+		kubeconfigPath := filepath.Join(d.commonOptions.RunDir(), "kubeconfig")
+		err := writeKubeconfig(d.eksClient(), d.resourceID, kubeconfigPath)
+		if err != nil {
+			klog.Warningf("failed to write kubeconfig: %v", err)
+			return "", err
+		}
+		d.KubeconfigPath = kubeconfigPath
 	}
-	kubeconfigPath := filepath.Join(d.commonOptions.RunDir(), "kubeconfig")
-	err := d.writeKubeconfig(kubeconfigPath)
-	if err != nil {
-		return "", err
-	}
-	return kubeconfigPath, nil
-}
-
-func (d *deployer) writeKubeconfig(kubeconfigPath string) error {
-	return util.ExecuteCommand("aws", "eks", "update-kubeconfig", "--name", d.resourceID, "--kubeconfig", kubeconfigPath)
+	return d.KubeconfigPath, nil
 }
 
 func (d *deployer) eksClient() *eks.Client {
