@@ -27,7 +27,7 @@ export PATH GOROOT GO111MODULE CGO_ENABLED
 # work around broken PATH export
 SPACE:=$(subst ,, )
 SHELL:=env PATH=$(subst $(SPACE),\$(SPACE),$(PATH)) $(SHELL)
-BUILD_FLAGS ?= -trimpath -ldflags="-buildid= -X=sigs.k8s.io/cloud-provider-aws/kubetest2-eks/deployer.GitTag=$(COMMIT)"
+BUILD_FLAGS ?= -trimpath -ldflags="-buildid= -X=github.com/aws/aws-k8s-tester/kubetest2/internal.Version=$(COMMIT)"
 
 .PHONY: deployers
 deployers: deployer-eksctl deployer-eksapi

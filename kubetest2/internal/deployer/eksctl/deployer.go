@@ -4,6 +4,7 @@ import (
 	"flag"
 	"path/filepath"
 
+	"github.com/aws/aws-k8s-tester/kubetest2/internal"
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/awssdk"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
@@ -15,10 +16,6 @@ import (
 
 // DeployerName is the name of the deployer
 const DeployerName = "eksctl"
-
-var (
-	GitTag string
-)
 
 type deployer struct {
 	// generic parts
@@ -54,7 +51,7 @@ func (d *deployer) Kubeconfig() (string, error) {
 }
 
 func (d *deployer) Version() string {
-	return GitTag
+	return internal.Version
 }
 
 // bindFlags is a helper used to create & bind a flagset to the deployer

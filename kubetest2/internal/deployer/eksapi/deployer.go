@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/aws/aws-k8s-tester/kubetest2/internal"
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/awssdk"
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/util"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -22,10 +23,6 @@ import (
 const DeployerName = "eksapi"
 
 const ResourcePrefix = "kubetest2-" + DeployerName
-
-var (
-	GitTag string
-)
 
 // assert that deployer implements types.DeployerWithKubeconfig
 var _ types.DeployerWithKubeconfig = &deployer{}
@@ -87,7 +84,7 @@ func bindFlags(d *deployer) *pflag.FlagSet {
 }
 
 func (d *deployer) Version() string {
-	return GitTag
+	return internal.Version
 }
 
 // Build is a no-op
