@@ -53,12 +53,10 @@ RUN go install sigs.k8s.io/kubetest2/...@${KUBETEST2_VERSION}
 
 COPY kubetest2/ .
 RUN ls -la
-RUN go install ./kubetest2-eksctl
-RUN go install ./kubetest2-eksapi
-RUN go install ./kubetest2-eksapi-janitor
+RUN go install ./...
 
 RUN rm -rf /workdir
 
 WORKDIR $GOPATH/src/github.com/aws/aws-k8s-tester
 COPY . .
-RUN go mod download
+RUN cd e2e2/ && go mod download

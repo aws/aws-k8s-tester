@@ -38,13 +38,19 @@ deployer-eksctl:
 deployer-eksapi:
 	CGO_ENABLED=1 go build -v $(BUILD_FLAGS) -o $(OUT_DIR)/kubetest2-eksapi kubetest2-eksapi/main.go
 
+.PHONY: testers
+testers: tester-multi tester-ginkgo-v1
+
+tester-multi:
+	GGO_ENABLED=1 go build -v $(BUILD_FLAGS) -o $(OUT_DIR)/kubetest2-tester-multi kubetest2-tester-multi/main.go
+
+tester-ginkgo-v1:
+	GGO_ENABLED=1 go build -v $(BUILD_FLAGS) -o $(OUT_DIR)/kubetest2-tester-ginkgo-v1 kubetest2-tester-ginkgo-v1/main.go
+
 .PHONY: install
-install:
+install: deployers testers
 	$(INSTALL) -d $(INSTALL_DIR)
 	$(INSTALL) $(OUT_DIR)/* $(INSTALL_DIR)/
-
-.PHONY: install-deployers
-install-deployers: deployers install
 
 .PHONY: clean
 clean:
