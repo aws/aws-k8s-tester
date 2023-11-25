@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	cloudformationtypes "github.com/aws/aws-sdk-go-v2/service/cloudformation/types"
-	"github.com/aws/aws-sdk-go-v2/service/eks"
 	"k8s.io/klog/v2"
 )
 
@@ -48,9 +47,9 @@ func (j *janitor) Sweep(ctx context.Context) error {
 				klog.Infof("skipping resources (%v old): %s", resourceAge, resourceID)
 				continue
 			}
-			eksClient := j.eksClientForStack(stack)
+			clients := j.awsClientsForStack(stack)
 			klog.Infof("deleting resources (%v old): %s", resourceAge, resourceID)
-			if err := deleteResources(eksClient, j.cfnClient, resourceID); err != nil {
+			if err := deleteResources(clients, resourceID); err != nil {
 				return err
 			}
 		}
@@ -58,13 +57,12 @@ func (j *janitor) Sweep(ctx context.Context) error {
 	return nil
 }
 
-func (j *janitor) eksClientForStack(stack cloudformationtypes.Stack) *eks.Client {
+func (j *janitor) awsClientsForStack(stack cloudformationtypes.Stack) *awsClients {
+	var eksEndpointURL string
 	for _, tag := range stack.Tags {
 		if *tag.Key == eksEndpointURLTag {
-			return eks.NewFromConfig(j.awsConfig, func(o *eks.Options) {
-				o.BaseEndpoint = tag.Value
-			})
+			eksEndpointURL = *tag.Value
 		}
 	}
-	return eks.NewFromConfig(j.awsConfig)
+	return newAWSClients(j.awsConfig, eksEndpointURL)
 }

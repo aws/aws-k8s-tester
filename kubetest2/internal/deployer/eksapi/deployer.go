@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/awssdk"
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/util"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/octago/sflags/gen/gpflag"
@@ -33,12 +32,7 @@ type deployer struct {
 
 	awsConfig aws.Config
 
-	// cached EKS client
-	// do not use directly, call eksClient()
-	_eksClient *eks.Client
-
-	// CFN client, can be used directly
-	cfnClient *cloudformation.Client
+	_awsClients *awsClients
 
 	infra *infra
 
@@ -63,9 +57,7 @@ func NewDeployer(opts types.Options) (types.Deployer, *pflag.FlagSet) {
 	d := &deployer{
 		commonOptions: opts,
 		awsConfig:     awsConfig,
-		cfnClient:     cloudformation.NewFromConfig(awsConfig),
 		resourceID:    ResourcePrefix + "-" + opts.RunID(),
-		infra:         &infra{},
 	}
 	// register flags and return
 	return d, bindFlags(d)
@@ -100,7 +92,7 @@ func (d *deployer) DumpClusterLogs() error {
 func (d *deployer) Kubeconfig() (string, error) {
 	if d.KubeconfigPath == "" {
 		kubeconfigPath := filepath.Join(d.commonOptions.RunDir(), "kubeconfig")
-		err := writeKubeconfig(d.eksClient(), d.resourceID, kubeconfigPath)
+		err := writeKubeconfig(d.awsClients().EKS(), d.resourceID, kubeconfigPath)
 		if err != nil {
 			klog.Warningf("failed to write kubeconfig: %v", err)
 			return "", err
@@ -110,30 +102,26 @@ func (d *deployer) Kubeconfig() (string, error) {
 	return d.KubeconfigPath, nil
 }
 
-func (d *deployer) eksClient() *eks.Client {
-	if d._eksClient == nil {
-		if d.EKSEndpointURL != "" {
-			d._eksClient = eks.NewFromConfig(d.awsConfig, func(o *eks.Options) {
-				o.BaseEndpoint = aws.String(d.EKSEndpointURL)
-			})
-		} else {
-			d._eksClient = eks.NewFromConfig(d.awsConfig)
-		}
+func (d *deployer) awsClients() *awsClients {
+	if d._awsClients == nil {
+		d._awsClients = newAWSClients(d.awsConfig, d.EKSEndpointURL)
 	}
-	return d._eksClient
+	return d._awsClients
 }
 
 func (d *deployer) Up() error {
 	if err := d.verifyUpFlags(); err != nil {
 		return fmt.Errorf("up flags are invalid: %v", err)
 	}
-	if err := createInfrastructureStack(d.cfnClient, d.infra, &d.deployerOptions, d.resourceID); err != nil {
+	if infra, err := createInfrastructureStack(d.awsClients(), &d.deployerOptions, d.resourceID); err != nil {
+		return err
+	} else {
+		d.infra = infra
+	}
+	if err := createCluster(d.awsClients(), d.infra, &d.deployerOptions, d.resourceID); err != nil {
 		return err
 	}
-	if err := createCluster(d.eksClient(), d.infra, &d.deployerOptions, d.resourceID); err != nil {
-		return err
-	}
-	if err := createNodegroup(d.eksClient(), d.infra, &d.deployerOptions, d.resourceID); err != nil {
+	if err := createNodegroup(d.awsClients(), d.infra, &d.deployerOptions, d.resourceID); err != nil {
 		return err
 	}
 	return nil
@@ -172,7 +160,7 @@ func detectKubernetesVersion() (string, error) {
 }
 
 func (d *deployer) IsUp() (up bool, err error) {
-	result, err := d.eksClient().DescribeCluster(context.TODO(), &eks.DescribeClusterInput{
+	result, err := d.awsClients().EKS().DescribeCluster(context.TODO(), &eks.DescribeClusterInput{
 		Name: aws.String(d.resourceID),
 	})
 	if err != nil {
@@ -189,15 +177,18 @@ func (d *deployer) IsUp() (up bool, err error) {
 }
 
 func (d *deployer) Down() error {
-	return deleteResources(d.eksClient(), d.cfnClient, d.resourceID)
+	return deleteResources(d.awsClients(), d.resourceID)
 }
 
-func deleteResources(eksClient *eks.Client, cfnClient *cloudformation.Client, resourceID string) error {
-	if err := deleteNodegroup(eksClient, resourceID); err != nil {
+func deleteResources(clients *awsClients, resourceID string) error {
+	if err := deleteNodegroup(clients, resourceID); err != nil {
 		return err
 	}
-	if err := deleteCluster(eksClient, resourceID); err != nil {
+	if err := deleteCluster(clients, resourceID); err != nil {
 		return err
 	}
-	return deleteInfrastructureStack(cfnClient, resourceID)
+	if err := deleteLeakedENIs(clients, resourceID); err != nil {
+		return err
+	}
+	return deleteInfrastructureStack(clients, resourceID)
 }
