@@ -11,6 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	cloudformationtypes "github.com/aws/aws-sdk-go-v2/service/cloudformation/types"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"k8s.io/klog"
 )
 
@@ -40,7 +42,7 @@ func (i *infra) subnets() []string {
 	return append(i.subnetsPublic, i.subnetsPrivate...)
 }
 
-func createInfrastructureStack(cfnClient *cloudformation.Client, infra *infra, opts *deployerOptions, resourceID string) error {
+func createInfrastructureStack(clients *awsClients, opts *deployerOptions, resourceID string) (*infra, error) {
 	input := cloudformation.CreateStackInput{
 		StackName:    aws.String(resourceID),
 		TemplateBody: aws.String(infraTemplate),
@@ -63,31 +65,41 @@ func createInfrastructureStack(cfnClient *cloudformation.Client, infra *infra, o
 		}
 	}
 	klog.Infof("creating infrastructure stack...")
-	out, err := cfnClient.CreateStack(context.TODO(), &input)
+	out, err := clients.CFN().CreateStack(context.TODO(), &input)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	klog.Infof("waiting for infrastructure stack to be created: %s", *out.StackId)
-	err = cloudformation.NewStackCreateCompleteWaiter(cfnClient).
+	err = cloudformation.NewStackCreateCompleteWaiter(clients.CFN()).
 		Wait(context.TODO(),
 			&cloudformation.DescribeStacksInput{
 				StackName: out.StackId,
 			},
 			infraStackCreationTimeout)
 	if err != nil {
-		return fmt.Errorf("failed to wait for infrastructure stack creation: %w", err)
+		return nil, fmt.Errorf("failed to wait for infrastructure stack creation: %w", err)
 	}
-	klog.Infof("getting infrastructure stack outputs: %s", *out.StackId)
-	stack, err := cfnClient.DescribeStacks(context.TODO(), &cloudformation.DescribeStacksInput{
-		StackName: out.StackId,
+	klog.Infof("getting infrastructure stack resources: %s", *out.StackId)
+	infra, err := getInfrastructureStackResources(clients, *out.StackId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get infrastructure stack resources: %w", err)
+	}
+	klog.Infof("created infrastructure: %+v", infra)
+	return infra, nil
+}
+
+func getInfrastructureStackResources(clients *awsClients, resourceID string) (*infra, error) {
+	stack, err := clients.CFN().DescribeStacks(context.TODO(), &cloudformation.DescribeStacksInput{
+		StackName: aws.String(resourceID),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to describe infrastructure stack: %w", err)
+		return nil, fmt.Errorf("failed to describe infrastructure stack: %w", err)
 	}
+	infra := infra{}
 	for _, output := range stack.Stacks[0].Outputs {
 		value := *output.OutputValue
 		switch *output.OutputKey {
-		case "Vpc":
+		case "VPC":
 			infra.vpc = value
 		case "SecurityGroups":
 			infra.securityGroups = strings.Split(value, ",")
@@ -101,16 +113,15 @@ func createInfrastructureStack(cfnClient *cloudformation.Client, infra *infra, o
 			infra.nodeRole = value
 		}
 	}
-	klog.Infof("created infrastructure: %+v", infra)
-	return nil
+	return &infra, nil
 }
 
-func deleteInfrastructureStack(cfnClient *cloudformation.Client, resourceID string) error {
+func deleteInfrastructureStack(clients *awsClients, resourceID string) error {
 	input := cloudformation.DeleteStackInput{
 		StackName: aws.String(resourceID),
 	}
 	klog.Infof("deleting infrastructure stack: %s", resourceID)
-	_, err := cfnClient.DeleteStack(context.TODO(), &input)
+	_, err := clients.CFN().DeleteStack(context.TODO(), &input)
 	if err != nil {
 		var notFound *cloudformationtypes.StackNotFoundException
 		if errors.As(err, &notFound) {
@@ -120,7 +131,7 @@ func deleteInfrastructureStack(cfnClient *cloudformation.Client, resourceID stri
 		return fmt.Errorf("failed to delete infrastructure stack: %w", err)
 	}
 	klog.Infof("waiting for infrastructure stack to be deleted: %s", resourceID)
-	err = cloudformation.NewStackDeleteCompleteWaiter(cfnClient).
+	err = cloudformation.NewStackDeleteCompleteWaiter(clients.CFN()).
 		Wait(context.TODO(),
 			&cloudformation.DescribeStacksInput{
 				StackName: aws.String(resourceID),
@@ -130,5 +141,47 @@ func deleteInfrastructureStack(cfnClient *cloudformation.Client, resourceID stri
 		return fmt.Errorf("failed to wait for infrastructure stack deletion: %w", err)
 	}
 	klog.Infof("deleted infrastructure stack: %s", resourceID)
+	return nil
+}
+
+// deleteLeakedENIs deletes Elastic Network Interfaces that may have been allocated (and left behind) by the VPC CNI.
+// These leaked ENIs will prevent deletion of their associated subnets and security groups.
+func deleteLeakedENIs(clients *awsClients, resourceID string) error {
+	infra, err := getInfrastructureStackResources(clients, resourceID)
+	if err != nil {
+		var notFound *cloudformationtypes.StackNotFoundException
+		if errors.As(err, &notFound) {
+			klog.Infof("infrastructure stack does not exist: %s", resourceID)
+			return nil
+		}
+		return fmt.Errorf("failed to get infrastructure stack resources: %w", err)
+	}
+	klog.Infof("deleting leaked ENIs...")
+	enis := ec2.NewDescribeNetworkInterfacesPaginator(clients.EC2(), &ec2.DescribeNetworkInterfacesInput{
+		Filters: []ec2types.Filter{
+			{
+				Name:   aws.String("vpc-id"),
+				Values: []string{infra.vpc},
+			},
+		},
+	})
+	deleted := 0
+	for enis.HasMorePages() {
+		page, err := enis.NextPage(context.TODO())
+		if err != nil {
+			return fmt.Errorf("failed to describe ENIs: %w", err)
+		}
+		for _, eni := range page.NetworkInterfaces {
+			klog.Infof("deleting leaked ENI: %s", *eni.NetworkInterfaceId)
+			_, err := clients.EC2().DeleteNetworkInterface(context.TODO(), &ec2.DeleteNetworkInterfaceInput{
+				NetworkInterfaceId: eni.NetworkInterfaceId,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to delete leaked ENI: %w", err)
+			}
+			deleted++
+		}
+	}
+	klog.Infof("deleted %d leaked ENIs", deleted)
 	return nil
 }

@@ -17,7 +17,7 @@ const (
 	clusterDeletionTimeout = time.Minute * 15
 )
 
-func createCluster(eksClient *eks.Client, infra *infra, opts *deployerOptions, resourceID string) error {
+func createCluster(clients *awsClients, infra *infra, opts *deployerOptions, resourceID string) error {
 	input := eks.CreateClusterInput{
 		Name: aws.String(resourceID),
 		ResourcesVpcConfig: &ekstypes.VpcConfigRequest{
@@ -33,12 +33,12 @@ func createCluster(eksClient *eks.Client, infra *infra, opts *deployerOptions, r
 		Version: aws.String(opts.KubernetesVersion),
 	}
 	klog.Infof("creating cluster...")
-	out, err := eksClient.CreateCluster(context.TODO(), &input)
+	out, err := clients.EKS().CreateCluster(context.TODO(), &input)
 	if err != nil {
 		return fmt.Errorf("failed to create cluster: %v", err)
 	}
 	klog.Infof("waiting for cluster to be active: %s", *out.Cluster.Arn)
-	err = eks.NewClusterActiveWaiter(eksClient).
+	err = eks.NewClusterActiveWaiter(clients.EKS()).
 		Wait(context.TODO(), &eks.DescribeClusterInput{
 			Name: out.Cluster.Name,
 		},
@@ -50,12 +50,12 @@ func createCluster(eksClient *eks.Client, infra *infra, opts *deployerOptions, r
 	return nil
 }
 
-func deleteCluster(eksClient *eks.Client, resourceID string) error {
+func deleteCluster(clients *awsClients, resourceID string) error {
 	input := eks.DeleteClusterInput{
 		Name: aws.String(resourceID),
 	}
 	klog.Infof("deleting cluster...")
-	out, err := eksClient.DeleteCluster(context.TODO(), &input)
+	out, err := clients.EKS().DeleteCluster(context.TODO(), &input)
 	if err != nil {
 		var notFound *ekstypes.ResourceNotFoundException
 		if errors.As(err, &notFound) {
@@ -65,7 +65,7 @@ func deleteCluster(eksClient *eks.Client, resourceID string) error {
 		return fmt.Errorf("failed to delete cluster: %v", err)
 	}
 	klog.Infof("waiting for cluster to be deleted: %s", *out.Cluster.Arn)
-	err = eks.NewClusterDeletedWaiter(eksClient).
+	err = eks.NewClusterDeletedWaiter(clients.EKS()).
 		Wait(context.TODO(), &eks.DescribeClusterInput{
 			Name: aws.String(resourceID),
 		},

@@ -17,7 +17,7 @@ const (
 	nodegroupDeletionTimeout = time.Minute * 20
 )
 
-func createNodegroup(eksClient *eks.Client, infra *infra, opts *deployerOptions, resourceID string) error {
+func createNodegroup(clients *awsClients, infra *infra, opts *deployerOptions, resourceID string) error {
 	klog.Infof("creating nodegroup...")
 	input := eks.CreateNodegroupInput{
 		ClusterName:   aws.String(resourceID),
@@ -35,12 +35,12 @@ func createNodegroup(eksClient *eks.Client, infra *infra, opts *deployerOptions,
 	if len(opts.InstanceTypes) > 0 {
 		input.InstanceTypes = opts.InstanceTypes
 	}
-	out, err := eksClient.CreateNodegroup(context.TODO(), &input)
+	out, err := clients.EKS().CreateNodegroup(context.TODO(), &input)
 	if err != nil {
 		return err
 	}
 	klog.Infof("waiting for nodegroup to be active: %s", *out.Nodegroup.NodegroupArn)
-	err = eks.NewNodegroupActiveWaiter(eksClient).
+	err = eks.NewNodegroupActiveWaiter(clients.EKS()).
 		Wait(context.TODO(), &eks.DescribeNodegroupInput{
 			ClusterName:   input.ClusterName,
 			NodegroupName: input.NodegroupName,
@@ -52,13 +52,13 @@ func createNodegroup(eksClient *eks.Client, infra *infra, opts *deployerOptions,
 	return nil
 }
 
-func deleteNodegroup(eksClient *eks.Client, resourceID string) error {
+func deleteNodegroup(clients *awsClients, resourceID string) error {
 	input := eks.DeleteNodegroupInput{
 		ClusterName:   aws.String(resourceID),
 		NodegroupName: aws.String(resourceID),
 	}
 	klog.Infof("deleting nodegroup...")
-	out, err := eksClient.DeleteNodegroup(context.TODO(), &input)
+	out, err := clients.EKS().DeleteNodegroup(context.TODO(), &input)
 	if err != nil {
 		var notFound *ekstypes.ResourceNotFoundException
 		if errors.As(err, &notFound) {
@@ -68,7 +68,7 @@ func deleteNodegroup(eksClient *eks.Client, resourceID string) error {
 		return fmt.Errorf("failed to delete nodegroup: %v", err)
 	}
 	klog.Infof("waiting for nodegroup deletion: %s", *out.Nodegroup.NodegroupArn)
-	err = eks.NewNodegroupDeletedWaiter(eksClient).
+	err = eks.NewNodegroupDeletedWaiter(clients.EKS()).
 		Wait(context.TODO(), &eks.DescribeNodegroupInput{
 			ClusterName:   input.ClusterName,
 			NodegroupName: input.NodegroupName,
