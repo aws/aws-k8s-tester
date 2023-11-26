@@ -172,6 +172,7 @@ Resources:
   PublicSubnetDefaultRoute:
     Type: AWS::EC2::Route
     DependsOn:
+      - InternetGateway
       - VPCGatewayAttachment
     Properties:
       DestinationCidrBlock: 0.0.0.0/0
