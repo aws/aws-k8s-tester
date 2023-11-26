@@ -1,16 +1,7 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:2
+FROM public.ecr.aws/amazonlinux/amazonlinux:2 AS builder
 ARG TARGETOS
 ARG TARGETARCH
-WORKDIR /workdir
-RUN yum install -y git tar gzip make unzip gcc rsync wget jq && amazon-linux-extras install python3.8
-
-RUN mkdir /info
-ENV PATH=$PATH:/info
-
-RUN wget -O awscli.zip https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && \
-    unzip awscli.zip && \
-    ./aws/install
-
+RUN yum install -y git tar gzip make unzip gcc rsync wget jq
 ARG GO_MINOR_VERSION="1.21"
 RUN curl https://go.dev/dl/?mode=json | jq -r .[].version | grep "^go${GO_MINOR_VERSION}" | head -n1 > go-version.txt
 RUN  wget -O go.tar.gz https://go.dev/dl/$(cat go-version.txt).${TARGETOS}-${TARGETARCH}.tar.gz && \
@@ -19,8 +10,25 @@ RUN  wget -O go.tar.gz https://go.dev/dl/$(cat go-version.txt).${TARGETOS}-${TAR
 ENV GOPATH=/usr/local/go
 ENV PATH=$PATH:$GOPATH/bin
 ENV GOPROXY=direct
+ARG KUBETEST2_VERSION=v0.0.0-20231113220322-d7fcb799ce84
+RUN go install sigs.k8s.io/kubetest2/...@${KUBETEST2_VERSION}
+WORKDIR $GOPATH/src/github.com/aws/aws-k8s-tester/kubetest2
+COPY kubetest2/ .
+RUN go install ./...
+WORKDIR $GOPATH/github.com/aws/aws-k8s-tester/e2e2
+COPY e2e2/ .
+RUN go test -c ./test/cases/nvidia -o $GOPATH/bin/nvidia.test
 
+FROM public.ecr.aws/amazonlinux/amazonlinux:2
+ARG TARGETOS
+ARG TARGETARCH
+WORKDIR /workdir
+RUN yum install -y tar gzip unzip wget
+RUN wget -O awscli.zip https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && \
+    unzip awscli.zip && \
+    ./aws/install
 # we need gsutil from the gcloud CLI for kubetest-tester-ginkgo
+RUN amazon-linux-extras install python3.8
 ARG GCLOUD_SDK_URL=https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.tar.gz
 RUN wget -O google-cloud-sdk.tar.gz -q $GCLOUD_SDK_URL && \
     tar xzf google-cloud-sdk.tar.gz -C / && \
@@ -31,9 +39,14 @@ RUN wget -O google-cloud-sdk.tar.gz -q $GCLOUD_SDK_URL && \
         --path-update=false \
         --usage-reporting=false
 ENV PATH=$PATH:/google-cloud-sdk/bin
-
+ARG EKSCTL_VERSION=latest
+RUN wget -O eksctl.tar.gz "https://github.com/eksctl-io/eksctl/releases/${EKSCTL_VERSION}/download/eksctl_Linux_${TARGETARCH}.tar.gz" && \
+    tar xzf eksctl.tar.gz -C /bin/ && \
+    rm eksctl.tar.gz
 ARG KUBERNETES_MINOR_VERSION
 RUN wget -O kubernetes-version.txt https://storage.googleapis.com/kubernetes-release/release/stable-${KUBERNETES_MINOR_VERSION}.txt
+RUN mkdir /info
+ENV PATH=$PATH:/info
 RUN cp kubernetes-version.txt /info/
 RUN wget -O kubernetes-client.tar.gz https://storage.googleapis.com/kubernetes-release/release/$(cat kubernetes-version.txt)/kubernetes-client-${TARGETOS}-${TARGETARCH}.tar.gz && \
     tar xzf kubernetes-client.tar.gz -C / && \
@@ -42,21 +55,5 @@ RUN wget -O kubernetes-test.tar.gz https://storage.googleapis.com/kubernetes-rel
     tar xzf kubernetes-test.tar.gz -C / && \
     rm kubernetes-test.tar.gz
 RUN mv /kubernetes/*/bin/* /bin/
-
-ARG EKSCTL_VERSION=latest
-RUN wget -O eksctl.tar.gz "https://github.com/eksctl-io/eksctl/releases/${EKSCTL_VERSION}/download/eksctl_Linux_${TARGETARCH}.tar.gz" && \
-    tar xzf eksctl.tar.gz -C /bin/ && \
-    rm eksctl.tar.gz
-
-ARG KUBETEST2_VERSION=v0.0.0-20231113220322-d7fcb799ce84
-RUN go install sigs.k8s.io/kubetest2/...@${KUBETEST2_VERSION}
-
-COPY kubetest2/ .
-RUN ls -la
-RUN go install ./...
-
 RUN rm -rf /workdir
-
-WORKDIR $GOPATH/src/github.com/aws/aws-k8s-tester
-COPY . .
-RUN cd e2e2/ && go mod download
+COPY --from=builder /usr/local/go/bin/* /bin/
