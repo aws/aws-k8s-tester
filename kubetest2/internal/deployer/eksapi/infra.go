@@ -163,6 +163,14 @@ func deleteLeakedENIs(clients *awsClients, resourceID string) error {
 				Name:   aws.String("vpc-id"),
 				Values: []string{infra.vpc},
 			},
+			{
+				Name:   aws.String("attachment.status"),
+				Values: []string{"detached"},
+			},
+			{
+				Name:   aws.String("interface-type"),
+				Values: []string{"interface"},
+			},
 		},
 	})
 	deleted := 0
