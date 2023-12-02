@@ -5,7 +5,7 @@ import (
 	"flag"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/kubetest2/internal/deployer/eksapi"
+	"github.com/aws/aws-k8s-tester/kubetest2/internal/deployers/eksapi"
 	"k8s.io/klog/v2"
 )
 
