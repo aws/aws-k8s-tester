@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/aws/aws-k8s-tester/kubetest2/internal/deployer/eksapi"
+	"github.com/aws/aws-k8s-tester/kubetest2/internal/deployers/eksapi"
 	"sigs.k8s.io/kubetest2/pkg/app"
 )
 

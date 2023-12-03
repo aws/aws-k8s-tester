@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/kubetest2/internal/util"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
@@ -32,8 +33,15 @@ func createCluster(clients *awsClients, infra *infra, opts *deployerOptions, res
 		},
 		Version: aws.String(opts.KubernetesVersion),
 	}
+	apiOpts, err := util.NewHTTPHeaderAPIOptions(opts.UpClusterHeaders)
+	if err != nil {
+		return fmt.Errorf("failed to create API options: %v", err)
+	}
 	klog.Infof("creating cluster...")
-	out, err := clients.EKS().CreateCluster(context.TODO(), &input)
+	out, err := clients.EKS().CreateCluster(context.TODO(), &input,
+		func(o *eks.Options) {
+			o.APIOptions = apiOpts
+		})
 	if err != nil {
 		return fmt.Errorf("failed to create cluster: %v", err)
 	}
