@@ -44,16 +44,11 @@ RUN wget -O eksctl.tar.gz "https://github.com/eksctl-io/eksctl/releases/${EKSCTL
     tar xzf eksctl.tar.gz -C /bin/ && \
     rm eksctl.tar.gz
 ARG KUBERNETES_MINOR_VERSION
-RUN wget -O kubernetes-version.txt https://storage.googleapis.com/kubernetes-release/release/stable-${KUBERNETES_MINOR_VERSION}.txt
+COPY hack/download-kubernetes-binaries.sh .
+RUN ./download-kubernetes-binaries.sh "${KUBERNETES_MINOR_VERSION}" "${TARGETOS}" "${TARGETARCH}"
 RUN mkdir /info
 ENV PATH=$PATH:/info
 RUN cp kubernetes-version.txt /info/
-RUN wget -O kubernetes-client.tar.gz https://storage.googleapis.com/kubernetes-release/release/$(cat kubernetes-version.txt)/kubernetes-client-${TARGETOS}-${TARGETARCH}.tar.gz && \
-    tar xzf kubernetes-client.tar.gz -C / && \
-    rm kubernetes-client.tar.gz
-RUN wget -O kubernetes-test.tar.gz https://storage.googleapis.com/kubernetes-release/release/$(cat kubernetes-version.txt)/kubernetes-test-${TARGETOS}-${TARGETARCH}.tar.gz && \
-    tar xzf kubernetes-test.tar.gz -C / && \
-    rm kubernetes-test.tar.gz
-RUN mv /kubernetes/*/bin/* /bin/
+RUN mv kubernetes/*/bin/* /bin/
 RUN rm -rf /workdir
 COPY --from=builder /usr/local/go/bin/* /bin/
