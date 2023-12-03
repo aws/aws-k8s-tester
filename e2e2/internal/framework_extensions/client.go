@@ -1,7 +1,9 @@
 package frameworkext
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"os"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -18,77 +20,94 @@ import (
 // ApplyFiles creates Kubernetes objects contained in manifest file(s), in a manner similar to `kubectl apply -f`
 // Multiple objects may be in each manifest file.
 // The manifest files are processed in order.
-func ApplyFiles(restConfig *rest.Config, manifestFiles []string) error {
+func ApplyFiles(restConfig *rest.Config, manifestFiles ...string) error {
 	for _, manifestFile := range manifestFiles {
-		if err := ApplyFile(restConfig, manifestFile); err != nil {
+		if f, err := os.Open(manifestFile); err != nil {
+			return err
+		} else if err := applyManifests(restConfig, f); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// ApplyFile creates Kubernetes objects contained in a manifest file, in a manner similar to `kubectl apply -f`
-// Multiple objects may be in the manifest file.
-func ApplyFile(restConfig *rest.Config, manifestFile string) error {
-	f, err := os.Open(manifestFile)
-	if err != nil {
-		return err
-	}
-	objs, err := decoder.DecodeAll(context.TODO(), f)
-	if err != nil {
-		return err
-	}
-	return processObjects(restConfig, objs, func(client *resource.Helper, obj k8s.Object) error {
-		namespace, err := meta.NewAccessor().Namespace(obj)
-		if err != nil {
+// ApplyManifests creates Kubernetes objects contained in manifests, in a manner similar to `kubectl apply -f`
+// Multiple objects may be in the manifest data.
+func ApplyManifests(restConfig *rest.Config, manifests ...[]byte) error {
+	return applyManifests(restConfig, bytesSlicesToReaders(manifests...)...)
+}
+
+func applyManifests(restConfig *rest.Config, manifests ...io.Reader) error {
+	for _, manifest := range manifests {
+		if objs, err := decoder.DecodeAll(context.TODO(), manifest); err != nil {
+			return err
+		} else if err := processObjects(restConfig, objs, func(client *resource.Helper, obj k8s.Object) error {
+			namespace, err := meta.NewAccessor().Namespace(obj)
+			if err != nil {
+				return err
+			}
+			if namespace == "" {
+				namespace = "default"
+			}
+			_, err = client.Create(namespace, false, obj)
+			return err
+		}); err != nil {
 			return err
 		}
-		if namespace == "" {
-			namespace = "default"
-		}
-		_, err = client.Create(namespace, false, obj)
-		return err
-	})
+	}
+	return nil
 }
 
 // DeleteFiles deletes Kubernetes objects contained in manifest file(s), in a manner similar to `kubectl delete -f`
 // Multiple objects may be in each manifest file.
-// The manifest files are processed in order.
-func DeleteFiles(restConfig *rest.Config, manifestFiles []string) error {
+func DeleteFiles(restConfig *rest.Config, manifestFiles ...string) error {
 	for _, manifestFile := range manifestFiles {
-		if err := DeleteFile(restConfig, manifestFile); err != nil {
+		if f, err := os.Open(manifestFile); err != nil {
+			return err
+		} else if err := deleteManifests(restConfig, f); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// DeleteFile deletes Kubernetes objects contained in a manifest file, in a manner similar to `kubectl delete -f`
-// Multiple objects may be in the manifest file.
-func DeleteFile(restConfig *rest.Config, manifestFile string) error {
-	f, err := os.Open(manifestFile)
-	if err != nil {
-		return err
-	}
-	objs, err := decoder.DecodeAll(context.TODO(), f)
-	if err != nil {
-		return err
-	}
-	return processObjects(restConfig, objs, func(client *resource.Helper, obj k8s.Object) error {
-		name, err := meta.NewAccessor().Name(obj)
-		if err != nil {
+// DeleteManifests deletes Kubernetes objects contained in manifest(s), in a manner similar to `kubectl delete -f`
+// Multiple objects may be in each manifest.
+func DeleteManifests(restConfig *rest.Config, manifests ...[]byte) error {
+	return deleteManifests(restConfig, bytesSlicesToReaders(manifests...)...)
+}
+
+func deleteManifests(restConfig *rest.Config, manifests ...io.Reader) error {
+	for _, manifest := range manifests {
+		if objs, err := decoder.DecodeAll(context.TODO(), manifest); err != nil {
+			return err
+		} else if err := processObjects(restConfig, objs, func(client *resource.Helper, obj k8s.Object) error {
+			name, err := meta.NewAccessor().Name(obj)
+			if err != nil {
+				return err
+			}
+			namespace, err := meta.NewAccessor().Namespace(obj)
+			if err != nil {
+				return err
+			}
+			if namespace == "" {
+				namespace = "default"
+			}
+			_, err = client.Delete(namespace, name)
+			return err
+		}); err != nil {
 			return err
 		}
-		namespace, err := meta.NewAccessor().Namespace(obj)
-		if err != nil {
-			return err
-		}
-		if namespace == "" {
-			namespace = "default"
-		}
-		_, err = client.Delete(namespace, name)
-		return err
-	})
+	}
+	return nil
+}
+
+func bytesSlicesToReaders(byteSlices ...[]byte) []io.Reader {
+	var readers []io.Reader
+	for _, b := range byteSlices {
+		readers = append(readers, bytes.NewReader(b))
+	}
+	return readers
 }
 
 // processObjects applies a processFunc to each object, supplying it a dynamically-typed client appropriate for the object

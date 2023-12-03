@@ -2,6 +2,7 @@ package nvidia
 
 import (
 	"context"
+	_ "embed"
 	"slices"
 	"testing"
 	"time"
@@ -19,14 +20,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestMPIJobPytorchTraining(t *testing.T) {
-	manifestSingleNode := "manifests/mpi-job-pytorch-training-single-node.yaml"
+var (
+	//go+embed manifests/mpi-job-pytorch-training-single-node.yaml
+	mpiJobPytorchTrainingSingleNodeManifest []byte
+	//go+embed manifests/mpi-job-pytorch-training-multi-node.yaml
+	mpiJobPytorchTrainingMultiNodeManifest []byte
+	//go+embed manifests/efa-device-plugin.yaml
+	efaDevicePluginManifest []byte
+)
 
+func TestMPIJobPytorchTraining(t *testing.T) {
 	singleNode := features.New("single-node").
 		WithLabel("suite", "nvidia").
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			err := fwext.ApplyFile(cfg.Client().RESTConfig(), manifestSingleNode)
+			err := fwext.ApplyManifests(cfg.Client().RESTConfig(), mpiJobPytorchTrainingSingleNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -49,7 +57,7 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			err := fwext.DeleteFile(cfg.Client().RESTConfig(), manifestSingleNode)
+			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), mpiJobPytorchTrainingSingleNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -57,9 +65,9 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 		}).
 		Feature()
 
-	manifestsMultiNode := []string{
-		"manifests/efa-device-plugin.yaml",
-		"manifests/mpi-job-pytorch-training-multi-node.yaml",
+	manifestsMultiNode := [][]byte{
+		efaDevicePluginManifest,
+		mpiJobPytorchTrainingMultiNodeManifest,
 	}
 
 	multiNode := features.New("multi-node").
@@ -67,7 +75,7 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 		WithLabel("hardware", "gpu").
 		WithLabel("hardware", "efa").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			err := fwext.ApplyFiles(cfg.Client().RESTConfig(), manifestsMultiNode)
+			err := fwext.ApplyManifests(cfg.Client().RESTConfig(), manifestsMultiNode...)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -102,7 +110,7 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			slices.Reverse(manifestsMultiNode)
-			err := fwext.DeleteFiles(cfg.Client().RESTConfig(), manifestsMultiNode)
+			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), manifestsMultiNode...)
 			if err != nil {
 				t.Fatal(err)
 			}
