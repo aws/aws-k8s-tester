@@ -22,6 +22,13 @@ var (
 	testenv env.Environment
 )
 
+var (
+	//go+embed manifests/nvidia-device-plugin.yaml
+	nvidiaDevicePluginManifest []byte
+	//go+embed manifests/mpi-operator.yaml
+	mpiOperatorManifest []byte
+)
+
 func TestMain(m *testing.M) {
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
@@ -30,14 +37,14 @@ func TestMain(m *testing.M) {
 	testenv = env.NewWithConfig(cfg)
 
 	// all NVIDIA tests require the device plugin and MPI operator
-	manifests := []string{
-		"manifests/nvidia-device-plugin.yaml",
-		"manifests/mpi-operator.yaml",
+	manifests := [][]byte{
+		nvidiaDevicePluginManifest,
+		mpiOperatorManifest,
 	}
 
 	testenv.Setup(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			err := fwext.ApplyFiles(config.Client().RESTConfig(), manifests)
+			err := fwext.ApplyManifests(config.Client().RESTConfig(), manifests...)
 			if err != nil {
 				return ctx, err
 			}
@@ -70,7 +77,7 @@ func TestMain(m *testing.M) {
 	testenv.Finish(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 			slices.Reverse(manifests)
-			err := fwext.DeleteFiles(config.Client().RESTConfig(), manifests)
+			err := fwext.DeleteManifests(config.Client().RESTConfig(), manifests...)
 			if err != nil {
 				return ctx, err
 			}
