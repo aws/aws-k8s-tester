@@ -44,7 +44,7 @@ RUN wget -O eksctl.tar.gz "https://github.com/eksctl-io/eksctl/releases/${EKSCTL
     tar xzf eksctl.tar.gz -C /bin/ && \
     rm eksctl.tar.gz
 ARG KUBERNETES_MINOR_VERSION
-RUN wget -O kubernetes-version.txt https://storage.googleapis.com/kubernetes-release/release/stable-${KUBERNETES_MINOR_VERSION}.txt
+RUN wget -O kubernetes-version.txt https://storage.googleapis.com/kubernetes-release/release/latest-${KUBERNETES_MINOR_VERSION}.txt
 RUN mkdir /info
 ENV PATH=$PATH:/info
 RUN cp kubernetes-version.txt /info/
