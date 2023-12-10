@@ -1,0 +1,153 @@
+# This is a golang template to work around limitations of CloudFormation built-ins, which are used whenever possible.
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'kubetest2-eksapi unmanaged nodegroup'
+
+Parameters:
+  ResourceId:
+    Description: Unique identifier for this kubetest2-eksapi execution.
+    Type: String
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+
+  AMIId:
+    Type: String
+    Default: ""
+    Description: Specify AMI id for the node instances.
+
+  AMISSMParameter:
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: /aws/service/eks/optimized-ami/{{.KubernetesVersion}}/amazon-linux-2/recommended/image_id
+    Description: AWS Systems Manager Parameter Store parameter of the AMI ID for the worker node instances. Only used if AMIId is not specified.
+
+  NodeDiskSize:
+    Type: Number
+    Description: Node disk size in gigabytes.
+    Default: 20
+
+  NodeCount:
+    Type: Number
+
+  ClusterCA:
+    Type: String
+
+  ClusterEndpoint:
+    Type: String
+
+  ClusterName:
+    Type: String
+
+  ExtraBootstrapArguments:
+    Description: Arguments to pass to the bootstrap script. See files/bootstrap.sh in https://github.com/awslabs/amazon-eks-ami
+    Type: String
+    Default: ""
+
+  BootstrapArgumentsForSpotFleet:
+    Description: Arguments to pass to the bootstrap script. See files/bootstrap.sh in https://github.com/awslabs/amazon-eks-ami
+    Default: "--kubelet-extra-args '--node-labels=lifecycle=Ec2Spot,$ExtraNodeLabels --register-with-taints=spotInstance=true:PreferNoSchedule'"
+    Type: String
+
+  NodeRoleName:
+    Description: The IAM role name  of worker nodes.
+    Type: String
+    
+  PauseTime:
+    Description: Pause Time
+    Type: String
+    Default: PT5M
+
+  SSHKeyPair:
+    Type: String
+
+  SSHSecurityGroup:
+    Type: String
+
+Conditions:
+  HasAMIId: !Not [ !Equals [ !Ref AMIId, "" ] ]
+
+Resources:
+  NodeInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - !Ref NodeRoleName
+
+  NodeGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        WaitOnResourceSignals: true
+        PauseTime: !Ref PauseTime
+    Properties:
+      AutoScalingGroupName: !Ref ResourceId
+      DesiredCapacity: !Ref NodeCount
+      MinSize: !Ref NodeCount
+      MaxSize: !Ref NodeCount      
+      MixedInstancesPolicy:
+        InstancesDistribution:
+          OnDemandAllocationStrategy: prioritized
+          OnDemandBaseCapacity: !Ref NodeCount
+          OnDemandPercentageAboveBaseCapacity: 0
+        LaunchTemplate:
+          LaunchTemplateSpecification: 
+            LaunchTemplateId: !Ref NodeLaunchTemplate
+            # LaunchTemplateName: String
+            Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
+          Overrides:
+            {{- range .InstanceTypes}}
+            - InstanceType: "{{.}}"
+            {{- end}}
+      VPCZoneIdentifier:
+        !Ref SubnetIds
+
+  NodeLifecycleHook:
+    Type: AWS::AutoScaling::LifecycleHook
+    Properties:
+      AutoScalingGroupName: !Ref NodeGroup
+      HeartbeatTimeout: 60
+      DefaultResult: CONTINUE
+      LifecycleHookName: !Ref ResourceId
+      LifecycleTransition: autoscaling:EC2_INSTANCE_TERMINATING
+
+  NodeLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Ref ResourceId
+      LaunchTemplateData: 
+        SecurityGroupIds:
+          - !Ref SecurityGroup
+          - !Ref SSHSecurityGroup
+        KeyName: !Ref SSHKeyPair
+        UserData:
+          Fn::Base64:
+            !Sub |
+            #!/bin/bash
+            /etc/eks/bootstrap.sh ${ClusterName} ${ExtraBootstrapArguments} \
+              --b64-cluster-ca ${ClusterCA} \
+              --apiserver-endpoint ${ClusterEndpoint}
+            /opt/aws/bin/cfn-signal --exit-code $? \
+                     --stack  ${AWS::StackName} \
+                     --resource NodeGroup  \
+                     --region ${AWS::Region}
+        IamInstanceProfile: 
+          Arn: !GetAtt NodeInstanceProfile.Arn
+        ImageId:
+          !If
+            - HasAMIId
+            - !Ref AMIId    
+            - Ref: AMISSMParameter
+        InstanceType: "{{index .InstanceTypes 0}}"
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeSize: !Ref NodeDiskSize
+              VolumeType: gp2
+              DeleteOnTermination: true

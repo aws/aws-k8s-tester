@@ -33,6 +33,12 @@ Parameters:
     Default: ""
     Description: Additional service principal with sts:AssumeRole permissions on the ClusterRole
 
+  SSHPublicKeyMaterial:
+    Type: String
+
+  ResourceId:
+    Type: String
+
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -182,6 +188,9 @@ Resources:
         Ref: PublicRouteTable
   PublicSubnetDefaultIpv6Route:
     Type: AWS::EC2::Route
+    DependsOn:
+      - InternetGateway
+      - VPCGatewayAttachment    
     Properties:
       DestinationIpv6CidrBlock: ::/0
       GatewayId:
@@ -392,12 +401,6 @@ Resources:
       SubnetId:
         Ref: SubnetPrivate02
 
-  ControlPlaneSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Cluster communication with worker nodes
-      VpcId: !Ref VPC
-
   ClusterRole:
     Type: AWS::IAM::Role
     Properties:
@@ -485,6 +488,23 @@ Resources:
       Roles:
         - !Ref NodeRole
 
+  SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "SSH access for worker nodes"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+  SSHKeyPair:
+    Type: AWS::EC2::KeyPair
+    Properties:
+      PublicKeyMaterial: !Ref SSHPublicKeyMaterial
+      KeyName: !Ref ResourceId
+
 Outputs:
   SubnetsPrivate:
     Value:
@@ -506,19 +526,25 @@ Outputs:
       Name:
         Fn::Sub: "${AWS::StackName}::SubnetsPublic"
 
-  SecurityGroups:
-    Description: Security group for the cluster control plane communication with worker nodes
-    Value: !Join [",", [!Ref ControlPlaneSecurityGroup]]
-    Export:
-      Name:
-        Fn::Sub: "${AWS::StackName}::SecurityGroups"
-
   VPC:
     Value:
       Ref: VPC
     Export:
       Name:
         Fn::Sub: "${AWS::StackName}::VPC"
+
+  SSHSecurityGroup:
+    Value: !GetAtt SSHSecurityGroup.GroupId
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}::SSHSecurityGroup"
+
+  SSHKeyPair:
+    Value:
+      Ref: SSHKeyPair
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}::SSHKeyPair"
 
   ClusterRole:
     Value:

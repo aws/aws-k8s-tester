@@ -5,6 +5,7 @@ OUT_DIR=$(REPO_ROOT)/bin
 # record the source commit in the binary, overridable
 COMMIT?=$(shell git describe --tags --always --dirty 2>/dev/null)
 INSTALL?=install
+GOPATH := $(shell go env GOPATH)
 # make install will place binaries here
 INSTALL_DIR?=$(GOPATH)/bin
 # the output binary name, overridden when cross compiling

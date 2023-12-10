@@ -14,10 +14,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"k8s.io/klog"
-)
 
-//go:embed cloudformation/infra.yaml
-var infraTemplate string
+	"github.com/aws/aws-k8s-tester/kubetest2/internal/deployers/eksapi/templates"
+)
 
 const (
 	infraStackCreationTimeout = time.Minute * 10
@@ -30,12 +29,13 @@ const (
 const eksEndpointURLTag = "eks-endpoint-url"
 
 type infra struct {
-	vpc            string
-	securityGroups []string
-	subnetsPublic  []string
-	subnetsPrivate []string
-	clusterRole    string
-	nodeRole       string
+	vpc              string
+	subnetsPublic    []string
+	subnetsPrivate   []string
+	clusterRole      string
+	nodeRole         string
+	sshSecurityGroup string
+	sshKeyPair       string
 }
 
 func (i *infra) subnets() []string {
@@ -43,18 +43,30 @@ func (i *infra) subnets() []string {
 }
 
 func createInfrastructureStack(clients *awsClients, opts *deployerOptions, resourceID string) (*infra, error) {
+	publicKeyMaterial, err := loadSSHPublicKey()
+	if err != nil {
+		return nil, err
+	}
 	input := cloudformation.CreateStackInput{
 		StackName:    aws.String(resourceID),
-		TemplateBody: aws.String(infraTemplate),
+		TemplateBody: aws.String(templates.Infrastructure),
 		Capabilities: []cloudformationtypes.Capability{cloudformationtypes.CapabilityCapabilityIam},
+		Parameters: []cloudformationtypes.Parameter{
+			{
+				ParameterKey:   aws.String("SSHPublicKeyMaterial"),
+				ParameterValue: aws.String(publicKeyMaterial),
+			},
+			{
+				ParameterKey:   aws.String("ResourceId"),
+				ParameterValue: aws.String(resourceID),
+			},
+		},
 	}
 	if opts.ClusterRoleServicePrincipal != "" {
-		input.Parameters = []cloudformationtypes.Parameter{
-			{
-				ParameterKey:   aws.String("AdditionalClusterRoleServicePrincipal"),
-				ParameterValue: aws.String(opts.ClusterRoleServicePrincipal),
-			},
-		}
+		input.Parameters = append(input.Parameters, cloudformationtypes.Parameter{
+			ParameterKey:   aws.String("AdditionalClusterRoleServicePrincipal"),
+			ParameterValue: aws.String(opts.ClusterRoleServicePrincipal),
+		})
 	}
 	if opts.EKSEndpointURL != "" {
 		input.Tags = []cloudformationtypes.Tag{
@@ -101,8 +113,6 @@ func getInfrastructureStackResources(clients *awsClients, resourceID string) (*i
 		switch *output.OutputKey {
 		case "VPC":
 			infra.vpc = value
-		case "SecurityGroups":
-			infra.securityGroups = strings.Split(value, ",")
 		case "SubnetsPublic":
 			infra.subnetsPublic = strings.Split(value, ",")
 		case "SubnetsPrivate":
@@ -111,6 +121,10 @@ func getInfrastructureStackResources(clients *awsClients, resourceID string) (*i
 			infra.clusterRole = value
 		case "NodeRole":
 			infra.nodeRole = value
+		case "SSHSecurityGroup":
+			infra.sshSecurityGroup = value
+		case "SSHKeyPair":
+			infra.sshKeyPair = value
 		}
 	}
 	return &infra, nil
