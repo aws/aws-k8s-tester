@@ -29,7 +29,7 @@ func createCluster(clients *awsClients, infra *infra, opts *deployerOptions, res
 		},
 		RoleArn: aws.String(infra.clusterRole),
 		KubernetesNetworkConfig: &ekstypes.KubernetesNetworkConfigRequest{
-			IpFamily: ekstypes.IpFamilyIpv4,
+			IpFamily: ekstypes.IpFamily(opts.IPFamily),
 		},
 		Version: aws.String(opts.KubernetesVersion),
 	}
