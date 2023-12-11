@@ -259,7 +259,6 @@ Resources:
 
   #
   # Public subnets
-  # Note: AssignIpv6AddressOnCreation: true is required but a CFN limitation right now, need to add this manually
   SubnetPublic01:
     Type: AWS::EC2::Subnet
     Metadata:
@@ -275,6 +274,7 @@ Resources:
         Ref: PublicSubnet01Block
       Ipv6CidrBlock:
         !Select [0, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 8, 64]]
+      AssignIpv6AddressOnCreation: true
       MapPublicIpOnLaunch: true
       Tags:
         - Key: kubernetes.io/role/elb
@@ -297,6 +297,7 @@ Resources:
         Ref: PublicSubnet02Block
       Ipv6CidrBlock:
         !Select [1, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 8, 64]]
+      AssignIpv6AddressOnCreation: true
       MapPublicIpOnLaunch: true
       Tags:
         - Key: kubernetes.io/role/elb

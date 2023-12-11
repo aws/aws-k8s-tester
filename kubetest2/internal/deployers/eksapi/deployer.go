@@ -49,6 +49,7 @@ type deployerOptions struct {
 	KubeconfigPath              string   `flag:"kubeconfig" desc:"Path to kubeconfig"`
 	EKSEndpointURL              string   `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
 	UpClusterHeaders            []string `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
+	IPFamily                    string   `flag:"ip-family" desc:"IP family for the cluster (ipv4 or ipv6)"`
 }
 
 // NewDeployer implements deployer.New for EKS using the EKS (and other AWS) API(s) directly (no cloudformation)
@@ -144,6 +145,10 @@ func (d *deployer) verifyUpFlags() error {
 	if d.Nodes == 0 {
 		d.Nodes = 3
 		klog.V(2).Infof("Using default number of nodes: %d", d.Nodes)
+	}
+	if d.IPFamily == "" {
+		d.IPFamily = string(ekstypes.IpFamilyIpv4)
+		klog.V(2).Infof("Using default IP family: %s", d.IPFamily)
 	}
 	return nil
 }
