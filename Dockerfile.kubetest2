@@ -15,7 +15,7 @@ RUN go install sigs.k8s.io/kubetest2/...@${KUBETEST2_VERSION}
 WORKDIR $GOPATH/src/github.com/aws/aws-k8s-tester/kubetest2
 COPY kubetest2/ .
 RUN go install ./...
-WORKDIR $GOPATH/github.com/aws/aws-k8s-tester/e2e2
+WORKDIR $GOPATH/src/github.com/aws/aws-k8s-tester/e2e2
 COPY e2e2/ .
 RUN go test -c ./test/cases/nvidia -o $GOPATH/bin/e2e-nvidia
 

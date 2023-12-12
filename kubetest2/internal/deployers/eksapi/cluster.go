@@ -18,13 +18,20 @@ const (
 	clusterDeletionTimeout = time.Minute * 15
 )
 
-func createCluster(clients *awsClients, infra *infra, opts *deployerOptions, resourceID string) error {
+type cluster struct {
+	endpoint                 string
+	certificateAuthorityData string
+	securityGroupId          string
+	arn                      string
+	name                     string
+}
+
+func createCluster(clients *awsClients, infra *infra, opts *deployerOptions, resourceID string) (*cluster, error) {
 	input := eks.CreateClusterInput{
 		Name: aws.String(resourceID),
 		ResourcesVpcConfig: &ekstypes.VpcConfigRequest{
 			EndpointPrivateAccess: aws.Bool(true),
 			EndpointPublicAccess:  aws.Bool(true),
-			SecurityGroupIds:      infra.securityGroups,
 			SubnetIds:             append(infra.subnetsPublic, infra.subnetsPrivate...),
 		},
 		RoleArn: aws.String(infra.clusterRole),
@@ -35,27 +42,39 @@ func createCluster(clients *awsClients, infra *infra, opts *deployerOptions, res
 	}
 	apiOpts, err := util.NewHTTPHeaderAPIOptions(opts.UpClusterHeaders)
 	if err != nil {
-		return fmt.Errorf("failed to create API options: %v", err)
+		return nil, fmt.Errorf("failed to create API options: %v", err)
 	}
 	klog.Infof("creating cluster...")
-	out, err := clients.EKS().CreateCluster(context.TODO(), &input,
+	createOutput, err := clients.EKS().CreateCluster(context.TODO(), &input,
 		func(o *eks.Options) {
 			o.APIOptions = apiOpts
 		})
 	if err != nil {
-		return fmt.Errorf("failed to create cluster: %v", err)
+		return nil, fmt.Errorf("failed to create cluster: %v", err)
 	}
-	klog.Infof("waiting for cluster to be active: %s", *out.Cluster.Arn)
+	klog.Infof("waiting for cluster to be active: %s", *createOutput.Cluster.Arn)
 	err = eks.NewClusterActiveWaiter(clients.EKS()).
 		Wait(context.TODO(), &eks.DescribeClusterInput{
-			Name: out.Cluster.Name,
+			Name: createOutput.Cluster.Name,
 		},
 			clusterCreationTimeout)
 	if err != nil {
-		return fmt.Errorf("failed to wait for cluster to become active: %v", err)
+		return nil, fmt.Errorf("failed to wait for cluster to become active: %v", err)
 	}
-	klog.Infof("cluster is active: %s", *out.Cluster.Arn)
-	return nil
+	klog.Infof("cluster is active: %s", *createOutput.Cluster.Arn)
+	describeOutput, err := clients.EKS().DescribeCluster(context.TODO(), &eks.DescribeClusterInput{
+		Name: createOutput.Cluster.Name,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &cluster{
+		arn:                      *describeOutput.Cluster.Arn,
+		certificateAuthorityData: *describeOutput.Cluster.CertificateAuthority.Data,
+		endpoint:                 *describeOutput.Cluster.Endpoint,
+		name:                     *describeOutput.Cluster.Name,
+		securityGroupId:          *describeOutput.Cluster.ResourcesVpcConfig.ClusterSecurityGroupId,
+	}, nil
 }
 
 func deleteCluster(clients *awsClients, resourceID string) error {

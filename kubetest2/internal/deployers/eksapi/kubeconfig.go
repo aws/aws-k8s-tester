@@ -2,12 +2,9 @@ package eksapi
 
 import (
 	"bytes"
-	"context"
 	"os"
 	"text/template"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/eks"
 	"k8s.io/klog"
 )
 
@@ -42,25 +39,19 @@ users:
 `
 
 type kubeconfigTemplateParameters struct {
-	ClusterCertificateAuthority *string
-	ClusterARN                  *string
-	ClusterEndpoint             *string
-	ClusterName                 *string
+	ClusterCertificateAuthority string
+	ClusterARN                  string
+	ClusterEndpoint             string
+	ClusterName                 string
 }
 
-func writeKubeconfig(eksClient *eks.Client, clusterName string, kubeconfigPath string) error {
-	klog.Infof("writing kubeconfig to %s for cluster: %s", kubeconfigPath, clusterName)
-	out, err := eksClient.DescribeCluster(context.TODO(), &eks.DescribeClusterInput{
-		Name: aws.String(clusterName),
-	})
-	if err != nil {
-		return err
-	}
+func writeKubeconfig(cluster *cluster, kubeconfigPath string) error {
+	klog.Infof("writing kubeconfig to %s for cluster: %s", kubeconfigPath, cluster.arn)
 	templateParams := kubeconfigTemplateParameters{
-		ClusterCertificateAuthority: out.Cluster.CertificateAuthority.Data,
-		ClusterARN:                  out.Cluster.Arn,
-		ClusterEndpoint:             out.Cluster.Endpoint,
-		ClusterName:                 out.Cluster.Name,
+		ClusterCertificateAuthority: cluster.certificateAuthorityData,
+		ClusterARN:                  cluster.arn,
+		ClusterEndpoint:             cluster.endpoint,
+		ClusterName:                 cluster.name,
 	}
 
 	kubeconfig := bytes.Buffer{}
