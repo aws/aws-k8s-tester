@@ -476,7 +476,7 @@ Resources:
                       "ec2:CreateTags"
                   ],
                   "Resource": [
-                      "arn:aws:ec2:*:*:network-interface/*"
+                      "arn:*:ec2:*:*:network-interface/*"
                   ]
               }
           ]
