@@ -18,6 +18,7 @@ RUN go install ./...
 WORKDIR $GOPATH/src/github.com/aws/aws-k8s-tester/e2e2
 COPY e2e2/ .
 RUN go test -c ./test/cases/nvidia -o $GOPATH/bin/e2e-nvidia
+RUN go test -c ./test/cases/netpol -o $GOPATH/bin/e2e-netpol
 
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 ARG TARGETOS
@@ -51,4 +52,8 @@ ENV PATH=$PATH:/info
 RUN cp kubernetes-version.txt /info/
 RUN mv kubernetes/*/bin/* /bin/
 RUN rm -rf /workdir
+RUN curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && \
+    chmod 700 get_helm.sh && \
+    VERIFY_CHECKSUM=false ./get_helm.sh && \
+    rm -rf ./get_helm.sh
 COPY --from=builder /usr/local/go/bin/* /bin/
