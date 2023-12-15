@@ -21,11 +21,11 @@ import (
 )
 
 var (
-	//go+embed manifests/mpi-job-pytorch-training-single-node.yaml
+	//go:embed manifests/mpi-job-pytorch-training-single-node.yaml
 	mpiJobPytorchTrainingSingleNodeManifest []byte
-	//go+embed manifests/mpi-job-pytorch-training-multi-node.yaml
+	//go:embed manifests/mpi-job-pytorch-training-multi-node.yaml
 	mpiJobPytorchTrainingMultiNodeManifest []byte
-	//go+embed manifests/efa-device-plugin.yaml
+	//go:embed manifests/efa-device-plugin.yaml
 	efaDevicePluginManifest []byte
 )
 
