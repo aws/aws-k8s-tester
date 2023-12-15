@@ -2,6 +2,7 @@ package nvidia
 
 import (
 	"context"
+	_ "embed"
 	"log"
 	"os"
 	"slices"
@@ -23,9 +24,9 @@ var (
 )
 
 var (
-	//go+embed manifests/nvidia-device-plugin.yaml
+	//go:embed manifests/nvidia-device-plugin.yaml
 	nvidiaDevicePluginManifest []byte
-	//go+embed manifests/mpi-operator.yaml
+	//go:embed manifests/mpi-operator.yaml
 	mpiOperatorManifest []byte
 )
 
