@@ -52,22 +52,20 @@ func createCluster(clients *awsClients, infra *infra, opts *deployerOptions, res
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cluster: %v", err)
 	}
+	describeInput := eks.DescribeClusterInput{
+		Name: createOutput.Cluster.Name,
+	}
 	klog.Infof("waiting for cluster to be active: %s", *createOutput.Cluster.Arn)
-	err = eks.NewClusterActiveWaiter(clients.EKS()).
-		Wait(context.TODO(), &eks.DescribeClusterInput{
-			Name: createOutput.Cluster.Name,
-		},
-			clusterCreationTimeout)
-	if err != nil {
-		return nil, fmt.Errorf("failed to wait for cluster to become active: %v", err)
+	waitErr := eks.NewClusterActiveWaiter(clients.EKS()).Wait(context.TODO(), &describeInput, clusterCreationTimeout)
+	describeOutput, describeErr := clients.EKS().DescribeCluster(context.TODO(), &describeInput)
+	if describeErr != nil {
+		return nil, fmt.Errorf("failed to describe cluster after creation: %v", describeErr)
+	}
+	klog.Infof("cluster details after creation: %+v", describeOutput.Cluster)
+	if waitErr != nil {
+		return nil, fmt.Errorf("failed to wait for cluster to become active: %v", waitErr)
 	}
 	klog.Infof("cluster is active: %s", *createOutput.Cluster.Arn)
-	describeOutput, err := clients.EKS().DescribeCluster(context.TODO(), &eks.DescribeClusterInput{
-		Name: createOutput.Cluster.Name,
-	})
-	if err != nil {
-		return nil, err
-	}
 	return &cluster{
 		arn:                      *describeOutput.Cluster.Arn,
 		certificateAuthorityData: *describeOutput.Cluster.CertificateAuthority.Data,
