@@ -14,7 +14,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.100.1
-	sigs.k8s.io/kubetest2 v0.0.0-20231113220322-d7fcb799ce84
+	sigs.k8s.io/kubetest2 v0.0.0-20231217201311-35c2bb42e641
 )
 
 require (

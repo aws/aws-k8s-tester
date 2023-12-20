@@ -25,19 +25,31 @@ const (
 	nodegroupDeletionTimeout = time.Minute * 20
 )
 
-func createNodegroup(clients *awsClients, infra *infra, cluster *cluster, opts *deployerOptions, resourceID string) error {
-	if opts.UnmanagedNodes {
-		return createUnmanagedNodegroup(clients, infra, cluster, opts, resourceID)
-	} else {
-		return createManagedNodegroup(clients, infra, cluster, opts, resourceID)
+type NodegroupManager struct {
+	clients    *awsClients
+	resourceID string
+}
+
+func NewNodegroupManager(clients *awsClients, resourceID string) *NodegroupManager {
+	return &NodegroupManager{
+		clients:    clients,
+		resourceID: resourceID,
 	}
 }
 
-func createManagedNodegroup(clients *awsClients, infra *infra, cluster *cluster, opts *deployerOptions, resourceID string) error {
+func (m *NodegroupManager) createNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
+	if opts.UnmanagedNodes {
+		return m.createUnmanagedNodegroup(infra, cluster, opts)
+	} else {
+		return m.createManagedNodegroup(infra, cluster, opts)
+	}
+}
+
+func (m *NodegroupManager) createManagedNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
 	klog.Infof("creating nodegroup...")
 	input := eks.CreateNodegroupInput{
-		ClusterName:   aws.String(resourceID),
-		NodegroupName: aws.String(resourceID),
+		ClusterName:   aws.String(m.resourceID),
+		NodegroupName: aws.String(m.resourceID),
 		NodeRole:      aws.String(infra.nodeRole),
 		Subnets:       infra.subnets(),
 		DiskSize:      aws.Int32(100),
@@ -51,12 +63,12 @@ func createManagedNodegroup(clients *awsClients, infra *infra, cluster *cluster,
 	if len(opts.InstanceTypes) > 0 {
 		input.InstanceTypes = opts.InstanceTypes
 	}
-	out, err := clients.EKS().CreateNodegroup(context.TODO(), &input)
+	out, err := m.clients.EKS().CreateNodegroup(context.TODO(), &input)
 	if err != nil {
 		return err
 	}
 	klog.Infof("waiting for nodegroup to be active: %s", *out.Nodegroup.NodegroupArn)
-	err = eks.NewNodegroupActiveWaiter(clients.EKS()).
+	err = eks.NewNodegroupActiveWaiter(m.clients.EKS()).
 		Wait(context.TODO(), &eks.DescribeNodegroupInput{
 			ClusterName:   input.ClusterName,
 			NodegroupName: input.NodegroupName,
@@ -68,8 +80,8 @@ func createManagedNodegroup(clients *awsClients, infra *infra, cluster *cluster,
 	return nil
 }
 
-func createUnmanagedNodegroup(clients *awsClients, infra *infra, cluster *cluster, opts *deployerOptions, resourceID string) error {
-	stackName := getUnmanagedNodegroupStackName(resourceID)
+func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
+	stackName := m.getUnmanagedNodegroupStackName()
 	klog.Infof("creating unmanaged nodegroup stack...")
 	templateBuf := bytes.Buffer{}
 	err := templates.UnmanagedNodegroup.Execute(&templateBuf, struct {
@@ -92,7 +104,7 @@ func createUnmanagedNodegroup(clients *awsClients, infra *infra, cluster *cluste
 		Parameters: []cloudformationtypes.Parameter{
 			{
 				ParameterKey:   aws.String("ResourceId"),
-				ParameterValue: aws.String(resourceID),
+				ParameterValue: aws.String(m.resourceID),
 			},
 			{
 				ParameterKey:   aws.String("VpcId"),
@@ -142,12 +154,12 @@ func createUnmanagedNodegroup(clients *awsClients, infra *infra, cluster *cluste
 			ParameterValue: aws.String(opts.AMI),
 		})
 	}
-	out, err := clients.CFN().CreateStack(context.TODO(), &input)
+	out, err := m.clients.CFN().CreateStack(context.TODO(), &input)
 	if err != nil {
 		return err
 	}
 	klog.Infof("waiting for unmanaged nodegroup to be created: %s", *out.StackId)
-	err = cloudformation.NewStackCreateCompleteWaiter(clients.CFN()).
+	err = cloudformation.NewStackCreateCompleteWaiter(m.clients.CFN()).
 		Wait(context.TODO(),
 			&cloudformation.DescribeStacksInput{
 				StackName: out.StackId,
@@ -160,30 +172,30 @@ func createUnmanagedNodegroup(clients *awsClients, infra *infra, cluster *cluste
 	return nil
 }
 
-func deleteNodegroup(clients *awsClients, resourceID string) error {
-	if err := deleteUnmanagedNodegroup(clients, resourceID); err != nil {
+func (m *NodegroupManager) deleteNodegroup() error {
+	if err := m.deleteUnmanagedNodegroup(); err != nil {
 		return err
 	}
-	return deleteManagedNodegroup(clients, resourceID)
+	return m.deleteManagedNodegroup()
 }
 
-func deleteManagedNodegroup(clients *awsClients, resourceID string) error {
+func (m *NodegroupManager) deleteManagedNodegroup() error {
 	input := eks.DeleteNodegroupInput{
-		ClusterName:   aws.String(resourceID),
-		NodegroupName: aws.String(resourceID),
+		ClusterName:   aws.String(m.resourceID),
+		NodegroupName: aws.String(m.resourceID),
 	}
 	klog.Infof("deleting nodegroup...")
-	out, err := clients.EKS().DeleteNodegroup(context.TODO(), &input)
+	out, err := m.clients.EKS().DeleteNodegroup(context.TODO(), &input)
 	if err != nil {
 		var notFound *ekstypes.ResourceNotFoundException
 		if errors.As(err, &notFound) {
-			klog.Infof("nodegroup does not exist: %s", resourceID)
+			klog.Infof("nodegroup does not exist: %s", m.resourceID)
 			return nil
 		}
 		return fmt.Errorf("failed to delete nodegroup: %v", err)
 	}
 	klog.Infof("waiting for nodegroup deletion: %s", *out.Nodegroup.NodegroupArn)
-	err = eks.NewNodegroupDeletedWaiter(clients.EKS()).
+	err = eks.NewNodegroupDeletedWaiter(m.clients.EKS()).
 		Wait(context.TODO(), &eks.DescribeNodegroupInput{
 			ClusterName:   input.ClusterName,
 			NodegroupName: input.NodegroupName,
@@ -195,13 +207,13 @@ func deleteManagedNodegroup(clients *awsClients, resourceID string) error {
 	return nil
 }
 
-func deleteUnmanagedNodegroup(clients *awsClients, resourceID string) error {
-	stackName := getUnmanagedNodegroupStackName(resourceID)
+func (m *NodegroupManager) deleteUnmanagedNodegroup() error {
+	stackName := m.getUnmanagedNodegroupStackName()
 	input := cloudformation.DeleteStackInput{
 		StackName: aws.String(stackName),
 	}
 	klog.Infof("deleting unmanaged nodegroup stack: %s", stackName)
-	_, err := clients.CFN().DeleteStack(context.TODO(), &input)
+	_, err := m.clients.CFN().DeleteStack(context.TODO(), &input)
 	if err != nil {
 		var notFound *cloudformationtypes.StackNotFoundException
 		if errors.As(err, &notFound) {
@@ -211,7 +223,7 @@ func deleteUnmanagedNodegroup(clients *awsClients, resourceID string) error {
 		return fmt.Errorf("failed to delete unmanaged nodegroup stack: %w", err)
 	}
 	klog.Infof("waiting for unmanaged nodegroup stack to be deleted: %s", stackName)
-	err = cloudformation.NewStackDeleteCompleteWaiter(clients.CFN()).
+	err = cloudformation.NewStackDeleteCompleteWaiter(m.clients.CFN()).
 		Wait(context.TODO(),
 			&cloudformation.DescribeStacksInput{
 				StackName: aws.String(stackName),
@@ -224,6 +236,6 @@ func deleteUnmanagedNodegroup(clients *awsClients, resourceID string) error {
 	return nil
 }
 
-func getUnmanagedNodegroupStackName(resourceID string) string {
-	return fmt.Sprintf("%s-unmanaged-nodegroup", resourceID)
+func (m *NodegroupManager) getUnmanagedNodegroupStackName() string {
+	return fmt.Sprintf("%s-unmanaged-nodegroup", m.resourceID)
 }

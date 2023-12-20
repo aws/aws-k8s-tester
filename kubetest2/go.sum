@@ -2927,6 +2927,8 @@ sigs.k8s.io/kubetest2 v0.0.0-20231014151303-89f09b65e8dd h1:HqAkTCyXnlhZA3GMTVy7
 sigs.k8s.io/kubetest2 v0.0.0-20231014151303-89f09b65e8dd/go.mod h1:Mk/GvoOSrhOvqIg90OmoHnj72i1NApWnmvTTXy86b3g=
 sigs.k8s.io/kubetest2 v0.0.0-20231113220322-d7fcb799ce84 h1:r1v5iHjx9A4b6vSXntNtTcskAvLh1RkaVYPpWhNK3SM=
 sigs.k8s.io/kubetest2 v0.0.0-20231113220322-d7fcb799ce84/go.mod h1:Mk/GvoOSrhOvqIg90OmoHnj72i1NApWnmvTTXy86b3g=
+sigs.k8s.io/kubetest2 v0.0.0-20231217201311-35c2bb42e641 h1:fXHKMtnV4QUs0zuaStEX7ihR/LGi9BJbZDyS0y4hk4Y=
+sigs.k8s.io/kubetest2 v0.0.0-20231217201311-35c2bb42e641/go.mod h1:Mk/GvoOSrhOvqIg90OmoHnj72i1NApWnmvTTXy86b3g=
 sigs.k8s.io/mdtoc v1.0.1/go.mod h1:COYBtOjsaCg7o7SC4eaLwEXPuVRSuiVuLLRrHd7kShw=
 sigs.k8s.io/promo-tools/v3 v3.5.2 h1:xYmYJb2/TXIHBq8rlQZx6C3ESsayiPjp+cMYAlSodEY=
 sigs.k8s.io/promo-tools/v3 v3.5.2/go.mod h1:AYQ3wu2ESWY4UQqHtRUXnzj7V9/gP11kRKoykVQ6Oek=

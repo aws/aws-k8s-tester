@@ -1,7 +1,6 @@
 package eksapi
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"path/filepath"
@@ -10,8 +9,6 @@ import (
 	"github.com/aws/aws-k8s-tester/kubetest2/internal"
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/awssdk"
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/util"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/eks"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/octago/sflags/gen/gpflag"
 	"github.com/spf13/pflag"
@@ -27,18 +24,19 @@ const ResourcePrefix = "kubetest2-" + DeployerName
 // assert that deployer implements types.DeployerWithKubeconfig
 var _ types.DeployerWithKubeconfig = &deployer{}
 
+// assert that deployer implements types.DeployerWithInit
+var _ types.DeployerWithInit = &deployer{}
+
 type deployer struct {
 	commonOptions types.Options
 	deployerOptions
 
-	awsConfig aws.Config
+	infraManager     *InfrastructureManager
+	clusterManager   *ClusterManager
+	nodegroupManager *NodegroupManager
 
-	_awsClients *awsClients
-
-	infra   *infra
-	cluster *cluster
-
-	resourceID string
+	infra   *Infrastructure
+	cluster *Cluster
 }
 
 type deployerOptions struct {
@@ -60,11 +58,8 @@ type deployerOptions struct {
 // NewDeployer implements deployer.New for EKS using the EKS (and other AWS) API(s) directly (no cloudformation)
 func NewDeployer(opts types.Options) (types.Deployer, *pflag.FlagSet) {
 	// create a deployer object and set fields that are not flag controlled
-	awsConfig := awssdk.NewConfig()
 	d := &deployer{
 		commonOptions: opts,
-		awsConfig:     awsConfig,
-		resourceID:    ResourcePrefix + "-" + opts.RunID(),
 	}
 	// register flags and return
 	return d, bindFlags(d)
@@ -84,6 +79,16 @@ func bindFlags(d *deployer) *pflag.FlagSet {
 
 func (d *deployer) Version() string {
 	return internal.Version
+}
+
+func (d *deployer) Init() error {
+	awsConfig := awssdk.NewConfig()
+	awsClients := newAWSClients(awsConfig, d.EKSEndpointURL)
+	resourceID := ResourcePrefix + "-" + d.commonOptions.RunID()
+	d.infraManager = NewInfrastructureManager(awsClients, resourceID)
+	d.clusterManager = NewClusterManager(awsClients, resourceID)
+	d.nodegroupManager = NewNodegroupManager(awsClients, resourceID)
+	return nil
 }
 
 // Build is a no-op
@@ -109,13 +114,6 @@ func (d *deployer) Kubeconfig() (string, error) {
 	return d.KubeconfigPath, nil
 }
 
-func (d *deployer) awsClients() *awsClients {
-	if d._awsClients == nil {
-		d._awsClients = newAWSClients(d.awsConfig, d.EKSEndpointURL)
-	}
-	return d._awsClients
-}
-
 func (d *deployer) Up() error {
 	if err := d.verifyUpFlags(); err != nil {
 		return fmt.Errorf("up flags are invalid: %v", err)
@@ -125,12 +123,12 @@ func (d *deployer) Up() error {
 			return err
 		}
 	}
-	if infra, err := createInfrastructureStack(d.awsClients(), &d.deployerOptions, d.resourceID); err != nil {
+	if infra, err := d.infraManager.createInfrastructureStack(&d.deployerOptions); err != nil {
 		return err
 	} else {
 		d.infra = infra
 	}
-	cluster, err := createCluster(d.awsClients(), d.infra, &d.deployerOptions, d.resourceID)
+	cluster, err := d.clusterManager.createCluster(d.infra, &d.deployerOptions)
 	if err != nil {
 		return err
 	}
@@ -148,7 +146,7 @@ func (d *deployer) Up() error {
 			return err
 		}
 	}
-	if err := createNodegroup(d.awsClients(), d.infra, d.cluster, &d.deployerOptions, d.resourceID); err != nil {
+	if err := d.nodegroupManager.createNodegroup(d.infra, d.cluster, &d.deployerOptions); err != nil {
 		return err
 	}
 	if err := waitForReadyNodes(k8sClient, d.Nodes, d.NodeReadyTimeout); err != nil {
@@ -208,35 +206,22 @@ func detectKubernetesVersion() (string, error) {
 }
 
 func (d *deployer) IsUp() (up bool, err error) {
-	result, err := d.awsClients().EKS().DescribeCluster(context.TODO(), &eks.DescribeClusterInput{
-		Name: aws.String(d.resourceID),
-	})
-	if err != nil {
-		return false, err
-	}
-	switch result.Cluster.Status {
-	case ekstypes.ClusterStatusActive:
-		return true, nil
-	case ekstypes.ClusterStatusCreating:
-		return false, nil
-	default:
-		return false, fmt.Errorf("cluster status is: %v", result.Cluster.Status)
-	}
+	return d.clusterManager.isClusterActive()
 }
 
 func (d *deployer) Down() error {
-	return deleteResources(d.awsClients(), d.resourceID)
+	return deleteResources(d.infraManager, d.clusterManager, d.nodegroupManager)
 }
 
-func deleteResources(clients *awsClients, resourceID string) error {
-	if err := deleteNodegroup(clients, resourceID); err != nil {
+func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *NodegroupManager) error {
+	if err := nm.deleteNodegroup(); err != nil {
 		return err
 	}
-	if err := deleteCluster(clients, resourceID); err != nil {
+	if err := cm.deleteCluster(); err != nil {
 		return err
 	}
-	if err := deleteLeakedENIs(clients, resourceID); err != nil {
+	if err := im.deleteLeakedENIs(); err != nil {
 		return err
 	}
-	return deleteInfrastructureStack(clients, resourceID)
+	return im.deleteInfrastructureStack()
 }
