@@ -45,7 +45,7 @@ type kubeconfigTemplateParameters struct {
 	ClusterName                 string
 }
 
-func writeKubeconfig(cluster *cluster, kubeconfigPath string) error {
+func writeKubeconfig(cluster *Cluster, kubeconfigPath string) error {
 	klog.Infof("writing kubeconfig to %s for cluster: %s", kubeconfigPath, cluster.arn)
 	templateParams := kubeconfigTemplateParameters{
 		ClusterCertificateAuthority: cluster.certificateAuthorityData,

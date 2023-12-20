@@ -18,7 +18,19 @@ const (
 	clusterDeletionTimeout = time.Minute * 15
 )
 
-type cluster struct {
+type ClusterManager struct {
+	clients    *awsClients
+	resourceID string
+}
+
+func NewClusterManager(clients *awsClients, resourceID string) *ClusterManager {
+	return &ClusterManager{
+		clients:    clients,
+		resourceID: resourceID,
+	}
+}
+
+type Cluster struct {
 	endpoint                 string
 	certificateAuthorityData string
 	securityGroupId          string
@@ -26,9 +38,9 @@ type cluster struct {
 	name                     string
 }
 
-func createCluster(clients *awsClients, infra *infra, opts *deployerOptions, resourceID string) (*cluster, error) {
+func (m *ClusterManager) createCluster(infra *Infrastructure, opts *deployerOptions) (*Cluster, error) {
 	input := eks.CreateClusterInput{
-		Name: aws.String(resourceID),
+		Name: aws.String(m.resourceID),
 		ResourcesVpcConfig: &ekstypes.VpcConfigRequest{
 			EndpointPrivateAccess: aws.Bool(true),
 			EndpointPublicAccess:  aws.Bool(true),
@@ -45,7 +57,7 @@ func createCluster(clients *awsClients, infra *infra, opts *deployerOptions, res
 		return nil, fmt.Errorf("failed to create API options: %v", err)
 	}
 	klog.Infof("creating cluster...")
-	createOutput, err := clients.EKS().CreateCluster(context.TODO(), &input,
+	createOutput, err := m.clients.EKS().CreateCluster(context.TODO(), &input,
 		func(o *eks.Options) {
 			o.APIOptions = apiOpts
 		})
@@ -56,8 +68,8 @@ func createCluster(clients *awsClients, infra *infra, opts *deployerOptions, res
 		Name: createOutput.Cluster.Name,
 	}
 	klog.Infof("waiting for cluster to be active: %s", *createOutput.Cluster.Arn)
-	waitErr := eks.NewClusterActiveWaiter(clients.EKS()).Wait(context.TODO(), &describeInput, clusterCreationTimeout)
-	describeOutput, describeErr := clients.EKS().DescribeCluster(context.TODO(), &describeInput)
+	waitErr := eks.NewClusterActiveWaiter(m.clients.EKS()).Wait(context.TODO(), &describeInput, clusterCreationTimeout)
+	describeOutput, describeErr := m.clients.EKS().DescribeCluster(context.TODO(), &describeInput)
 	if describeErr != nil {
 		return nil, fmt.Errorf("failed to describe cluster after creation: %v", describeErr)
 	}
@@ -66,7 +78,7 @@ func createCluster(clients *awsClients, infra *infra, opts *deployerOptions, res
 		return nil, fmt.Errorf("failed to wait for cluster to become active: %v", waitErr)
 	}
 	klog.Infof("cluster is active: %s", *createOutput.Cluster.Arn)
-	return &cluster{
+	return &Cluster{
 		arn:                      *describeOutput.Cluster.Arn,
 		certificateAuthorityData: *describeOutput.Cluster.CertificateAuthority.Data,
 		endpoint:                 *describeOutput.Cluster.Endpoint,
@@ -75,24 +87,41 @@ func createCluster(clients *awsClients, infra *infra, opts *deployerOptions, res
 	}, nil
 }
 
-func deleteCluster(clients *awsClients, resourceID string) error {
+func (m *ClusterManager) isClusterActive() (bool, error) {
+	result, err := m.clients.EKS().DescribeCluster(context.TODO(), &eks.DescribeClusterInput{
+		Name: aws.String(m.resourceID),
+	})
+	if err != nil {
+		return false, err
+	}
+	switch result.Cluster.Status {
+	case ekstypes.ClusterStatusActive:
+		return true, nil
+	case ekstypes.ClusterStatusCreating:
+		return false, nil
+	default:
+		return false, fmt.Errorf("cluster status is: %v", result.Cluster.Status)
+	}
+}
+
+func (m *ClusterManager) deleteCluster() error {
 	input := eks.DeleteClusterInput{
-		Name: aws.String(resourceID),
+		Name: aws.String(m.resourceID),
 	}
 	klog.Infof("deleting cluster...")
-	out, err := clients.EKS().DeleteCluster(context.TODO(), &input)
+	out, err := m.clients.EKS().DeleteCluster(context.TODO(), &input)
 	if err != nil {
 		var notFound *ekstypes.ResourceNotFoundException
 		if errors.As(err, &notFound) {
-			klog.Infof("cluster does not exist: %s", resourceID)
+			klog.Infof("cluster does not exist: %s", m.resourceID)
 			return nil
 		}
 		return fmt.Errorf("failed to delete cluster: %v", err)
 	}
 	klog.Infof("waiting for cluster to be deleted: %s", *out.Cluster.Arn)
-	err = eks.NewClusterDeletedWaiter(clients.EKS()).
+	err = eks.NewClusterDeletedWaiter(m.clients.EKS()).
 		Wait(context.TODO(), &eks.DescribeClusterInput{
-			Name: aws.String(resourceID),
+			Name: aws.String(m.resourceID),
 		},
 			clusterDeletionTimeout)
 	if err != nil {

@@ -17,18 +17,19 @@ func NewJanitor(maxResourceAge time.Duration) *janitor {
 	return &janitor{
 		maxResourceAge: maxResourceAge,
 		awsConfig:      awsConfig,
-		cfnClient:      cloudformation.NewFromConfig(awsConfig),
 	}
 }
 
 type janitor struct {
+	awsConfig aws.Config
+
 	maxResourceAge time.Duration
-	awsConfig      aws.Config
-	cfnClient      *cloudformation.Client
 }
 
 func (j *janitor) Sweep(ctx context.Context) error {
-	stacks := cloudformation.NewDescribeStacksPaginator(j.cfnClient, &cloudformation.DescribeStacksInput{})
+	awsConfig := awssdk.NewConfig()
+	cfnClient := cloudformation.NewFromConfig(awsConfig)
+	stacks := cloudformation.NewDescribeStacksPaginator(cfnClient, &cloudformation.DescribeStacksInput{})
 	for stacks.HasMorePages() {
 		page, err := stacks.NextPage(ctx)
 		if err != nil {
@@ -48,8 +49,11 @@ func (j *janitor) Sweep(ctx context.Context) error {
 				continue
 			}
 			clients := j.awsClientsForStack(stack)
+			infraManager := NewInfrastructureManager(clients, resourceID)
+			clusterManager := NewClusterManager(clients, resourceID)
+			nodegroupManager := NewNodegroupManager(clients, resourceID)
 			klog.Infof("deleting resources (%v old): %s", resourceAge, resourceID)
-			if err := deleteResources(clients, resourceID); err != nil {
+			if err := deleteResources(infraManager, clusterManager, nodegroupManager); err != nil {
 				return err
 			}
 		}
