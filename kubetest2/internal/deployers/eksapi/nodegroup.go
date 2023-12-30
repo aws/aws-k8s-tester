@@ -11,8 +11,10 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/autoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	cloudformationtypes "github.com/aws/aws-sdk-go-v2/service/cloudformation/types"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"k8s.io/klog/v2"
@@ -77,6 +79,21 @@ func (m *NodegroupManager) createManagedNodegroup(infra *Infrastructure, cluster
 		return err
 	}
 	klog.Infof("nodegroup is active: %s", *out.Nodegroup.NodegroupArn)
+	if opts.ExpectedAMI != "" {
+		out, err := m.clients.EKS().DescribeNodegroup(context.TODO(), &eks.DescribeNodegroupInput{
+			ClusterName:   input.ClusterName,
+			NodegroupName: input.NodegroupName,
+		})
+		if err != nil {
+			return err
+		}
+		asgName := out.Nodegroup.Resources.AutoScalingGroups[0].Name
+		if ok, err := m.verifyASGAMI(*asgName, opts.ExpectedAMI); err != nil {
+			return err
+		} else if !ok {
+			return fmt.Errorf("ASG %s is not using expected AMI: %s", &asgName, opts.ExpectedAMI)
+		}
+	}
 	return nil
 }
 
@@ -169,6 +186,13 @@ func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, clust
 		return fmt.Errorf("failed to wait for unmanaged nodegroup stack creation: %w", err)
 	}
 	klog.Infof("created unmanaged nodegroup stack: %s", *out.StackId)
+	if opts.ExpectedAMI != "" {
+		if ok, err := m.verifyASGAMI(m.resourceID, opts.ExpectedAMI); err != nil {
+			return err
+		} else if !ok {
+			return fmt.Errorf("ASG %s is not using expected AMI: %s", m.resourceID, opts.ExpectedAMI)
+		}
+	}
 	return nil
 }
 
@@ -238,4 +262,41 @@ func (m *NodegroupManager) deleteUnmanagedNodegroup() error {
 
 func (m *NodegroupManager) getUnmanagedNodegroupStackName() string {
 	return fmt.Sprintf("%s-unmanaged-nodegroup", m.resourceID)
+}
+
+func (m *NodegroupManager) verifyASGAMI(asgName string, amiId string) (bool, error) {
+	klog.Infof("verifying AMI is %s for ASG: %s", amiId, asgName)
+	asgOut, err := m.clients.ASG().DescribeAutoScalingGroups(context.TODO(), &autoscaling.DescribeAutoScalingGroupsInput{
+		AutoScalingGroupNames: []string{asgName},
+	})
+	if err != nil {
+		return false, nil
+	}
+	if len(asgOut.AutoScalingGroups) != 1 {
+		return false, fmt.Errorf("autoscaling group not found: %s", asgName)
+	}
+	var instanceIds []string
+	for _, instance := range asgOut.AutoScalingGroups[0].Instances {
+		instanceIds = append(instanceIds, *instance.InstanceId)
+	}
+	klog.Infof("verifying AMI for instances: %v", instanceIds)
+	ec2Out, err := m.clients.EC2().DescribeInstances(context.TODO(), &ec2.DescribeInstancesInput{
+		InstanceIds: instanceIds,
+	})
+	if err != nil {
+		return false, err
+	}
+	var errs []error
+	for _, reservation := range ec2Out.Reservations {
+		for _, instance := range reservation.Instances {
+			if *instance.ImageId != amiId {
+				errs = append(errs, fmt.Errorf("instance %s using wrong AMI: %s", *instance.InstanceId, *instance.ImageId))
+			}
+		}
+	}
+	if len(errs) > 0 {
+		return false, errors.Join(errs...)
+	}
+	klog.Infof("ASG instances are using expected AMI: %s", amiId)
+	return true, nil
 }
