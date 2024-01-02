@@ -2,6 +2,8 @@ package eksapi
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -30,6 +32,7 @@ func (j *janitor) Sweep(ctx context.Context) error {
 	awsConfig := awssdk.NewConfig()
 	cfnClient := cloudformation.NewFromConfig(awsConfig)
 	stacks := cloudformation.NewDescribeStacksPaginator(cfnClient, &cloudformation.DescribeStacksInput{})
+	var errs []error
 	for stacks.HasMorePages() {
 		page, err := stacks.NextPage(ctx)
 		if err != nil {
@@ -54,9 +57,12 @@ func (j *janitor) Sweep(ctx context.Context) error {
 			nodegroupManager := NewNodegroupManager(clients, resourceID)
 			klog.Infof("deleting resources (%v old): %s", resourceAge, resourceID)
 			if err := deleteResources(infraManager, clusterManager, nodegroupManager); err != nil {
-				return err
+				errs = append(errs, fmt.Errorf("failed to delete resources: %s: %v", resourceID, err))
 			}
 		}
+	}
+	if len(errs) > 0 {
+		return errors.Join(errs...)
 	}
 	return nil
 }

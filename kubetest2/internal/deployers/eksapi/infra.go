@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	infraStackCreationTimeout = time.Minute * 10
-	infraStackDeletionTimeout = time.Minute * 10
+	infraStackCreationTimeout = time.Minute * 15
+	infraStackDeletionTimeout = time.Minute * 15
 )
 
 // eksEndpointURLTag is the key for an optional tag on the infrastructure CloudFormation stack,
