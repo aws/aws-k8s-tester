@@ -40,19 +40,20 @@ type deployer struct {
 }
 
 type deployerOptions struct {
-	Region                      string        `flag:"region" desc:"AWS region for EKS cluster"`
-	KubernetesVersion           string        `flag:"kubernetes-version" desc:"cluster Kubernetes version"`
-	Nodes                       int           `flag:"nodes" desc:"number of nodes to launch in cluster"`
-	AMI                         string        `flag:"ami" desc:"Node AMI"`
-	InstanceTypes               []string      `flag:"instance-types" desc:"Node instance types"`
+	AMI                         string        `flag:"ami" desc:"AMI for nodes"`
 	ClusterRoleServicePrincipal string        `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
-	KubeconfigPath              string        `flag:"kubeconfig" desc:"Path to kubeconfig"`
 	EKSEndpointURL              string        `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
-	UpClusterHeaders            []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
-	IPFamily                    string        `flag:"ip-family" desc:"IP family for the cluster (ipv4 or ipv6)"`
-	UnmanagedNodes              bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup."`
-	NodeReadyTimeout            time.Duration `flag:"node-ready-timeout" desc:"Time to wait for all nodes to become ready"`
+	ExpectedAMI                 string        `flag:"expected-ami" desc:"Expected AMI of nodes. Up will fail if the actual nodes are not utilizing the expected AMI. Defaults to --ami if defined."`
 	GenerateSSHKey              bool          `flag:"generate-ssh-key" desc:"Generate an SSH key to use for tests. The generated key should not be used in production, as it will not have a passphrase."`
+	InstanceTypes               []string      `flag:"instance-types" desc:"Node instance types"`
+	IPFamily                    string        `flag:"ip-family" desc:"IP family for the cluster (ipv4 or ipv6)"`
+	KubeconfigPath              string        `flag:"kubeconfig" desc:"Path to kubeconfig"`
+	KubernetesVersion           string        `flag:"kubernetes-version" desc:"cluster Kubernetes version"`
+	NodeReadyTimeout            time.Duration `flag:"node-ready-timeout" desc:"Time to wait for all nodes to become ready"`
+	Nodes                       int           `flag:"nodes" desc:"number of nodes to launch in cluster"`
+	Region                      string        `flag:"region" desc:"AWS region for EKS cluster"`
+	UnmanagedNodes              bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup."`
+	UpClusterHeaders            []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
 }
 
 // NewDeployer implements deployer.New for EKS using the EKS (and other AWS) API(s) directly (no cloudformation)
@@ -145,6 +146,9 @@ func (d *deployer) Up() error {
 		if err := createAWSAuthConfigMap(k8sClient, d.infra.nodeRole); err != nil {
 			return err
 		}
+	}
+	if d.AMI != "" && d.ExpectedAMI == "" {
+		d.ExpectedAMI = d.AMI
 	}
 	if err := d.nodegroupManager.createNodegroup(d.infra, d.cluster, &d.deployerOptions); err != nil {
 		return err
