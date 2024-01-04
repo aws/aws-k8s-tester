@@ -52,8 +52,4 @@ ENV PATH=$PATH:/info
 RUN cp kubernetes-version.txt /info/
 RUN mv kubernetes/*/bin/* /bin/
 RUN rm -rf /workdir
-RUN curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && \
-    chmod 700 get_helm.sh && \
-    VERIFY_CHECKSUM=false ./get_helm.sh && \
-    rm -rf ./get_helm.sh
 COPY --from=builder /usr/local/go/bin/* /bin/

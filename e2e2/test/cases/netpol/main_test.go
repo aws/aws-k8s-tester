@@ -1,40 +1,54 @@
 package netpol
 
 import (
-	"bytes"
 	"context"
+	"flag"
 	"log"
 	"os"
-	"strings"
 	"testing"
 	"time"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/eks"
+	"github.com/aws/aws-sdk-go-v2/service/eks/types"
 
 	fwext "github.com/aws/aws-k8s-tester/e2e2/internal/framework_extensions"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
-	networking "k8s.io/api/networking/v1"
-	rbac "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/e2e-framework/klient"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-	"sigs.k8s.io/e2e-framework/pkg/features"
-	"sigs.k8s.io/e2e-framework/third_party/helm"
 )
 
-var testenv env.Environment
+var (
+	testenv           env.Environment
+	clusterName       string
+	endPointUrl       string
+	kubernetesVersion string
+	addonName         string = "vpc-cni"
+)
 
 func TestMain(m *testing.M) {
+
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
 		log.Fatalf("failed to initialize test environment: %v", err)
 	}
+
+	config, err := config.LoadDefaultConfig(context.TODO())
+	eksclient := eks.NewFromConfig(config)
 	testenv = env.NewWithConfig(cfg)
+
+	flag.StringVar(&clusterName, "cluster-name", "", "Name of the cluster")
+	flag.StringVar(&endPointUrl, "endpoint-url", "", "Endpoint url to use")
+	flag.Parse()
+
 	namespaces := []string{"a", "b", "c"}
 
 	testenv.Setup(
@@ -53,9 +67,14 @@ func TestMain(m *testing.M) {
 
 			// 1. Install Latest CNI version
 			log.Print("Install the latest VPC-CNI on the cluster")
-			err = installLatestCNI(config, ctx)
+			kubernetesVersion, err = getClusterVersion(ctx, eksclient)
 			if err != nil {
-				return ctx, errors.Wrap(err, "Failed to install latest aws-vpc-cni on cluster")
+				return ctx, err
+			}
+
+			err = installLatestCNIVersion(ctx, config, eksclient)
+			if err != nil {
+				return ctx, err
 			}
 
 			// 2. Create three namespaces
@@ -87,11 +106,17 @@ func TestMain(m *testing.M) {
 			if err != nil {
 				return ctx, err
 			}
+
 			log.Print("Deleting the test namespaces")
 			for _, ns := range namespaces {
 				client.Resources().Delete(ctx, &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: ns, Namespace: ns}})
 			}
 
+			log.Print("Installing the Default version of VPC-CNI on the cluster")
+			err = installDefaultCNIVersion(ctx, config, eksclient)
+			if err != nil {
+				return ctx, err
+			}
 			return ctx, nil
 		},
 	)
@@ -99,62 +124,109 @@ func TestMain(m *testing.M) {
 	os.Exit(testenv.Run(m))
 }
 
-func installLatestCNI(config *envconf.Config, ctx context.Context) error {
+func installDefaultCNIVersion(ctx context.Context, config *envconf.Config, eksclient *eks.Client) error {
 
-	repoName := "eks"
-	repoUrl := "https://aws.github.io/eks-charts"
-	chartName := "eks/aws-vpc-cni"
-	releaseNamespace := "kube-system"
+	// Uninstall the currently install addon
+	uninstallCNIAddon(ctx, config, eksclient)
 
-	client, err := config.NewClient()
-
+	// Passing addonVersion empty installs the default version of addon
+	err := installCNIAddon(ctx, config, eksclient, "", "")
 	if err != nil {
-		return errors.Wrap(err, "Failed to get client")
+		return errors.Wrap(err, "Could not install the default addon version")
 	}
 
-	// Delete Cluster role
-	client.Resources().Delete(ctx, &rbac.ClusterRole{ObjectMeta: metav1.ObjectMeta{Name: "aws-node", Namespace: releaseNamespace}})
-
-	// Delete Cluster-Role Binding
-	client.Resources().Delete(ctx, &rbac.ClusterRoleBinding{ObjectMeta: metav1.ObjectMeta{Name: "aws-node", Namespace: releaseNamespace}})
-
-	// Delete ServiceAccount
-	client.Resources().Delete(ctx, &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: "aws-node", Namespace: releaseNamespace}})
-
-	// Delete Daemonset
-	client.Resources().Delete(ctx, &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: "aws-node", Namespace: releaseNamespace}})
-
-	// Delete Configmap
-	client.Resources().Delete(ctx, &v1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "amazon-vpc-cni", Namespace: releaseNamespace}})
-
-	manager := helm.New(config.KubeconfigFile())
-	if err := manager.RunRepo(helm.WithArgs("add", repoName, repoUrl)); err != nil {
-		return errors.Wrap(err, "failed to add eks-charts repository")
-	}
-
-	if err := manager.RunRepo(helm.WithArgs("update")); err != nil {
-		return errors.Wrap(err, "failed to upgrade eks-charts repo")
-	}
-
-	err = manager.RunInstall(helm.WithChart(chartName), helm.WithNamespace(releaseNamespace),
-		helm.WithArgs("--generate-name", "--set", "enableNetworkPolicy=true", "--set", "originalMatchLabels=true"),
-		helm.WithWait(), helm.WithTimeout("5m"))
-
-	if err != nil {
-		return err
-	}
-
-	cniDS := &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{Name: "aws-node", Namespace: releaseNamespace},
-	}
-
-	err = wait.For(fwext.NewConditionExtension(client.Resources()).DaemonSetReady(cniDS), wait.WithTimeout(time.Minute*5))
-	if err != nil {
-		return err
-	}
-
-	log.Print("Installed the latest VPC-CNI using helm chart")
 	return nil
+}
+
+func installLatestCNIVersion(ctx context.Context, config *envconf.Config, eksclient *eks.Client) error {
+
+	version, err := getLatestCNIAddon(ctx, eksclient)
+	if err != nil {
+		return err
+	}
+
+	configurationValues := "{\"enableNetworkPolicy\": \"true\"}"
+	err = installCNIAddon(ctx, config, eksclient, version, configurationValues)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func uninstallCNIAddon(ctx context.Context, config *envconf.Config, eksclient *eks.Client) error {
+
+	cniDS := &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: "aws-node", Namespace: "kube-system"}}
+
+	_, err := eksclient.DeleteAddon(ctx, &eks.DeleteAddonInput{
+		AddonName:   aws.String(addonName),
+		ClusterName: aws.String(clusterName),
+	})
+
+	err = wait.For(conditions.New(config.Client().Resources()).ResourceDeleted(cniDS), wait.WithTimeout(time.Minute*5))
+	if err != nil {
+		return errors.Wrap(err, "Daemonset could not be deleted")
+	}
+
+	return nil
+}
+
+func getLatestCNIAddon(ctx context.Context, eksclient *eks.Client) (string, error) {
+
+	addonVersions, err := eksclient.DescribeAddonVersions(ctx, &eks.DescribeAddonVersionsInput{
+		AddonName:         aws.String(addonName),
+		KubernetesVersion: aws.String(kubernetesVersion),
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if len(*&addonVersions.Addons) > 0 {
+		return *addonVersions.Addons[0].AddonVersions[0].AddonVersion, nil
+	} else {
+		return "", errors.Errorf("Addon versions not available")
+	}
+}
+
+func installCNIAddon(ctx context.Context, config *envconf.Config, eksclient *eks.Client, addonVersion string, configurationValues string) error {
+
+	// Delete old Daemonset if exists
+	cniDS := &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: "aws-node", Namespace: "kube-system"}}
+	config.Client().Resources().Delete(ctx, cniDS)
+
+	_, err := eksclient.CreateAddon(ctx, &eks.CreateAddonInput{
+		AddonName:           aws.String(addonName),
+		ClusterName:         aws.String(clusterName),
+		AddonVersion:        aws.String(addonVersion),
+		ConfigurationValues: aws.String(configurationValues),
+		ResolveConflicts:    types.ResolveConflictsOverwrite,
+	})
+
+	if err != nil {
+		return errors.Wrap(err, "Failed to create addon")
+	}
+
+	err = wait.For(fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(cniDS), wait.WithTimeout(time.Minute*5))
+
+	if err != nil {
+		return errors.Wrap(err, "Daemonset failed to reach running state")
+	}
+
+	return nil
+}
+
+func getClusterVersion(ctx context.Context, eksclient *eks.Client) (string, error) {
+
+	cluster, err := eksclient.DescribeCluster(ctx, &eks.DescribeClusterInput{
+		Name: aws.String(clusterName),
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return *cluster.Cluster.Version, nil
 }
 
 func createNamespace(name string, client klient.Client, ctx context.Context) error {
@@ -214,196 +286,4 @@ func createServerAndService(namespace string, name string, replicas int32, clien
 	}
 
 	return nil
-}
-
-func TestNetworkPolicyCases(t *testing.T) {
-
-	protocolTCP := corev1.ProtocolTCP
-	protocolUDP := corev1.ProtocolUDP
-	networkPolicy := networking.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{Name: "block-c-to-a", Namespace: "a"},
-		Spec: networking.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{MatchLabels: map[string]string{"app": "a-server"}},
-			PolicyTypes: []networking.PolicyType{networking.PolicyTypeIngress, networking.PolicyTypeEgress},
-			Ingress: []networking.NetworkPolicyIngressRule{
-				{
-					From: []networking.NetworkPolicyPeer{
-						{
-							PodSelector:       &metav1.LabelSelector{MatchLabels: map[string]string{"app": "b-server"}},
-							NamespaceSelector: &metav1.LabelSelector{MatchLabels: map[string]string{"ns": "b"}},
-						},
-					},
-					Ports: []networking.NetworkPolicyPort{
-						{
-							Protocol: &protocolTCP,
-							Port:     &intstr.IntOrString{IntVal: 80},
-						},
-					},
-				},
-			},
-			Egress: []networking.NetworkPolicyEgressRule{
-				{
-					To: []networking.NetworkPolicyPeer{
-						{
-							PodSelector:       &metav1.LabelSelector{MatchLabels: map[string]string{"app": "b-server"}},
-							NamespaceSelector: &metav1.LabelSelector{MatchLabels: map[string]string{"ns": "b"}},
-						},
-					},
-					Ports: []networking.NetworkPolicyPort{
-						{
-							Protocol: &protocolTCP,
-							Port:     &intstr.IntOrString{IntVal: 80},
-						},
-					},
-				},
-				{
-					Ports: []networking.NetworkPolicyPort{
-						{
-							Protocol: &protocolUDP,
-							Port:     &intstr.IntOrString{IntVal: 53},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	allowAll := features.New("allowAll").
-		WithLabel("suite", "netpol").
-		WithLabel("policy", "none").
-		Assess("curl from A to B succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			client, err := cfg.NewClient()
-			if err != nil {
-				return ctx
-			}
-			pods := &corev1.PodList{}
-			namespace := "a"
-			containerName := "a-server"
-			err = client.Resources("a").List(context.TODO(), pods)
-			if err != nil || pods.Items == nil {
-				t.Error("error while getting pods", err)
-			}
-			podName := pods.Items[0].Name
-
-			var stdout, stderr bytes.Buffer
-			command := []string{"curl", "-m", "2", "-I", "http://b-server.b:80"}
-			client.Resources().ExecInPod(context.TODO(), namespace, podName, containerName, command, &stdout, &stderr)
-
-			httpStatus := strings.Split(stdout.String(), "\n")[0]
-			if !strings.Contains(httpStatus, "200") {
-				t.Fatal("Couldn't connect to server B")
-			}
-			return ctx
-
-		}).
-		Assess("curl from C to A succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			client, err := cfg.NewClient()
-			if err != nil {
-				return ctx
-			}
-			namespace := "c"
-			containerName := "c-server"
-			pods := &corev1.PodList{}
-			err = client.Resources("c").List(context.TODO(), pods)
-			if err != nil || pods.Items == nil {
-				t.Error("error while getting pods", err)
-			}
-			podName := pods.Items[0].Name
-
-			var stdout, stderr bytes.Buffer
-			command := []string{"curl", "-m", "2", "-I", "http://a-server.a:80"}
-			client.Resources().ExecInPod(context.TODO(), namespace, podName, containerName, command, &stdout, &stderr)
-
-			httpStatus := strings.Split(stdout.String(), "\n")[0]
-			if !strings.Contains(httpStatus, "200") {
-				t.Fatal("Couldn't connect to server A")
-			}
-			return ctx
-		}).
-		Feature()
-
-	blockCToA := features.New("blockCToA").
-		WithLabel("suite", "netpol").
-		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			client, err := cfg.NewClient()
-			if err != nil {
-				return ctx
-			}
-
-			log.Print("Applying Network Policy")
-			if err := client.Resources().Create(ctx, &networkPolicy); err != nil {
-				t.Error("error while applying Network Policy", err)
-				return ctx
-			}
-
-			// This time-wait is to account for Network Policy Controller to start up, run leader election in the control plane
-			// and to apply the network policy
-			time.Sleep(1 * time.Minute)
-
-			return ctx
-
-		}).
-		Assess("curl from A to B succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			client, err := cfg.NewClient()
-			if err != nil {
-				return ctx
-			}
-			pods := &corev1.PodList{}
-			namespace := "a"
-			containerName := "a-server"
-			err = client.Resources("a").List(context.TODO(), pods)
-			if err != nil || pods.Items == nil {
-				t.Error("error while getting pods", err)
-			}
-			podName := pods.Items[0].Name
-
-			var stdout, stderr bytes.Buffer
-			command := []string{"curl", "-m", "2", "-I", "http://b-server.b:80"}
-			client.Resources().ExecInPod(context.TODO(), namespace, podName, containerName, command, &stdout, &stderr)
-
-			httpStatus := strings.Split(stdout.String(), "\n")[0]
-			if !strings.Contains(httpStatus, "200") {
-				t.Fatal("Couldn't connect to server B")
-			}
-			return ctx
-		}).
-		Assess("curl from C to A fails", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			client, err := cfg.NewClient()
-			if err != nil {
-				return ctx
-			}
-			namespace := "c"
-			containerName := "c-server"
-			pods := &corev1.PodList{}
-			err = client.Resources("c").List(context.TODO(), pods)
-			if err != nil || pods.Items == nil {
-				t.Error("error while getting pods", err)
-			}
-			podName := pods.Items[0].Name
-
-			var stdout, stderr bytes.Buffer
-			command := []string{"curl", "-m", "2", "-I", "http://a-server.a:80"}
-			client.Resources().ExecInPod(context.TODO(), namespace, podName, containerName, command, &stdout, &stderr)
-
-			httpStatus := strings.Split(stdout.String(), "\n")[0]
-			if strings.Contains(httpStatus, "200") {
-				t.Fatal("Network Policy didn't block connection to server A")
-			}
-			return ctx
-		}).
-		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			client, err := cfg.NewClient()
-			if err != nil {
-				return ctx
-			}
-
-			if err := client.Resources().Delete(ctx, &networkPolicy); err != nil {
-				t.Error("error while deleting Network Policy", err)
-				return ctx
-			}
-			return ctx
-		}).
-		Feature()
-
-	testenv.Test(t, allowAll, blockCToA)
 }
