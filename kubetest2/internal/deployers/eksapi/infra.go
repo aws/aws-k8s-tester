@@ -19,8 +19,9 @@ import (
 )
 
 const (
-	infraStackCreationTimeout = time.Minute * 15
-	infraStackDeletionTimeout = time.Minute * 15
+	infraStackCreationTimeout         = time.Minute * 15
+	infraStackDeletionTimeout         = time.Minute * 15
+	networkInterfaceDetachmentTimeout = time.Minute * 5
 )
 
 // eksEndpointURLTag is the key for an optional tag on the infrastructure CloudFormation stack,
@@ -177,21 +178,42 @@ func (m *InfrastructureManager) deleteLeakedENIs() error {
 	if err != nil {
 		var notFound *cloudformationtypes.StackNotFoundException
 		if errors.As(err, &notFound) {
-			klog.Infof("infrastructure stack does not exist: %s", m.resourceID)
 			return nil
 		}
 		return fmt.Errorf("failed to get infrastructure stack resources: %w", err)
 	}
-	klog.Infof("deleting leaked ENIs...")
-	enis := ec2.NewDescribeNetworkInterfacesPaginator(m.clients.EC2(), &ec2.DescribeNetworkInterfacesInput{
+	enis, err := m.getNetworkInterfaceIds(infra.vpc)
+	if err != nil {
+		return err
+	}
+	if len(enis) == 0 {
+		return nil
+	}
+	klog.Infof("waiting for %d leaked ENI(s) to become available: %v", len(enis), enis)
+	if err := ec2.NewNetworkInterfaceAvailableWaiter(m.clients.EC2()).Wait(context.TODO(), &ec2.DescribeNetworkInterfacesInput{
+		NetworkInterfaceIds: enis,
+	}, networkInterfaceDetachmentTimeout); err != nil {
+		return fmt.Errorf("failed to wait for ENI(s) to become available: %v", err)
+	}
+	for _, eni := range enis {
+		klog.Infof("deleting leaked ENI: %s", eni)
+		_, err := m.clients.EC2().DeleteNetworkInterface(context.TODO(), &ec2.DeleteNetworkInterfaceInput{
+			NetworkInterfaceId: aws.String(eni),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to delete leaked ENI: %w", err)
+		}
+	}
+	klog.Infof("deleted %d leaked ENI(s)!", len(enis))
+	return nil
+}
+
+func (m *InfrastructureManager) getNetworkInterfaceIds(vpcId string) ([]string, error) {
+	paginator := ec2.NewDescribeNetworkInterfacesPaginator(m.clients.EC2(), &ec2.DescribeNetworkInterfacesInput{
 		Filters: []ec2types.Filter{
 			{
 				Name:   aws.String("vpc-id"),
-				Values: []string{infra.vpc},
-			},
-			{
-				Name:   aws.String("attachment.status"),
-				Values: []string{"detached"},
+				Values: []string{vpcId},
 			},
 			{
 				Name:   aws.String("interface-type"),
@@ -199,23 +221,15 @@ func (m *InfrastructureManager) deleteLeakedENIs() error {
 			},
 		},
 	})
-	deleted := 0
-	for enis.HasMorePages() {
-		page, err := enis.NextPage(context.TODO())
+	var enis []string
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(context.TODO())
 		if err != nil {
-			return fmt.Errorf("failed to describe ENIs: %w", err)
+			return nil, fmt.Errorf("failed to describe ENIs: %w", err)
 		}
 		for _, eni := range page.NetworkInterfaces {
-			klog.Infof("deleting leaked ENI: %s", *eni.NetworkInterfaceId)
-			_, err := m.clients.EC2().DeleteNetworkInterface(context.TODO(), &ec2.DeleteNetworkInterfaceInput{
-				NetworkInterfaceId: eni.NetworkInterfaceId,
-			})
-			if err != nil {
-				return fmt.Errorf("failed to delete leaked ENI: %w", err)
-			}
-			deleted++
+			enis = append(enis, *eni.NetworkInterfaceId)
 		}
 	}
-	klog.Infof("deleted %d leaked ENIs", deleted)
-	return nil
+	return enis, nil
 }
