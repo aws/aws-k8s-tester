@@ -19,13 +19,7 @@ Parameters:
 
   AMIId:
     Type: String
-    Default: ""
     Description: Specify AMI id for the node instances.
-
-  AMISSMParameter:
-    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
-    Default: /aws/service/eks/optimized-ami/{{.KubernetesVersion}}/amazon-linux-2/recommended/image_id
-    Description: AWS Systems Manager Parameter Store parameter of the AMI ID for the worker node instances. Only used if AMIId is not specified.
 
   NodeDiskSize:
     Type: Number
@@ -68,9 +62,6 @@ Parameters:
 
   SSHSecurityGroup:
     Type: String
-
-Conditions:
-  HasAMIId: !Not [ !Equals [ !Ref AMIId, "" ] ]
 
 Resources:
   NodeInstanceProfile:
@@ -144,11 +135,7 @@ Resources:
                      --region ${AWS::Region}
         IamInstanceProfile: 
           Arn: !GetAtt NodeInstanceProfile.Arn
-        ImageId:
-          !If
-            - HasAMIId
-            - !Ref AMIId    
-            - Ref: AMISSMParameter
+        ImageId: !Ref AMIId
         InstanceType: "{{index .InstanceTypes 0}}"
         BlockDeviceMappings:
           - DeviceName: /dev/xvda
