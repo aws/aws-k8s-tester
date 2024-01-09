@@ -220,10 +220,13 @@ func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *Nodegrou
 	if err := nm.deleteNodegroup(); err != nil {
 		return err
 	}
-	if err := cm.deleteCluster(); err != nil {
+	// the EKS-managed cluster security group may be associated with a leaked ENI
+	// so we need to make sure we've deleted leaked ENIs before we delete the cluster
+	// otherwise, the cluster security group will be left behind and will block deletion of our VPC
+	if err := im.deleteLeakedENIs(); err != nil {
 		return err
 	}
-	if err := im.deleteLeakedENIs(); err != nil {
+	if err := cm.deleteCluster(); err != nil {
 		return err
 	}
 	return im.deleteInfrastructureStack()
