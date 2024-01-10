@@ -24,6 +24,11 @@ const (
 	networkInterfaceDetachmentTimeout = time.Minute * 5
 )
 
+const (
+	// the VPC CNI will always add this tag to ENI's that it creates
+	vpcCNIENITagKey = "node.k8s.amazonaws.com/createdAt"
+)
+
 // eksEndpointURLTag is the key for an optional tag on the infrastructure CloudFormation stack,
 // which indicates which EKS environment is associated with the stack's resources.
 // The tag is only added when --endpoint-url is passed to the deployer.
@@ -182,7 +187,7 @@ func (m *InfrastructureManager) deleteLeakedENIs() error {
 		}
 		return fmt.Errorf("failed to get infrastructure stack resources: %w", err)
 	}
-	enis, err := m.getNetworkInterfaceIds(infra.vpc)
+	enis, err := m.getVPCCNINetworkInterfaceIds(infra.vpc)
 	if err != nil {
 		return err
 	}
@@ -208,7 +213,8 @@ func (m *InfrastructureManager) deleteLeakedENIs() error {
 	return nil
 }
 
-func (m *InfrastructureManager) getNetworkInterfaceIds(vpcId string) ([]string, error) {
+// getVPCCNINetworkInterfaceIds returns the IDs of ENIs in the specified VPC that were created by the VPC CNI
+func (m *InfrastructureManager) getVPCCNINetworkInterfaceIds(vpcId string) ([]string, error) {
 	paginator := ec2.NewDescribeNetworkInterfacesPaginator(m.clients.EC2(), &ec2.DescribeNetworkInterfacesInput{
 		Filters: []ec2types.Filter{
 			{
@@ -218,6 +224,10 @@ func (m *InfrastructureManager) getNetworkInterfaceIds(vpcId string) ([]string, 
 			{
 				Name:   aws.String("interface-type"),
 				Values: []string{"interface"},
+			},
+			{
+				Name:   aws.String("tag-key"),
+				Values: []string{vpcCNIENITagKey},
 			},
 		},
 	})
