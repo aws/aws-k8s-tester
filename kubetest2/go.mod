@@ -14,7 +14,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.100.1
-	sigs.k8s.io/kubetest2 v0.0.0-20231217201311-35c2bb42e641
+	sigs.k8s.io/kubetest2 v0.0.0-20240112190112-02e669d0b9b7
 )
 
 require (
@@ -53,12 +53,14 @@ require (
 	github.com/alibabacloud-go/tea-xml v1.1.2 // indirect
 	github.com/aliyun/credentials-go v1.2.3 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
+	github.com/aws/aws-sdk-go v1.46.4 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.14 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.23 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.2.9 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.5.9 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.30 // indirect
 	github.com/aws/aws-sdk-go-v2/service/autoscaling v1.36.6 // indirect
+	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.32.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.15.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.12.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.10.1 // indirect

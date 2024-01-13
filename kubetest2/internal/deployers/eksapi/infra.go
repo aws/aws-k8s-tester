@@ -5,17 +5,20 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"path"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	cloudformationtypes "github.com/aws/aws-sdk-go-v2/service/cloudformation/types"
+	cloudwatchtypes "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"k8s.io/klog"
 
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/deployers/eksapi/templates"
+	"github.com/aws/aws-k8s-tester/kubetest2/internal/metrics"
 )
 
 const (
@@ -34,15 +37,31 @@ const (
 // The tag is only added when --endpoint-url is passed to the deployer.
 const eksEndpointURLTag = "eks-endpoint-url"
 
+var (
+	infraMetricNamespace     = path.Join(DeployerMetricNamespace, "infrastructure")
+	infraStackDeletionFailed = &metrics.MetricSpec{
+		Namespace: infraMetricNamespace,
+		Metric:    "StackDeletionFailed",
+		Unit:      cloudwatchtypes.StandardUnitCount,
+	}
+	infraLeakedENIs = &metrics.MetricSpec{
+		Namespace: infraMetricNamespace,
+		Metric:    "LeakedENIs",
+		Unit:      cloudwatchtypes.StandardUnitCount,
+	}
+)
+
 type InfrastructureManager struct {
 	clients    *awsClients
 	resourceID string
+	metrics    metrics.MetricRegistry
 }
 
-func NewInfrastructureManager(clients *awsClients, resourceID string) *InfrastructureManager {
+func NewInfrastructureManager(clients *awsClients, resourceID string, metrics metrics.MetricRegistry) *InfrastructureManager {
 	return &InfrastructureManager{
 		clients:    clients,
 		resourceID: resourceID,
+		metrics:    metrics,
 	}
 }
 
@@ -170,7 +189,10 @@ func (m *InfrastructureManager) deleteInfrastructureStack() error {
 			},
 			infraStackDeletionTimeout)
 	if err != nil {
-		return fmt.Errorf("failed to wait for infrastructure stack deletion: %w", err)
+		// don't fail the overall test, the janitor can clean this up
+		klog.Warningf("failed to wait for infrastructure stack deletion: %v", err)
+		m.metrics.Record(infraStackDeletionFailed, 1, nil)
+		return nil
 	}
 	klog.Infof("deleted infrastructure stack: %s", m.resourceID)
 	return nil
@@ -210,6 +232,7 @@ func (m *InfrastructureManager) deleteLeakedENIs() error {
 		}
 	}
 	klog.Infof("deleted %d leaked ENI(s)!", len(enis))
+	m.metrics.Record(infraLeakedENIs, float64(len(enis)), nil)	
 	return nil
 }
 

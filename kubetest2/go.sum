@@ -293,6 +293,8 @@ github.com/aws/aws-sdk-go v1.27.0/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN
 github.com/aws/aws-sdk-go v1.34.28/go.mod h1:H7NKnBqNVzoTJpGfLrQkkD+ytBA93eiDYi/+8rV9s48=
 github.com/aws/aws-sdk-go v1.37.0/go.mod h1:hcU610XS61/+aQV88ixoOzUoG7v3b31pl2zKMmprdro=
 github.com/aws/aws-sdk-go v1.37.6/go.mod h1:hcU610XS61/+aQV88ixoOzUoG7v3b31pl2zKMmprdro=
+github.com/aws/aws-sdk-go v1.46.4 h1:48tKgtm9VMPkb6y7HuYlsfhQmoIRAsTEXTsWLVlty4M=
+github.com/aws/aws-sdk-go v1.46.4/go.mod h1:aVsgQcEevwlmQ7qHE9I3h+dtQgpqhFB+i8Phjh7fkwI=
 github.com/aws/aws-sdk-go-v2 v0.18.0/go.mod h1:JWVYvqSMppoMJC0x5wdwiImzgXTI9FuZwxzkQq9wy+g=
 github.com/aws/aws-sdk-go-v2 v1.7.1/go.mod h1:L5LuPC1ZgDr2xQS7AmIec/Jlc7O/Y1u2KxJyNVab250=
 github.com/aws/aws-sdk-go-v2 v1.14.0/go.mod h1:ZA3Y8V0LrlWj63MQAnRHgKf/5QB//LSZCPNWlWrNGLU=
@@ -329,6 +331,8 @@ github.com/aws/aws-sdk-go-v2/service/autoscaling v1.36.6 h1:xLETNIzlbzqb/ZFir6l1
 github.com/aws/aws-sdk-go-v2/service/autoscaling v1.36.6/go.mod h1:ldeYLrGhWz2aMgCEL7He3+YbJAG5xn1K/fFFKRkyzd0=
 github.com/aws/aws-sdk-go-v2/service/cloudformation v1.40.1 h1:gcJzqFpFy6no/GvMkA8L8ld3Wt/MygcJzj5xmpwfJuM=
 github.com/aws/aws-sdk-go-v2/service/cloudformation v1.40.1/go.mod h1:swqr+Ayq2Mv+l32CXjtrYrdNqMu5d0aSKeM63ud7G8M=
+github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.32.0 h1:f426fLs4hcrLuczLBqWf1Ob6FKJhISaR4e9Iw3Scr5A=
+github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.32.0/go.mod h1:G63GKqSBLpBmO3tN1/PwM2NC65XvSd00zJWTZk202bc=
 github.com/aws/aws-sdk-go-v2/service/ec2 v1.137.1 h1:J/N4ydefXQZIwKBDPtvrhxrIuP/vaaYKnAsy3bKVIvU=
 github.com/aws/aws-sdk-go-v2/service/ec2 v1.137.1/go.mod h1:hrBzQzlQQRmiaeYRQPr0SdSx6fdqP+5YcGhb97LCt8M=
 github.com/aws/aws-sdk-go-v2/service/ecr v1.4.1/go.mod h1:FglZcyeiBqcbvyinl+n14aT/EWC7S1MIH+Gan2iizt0=
@@ -2939,6 +2943,8 @@ sigs.k8s.io/kubetest2 v0.0.0-20231113220322-d7fcb799ce84 h1:r1v5iHjx9A4b6vSXntNt
 sigs.k8s.io/kubetest2 v0.0.0-20231113220322-d7fcb799ce84/go.mod h1:Mk/GvoOSrhOvqIg90OmoHnj72i1NApWnmvTTXy86b3g=
 sigs.k8s.io/kubetest2 v0.0.0-20231217201311-35c2bb42e641 h1:fXHKMtnV4QUs0zuaStEX7ihR/LGi9BJbZDyS0y4hk4Y=
 sigs.k8s.io/kubetest2 v0.0.0-20231217201311-35c2bb42e641/go.mod h1:Mk/GvoOSrhOvqIg90OmoHnj72i1NApWnmvTTXy86b3g=
+sigs.k8s.io/kubetest2 v0.0.0-20240112190112-02e669d0b9b7 h1:NoijosFvhxKMZzzzfpUQ91cueAUct9swQw3IH5fBxIQ=
+sigs.k8s.io/kubetest2 v0.0.0-20240112190112-02e669d0b9b7/go.mod h1:L1g0hoUkaxD1+3bU+3eqbmoOHaW1xj5bTtjivDSl1OE=
 sigs.k8s.io/mdtoc v1.0.1/go.mod h1:COYBtOjsaCg7o7SC4eaLwEXPuVRSuiVuLLRrHd7kShw=
 sigs.k8s.io/promo-tools/v3 v3.5.2 h1:xYmYJb2/TXIHBq8rlQZx6C3ESsayiPjp+cMYAlSodEY=
 sigs.k8s.io/promo-tools/v3 v3.5.2/go.mod h1:AYQ3wu2ESWY4UQqHtRUXnzj7V9/gP11kRKoykVQ6Oek=

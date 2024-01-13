@@ -8,24 +8,36 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/awssdk"
+	"github.com/aws/aws-k8s-tester/kubetest2/internal/metrics"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	cloudformationtypes "github.com/aws/aws-sdk-go-v2/service/cloudformation/types"
+	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	"k8s.io/klog/v2"
 )
 
-func NewJanitor(maxResourceAge time.Duration) *janitor {
+func NewJanitor(maxResourceAge time.Duration, emitMetrics bool) *janitor {
 	awsConfig := awssdk.NewConfig()
+	var metricRegistry metrics.MetricRegistry
+	if emitMetrics {
+		metricRegistry = metrics.NewCloudWatchRegistry(cloudwatch.NewFromConfig(awsConfig))
+	} else {
+		metricRegistry = metrics.NewNoopMetricRegistry()
+	}
 	return &janitor{
 		maxResourceAge: maxResourceAge,
 		awsConfig:      awsConfig,
+		cfnClient:      cloudformation.NewFromConfig(awsConfig),
+		metrics:        metricRegistry,
 	}
 }
 
 type janitor struct {
-	awsConfig aws.Config
-
 	maxResourceAge time.Duration
+
+	awsConfig aws.Config
+	cfnClient *cloudformation.Client
+	metrics   metrics.MetricRegistry
 }
 
 func (j *janitor) Sweep(ctx context.Context) error {
@@ -52,7 +64,7 @@ func (j *janitor) Sweep(ctx context.Context) error {
 				continue
 			}
 			clients := j.awsClientsForStack(stack)
-			infraManager := NewInfrastructureManager(clients, resourceID)
+			infraManager := NewInfrastructureManager(clients, resourceID, j.metrics)
 			clusterManager := NewClusterManager(clients, resourceID)
 			nodegroupManager := NewNodegroupManager(clients, resourceID)
 			klog.Infof("deleting resources (%v old): %s", resourceAge, resourceID)

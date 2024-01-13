@@ -3,12 +3,17 @@ package eksapi
 import (
 	"flag"
 	"fmt"
+	"path"
 	"path/filepath"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/kubetest2/internal"
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/awssdk"
+	"github.com/aws/aws-k8s-tester/kubetest2/internal/metrics"
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/util"
+
+	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
+	cloudwatchtypes "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/octago/sflags/gen/gpflag"
 	"github.com/spf13/pflag"
@@ -21,28 +26,41 @@ const DeployerName = "eksapi"
 
 const ResourcePrefix = "kubetest2-" + DeployerName
 
-// assert that deployer implements types.DeployerWithKubeconfig
-var _ types.DeployerWithKubeconfig = &deployer{}
+var DeployerMetricNamespace = path.Join("kubetest2", DeployerName)
 
-// assert that deployer implements types.DeployerWithInit
+var (
+	totalRuntimeSeconds = &metrics.MetricSpec{
+		Namespace: DeployerMetricNamespace,
+		Metric:    "TotalRuntimeSeconds",
+		Unit:      cloudwatchtypes.StandardUnitSeconds,
+	}
+)
+
+// assert that deployer implements optional interfaces
+var _ types.DeployerWithKubeconfig = &deployer{}
 var _ types.DeployerWithInit = &deployer{}
+var _ types.DeployerWithFinish = &deployer{}
 
 type deployer struct {
 	commonOptions types.Options
 	deployerOptions
 
+	metrics          metrics.MetricRegistry
 	infraManager     *InfrastructureManager
 	clusterManager   *ClusterManager
 	nodegroupManager *NodegroupManager
 
 	infra   *Infrastructure
 	cluster *Cluster
+
+	initTime time.Time
 }
 
 type deployerOptions struct {
 	AMI                         string        `flag:"ami" desc:"AMI for nodes"`
 	ClusterRoleServicePrincipal string        `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
 	EKSEndpointURL              string        `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
+	EmitMetrics                 bool          `flag:"emit-metrics" desc:"Record and emit metrics to CloudWatch"`
 	ExpectedAMI                 string        `flag:"expected-ami" desc:"Expected AMI of nodes. Up will fail if the actual nodes are not utilizing the expected AMI. Defaults to --ami if defined."`
 	GenerateSSHKey              bool          `flag:"generate-ssh-key" desc:"Generate an SSH key to use for tests. The generated key should not be used in production, as it will not have a passphrase."`
 	InstanceTypes               []string      `flag:"instance-types" desc:"Node instance types"`
@@ -83,13 +101,25 @@ func (d *deployer) Version() string {
 }
 
 func (d *deployer) Init() error {
+	d.initTime = time.Now()
 	awsConfig := awssdk.NewConfig()
 	awsClients := newAWSClients(awsConfig, d.EKSEndpointURL)
 	resourceID := ResourcePrefix + "-" + d.commonOptions.RunID()
-	d.infraManager = NewInfrastructureManager(awsClients, resourceID)
+	if d.deployerOptions.EmitMetrics {
+		client := cloudwatch.NewFromConfig(awsConfig)
+		d.metrics = metrics.NewCloudWatchRegistry(client)
+	} else {
+		d.metrics = metrics.NewNoopMetricRegistry()
+	}
+	d.infraManager = NewInfrastructureManager(awsClients, resourceID, d.metrics)
 	d.clusterManager = NewClusterManager(awsClients, resourceID)
 	d.nodegroupManager = NewNodegroupManager(awsClients, resourceID)
 	return nil
+}
+
+func (d *deployer) Finish() error {
+	d.metrics.Record(totalRuntimeSeconds, float64(time.Since(d.initTime).Seconds()), nil)
+	return d.metrics.Emit()
 }
 
 // Build is a no-op
