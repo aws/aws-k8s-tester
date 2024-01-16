@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -25,6 +26,7 @@ func newKubernetesClient(kubeconfigPath string) (*kubernetes.Clientset, error) {
 }
 
 func waitForReadyNodes(client *kubernetes.Clientset, nodeCount int, timeout time.Duration) error {
+	klog.Infof("waiting up to %v for %d node(s) to be ready...", timeout, nodeCount)
 	readyNodes := sets.NewString()
 	watcher, err := client.CoreV1().Nodes().Watch(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -64,6 +66,7 @@ func waitForReadyNodes(client *kubernetes.Clientset, nodeCount int, timeout time
 			break
 		}
 	}
+	klog.Infof("%d node(s) are ready: %v", readyNodes.Len(), readyNodes)
 	return nil
 }
 

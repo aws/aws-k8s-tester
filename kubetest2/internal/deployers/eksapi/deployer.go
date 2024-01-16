@@ -72,6 +72,7 @@ type deployerOptions struct {
 	Region                      string        `flag:"region" desc:"AWS region for EKS cluster"`
 	UnmanagedNodes              bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup."`
 	UpClusterHeaders            []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
+	UserDataFormat              string        `flag:"user-data-format" desc:"Format of the node instance user data"`
 }
 
 // NewDeployer implements deployer.New for EKS using the EKS (and other AWS) API(s) directly (no cloudformation)
@@ -219,6 +220,13 @@ func (d *deployer) verifyUpFlags() error {
 			"m4.large",
 		}
 		klog.V(2).Infof("Using default instance types: %v", d.InstanceTypes)
+	}
+	if d.UnmanagedNodes && d.AMI == "" {
+		return fmt.Errorf("--ami must be specified for --unmanaged-nodes")
+	}
+	if d.UnmanagedNodes && d.UserDataFormat == "" {
+		d.UserDataFormat = "bootstrap.sh"
+		klog.V(2).Infof("Using default user data format: %s", d.UserDataFormat)
 	}
 	if d.NodeReadyTimeout == 0 {
 		d.NodeReadyTimeout = time.Minute * 5
