@@ -91,7 +91,7 @@ func (m *NodegroupManager) createManagedNodegroup(infra *Infrastructure, cluster
 		if ok, err := m.verifyASGAMI(*asgName, opts.ExpectedAMI); err != nil {
 			return err
 		} else if !ok {
-			return fmt.Errorf("ASG %s is not using expected AMI: %s", &asgName, opts.ExpectedAMI)
+			return fmt.Errorf("ASG %s is not using expected AMI: %s", *asgName, opts.ExpectedAMI)
 		}
 	}
 	return nil
@@ -100,8 +100,12 @@ func (m *NodegroupManager) createManagedNodegroup(infra *Infrastructure, cluster
 func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
 	stackName := m.getUnmanagedNodegroupStackName()
 	klog.Infof("creating unmanaged nodegroup stack...")
+	userData, err := generateUserData(opts.UserDataFormat, cluster)
+	if err != nil {
+		return err
+	}
 	templateBuf := bytes.Buffer{}
-	err := templates.UnmanagedNodegroup.Execute(&templateBuf, struct {
+	err = templates.UnmanagedNodegroup.Execute(&templateBuf, struct {
 		InstanceTypes     []string
 		KubernetesVersion string
 	}{
@@ -132,12 +136,8 @@ func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, clust
 				ParameterValue: aws.String(strings.Join(infra.subnets(), ",")),
 			},
 			{
-				ParameterKey:   aws.String("ClusterCA"),
-				ParameterValue: aws.String(cluster.certificateAuthorityData),
-			},
-			{
-				ParameterKey:   aws.String("ClusterEndpoint"),
-				ParameterValue: aws.String(cluster.endpoint),
+				ParameterKey:   aws.String("UserData"),
+				ParameterValue: aws.String(userData),
 			},
 			{
 				ParameterKey:   aws.String("ClusterName"),
@@ -163,13 +163,11 @@ func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, clust
 				ParameterKey:   aws.String("SSHKeyPair"),
 				ParameterValue: aws.String(infra.sshKeyPair),
 			},
+			{
+				ParameterKey:   aws.String("AMIId"),
+				ParameterValue: aws.String(opts.AMI),
+			},
 		},
-	}
-	if opts.AMI != "" {
-		input.Parameters = append(input.Parameters, cloudformationtypes.Parameter{
-			ParameterKey:   aws.String("AMIId"),
-			ParameterValue: aws.String(opts.AMI),
-		})
 	}
 	out, err := m.clients.CFN().CreateStack(context.TODO(), &input)
 	if err != nil {

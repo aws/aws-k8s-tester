@@ -29,38 +29,20 @@ Parameters:
   NodeCount:
     Type: Number
 
-  ClusterCA:
-    Type: String
-
-  ClusterEndpoint:
-    Type: String
-
   ClusterName:
-    Type: String
-
-  ExtraBootstrapArguments:
-    Description: Arguments to pass to the bootstrap script. See files/bootstrap.sh in https://github.com/awslabs/amazon-eks-ami
-    Type: String
-    Default: ""
-
-  BootstrapArgumentsForSpotFleet:
-    Description: Arguments to pass to the bootstrap script. See files/bootstrap.sh in https://github.com/awslabs/amazon-eks-ami
-    Default: "--kubelet-extra-args '--node-labels=lifecycle=Ec2Spot,$ExtraNodeLabels --register-with-taints=spotInstance=true:PreferNoSchedule'"
     Type: String
 
   NodeRoleName:
     Description: The IAM role name  of worker nodes.
     Type: String
-    
-  PauseTime:
-    Description: Pause Time
-    Type: String
-    Default: PT5M
 
   SSHKeyPair:
     Type: String
 
   SSHSecurityGroup:
+    Type: String
+
+  UserData:
     Type: String
 
 Resources:
@@ -76,19 +58,19 @@ Resources:
     UpdatePolicy:
       AutoScalingRollingUpdate:
         WaitOnResourceSignals: true
-        PauseTime: !Ref PauseTime
+        PauseTime: PT15M
     Properties:
       AutoScalingGroupName: !Ref ResourceId
       DesiredCapacity: !Ref NodeCount
       MinSize: !Ref NodeCount
-      MaxSize: !Ref NodeCount      
+      MaxSize: !Ref NodeCount
       MixedInstancesPolicy:
         InstancesDistribution:
           OnDemandAllocationStrategy: prioritized
           OnDemandBaseCapacity: !Ref NodeCount
           OnDemandPercentageAboveBaseCapacity: 0
         LaunchTemplate:
-          LaunchTemplateSpecification: 
+          LaunchTemplateSpecification:
             LaunchTemplateId: !Ref NodeLaunchTemplate
             # LaunchTemplateName: String
             Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
@@ -117,23 +99,32 @@ Resources:
     Type: AWS::EC2::LaunchTemplate
     Properties:
       LaunchTemplateName: !Ref ResourceId
-      LaunchTemplateData: 
+      LaunchTemplateData:
         SecurityGroupIds:
           - !Ref SecurityGroup
           - !Ref SSHSecurityGroup
         KeyName: !Ref SSHKeyPair
         UserData:
           Fn::Base64:
-            !Sub |
-            #!/bin/bash
-            /etc/eks/bootstrap.sh ${ClusterName} ${ExtraBootstrapArguments} \
-              --b64-cluster-ca ${ClusterCA} \
-              --apiserver-endpoint ${ClusterEndpoint}
-            /opt/aws/bin/cfn-signal --exit-code $? \
-                     --stack  ${AWS::StackName} \
-                     --resource NodeGroup  \
-                     --region ${AWS::Region}
-        IamInstanceProfile: 
+            Fn::Sub: |
+              Content-Type: multipart/mixed; boundary="BOUNDARY"
+              MIME-Version: 1.0
+
+              --BOUNDARY
+              ${UserData}
+
+              --BOUNDARY
+              Content-Type: text/x-shellscript; charset="us-ascii"
+              MIME-Version: 1.0
+
+              #!/usr/bin/env bash
+              /opt/aws/bin/cfn-signal \
+                --stack  ${AWS::StackName} \
+                --resource NodeGroup \
+                --region ${AWS::Region}
+
+              --BOUNDARY--
+        IamInstanceProfile:
           Arn: !GetAtt NodeInstanceProfile.Arn
         ImageId: !Ref AMIId
         InstanceType: "{{index .InstanceTypes 0}}"

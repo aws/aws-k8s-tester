@@ -1,0 +1,12 @@
+Content-Type: application/node.eks.aws
+MIME-Version: 1.0
+
+---
+apiVersion: node.eks.aws/v1alpha1
+kind: NodeConfig
+spec:
+  cluster:
+    name: {{.Name}}
+    apiServerEndpoint: {{.APIServerEndpoint}}
+    certificateAuthority: {{.CertificateAuthority}}
+    cidr: {{.CIDR}}

@@ -36,6 +36,7 @@ type Cluster struct {
 	securityGroupId          string
 	arn                      string
 	name                     string
+	cidr                     string
 }
 
 func (m *ClusterManager) createCluster(infra *Infrastructure, opts *deployerOptions) (*Cluster, error) {
@@ -78,9 +79,19 @@ func (m *ClusterManager) createCluster(infra *Infrastructure, opts *deployerOpti
 		return nil, fmt.Errorf("failed to wait for cluster to become active: %v", waitErr)
 	}
 	klog.Infof("cluster is active: %s", *createOutput.Cluster.Arn)
+	var cidr string
+	switch describeOutput.Cluster.KubernetesNetworkConfig.IpFamily {
+	case ekstypes.IpFamilyIpv4:
+		cidr = *describeOutput.Cluster.KubernetesNetworkConfig.ServiceIpv4Cidr
+	case ekstypes.IpFamilyIpv6:
+		cidr = *describeOutput.Cluster.KubernetesNetworkConfig.ServiceIpv6Cidr
+	default:
+		return nil, fmt.Errorf("unknown cluster IP family: '%v'", describeOutput.Cluster.KubernetesNetworkConfig.IpFamily)
+	}
 	return &Cluster{
 		arn:                      *describeOutput.Cluster.Arn,
 		certificateAuthorityData: *describeOutput.Cluster.CertificateAuthority.Data,
+		cidr:                     cidr,
 		endpoint:                 *describeOutput.Cluster.Endpoint,
 		name:                     *describeOutput.Cluster.Name,
 		securityGroupId:          *describeOutput.Cluster.ResourcesVpcConfig.ClusterSecurityGroupId,
