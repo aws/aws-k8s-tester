@@ -3,6 +3,7 @@ package eksapi
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -93,15 +94,25 @@ func isNodeReady(node *corev1.Node) bool {
 	return false
 }
 
-const awsAuthMapRolesPrefix = `
-- username: system:node:{{EC2PrivateDNSName}}
+func getAwsAuthMapRolesPrefix(osDistro string) string {
+	var nodeNameFlavor string
+	if strings.EqualFold(osDistro, "al2023") {
+		nodeNameFlavor = "SessionName"
+	} else {
+		nodeNameFlavor = "EC2PrivateDNSName"
+	}
+	return fmt.Sprintf(`
+- username: system:node:{{%s}}
   groups:
     - system:bootstrappers
     - system:nodes
-  rolearn: `
+  rolearn: `, nodeNameFlavor)
+  
+}
 
-func createAWSAuthConfigMap(client *kubernetes.Clientset, nodeRoleARN string) error {
-	mapRoles := awsAuthMapRolesPrefix + nodeRoleARN
+func createAWSAuthConfigMap(client *kubernetes.Clientset, nodeRoleARN string, osDistro string) error {
+	mapRoles := getAwsAuthMapRolesPrefix(osDistro) + nodeRoleARN
+	klog.Infof("formattedMapRole %s", mapRoles)
 	_, err := client.CoreV1().ConfigMaps("kube-system").Create(context.TODO(), &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "aws-auth",

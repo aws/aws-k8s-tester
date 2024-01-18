@@ -26,6 +26,8 @@ const DeployerName = "eksapi"
 
 const ResourcePrefix = "kubetest2-" + DeployerName
 
+var SupportedOsDistro = []string{"al2", "al2023"}
+
 var DeployerMetricNamespace = path.Join("kubetest2", DeployerName)
 
 var (
@@ -69,6 +71,7 @@ type deployerOptions struct {
 	KubernetesVersion           string        `flag:"kubernetes-version" desc:"cluster Kubernetes version"`
 	NodeReadyTimeout            time.Duration `flag:"node-ready-timeout" desc:"Time to wait for all nodes to become ready"`
 	Nodes                       int           `flag:"nodes" desc:"number of nodes to launch in cluster"`
+	OsDistro                    string        `flag:"os-distro" desc:"Specifies the OS distribution for the AMI. Allowed values: ['al2', 'al2023'] (case-insensitive)"`
 	Region                      string        `flag:"region" desc:"AWS region for EKS cluster"`
 	UnmanagedNodes              bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup."`
 	UpClusterHeaders            []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
@@ -174,7 +177,7 @@ func (d *deployer) Up() error {
 		return err
 	}
 	if d.UnmanagedNodes {
-		if err := createAWSAuthConfigMap(k8sClient, d.infra.nodeRole); err != nil {
+		if err := createAWSAuthConfigMap(k8sClient, d.infra.nodeRole, d.OsDistro); err != nil {
 			return err
 		}
 	}
@@ -223,6 +226,13 @@ func (d *deployer) verifyUpFlags() error {
 	}
 	if d.UnmanagedNodes && d.AMI == "" {
 		return fmt.Errorf("--ami must be specified for --unmanaged-nodes")
+	}
+	//TODO: add support for Manage node group once it supports AL2023
+	if d.UnmanagedNodes && d.OsDistro == "" {
+		return fmt.Errorf("--os-distro must be specified for --unmanaged-nodes")
+	}
+	if d.UnmanagedNodes && !util.IsStringInSlice(d.OsDistro, SupportedOsDistro) {
+		return fmt.Errorf("--os-distro must be one of the following values: ['al2', 'al2023'] (case-insensitive)")
 	}
 	if d.UnmanagedNodes && d.UserDataFormat == "" {
 		d.UserDataFormat = "bootstrap.sh"
