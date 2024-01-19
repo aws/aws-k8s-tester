@@ -35,3 +35,14 @@ type UserDataTemplateData struct {
 	CIDR                 string
 	APIServerEndpoint    string
 }
+
+var (
+	//go:embed auth_map_role.yaml.template
+	authMapRoleTemplate string
+	AuthMapRole         = template.Must(template.New("authMapRole").Parse(authMapRoleTemplate))
+)
+
+type AuthMapRoleTemplateData struct {
+	NodeNameStrategy string
+	Rolearn          string
+}

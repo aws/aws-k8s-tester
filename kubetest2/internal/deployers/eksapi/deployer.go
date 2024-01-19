@@ -17,6 +17,7 @@ import (
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/octago/sflags/gen/gpflag"
 	"github.com/spf13/pflag"
+	"golang.org/x/exp/slices"
 	"k8s.io/klog"
 	"sigs.k8s.io/kubetest2/pkg/types"
 )
@@ -26,7 +27,7 @@ const DeployerName = "eksapi"
 
 const ResourcePrefix = "kubetest2-" + DeployerName
 
-var SupportedOsDistro = []string{"al2", "al2023"}
+var SupportedNodeNameStrategy = []string{"SessionName", "EC2PrivateDNSName"}
 
 var DeployerMetricNamespace = path.Join("kubetest2", DeployerName)
 
@@ -71,7 +72,7 @@ type deployerOptions struct {
 	KubernetesVersion           string        `flag:"kubernetes-version" desc:"cluster Kubernetes version"`
 	NodeReadyTimeout            time.Duration `flag:"node-ready-timeout" desc:"Time to wait for all nodes to become ready"`
 	Nodes                       int           `flag:"nodes" desc:"number of nodes to launch in cluster"`
-	OsDistro                    string        `flag:"os-distro" desc:"Specifies the OS distribution for the AMI. Allowed values: ['al2', 'al2023'] (case-insensitive)"`
+	NodeNameStrategy            string        `flag:"node-name-strategy" desc:"Specifies the naming strategy for node. Allowed values: ['SessionName', 'EC2PrivateDNSName'], default to EC2PrivateDNSName"`
 	Region                      string        `flag:"region" desc:"AWS region for EKS cluster"`
 	UnmanagedNodes              bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup."`
 	UpClusterHeaders            []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
@@ -177,7 +178,7 @@ func (d *deployer) Up() error {
 		return err
 	}
 	if d.UnmanagedNodes {
-		if err := createAWSAuthConfigMap(k8sClient, d.infra.nodeRole, d.OsDistro); err != nil {
+		if err := createAWSAuthConfigMap(k8sClient, d.NodeNameStrategy, d.infra.nodeRole); err != nil {
 			return err
 		}
 	}
@@ -228,11 +229,15 @@ func (d *deployer) verifyUpFlags() error {
 		return fmt.Errorf("--ami must be specified for --unmanaged-nodes")
 	}
 	//TODO: add support for Manage node group once it supports AL2023
-	if d.UnmanagedNodes && d.OsDistro == "" {
-		return fmt.Errorf("--os-distro must be specified for --unmanaged-nodes")
-	}
-	if d.UnmanagedNodes && !util.IsStringInSlice(d.OsDistro, SupportedOsDistro) {
-		return fmt.Errorf("--os-distro must be one of the following values: ['al2', 'al2023'] (case-insensitive)")
+	if d.UnmanagedNodes {
+		if d.NodeNameStrategy == "" {
+			d.NodeNameStrategy = "EC2PrivateDNSName"
+			klog.V(2).Infof("Using default node name strategy: EC2PrivateDNSName")
+		} else {
+			if !slices.Contains(SupportedNodeNameStrategy, d.NodeNameStrategy) {
+				return fmt.Errorf("--node-name-strategy must be one of the following values: ['SessionName', 'EC2PrivateDNSName']")
+			}
+		}
 	}
 	if d.UnmanagedNodes && d.UserDataFormat == "" {
 		d.UserDataFormat = "bootstrap.sh"

@@ -1,0 +1,6 @@
+
+- username: system:node:{{"{{"}}{{.NodeNameStrategy}}{{"}}"}} 
+  groups:
+    - system:bootstrappers
+    - system:nodes
+  rolearn: {{.Rolearn}}
