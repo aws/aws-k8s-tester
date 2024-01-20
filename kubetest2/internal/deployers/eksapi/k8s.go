@@ -93,16 +93,13 @@ func isNodeReady(node *corev1.Node) bool {
 	return false
 }
 
-const awsAuthMapRolesPrefix = `
-- username: system:node:{{EC2PrivateDNSName}}
-  groups:
-    - system:bootstrappers
-    - system:nodes
-  rolearn: `
-
-func createAWSAuthConfigMap(client *kubernetes.Clientset, nodeRoleARN string) error {
-	mapRoles := awsAuthMapRolesPrefix + nodeRoleARN
-	_, err := client.CoreV1().ConfigMaps("kube-system").Create(context.TODO(), &corev1.ConfigMap{
+func createAWSAuthConfigMap(client *kubernetes.Clientset, nodeNameStrategy string, nodeRoleARN string) error {
+	mapRoles, err := generateAuthMapRole(nodeNameStrategy, nodeRoleARN)
+	if err != nil {
+		return err
+	}
+	klog.Infof("generated AuthMapRole %s", mapRoles)
+	_, err = client.CoreV1().ConfigMaps("kube-system").Create(context.TODO(), &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "aws-auth",
 			Namespace: "kube-system",
