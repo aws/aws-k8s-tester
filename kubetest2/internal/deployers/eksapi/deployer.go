@@ -51,6 +51,7 @@ type deployer struct {
 	metrics          metrics.MetricRegistry
 	infraManager     *InfrastructureManager
 	clusterManager   *ClusterManager
+	addonManager     *AddonManager
 	nodegroupManager *NodegroupManager
 
 	infra   *Infrastructure
@@ -60,6 +61,7 @@ type deployer struct {
 }
 
 type deployerOptions struct {
+	Addons                      []string      `flag:"addons" desc:"Managed addons (name:version pairs) to create in the cluster. Use 'latest' for the most recent version, or 'default' for the default version."`
 	AMI                         string        `flag:"ami" desc:"AMI for nodes"`
 	ClusterRoleServicePrincipal string        `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
 	EKSEndpointURL              string        `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
@@ -118,6 +120,7 @@ func (d *deployer) Init() error {
 	}
 	d.infraManager = NewInfrastructureManager(awsClients, resourceID, d.metrics)
 	d.clusterManager = NewClusterManager(awsClients, resourceID)
+	d.addonManager = NewAddonManager(awsClients)
 	d.nodegroupManager = NewNodegroupManager(awsClients, resourceID)
 	return nil
 }
@@ -184,6 +187,9 @@ func (d *deployer) Up() error {
 	}
 	if d.AMI != "" && d.ExpectedAMI == "" {
 		d.ExpectedAMI = d.AMI
+	}
+	if err := d.addonManager.createAddons(d.infra, d.cluster, &d.deployerOptions); err != nil {
+		return err
 	}
 	if err := d.nodegroupManager.createNodegroup(d.infra, d.cluster, &d.deployerOptions); err != nil {
 		return err
