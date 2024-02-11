@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-rolearn := "mock-role-arn"
+const rolearn = "mock-role-arn"
 
 const sessionNamedAuthMapRole = `
 - username: system:node:{{SessionName}} 
@@ -25,7 +25,7 @@ const privateDNSNamedAuthMapRole = `
 func Test_generateAuthRoleMap(t *testing.T) {
 	cases := []struct {
 		nodeNameStrategy string
-		expected string
+		expected         string
 	}{
 		{
 			nodeNameStrategy: "SessionName",

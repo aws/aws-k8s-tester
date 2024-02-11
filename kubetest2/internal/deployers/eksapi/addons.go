@@ -4,10 +4,15 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	"k8s.io/klog/v2"
+)
+
+const (
+	addonCreationTimeout = 5 * time.Minute
 )
 
 type AddonManager struct {
@@ -42,6 +47,15 @@ func (m *AddonManager) createAddons(infra *Infrastructure, cluster *Cluster, opt
 		_, err = m.clients.EKS().CreateAddon(context.TODO(), &input)
 		if err != nil {
 			return fmt.Errorf("failed to create addon: %v", err)
+		}
+		klog.Infof("waiting for addon to be active: %s", name)
+		err = eks.NewAddonActiveWaiter(m.clients.EKS()).
+			Wait(context.TODO(), &eks.DescribeAddonInput{
+				ClusterName: aws.String(cluster.name),
+				AddonName:   aws.String(name),
+			}, addonCreationTimeout)
+		if err != nil {
+			return fmt.Errorf("failed to wait for addon to be active: %v", err)
 		}
 	}
 	return nil
