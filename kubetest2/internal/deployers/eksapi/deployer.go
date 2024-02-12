@@ -229,6 +229,7 @@ func (d *deployer) verifyUpFlags() error {
 	}
 	if len(d.InstanceTypes) == 0 && d.UnmanagedNodes {
 		d.InstanceTypes = []string{
+			"m6i.xlarge",
 			"m6i.large",
 			"m6a.large",
 			"m5.large",
