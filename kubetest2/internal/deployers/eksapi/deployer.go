@@ -76,6 +76,7 @@ type deployerOptions struct {
 	Nodes                       int           `flag:"nodes" desc:"number of nodes to launch in cluster"`
 	NodeNameStrategy            string        `flag:"node-name-strategy" desc:"Specifies the naming strategy for node. Allowed values: ['SessionName', 'EC2PrivateDNSName'], default to EC2PrivateDNSName"`
 	Region                      string        `flag:"region" desc:"AWS region for EKS cluster"`
+	TuneVPCCNI                  bool          `flag:"tune-vpc-cni" desc:"Apply tuning parameters to the VPC CNI DaemonSet"`
 	UnmanagedNodes              bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup."`
 	UpClusterHeaders            []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
 	UserDataFormat              string        `flag:"user-data-format" desc:"Format of the node instance user data"`
@@ -190,6 +191,11 @@ func (d *deployer) Up() error {
 	}
 	if err := d.addonManager.createAddons(d.infra, d.cluster, &d.deployerOptions); err != nil {
 		return err
+	}
+	if d.deployerOptions.TuneVPCCNI {
+		if err := tuneVPCCNI(k8sClient); err != nil {
+			return err
+		}
 	}
 	if err := d.nodegroupManager.createNodegroup(d.infra, d.cluster, &d.deployerOptions); err != nil {
 		return err
