@@ -9,7 +9,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"log"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
@@ -76,16 +75,16 @@ func TestKubernetes(t *testing.T) {
 			req := client.CoreV1().Pods("default").GetLogs("ulimit", &podLogOptions)
 			logs, err := req.Stream(ctx)
 			if err != nil {
-				log.Fatalf("error in opening stream: %v", err)
+				t.Fatalf("error in opening stream: %v", err)
 			}
 			defer logs.Close()
-			compareResourceLimitsWithExpectedValues(logs)
+			compareResourceLimitsWithExpectedValues(t, logs)
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), ulimitManifest)
 			if err != nil {
-				log.Fatalf("failed to delete manifests: %v", err)
+				t.Fatalf("failed to delete manifests: %v", err)
 			}
 			return ctx
 		}).Feature()
@@ -94,11 +93,11 @@ func TestKubernetes(t *testing.T) {
 	testenv.Test(t, f1)
 }
 
-func compareResourceLimitsWithExpectedValues(logs io.ReadCloser) {
+func compareResourceLimitsWithExpectedValues(t *testing.T, logs io.ReadCloser) {
 	buf := new(bytes.Buffer)
 	_, err := io.Copy(buf, logs)
 	if err != nil {
-		log.Fatalf("error in copy information from podLogs to buf: %v", err)
+		t.Fatalf("error in copy information from podLogs to buf: %v", err)
 	}
 	str := buf.String()
 
@@ -108,9 +107,10 @@ func compareResourceLimitsWithExpectedValues(logs io.ReadCloser) {
 		marker := getMarker(info[len(info)-2])
 		value := info[len(info)-1]
 		if expectedResourceLimit[marker] != value {
-			log.Fatalf("resource limit doesn't match with the default value, limit we get %v, but default value is %v", line, expectedResourceLimit[marker])
+			t.Errorf("resource limit doesn't match with the default value, limit we get %v, but default value is %v", line, expectedResourceLimit[marker])
+		} else {
+			t.Logf("resrouce limit fetched from ulimit: %v. Equal to the default value %v", line, expectedResourceLimit[marker])
 		}
-		log.Printf("resrouce limit fetched from ulimit: %v. Equal to the default value %v", line, expectedResourceLimit[marker])
 	}
 }
 
