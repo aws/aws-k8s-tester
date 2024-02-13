@@ -1,4 +1,4 @@
-package ulimit
+package quick
 
 import (
 	"os"

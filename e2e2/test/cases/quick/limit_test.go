@@ -1,4 +1,4 @@
-package ulimit
+package quick
 
 import (
 	"bytes"
@@ -44,7 +44,7 @@ var (
 	}
 )
 
-func TestKubernetes(t *testing.T) {
+func TestUserLimits(t *testing.T) {
 	f1 := features.New("ulimit pod").
 		WithLabel("type", "ulimit").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
