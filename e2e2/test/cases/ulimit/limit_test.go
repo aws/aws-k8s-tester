@@ -24,7 +24,7 @@ var (
 	//go:embed manifests/ulimit.yaml
 	ulimitManifest []byte
 
-	defaultResourceVaule = map[string]string{
+	expectedResourceLimit = map[string]string{
 		"-R": "unlimited",
 		"-c": "unlimited",
 		"-d": "unlimited",
@@ -79,23 +79,7 @@ func TestKubernetes(t *testing.T) {
 				log.Fatalf("error in opening stream: %v", err)
 			}
 			defer logs.Close()
-
-			buf := new(bytes.Buffer)
-			_, err = io.Copy(buf, logs)
-			if err != nil {
-				log.Fatalf("error in copy information from podLogs to buf: %v", err)
-			}
-			str := buf.String()
-
-			lines := strings.Split(str, "\n")
-			for _, line := range lines[:len(lines)-1] {
-				info := strings.Split(line, " ")
-				marker := getMarker(info[len(info)-2])
-				value := info[len(info)-1]
-				if defaultResourceVaule[marker] != value {
-					log.Fatalf("resource limit doesn't match with the default value, limit we get %v, but default value is %v", line, defaultResourceVaule[marker])
-				}
-			}
+			compareResourceLimitsWithExpectedValues(logs)
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -108,6 +92,26 @@ func TestKubernetes(t *testing.T) {
 
 	// test feature
 	testenv.Test(t, f1)
+}
+
+func compareResourceLimitsWithExpectedValues(logs io.ReadCloser) {
+	buf := new(bytes.Buffer)
+	_, err := io.Copy(buf, logs)
+	if err != nil {
+		log.Fatalf("error in copy information from podLogs to buf: %v", err)
+	}
+	str := buf.String()
+
+	lines := strings.Split(str, "\n")
+	for _, line := range lines[:len(lines)-1] {
+		info := strings.Split(line, " ")
+		marker := getMarker(info[len(info)-2])
+		value := info[len(info)-1]
+		if expectedResourceLimit[marker] != value {
+			log.Fatalf("resource limit doesn't match with the default value, limit we get %v, but default value is %v", line, expectedResourceLimit[marker])
+		}
+		log.Printf("resrouce limit fetched from ulimit: %v. Equal to the default value %v", line, expectedResourceLimit[marker])
+	}
 }
 
 func containerTerminated(obj k8s.Object) bool {
