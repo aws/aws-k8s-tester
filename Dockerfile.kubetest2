@@ -19,6 +19,7 @@ WORKDIR $GOPATH/src/github.com/aws/aws-k8s-tester/e2e2
 COPY e2e2/ .
 RUN go test -c ./test/cases/nvidia -o $GOPATH/bin/e2e-nvidia
 RUN go test -c ./test/cases/netpol -o $GOPATH/bin/e2e-netpol
+RUN go test -c ./test/cases/quick -o $GOPATH/bin/e2e-quick
 
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 ARG TARGETOS
