@@ -98,9 +98,9 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 				t.Fatal(err)
 			}
 			j := kubeflowv2beta1.MPIJob{
-				ObjectMeta: metav1.ObjectMeta{Name: "pytorch-training-multi-node"},
+				ObjectMeta: metav1.ObjectMeta{Name: "pytorch-training-multi-node", Namespace: "default"},
 			}
-			timeout := time.Minute * 20
+			timeout := time.Minute * 10
 			err := wait.For(conditions.New(rsrc).ResourceMatch(&j, mpiJobSucceeded),
 				wait.WithTimeout(timeout))
 			if err != nil {
