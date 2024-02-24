@@ -86,15 +86,6 @@ Resources:
           Value: owned
           PropagateAtLaunch: true
 
-  NodeLifecycleHook:
-    Type: AWS::AutoScaling::LifecycleHook
-    Properties:
-      AutoScalingGroupName: !Ref NodeGroup
-      HeartbeatTimeout: 60
-      DefaultResult: CONTINUE
-      LifecycleHookName: !Ref ResourceId
-      LifecycleTransition: autoscaling:EC2_INSTANCE_TERMINATING
-
   NodeLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:

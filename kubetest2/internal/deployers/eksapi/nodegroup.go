@@ -41,6 +41,9 @@ func NewNodegroupManager(clients *awsClients, resourceID string) *NodegroupManag
 
 func (m *NodegroupManager) createNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
 	if opts.UnmanagedNodes {
+		if opts.EFA {
+			return m.createUnmanagedNodegroupWithEFA(infra, cluster, opts)
+		}
 		return m.createUnmanagedNodegroup(infra, cluster, opts)
 	} else {
 		return m.createManagedNodegroup(infra, cluster, opts)
@@ -184,6 +187,92 @@ func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, clust
 		return fmt.Errorf("failed to wait for unmanaged nodegroup stack creation: %w", err)
 	}
 	klog.Infof("created unmanaged nodegroup stack: %s", *out.StackId)
+	if opts.ExpectedAMI != "" {
+		if ok, err := m.verifyASGAMI(m.resourceID, opts.ExpectedAMI); err != nil {
+			return err
+		} else if !ok {
+			return fmt.Errorf("ASG %s is not using expected AMI: %s", m.resourceID, opts.ExpectedAMI)
+		}
+	}
+	return nil
+}
+
+func (m *NodegroupManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
+	stackName := m.getUnmanagedNodegroupStackName()
+	klog.Infof("creating unmanaged nodegroup with EFA stack...")
+	userData, err := generateUserData(opts.UserDataFormat, cluster)
+	if err != nil {
+		return err
+	}
+	// pull the role name out of the ARN
+	nodeRoleArnParts := strings.Split(infra.nodeRole, "/")
+	nodeRoleName := nodeRoleArnParts[len(nodeRoleArnParts)-1]
+	input := cloudformation.CreateStackInput{
+		StackName:    aws.String(stackName),
+		TemplateBody: aws.String(templates.UnmanagedNodegroupEFA),
+		Capabilities: []cloudformationtypes.Capability{cloudformationtypes.CapabilityCapabilityIam},
+		Parameters: []cloudformationtypes.Parameter{
+			{
+				ParameterKey:   aws.String("ResourceId"),
+				ParameterValue: aws.String(m.resourceID),
+			},
+			{
+				ParameterKey:   aws.String("VpcId"),
+				ParameterValue: aws.String(infra.vpc),
+			},
+			{
+				ParameterKey:   aws.String("SubnetIds"),
+				ParameterValue: aws.String(infra.subnetsPrivate[0]), // this is load bearing! EFA requires a private subnet
+			},
+			{
+				ParameterKey:   aws.String("UserData"),
+				ParameterValue: aws.String(userData),
+			},
+			{
+				ParameterKey:   aws.String("ClusterName"),
+				ParameterValue: aws.String(cluster.name),
+			},
+			{
+				ParameterKey:   aws.String("NodeRoleName"),
+				ParameterValue: aws.String(nodeRoleName),
+			},
+			{
+				ParameterKey:   aws.String("NodeCount"),
+				ParameterValue: aws.String(strconv.Itoa(opts.Nodes)),
+			},
+			{
+				ParameterKey:   aws.String("SecurityGroup"),
+				ParameterValue: aws.String(cluster.securityGroupId),
+			},
+			{
+				ParameterKey:   aws.String("SSHKeyPair"),
+				ParameterValue: aws.String(infra.sshKeyPair),
+			},
+			{
+				ParameterKey:   aws.String("AMIId"),
+				ParameterValue: aws.String(opts.AMI),
+			},
+			{
+				ParameterKey:   aws.String("InstanceType"),
+				ParameterValue: aws.String(opts.InstanceTypes[0]),
+			},
+		},
+	}
+	out, err := m.clients.CFN().CreateStack(context.TODO(), &input)
+	if err != nil {
+		return err
+	}
+	klog.Infof("waiting for unmanaged nodegroup with EFA to be created: %s", *out.StackId)
+	err = cloudformation.NewStackCreateCompleteWaiter(m.clients.CFN()).
+		Wait(context.TODO(),
+			&cloudformation.DescribeStacksInput{
+				StackName: out.StackId,
+			},
+			infraStackCreationTimeout)
+	if err != nil {
+		return fmt.Errorf("failed to wait for unmanaged nodegroup stack creation: %w", err)
+	}
+	klog.Infof("created unmanaged nodegroup with EFA stack: %s", *out.StackId)
 	if opts.ExpectedAMI != "" {
 		if ok, err := m.verifyASGAMI(m.resourceID, opts.ExpectedAMI); err != nil {
 			return err

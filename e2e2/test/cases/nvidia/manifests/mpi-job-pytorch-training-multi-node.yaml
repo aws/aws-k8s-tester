@@ -5,6 +5,9 @@ metadata:
 spec:
   slotsPerWorker: 8
   runPolicy:
+    # it may take a bit for the workers to get ready (the container image is heavy)
+    # and we don't want the launcher to reach it's CrashLoopBackoff limit in the meantime
+    backoffLimit: 20
     cleanPodPolicy: Running
   mpiReplicaSpecs:
     Launcher:
@@ -12,19 +15,11 @@ spec:
       template:
          spec:
           restartPolicy: OnFailure
-          initContainers:
-          - image: public.ecr.aws/w6p6i9i7/aws-efa-nccl-rdma:22.03-pt-py3
-            name: init
-            command: ["sh", "-c", "sleep 5"]
           containers:
-          - image: public.ecr.aws/w6p6i9i7/aws-efa-nccl-rdma:22.03-pt-py3
+          - image: TODO
             imagePullPolicy: Always
             name: nccl-test-launcher
             env:
-             - name: LD_LIBRARY_PATH
-               value: /opt/amazon/openmpi/lib:/opt/nccl/build/lib:/opt/amazon/efa/lib:/opt/aws-ofi-nccl/install/lib:/usr/local/nvidia/lib:$LD_LIBRARY_PATH
-             - name: PATH
-               value: $PATH:/opt/amazon/efa/bin:/usr/sbin:/usr/bin:/usr/local/bin
              - name: XLA_FLAGS
                value: "--xla_gpu_cuda_data_dir=/usr/local/cuda"
              - name: TF_XLA_FLAGS
@@ -55,10 +50,12 @@ spec:
             - RDMAV_FORK_SAFE=1
             - -x
             - NCCL_PROTO=simple
-            - -x 
+            - -x
             - FI_LOG_LEVEL=warn
             - -x
             - FI_EFA_USE_DEVICE_RDMA=1
+            - -x
+            - OFI_NCCL_DISABLE_GDR_REQUIRED_CHECK=0
             - -x
             - NCCL_PROTO=simple
             - --mca
@@ -88,10 +85,8 @@ spec:
           - name: dshm
             emptyDir:
               medium: Memory
-          nodeSelector:
-            beta.kubernetes.io/instance-type: p4d.24xlarge
           containers:
-          - image: public.ecr.aws/w6p6i9i7/aws-efa-nccl-rdma:22.03-pt-py3
+          - image: TODO
             imagePullPolicy: Always
             name: nccl-worker
             volumeMounts:

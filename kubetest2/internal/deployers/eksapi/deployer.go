@@ -64,6 +64,7 @@ type deployerOptions struct {
 	Addons                      []string      `flag:"addons" desc:"Managed addons (name:version pairs) to create in the cluster. Use 'latest' for the most recent version, or 'default' for the default version."`
 	AMI                         string        `flag:"ami" desc:"AMI for nodes"`
 	ClusterRoleServicePrincipal string        `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
+	EFA                         bool          `flag:"efa" desc:"Create EFA interfaces on the node of an unmanaged nodegroup. Requires --unmanaged-nodes."`
 	EKSEndpointURL              string        `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
 	EmitMetrics                 bool          `flag:"emit-metrics" desc:"Record and emit metrics to CloudWatch"`
 	ExpectedAMI                 string        `flag:"expected-ami" desc:"Expected AMI of nodes. Up will fail if the actual nodes are not utilizing the expected AMI. Defaults to --ami if defined."`
@@ -255,6 +256,9 @@ func (d *deployer) verifyUpFlags() error {
 	if d.UnmanagedNodes && d.UserDataFormat == "" {
 		d.UserDataFormat = "bootstrap.sh"
 		klog.V(2).Infof("Using default user data format: %s", d.UserDataFormat)
+	}
+	if d.UnmanagedNodes && d.EFA && len(d.InstanceTypes) != 1 {
+		return fmt.Errorf("--efa requires a single instance type")
 	}
 	if d.NodeReadyTimeout == 0 {
 		d.NodeReadyTimeout = time.Minute * 5
