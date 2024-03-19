@@ -366,7 +366,7 @@ func (ts *tester) createPVC() error {
 			Spec: core_v1.PersistentVolumeClaimSpec{
 				AccessModes:      []v1.PersistentVolumeAccessMode{v1.ReadWriteMany},
 				StorageClassName: &scName,
-				Resources: core_v1.ResourceRequirements{
+				Resources: core_v1.VolumeResourceRequirements{
 					Requests: core_v1.ResourceList{
 						core_v1.ResourceStorage: api_resource.MustParse("5Gi"),
 					},

@@ -379,7 +379,7 @@ func (ts *tester) createPersistentVolumeClaim(storageClass string) error {
 			Spec: core_v1.PersistentVolumeClaimSpec{
 				AccessModes:      []v1.PersistentVolumeAccessMode{v1.ReadWriteOnce},
 				StorageClassName: &storageClass,
-				Resources: core_v1.ResourceRequirements{
+				Resources: core_v1.VolumeResourceRequirements{
 					Requests: core_v1.ResourceList{
 						core_v1.ResourceStorage: api_resource.MustParse("4Gi"),
 					},
