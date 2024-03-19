@@ -36,7 +36,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	extensions_v1beta1 "k8s.io/api/extensions/v1beta1"
 	networking_v1 "k8s.io/api/networking/v1"
-	policy_v1beta1 "k8s.io/api/policy/v1beta1"
 	apiextensions_client "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/version"
@@ -179,7 +178,6 @@ type EKS interface {
 	ListAppsV1DaemonSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1.DaemonSet, err error)
 	ListAppsV1ReplicaSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1.ReplicaSet, err error)
 	ListNetworkingV1NetworkPolicies(namespace string, batchLimit int64, batchInterval time.Duration) (ss []networking_v1.NetworkPolicy, err error)
-	ListPolicyV1beta1PodSecurityPolicies(batchLimit int64, batchInterval time.Duration) (ss []policy_v1beta1.PodSecurityPolicy, err error)
 
 	ListAppsV1beta1Deployments(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1beta1.Deployment, err error)
 	ListAppsV1beta1StatefulSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1beta1.StatefulSet, err error)
@@ -189,7 +187,6 @@ type EKS interface {
 	ListExtensionsV1beta1Deployments(namespace string, batchLimit int64, batchInterval time.Duration) (ss []extensions_v1beta1.Deployment, err error)
 	ListExtensionsV1beta1ReplicaSets(namespace string, batchLimit int64, batchInterval time.Duration) (ss []extensions_v1beta1.ReplicaSet, err error)
 	ListExtensionsV1beta1NetworkPolicies(namespace string, batchLimit int64, batchInterval time.Duration) (ss []extensions_v1beta1.NetworkPolicy, err error)
-	ListExtensionsV1beta1PodSecurityPolicies(batchLimit int64, batchInterval time.Duration) (ss []extensions_v1beta1.PodSecurityPolicy, err error)
 
 	// GetObject get object type and object metadata using kubectl.
 	// The internal API group version is not exposed,
@@ -1313,40 +1310,6 @@ func (e *eks) ListNetworkingV1NetworkPolicies(namespace string, batchLimit int64
 	return ss, err
 }
 
-func (e *eks) ListPolicyV1beta1PodSecurityPolicies(batchLimit int64, batchInterval time.Duration) (ss []policy_v1beta1.PodSecurityPolicy, err error) {
-	rs := &policy_v1beta1.PodSecurityPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
-	for {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().PolicyV1beta1().PodSecurityPolicies().List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
-		cancel()
-		if err != nil {
-			return nil, err
-		}
-		ss = append(ss, rs.Items...)
-		remained := int64Value(rs.RemainingItemCount)
-		e.cfg.Logger.Info("listing podsecuritypolicies policy/v1beta1",
-			zap.Int64("batch-limit", batchLimit),
-			zap.Int64("remained", remained),
-			zap.String("continue", rs.Continue),
-			zap.Duration("batch-interval", batchInterval),
-			zap.Int("items", len(rs.Items)),
-		)
-		if rs.Continue == "" {
-			break
-		}
-		time.Sleep(batchInterval)
-	}
-	for i := range ss {
-		if ss[i].TypeMeta.APIVersion == "" {
-			ss[i].TypeMeta.APIVersion = "policy/v1beta1"
-		}
-		if ss[i].TypeMeta.Kind == "" {
-			ss[i].TypeMeta.Kind = "PodSecurityPolicy"
-		}
-	}
-	return ss, err
-}
-
 func (e *eks) ListAppsV1beta1Deployments(namespace string, batchLimit int64, batchInterval time.Duration) (ss []apps_v1beta1.Deployment, err error) {
 	e.cfg.Logger.Info("listing deployments apps/v1beta1",
 		zap.String("namespace", namespace),
@@ -1653,41 +1616,6 @@ func (e *eks) ListExtensionsV1beta1NetworkPolicies(namespace string, batchLimit 
 		}
 		if ss[i].ObjectMeta.Namespace == "" {
 			ss[i].ObjectMeta.Namespace = namespace
-		}
-	}
-	return ss, err
-}
-
-func (e *eks) ListExtensionsV1beta1PodSecurityPolicies(batchLimit int64, batchInterval time.Duration) (ss []extensions_v1beta1.PodSecurityPolicy, err error) {
-	e.cfg.Logger.Info("listing podsecuritypolicies extensions/v1beta1",
-		zap.Int64("batch-limit", batchLimit),
-		zap.Duration("batch-interval", batchInterval),
-	)
-	rs := &extensions_v1beta1.PodSecurityPolicyList{ListMeta: metav1.ListMeta{Continue: ""}}
-	for {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-		rs, err = e.getClient().ExtensionsV1beta1().PodSecurityPolicies().List(ctx, metav1.ListOptions{Limit: batchLimit, Continue: rs.Continue})
-		cancel()
-		if err != nil {
-			return nil, err
-		}
-		ss = append(ss, rs.Items...)
-		remained := int64Value(rs.RemainingItemCount)
-		e.cfg.Logger.Info("podsecuritypolicies extensions/v1beta1",
-			zap.Int64("remained", remained),
-			zap.Int("items", len(rs.Items)),
-		)
-		if rs.Continue == "" {
-			break
-		}
-		time.Sleep(batchInterval)
-	}
-	for i := range ss {
-		if ss[i].TypeMeta.APIVersion == "" {
-			ss[i].TypeMeta.APIVersion = "extensions/v1beta1"
-		}
-		if ss[i].TypeMeta.Kind == "" {
-			ss[i].TypeMeta.Kind = "PodSecurityPolicy"
 		}
 	}
 	return ss, err
