@@ -154,7 +154,7 @@ func (ts *tester) deployFalconContainer(ctx context.Context) error {
 			Name: "default",
 		},
 		Spec: falconv1alpha1.FalconContainerSpec{
-			FalconAPI: falconv1alpha1.FalconAPI{
+			FalconAPI: &falconv1alpha1.FalconAPI{
 				CloudRegion:  "autodiscover",
 				ClientId:     ts.cfg.FalconClientId,
 				ClientSecret: ts.cfg.FalconClientSecret,
@@ -162,8 +162,8 @@ func (ts *tester) deployFalconContainer(ctx context.Context) error {
 			Registry: falconv1alpha1.RegistrySpec{
 				Type: falconv1alpha1.RegistryTypeCrowdStrike,
 			},
-			InstallerArgs: []string{
-				"-disable-default-ns-injection",
+			Injector: falconv1alpha1.FalconContainerInjectorSpec{
+				DisableDefaultNSInjection: true,
 			},
 		},
 	}
