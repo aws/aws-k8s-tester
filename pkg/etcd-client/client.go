@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/clientv3/concurrency"
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	"go.etcd.io/etcd/mvcc/mvccpb"
 	"go.uber.org/zap"
 )

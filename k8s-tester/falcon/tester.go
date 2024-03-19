@@ -17,7 +17,7 @@ import (
 	"github.com/aws/aws-k8s-tester/client"
 	k8s_tester "github.com/aws/aws-k8s-tester/k8s-tester/tester"
 	"github.com/aws/aws-k8s-tester/utils/file"
-	falconv1alpha1 "github.com/crowdstrike/falcon-operator/apis/falcon/v1alpha1"
+	falconv1alpha1 "github.com/crowdstrike/falcon-operator/api/falcon/v1alpha1"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

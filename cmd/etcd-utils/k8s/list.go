@@ -13,7 +13,7 @@ import (
 	"github.com/aws/aws-k8s-tester/pkg/logutil"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
-	"go.etcd.io/etcd/clientv3"
+	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
 	"sigs.k8s.io/yaml" // must use "sigs.k8s.io/yaml"
 )
