@@ -61,26 +61,27 @@ type deployer struct {
 }
 
 type deployerOptions struct {
-	Addons                      []string      `flag:"addons" desc:"Managed addons (name:version pairs) to create in the cluster. Use 'latest' for the most recent version, or 'default' for the default version."`
-	AMI                         string        `flag:"ami" desc:"AMI for nodes"`
-	ClusterRoleServicePrincipal string        `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
-	EFA                         bool          `flag:"efa" desc:"Create EFA interfaces on the node of an unmanaged nodegroup. Requires --unmanaged-nodes."`
-	EKSEndpointURL              string        `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
-	EmitMetrics                 bool          `flag:"emit-metrics" desc:"Record and emit metrics to CloudWatch"`
-	ExpectedAMI                 string        `flag:"expected-ami" desc:"Expected AMI of nodes. Up will fail if the actual nodes are not utilizing the expected AMI. Defaults to --ami if defined."`
-	GenerateSSHKey              bool          `flag:"generate-ssh-key" desc:"Generate an SSH key to use for tests. The generated key should not be used in production, as it will not have a passphrase."`
-	InstanceTypes               []string      `flag:"instance-types" desc:"Node instance types"`
-	IPFamily                    string        `flag:"ip-family" desc:"IP family for the cluster (ipv4 or ipv6)"`
-	KubeconfigPath              string        `flag:"kubeconfig" desc:"Path to kubeconfig"`
-	KubernetesVersion           string        `flag:"kubernetes-version" desc:"cluster Kubernetes version"`
-	NodeReadyTimeout            time.Duration `flag:"node-ready-timeout" desc:"Time to wait for all nodes to become ready"`
-	Nodes                       int           `flag:"nodes" desc:"number of nodes to launch in cluster"`
-	NodeNameStrategy            string        `flag:"node-name-strategy" desc:"Specifies the naming strategy for node. Allowed values: ['SessionName', 'EC2PrivateDNSName'], default to EC2PrivateDNSName"`
-	Region                      string        `flag:"region" desc:"AWS region for EKS cluster"`
-	TuneVPCCNI                  bool          `flag:"tune-vpc-cni" desc:"Apply tuning parameters to the VPC CNI DaemonSet"`
-	UnmanagedNodes              bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup."`
-	UpClusterHeaders            []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
-	UserDataFormat              string        `flag:"user-data-format" desc:"Format of the node instance user data"`
+	Addons                      []string          `flag:"addons" desc:"Managed addons (name:version pairs) to create in the cluster. Use 'latest' for the most recent version, or 'default' for the default version."`
+	AMI                         string            `flag:"ami" desc:"AMI for unmanaged nodes"`
+	AMIType                     ekstypes.AMITypes `flag:"ami-type" desc:"AMI type for managed nodes"`
+	ClusterRoleServicePrincipal string            `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
+	EFA                         bool              `flag:"efa" desc:"Create EFA interfaces on the node of an unmanaged nodegroup. Requires --unmanaged-nodes."`
+	EKSEndpointURL              string            `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
+	EmitMetrics                 bool              `flag:"emit-metrics" desc:"Record and emit metrics to CloudWatch"`
+	ExpectedAMI                 string            `flag:"expected-ami" desc:"Expected AMI of nodes. Up will fail if the actual nodes are not utilizing the expected AMI. Defaults to --ami if defined."`
+	GenerateSSHKey              bool              `flag:"generate-ssh-key" desc:"Generate an SSH key to use for tests. The generated key should not be used in production, as it will not have a passphrase."`
+	InstanceTypes               []string          `flag:"instance-types" desc:"Node instance types"`
+	IPFamily                    string            `flag:"ip-family" desc:"IP family for the cluster (ipv4 or ipv6)"`
+	KubeconfigPath              string            `flag:"kubeconfig" desc:"Path to kubeconfig"`
+	KubernetesVersion           string            `flag:"kubernetes-version" desc:"cluster Kubernetes version"`
+	NodeReadyTimeout            time.Duration     `flag:"node-ready-timeout" desc:"Time to wait for all nodes to become ready"`
+	Nodes                       int               `flag:"nodes" desc:"number of nodes to launch in cluster"`
+	NodeNameStrategy            string            `flag:"node-name-strategy" desc:"Specifies the naming strategy for node. Allowed values: ['SessionName', 'EC2PrivateDNSName'], default to EC2PrivateDNSName"`
+	Region                      string            `flag:"region" desc:"AWS region for EKS cluster"`
+	TuneVPCCNI                  bool              `flag:"tune-vpc-cni" desc:"Apply tuning parameters to the VPC CNI DaemonSet"`
+	UnmanagedNodes              bool              `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup. Requires --ami"`
+	UpClusterHeaders            []string          `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
+	UserDataFormat              string            `flag:"user-data-format" desc:"Format of the node instance user data"`
 }
 
 // NewDeployer implements deployer.New for EKS using the EKS (and other AWS) API(s) directly (no cloudformation)
@@ -242,7 +243,9 @@ func (d *deployer) verifyUpFlags() error {
 	if d.UnmanagedNodes && d.AMI == "" {
 		return fmt.Errorf("--ami must be specified for --unmanaged-nodes")
 	}
-	//TODO: add support for Manage node group once it supports AL2023
+	if !d.UnmanagedNodes && d.AMI != "" {
+		return fmt.Errorf("--ami should not be provided without --unmanaged-nodes")
+	}
 	if d.UnmanagedNodes {
 		if d.NodeNameStrategy == "" {
 			d.NodeNameStrategy = "EC2PrivateDNSName"
@@ -259,6 +262,9 @@ func (d *deployer) verifyUpFlags() error {
 	}
 	if d.UnmanagedNodes && d.EFA && len(d.InstanceTypes) != 1 {
 		return fmt.Errorf("--efa requires a single instance type")
+	}
+	if d.UnmanagedNodes && d.AMIType != "" {
+		return fmt.Errorf("--ami-type should not be provided with --unmanaged-nodes")
 	}
 	if d.NodeReadyTimeout == 0 {
 		d.NodeReadyTimeout = time.Minute * 5
