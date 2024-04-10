@@ -65,6 +65,9 @@ func (m *NodegroupManager) createManagedNodegroup(infra *Infrastructure, cluster
 			DesiredSize: aws.Int32(int32(opts.Nodes)),
 		},
 	}
+	if opts.AMIType != "" {
+		input.AmiType = opts.AMIType
+	}
 	if len(opts.InstanceTypes) > 0 {
 		input.InstanceTypes = opts.InstanceTypes
 	}
