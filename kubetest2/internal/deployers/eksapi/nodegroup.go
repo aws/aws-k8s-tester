@@ -66,7 +66,7 @@ func (m *NodegroupManager) createManagedNodegroup(infra *Infrastructure, cluster
 		},
 	}
 	if opts.AMIType != "" {
-		input.AmiType = opts.AMIType
+		input.AmiType = ekstypes.AMITypes(opts.AMIType)
 	}
 	if len(opts.InstanceTypes) > 0 {
 		input.InstanceTypes = opts.InstanceTypes
