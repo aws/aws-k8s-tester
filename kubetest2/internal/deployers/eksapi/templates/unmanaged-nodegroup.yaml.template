@@ -45,6 +45,16 @@ Parameters:
   UserData:
     Type: String
 
+  UserDataIsMIMEPart:
+    Description: "User data should be embedded as a part of a multi-part MIME document"
+    Default: true
+    Type: String
+    AllowedValues: [true, false]
+
+Conditions:
+  IsUserDataMIMEPart:
+    !Equals [true, !Ref UserDataIsMIMEPart]
+
 Resources:
   NodeInstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -97,24 +107,28 @@ Resources:
         KeyName: !Ref SSHKeyPair
         UserData:
           Fn::Base64:
-            Fn::Sub: |
-              Content-Type: multipart/mixed; boundary="BOUNDARY"
-              MIME-Version: 1.0
+            Fn::If:
+              - IsUserDataMIMEPart
+              - Fn::Sub: |
+                  Content-Type: multipart/mixed; boundary="BOUNDARY"
+                  MIME-Version: 1.0
 
-              --BOUNDARY
-              ${UserData}
+                  --BOUNDARY
+                  ${UserData}
 
-              --BOUNDARY
-              Content-Type: text/x-shellscript; charset="us-ascii"
-              MIME-Version: 1.0
+                  --BOUNDARY
+                  Content-Type: text/x-shellscript; charset="us-ascii"
+                  MIME-Version: 1.0
 
-              #!/usr/bin/env bash
-              /opt/aws/bin/cfn-signal \
-                --stack  ${AWS::StackName} \
-                --resource NodeGroup \
-                --region ${AWS::Region}
+                  #!/usr/bin/env bash
+                  /opt/aws/bin/cfn-signal \
+                    --stack  ${AWS::StackName} \
+                    --resource NodeGroup \
+                    --region ${AWS::Region}
 
-              --BOUNDARY--
+                  --BOUNDARY--
+              - Fn::Sub: |
+                  ${UserData}
         IamInstanceProfile:
           Arn: !GetAtt NodeInstanceProfile.Arn
         ImageId: !Ref AMIId

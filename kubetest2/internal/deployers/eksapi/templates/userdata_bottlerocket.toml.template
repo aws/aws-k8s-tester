@@ -1,0 +1,7 @@
+[settings.kubernetes]
+"cluster-name" = "{{.Name}}"
+"api-server" = "{{.APIServerEndpoint}}"
+"cluster-certificate" = "{{.CertificateAuthority}}"
+
+[settings.host-containers.admin]
+"enabled" = true

@@ -38,26 +38,30 @@ spec:
 
 func Test_generateUserData(t *testing.T) {
 	cases := []struct {
-		format   string
-		expected string
+		format             string
+		expected           string
+		expectedIsMimePart bool
 	}{
 		{
-			format:   "bootstrap.sh",
-			expected: bootstrapShUserData,
+			format:             "bootstrap.sh",
+			expected:           bootstrapShUserData,
+			expectedIsMimePart: true,
 		},
 		{
-			format:   "nodeadm",
-			expected: nodeadmUserData,
+			format:             "nodeadm",
+			expected:           nodeadmUserData,
+			expectedIsMimePart: true,
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.format, func(t *testing.T) {
-			actual, err := generateUserData(c.format, &cluster)
+			actual, isMimePart, err := generateUserData(c.format, &cluster)
 			if err != nil {
 				t.Log(err)
 				t.Error(err)
 			}
 			assert.Equal(t, c.expected, actual)
+			assert.Equal(t, c.expectedIsMimePart, isMimePart)
 		})
 	}
 }

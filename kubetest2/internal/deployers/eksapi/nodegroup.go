@@ -106,7 +106,7 @@ func (m *NodegroupManager) createManagedNodegroup(infra *Infrastructure, cluster
 func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
 	stackName := m.getUnmanagedNodegroupStackName()
 	klog.Infof("creating unmanaged nodegroup stack...")
-	userData, err := generateUserData(opts.UserDataFormat, cluster)
+	userData, userDataIsMimePart, err := generateUserData(opts.UserDataFormat, cluster)
 	if err != nil {
 		return err
 	}
@@ -144,6 +144,10 @@ func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, clust
 			{
 				ParameterKey:   aws.String("UserData"),
 				ParameterValue: aws.String(userData),
+			},
+			{
+				ParameterKey:   aws.String("UserDataIsMIMEPart"),
+				ParameterValue: aws.String(strconv.FormatBool(userDataIsMimePart)),
 			},
 			{
 				ParameterKey:   aws.String("ClusterName"),
@@ -203,7 +207,7 @@ func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, clust
 func (m *NodegroupManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
 	stackName := m.getUnmanagedNodegroupStackName()
 	klog.Infof("creating unmanaged nodegroup with EFA stack...")
-	userData, err := generateUserData(opts.UserDataFormat, cluster)
+	userData, _, err := generateUserData(opts.UserDataFormat, cluster)
 	if err != nil {
 		return err
 	}
