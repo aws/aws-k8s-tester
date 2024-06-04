@@ -30,6 +30,10 @@ var (
 	//go:embed userdata_nodeadm.yaml.mimepart.template
 	userDataNodeadmTemplate string
 	UserDataNodeadm         = template.Must(template.New("userDataNodeadm").Parse(userDataNodeadmTemplate))
+
+	//go:embed userdata_bottlerocket.toml.template
+	userDataBottlerocketTemplate string
+	UserDataBottlerocket         = template.Must(template.New("userDataBottlerocket").Parse(userDataBottlerocketTemplate))
 )
 
 type UserDataTemplateData struct {

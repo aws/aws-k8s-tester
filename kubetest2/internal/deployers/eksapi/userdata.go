@@ -8,7 +8,8 @@ import (
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/deployers/eksapi/templates"
 )
 
-func generateUserData(format string, cluster *Cluster) (string, error) {
+func generateUserData(format string, cluster *Cluster) (string, bool, error) {
+	userDataIsMimePart := true
 	var t *template.Template
 	switch format {
 	case "bootstrap.sh":
@@ -16,8 +17,11 @@ func generateUserData(format string, cluster *Cluster) (string, error) {
 	case "nodeadm":
 		// TODO: replace the YAML template with proper usage of the nodeadm API go types
 		t = templates.UserDataNodeadm
+	case "bottlerocket":
+		t = templates.UserDataBottlerocket
+		userDataIsMimePart = false
 	default:
-		return "", fmt.Errorf("uknown user data format: '%s'", format)
+		return "", false, fmt.Errorf("uknown user data format: '%s'", format)
 	}
 	buf := bytes.Buffer{}
 	if err := t.Execute(&buf, templates.UserDataTemplateData{
@@ -26,7 +30,7 @@ func generateUserData(format string, cluster *Cluster) (string, error) {
 		CIDR:                 cluster.cidr,
 		Name:                 cluster.name,
 	}); err != nil {
-		return "", err
+		return "", false, err
 	}
-	return buf.String(), nil
+	return buf.String(), userDataIsMimePart, nil
 }
