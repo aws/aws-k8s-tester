@@ -1,8 +1,9 @@
-FROM nvidia/cuda:12.2.0-devel-ubuntu22.04
+# Start with the NVIDIA CUDA base image
+FROM nvidia/cuda:12.5.0-devel-ubuntu22.04
 
 ARG EFA_INSTALLER_VERSION=latest
 # 1.7.4+ is required, to enforce proper EFA function with OFI_NCCL_DISABLE_GDR_REQUIRED_CHECK=0
-ARG AWS_OFI_NCCL_VERSION=1.7.4
+ARG AWS_OFI_NCCL_VERSION=1.9.1
 ARG NCCL_TESTS_VERSION=master
 
 # Install necessary dependencies
