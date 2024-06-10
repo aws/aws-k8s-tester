@@ -3,6 +3,7 @@ package frameworkext
 import (
 	"bytes"
 	"context"
+	"html/template"
 	"io"
 	"os"
 
@@ -100,6 +101,17 @@ func deleteManifests(restConfig *rest.Config, manifests ...io.Reader) error {
 		}
 	}
 	return nil
+}
+
+// RenderManifests renders manifests with the supplied data
+func RenderManifests(file []byte, templateData interface{}) ([]byte, error) {
+	tpl, err := template.New("Manifest").Parse(string(file))
+	if err != nil {
+		return nil, err
+	}
+	buf := bytes.Buffer{}
+	err = tpl.Execute(&buf, templateData)
+	return buf.Bytes(), err
 }
 
 func bytesSlicesToReaders(byteSlices ...[]byte) []io.Reader {
