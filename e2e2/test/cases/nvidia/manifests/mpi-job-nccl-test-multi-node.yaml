@@ -3,7 +3,7 @@ kind: MPIJob
 metadata:
   name: multi-node-nccl-test
 spec:
-  slotsPerWorker: {{.GpuCount}}
+  slotsPerWorker: {{.GpuPerNode}}
   runPolicy:
     # it may take a bit for the workers to get ready (the container image is heavy)
     # and we don't want the launcher to reach it's CrashLoopBackoff limit in the meantime
@@ -16,7 +16,7 @@ spec:
          spec:
           restartPolicy: OnFailure
           containers:
-          - image: {{.EfaImage}}
+          - image: {{.NcclTestImage}}
             imagePullPolicy: Always
             name: nccl-test-launcher
             env:
@@ -29,7 +29,7 @@ spec:
             - --allow-run-as-root
             - --tag-output
             - -np
-            - "{{.GpuCount}}"
+            - "{{.WorkerNodeGpuCount}}"
             - -bind-to
             - none
             - -map-by
@@ -82,7 +82,7 @@ spec:
             emptyDir:
               medium: Memory
           containers:
-          - image: {{.EfaImage}}
+          - image: {{.NcclTestImage}}
             imagePullPolicy: Always
             name: nccl-test-worker
             volumeMounts:
@@ -90,12 +90,12 @@ spec:
               name: dshm
             resources:
               requests:
-                nvidia.com/gpu: {{.GpuCount}}
+                nvidia.com/gpu: {{.GpuPerNode}}
                 hugepages-2Mi: 5120Mi
-                vpc.amazonaws.com/efa: {{.EfaInterfaceCount}}
+                vpc.amazonaws.com/efa: {{.EfaInterfacePerNode}}
                 memory: 8000Mi
               limits:
-                nvidia.com/gpu: {{.GpuCount}}
+                nvidia.com/gpu: {{.GpuPerNode}}
                 hugepages-2Mi: 5120Mi
-                vpc.amazonaws.com/efa: {{.EfaInterfaceCount}}
+                vpc.amazonaws.com/efa: {{.EfaInterfacePerNode}}
                 memory: 8000Mi

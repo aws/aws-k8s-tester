@@ -22,13 +22,13 @@ import (
 )
 
 var (
-	testenv    env.Environment
-	nodeType   *string
-	efaEnabled *bool
-	efaImage   *string
-	nodeCount  int
-	gpuCount   int
-	efaCount   int
+	testenv       env.Environment
+	nodeType      *string
+	efaEnabled    *bool
+	ncclTestImage *string
+	nodeCount     int
+	gpuPerNode    int
+	efaPerNode    int
 )
 
 var (
@@ -42,7 +42,7 @@ var (
 
 func TestMain(m *testing.M) {
 	nodeType = flag.String("nodeType", "", "node type for the tests")
-	efaImage = flag.String("efaImage", "", "efa image for nccl tests")
+	ncclTestImage = flag.String("ncclTestImage", "", "nccl test image for nccl tests")
 	efaEnabled = flag.Bool("efaEnabled", false, "enable efa tests")
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
@@ -114,18 +114,18 @@ func TestMain(m *testing.M) {
 					if v.Labels["node.kubernetes.io/instance-type"] == *nodeType {
 						nodeCount++
 						gpu := v.Status.Capacity["nvidia.com/gpu"]
-						gpuCount = int(gpu.Value())
+						gpuPerNode = int(gpu.Value())
 						efa := v.Status.Capacity["vpc.amazonaws.com/efa"]
-						efaCount = int(efa.Value())
+						efaPerNode = int(efa.Value())
 					}
 				}
 			} else {
 				log.Printf("No node type specified. Using the node type %s in the node groups.", nodes.Items[0].Labels["node.kubernetes.io/instance-type"])
 				nodeCount = len(nodes.Items)
 				gpu := nodes.Items[0].Status.Capacity["nvidia.com/gpu"]
-				gpuCount = int(gpu.Value())
+				gpuPerNode = int(gpu.Value())
 				efa := nodes.Items[0].Status.Capacity["vpc.amazonaws.com/efa"]
-				efaCount = int(efa.Value())
+				efaPerNode = int(efa.Value())
 			}
 			return ctx, nil
 		},
