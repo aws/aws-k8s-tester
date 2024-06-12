@@ -8,18 +8,23 @@ import (
 //go:embed infra.yaml
 var Infrastructure string
 
-//go:embed unmanaged-nodegroup-efa.yaml
-var UnmanagedNodegroupEFA string
-
 var (
+	//go:embed unmanaged-nodegroup-efa.yaml.template
+	UnmanagedNodegroupEFATemplate string
+	UnmanagedNodegroupEFA         = template.Must(template.New("unmanagedNodegroupEFA").Parse(UnmanagedNodegroupEFATemplate))
+
 	//go:embed unmanaged-nodegroup.yaml.template
 	unmanagedNodegroupTemplate string
 	UnmanagedNodegroup         = template.Must(template.New("unmanagedNodegroup").Parse(unmanagedNodegroupTemplate))
 )
 
 type UnmanagedNodegroupTemplateData struct {
-	KubernetesVersion string
-	InstanceTypes     []string
+	InstanceTypes []string
+	Features      map[string]bool
+}
+
+type UnmanagedNodegroupEFATemplateData struct {
+	Features map[string]bool
 }
 
 var (
