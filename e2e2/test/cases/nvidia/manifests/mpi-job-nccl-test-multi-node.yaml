@@ -13,17 +13,17 @@ spec:
     Launcher:
       replicas: 1
       template:
-         spec:
+        spec:
           restartPolicy: OnFailure
           containers:
           - image: {{.NcclTestImage}}
             imagePullPolicy: Always
             name: nccl-test-launcher
             env:
-             - name: XLA_FLAGS
-               value: "--xla_gpu_cuda_data_dir=/usr/local/cuda"
-             - name: TF_XLA_FLAGS
-               value: "--tf_xla_cpu_global_jit"
+            - name: XLA_FLAGS
+              value: "--xla_gpu_cuda_data_dir=/usr/local/cuda"
+            - name: TF_XLA_FLAGS
+              value: "--tf_xla_cpu_global_jit"
             command:
             - /opt/amazon/openmpi/bin/mpirun
             - --allow-run-as-root

@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"slices"
@@ -108,6 +109,16 @@ func TestMain(m *testing.M) {
 				if err != nil {
 					return ctx, err
 				}
+			}
+
+			singleNodeType := true
+			for i := 1; i < len(nodes.Items)-1; i++ {
+				if nodes.Items[i].Labels["node.kubernetes.io/instance-type"] != nodes.Items[i-1].Labels["node.kubernetes.io/instance-type"] {
+					singleNodeType = false
+				}
+			}
+			if !singleNodeType {
+				return ctx, fmt.Errorf("Node types are not the same, all node types must be the same in the cluster")
 			}
 			if *nodeType != "" {
 				for _, v := range nodes.Items {
