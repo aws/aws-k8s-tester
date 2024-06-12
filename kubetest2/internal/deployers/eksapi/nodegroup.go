@@ -111,10 +111,14 @@ func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, clust
 		return err
 	}
 	templateBuf := bytes.Buffer{}
-	if err = templates.UnmanagedNodegroup.Execute(&templateBuf, templates.UnmanagedNodegroupTemplateData{
-		InstanceTypes: opts.InstanceTypes,
-		Features:      opts.featureMap,
-	}); err != nil {
+	err = templates.UnmanagedNodegroup.Execute(&templateBuf, struct {
+		InstanceTypes     []string
+		KubernetesVersion string
+	}{
+		InstanceTypes:     opts.InstanceTypes,
+		KubernetesVersion: opts.KubernetesVersion,
+	})
+	if err != nil {
 		return err
 	}
 	// pull the role name out of the ARN
@@ -207,18 +211,12 @@ func (m *NodegroupManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure
 	if err != nil {
 		return err
 	}
-	templateBuf := bytes.Buffer{}
-	if err = templates.UnmanagedNodegroupEFA.Execute(&templateBuf, templates.UnmanagedNodegroupEFATemplateData{
-		Features: opts.featureMap,
-	}); err != nil {
-		return err
-	}
 	// pull the role name out of the ARN
 	nodeRoleArnParts := strings.Split(infra.nodeRole, "/")
 	nodeRoleName := nodeRoleArnParts[len(nodeRoleArnParts)-1]
 	input := cloudformation.CreateStackInput{
 		StackName:    aws.String(stackName),
-		TemplateBody: aws.String(templateBuf.String()),
+		TemplateBody: aws.String(templates.UnmanagedNodegroupEFA),
 		Capabilities: []cloudformationtypes.Capability{cloudformationtypes.CapabilityCapabilityIam},
 		Parameters: []cloudformationtypes.Parameter{
 			{

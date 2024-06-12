@@ -8,6 +8,7 @@ import (
 func Test_UnmanagedNodegroup(t *testing.T) {
 	buf := bytes.Buffer{}
 	err := UnmanagedNodegroup.Execute(&buf, UnmanagedNodegroupTemplateData{
+		KubernetesVersion: "1.28",
 		InstanceTypes: []string{
 			"t2.medium",
 			"t2.large",

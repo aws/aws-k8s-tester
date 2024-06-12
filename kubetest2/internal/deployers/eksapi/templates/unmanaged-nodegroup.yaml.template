@@ -75,12 +75,10 @@ Resources:
       MinSize: !Ref NodeCount
       MaxSize: !Ref NodeCount
       MixedInstancesPolicy:
-        {{- if .Features.InstancesDistribution }}
         InstancesDistribution:
           OnDemandAllocationStrategy: prioritized
           OnDemandBaseCapacity: !Ref NodeCount
           OnDemandPercentageAboveBaseCapacity: 0
-        {{- end }}
         LaunchTemplate:
           LaunchTemplateSpecification:
             LaunchTemplateId: !Ref NodeLaunchTemplate

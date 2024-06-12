@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/kubetest2/internal"
@@ -38,11 +37,6 @@ var (
 		Metric:    "TotalRuntimeSeconds",
 		Unit:      cloudwatchtypes.StandardUnitSeconds,
 	}
-)
-
-// default features
-const (
-	InstancesDistribution = "InstancesDistribution"
 )
 
 // assert that deployer implements optional interfaces
@@ -88,10 +82,6 @@ type deployerOptions struct {
 	UnmanagedNodes              bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup. Requires --ami"`
 	UpClusterHeaders            []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
 	UserDataFormat              string        `flag:"user-data-format" desc:"Format of the node instance user data"`
-	Features                    []string      `flag:"features" desc:"feature toggles for the nodegroup deployer"`
-
-	// private field for configurations of cloud formation templates
-	featureMap map[string]bool
 }
 
 // NewDeployer implements deployer.New for EKS using the EKS (and other AWS) API(s) directly (no cloudformation)
@@ -279,36 +269,6 @@ func (d *deployer) verifyUpFlags() error {
 	if d.NodeReadyTimeout == 0 {
 		d.NodeReadyTimeout = time.Minute * 5
 	}
-
-	// convert features to featureMap
-	d.featureMap = make(map[string]bool)
-	for _, feature := range d.Features {
-		parts := strings.Split(feature, "=")
-		if len(parts) != 2 {
-			return fmt.Errorf("feature key-value pair '%s' is incorrectly formatted", feature)
-		}
-		featureKey, featureValue := parts[0], parts[1]
-		var featureOn bool
-		if featureValue == "true" {
-			featureOn = true
-		} else if featureValue == "false" {
-			featureOn = false
-		} else {
-			return fmt.Errorf("feature value for '%s' must one of {true,false}", feature)
-		}
-
-		d.featureMap[featureKey] = featureOn
-	}
-
-	// set default features
-	for name, value := range map[string]bool{
-		InstancesDistribution: true,
-	} {
-		if _, ok := d.featureMap[name]; !ok {
-			d.featureMap[name] = value
-		}
-	}
-
 	return nil
 }
 

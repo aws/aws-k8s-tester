@@ -232,7 +232,7 @@ func (m *InfrastructureManager) deleteLeakedENIs() error {
 		}
 	}
 	klog.Infof("deleted %d leaked ENI(s)!", len(enis))
-	m.metrics.Record(infraLeakedENIs, float64(len(enis)), nil)
+	m.metrics.Record(infraLeakedENIs, float64(len(enis)), nil)	
 	return nil
 }
 
