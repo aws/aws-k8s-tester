@@ -3,7 +3,7 @@ package nvidia
 import (
 	"context"
 	_ "embed"
-	"slices"
+	"fmt"
 	"testing"
 	"time"
 
@@ -15,7 +15,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 
-	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -23,11 +22,19 @@ import (
 var (
 	//go:embed manifests/mpi-job-pytorch-training-single-node.yaml
 	mpiJobPytorchTrainingSingleNodeManifest []byte
-	//go:embed manifests/mpi-job-pytorch-training-multi-node.yaml
-	mpiJobPytorchTrainingMultiNodeManifest []byte
-	//go:embed manifests/efa-device-plugin.yaml
-	efaDevicePluginManifest []byte
+	//go:embed manifests/mpi-job-nccl-test-multi-node.yaml
+	mpiJobNcclTestMultiNodeManifest         []byte
+	renderedMpiJobNcclTestMultiNodeManifest []byte
 )
+
+type ncclTestManifestTplVars struct {
+	WorkerNodeCount     int
+	WorkerNodeGpuCount  int
+	GpuPerNode          int
+	NcclTestImage       string
+	EfaInterfacePerNode int
+	EfaUseDeviceRdma    int
+}
 
 func TestMPIJobPytorchTraining(t *testing.T) {
 	singleNode := features.New("single-node").
@@ -65,28 +72,32 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 		}).
 		Feature()
 
-	manifestsMultiNode := [][]byte{
-		efaDevicePluginManifest,
-		mpiJobPytorchTrainingMultiNodeManifest,
-	}
-
 	multiNode := features.New("multi-node").
 		WithLabel("suite", "nvidia").
 		WithLabel("hardware", "gpu").
 		WithLabel("hardware", "efa").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			err := fwext.ApplyManifests(cfg.Client().RESTConfig(), manifestsMultiNode...)
+			if *ncclTestImage == "" {
+				t.Fatal(fmt.Errorf("efaImage must be set to run nccl test, use https://github.com/aws/aws-k8s-tester/blob/main/e2e2/test/images/Dockerfile.aws-efa-nccl-tests to build the image and -efaImage to set the image url"))
+			}
+			// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/efa-start-nccl-base.html#nccl-start-base-test
+			var EfaUseDeviceRdma int
+			if *nodeType == "p4d.24xlarge" {
+				EfaUseDeviceRdma = 1
+			}
+			renderedMpiJobNcclTestMultiNodeManifest, err := fwext.RenderManifests(mpiJobNcclTestMultiNodeManifest, ncclTestManifestTplVars{
+				// one of the nodes will be used for the master pod
+				WorkerNodeCount:     nodeCount - 1,
+				WorkerNodeGpuCount:  (nodeCount - 1) * gpuPerNode,
+				GpuPerNode:          gpuPerNode,
+				NcclTestImage:       *ncclTestImage,
+				EfaInterfacePerNode: efaPerNode,
+				EfaUseDeviceRdma:    EfaUseDeviceRdma,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
-			return ctx
-		}).
-		Assess("EFA device plugin daemonset ready", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ds := appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{Name: "efa-device-plugin-daemonset", Namespace: "kube-system"},
-			}
-			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).DaemonSetReady(&ds),
-				wait.WithTimeout(time.Minute*5))
+			err = fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedMpiJobNcclTestMultiNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -98,7 +109,7 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 				t.Fatal(err)
 			}
 			j := kubeflowv2beta1.MPIJob{
-				ObjectMeta: metav1.ObjectMeta{Name: "pytorch-training-multi-node", Namespace: "default"},
+				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccl-test", Namespace: "default"},
 			}
 			timeout := time.Minute * 10
 			err := wait.For(conditions.New(rsrc).ResourceMatch(&j, mpiJobSucceeded),
@@ -109,8 +120,7 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			slices.Reverse(manifestsMultiNode)
-			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), manifestsMultiNode...)
+			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedMpiJobNcclTestMultiNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}

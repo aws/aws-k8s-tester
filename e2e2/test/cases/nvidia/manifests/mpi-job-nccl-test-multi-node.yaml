@@ -1,9 +1,9 @@
 apiVersion: kubeflow.org/v2beta1
 kind: MPIJob
 metadata:
-  name: pytorch-training-multi-node
+  name: multi-node-nccl-test
 spec:
-  slotsPerWorker: 8
+  slotsPerWorker: {{.GpuPerNode}}
   runPolicy:
     # it may take a bit for the workers to get ready (the container image is heavy)
     # and we don't want the launcher to reach it's CrashLoopBackoff limit in the meantime
@@ -13,23 +13,23 @@ spec:
     Launcher:
       replicas: 1
       template:
-         spec:
+        spec:
           restartPolicy: OnFailure
           containers:
-          - image: TODO
+          - image: {{.NcclTestImage}}
             imagePullPolicy: Always
             name: nccl-test-launcher
             env:
-             - name: XLA_FLAGS
-               value: "--xla_gpu_cuda_data_dir=/usr/local/cuda"
-             - name: TF_XLA_FLAGS
-               value: "--tf_xla_cpu_global_jit"
+            - name: XLA_FLAGS
+              value: "--xla_gpu_cuda_data_dir=/usr/local/cuda"
+            - name: TF_XLA_FLAGS
+              value: "--tf_xla_cpu_global_jit"
             command:
             - /opt/amazon/openmpi/bin/mpirun
             - --allow-run-as-root
             - --tag-output
             - -np
-            - "16"
+            - "{{.WorkerNodeGpuCount}}"
             - -bind-to
             - none
             - -map-by
@@ -53,7 +53,7 @@ spec:
             - -x
             - FI_LOG_LEVEL=warn
             - -x
-            - FI_EFA_USE_DEVICE_RDMA=1
+            - FI_EFA_USE_DEVICE_RDMA={{.EfaUseDeviceRdma}}
             - -x
             - OFI_NCCL_DISABLE_GDR_REQUIRED_CHECK=0
             - -x
@@ -69,16 +69,12 @@ spec:
             - 2G
             - -f
             - "2"
-            - -t
-            - "1"
-            - -g
-            - "1"
             - -c
             - "1"
             - -n
             - "100"
     Worker:
-      replicas: 2
+      replicas: {{.WorkerNodeCount}}
       template:
         spec:
           volumes:
@@ -86,20 +82,20 @@ spec:
             emptyDir:
               medium: Memory
           containers:
-          - image: TODO
+          - image: {{.NcclTestImage}}
             imagePullPolicy: Always
-            name: nccl-worker
+            name: nccl-test-worker
             volumeMounts:
             - mountPath: /dev/shm
               name: dshm
             resources:
-              limits:
-                nvidia.com/gpu: 8
-                hugepages-2Mi: 5120Mi
-                vpc.amazonaws.com/efa: 4
-                memory: 8000Mi
               requests:
-                nvidia.com/gpu: 8
+                nvidia.com/gpu: {{.GpuPerNode}}
                 hugepages-2Mi: 5120Mi
-                vpc.amazonaws.com/efa: 4
+                vpc.amazonaws.com/efa: {{.EfaInterfacePerNode}}
+                memory: 8000Mi
+              limits:
+                nvidia.com/gpu: {{.GpuPerNode}}
+                hugepages-2Mi: 5120Mi
+                vpc.amazonaws.com/efa: {{.EfaInterfacePerNode}}
                 memory: 8000Mi
