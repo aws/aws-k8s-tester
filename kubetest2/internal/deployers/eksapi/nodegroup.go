@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	cloudformationtypes "github.com/aws/aws-sdk-go-v2/service/cloudformation/types"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"k8s.io/klog/v2"
@@ -25,6 +26,26 @@ import (
 const (
 	nodegroupCreationTimeout = time.Minute * 20
 	nodegroupDeletionTimeout = time.Minute * 20
+)
+
+var (
+	defaultInstanceTypes_x86_64 = []string{
+		"m6i.xlarge",
+		"m6i.large",
+		"m6a.large",
+		"m5.large",
+		"m5a.large",
+		"m4.large",
+	}
+
+	defaultInstanceTypes_arm64 = []string{
+		"m7g.xlarge",
+		"m7g.large",
+		"m6g.xlarge",
+		"m6g.large",
+		"t4g.xlarge",
+		"t4g.large",
+	}
 )
 
 type NodegroupManager struct {
@@ -41,6 +62,24 @@ func NewNodegroupManager(clients *awsClients, resourceID string) *NodegroupManag
 
 func (m *NodegroupManager) createNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
 	if opts.UnmanagedNodes {
+		if len(opts.InstanceTypes) == 0 {
+			if out, err := m.clients.EC2().DescribeImages(context.TODO(), &ec2.DescribeImagesInput{
+				ImageIds: []string{opts.AMI},
+			}); err != nil {
+				return fmt.Errorf("failed to describe AMI when populating default instance types: %s: %v", opts.AMI, err)
+			} else {
+				amiArch := out.Images[0].Architecture
+				switch out.Images[0].Architecture {
+				case ec2types.ArchitectureValuesX8664:
+					opts.InstanceTypes = defaultInstanceTypes_x86_64
+				case ec2types.ArchitectureValuesArm64:
+					opts.InstanceTypes = defaultInstanceTypes_arm64
+				default:
+					return fmt.Errorf("no default instance types known for AMI architecture: %v", out.Images[0].Architecture)
+				}
+				klog.V(2).Infof("Using default instance types for AMI architecture: %v: %v", amiArch, opts.InstanceTypes)
+			}
+		}
 		if opts.EFA {
 			return m.createUnmanagedNodegroupWithEFA(infra, cluster, opts)
 		}

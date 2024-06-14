@@ -229,17 +229,6 @@ func (d *deployer) verifyUpFlags() error {
 		d.IPFamily = string(ekstypes.IpFamilyIpv4)
 		klog.V(2).Infof("Using default IP family: %s", d.IPFamily)
 	}
-	if len(d.InstanceTypes) == 0 && d.UnmanagedNodes {
-		d.InstanceTypes = []string{
-			"m6i.xlarge",
-			"m6i.large",
-			"m6a.large",
-			"m5.large",
-			"m5a.large",
-			"m4.large",
-		}
-		klog.V(2).Infof("Using default instance types: %v", d.InstanceTypes)
-	}
 	if d.UnmanagedNodes && d.AMI == "" {
 		return fmt.Errorf("--ami must be specified for --unmanaged-nodes")
 	}
