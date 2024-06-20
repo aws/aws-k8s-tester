@@ -1,0 +1,5 @@
+# Start with the Neuron base image
+FROM public.ecr.aws/neuron/pytorch-training-neuronx:2.1.2-neuronx-py310-sdk2.18.2-ubuntu20.04
+
+WORKDIR /
+COPY e2e2/test/images/pytorch_tests/ ./pytorch_tests
