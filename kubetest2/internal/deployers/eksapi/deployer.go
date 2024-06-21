@@ -82,6 +82,7 @@ type deployerOptions struct {
 	UnmanagedNodes              bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup. Requires --ami"`
 	UpClusterHeaders            []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
 	UserDataFormat              string        `flag:"user-data-format" desc:"Format of the node instance user data"`
+	UserDataFile                string        `flag:"user-data-file" desc:"File containing a golang template of the node instance user data"`
 }
 
 // NewDeployer implements deployer.New for EKS using the EKS (and other AWS) API(s) directly (no cloudformation)
@@ -229,13 +230,13 @@ func (d *deployer) verifyUpFlags() error {
 		d.IPFamily = string(ekstypes.IpFamilyIpv4)
 		klog.V(2).Infof("Using default IP family: %s", d.IPFamily)
 	}
-	if d.UnmanagedNodes && d.AMI == "" {
-		return fmt.Errorf("--ami must be specified for --unmanaged-nodes")
-	}
-	if !d.UnmanagedNodes && d.AMI != "" {
-		return fmt.Errorf("--ami should not be provided without --unmanaged-nodes")
+	if d.UserDataFile != "" && d.UserDataFormat != "" {
+		return fmt.Errorf("--user-data-file should not be provided with --user-data-format")
 	}
 	if d.UnmanagedNodes {
+		if d.AMI == "" {
+			return fmt.Errorf("--ami must be specified for --unmanaged-nodes")
+		}
 		if d.NodeNameStrategy == "" {
 			d.NodeNameStrategy = "EC2PrivateDNSName"
 			klog.V(2).Infof("Using default node name strategy: EC2PrivateDNSName")
@@ -244,16 +245,18 @@ func (d *deployer) verifyUpFlags() error {
 				return fmt.Errorf("--node-name-strategy must be one of the following values: ['SessionName', 'EC2PrivateDNSName']")
 			}
 		}
-	}
-	if d.UnmanagedNodes && d.UserDataFormat == "" {
-		d.UserDataFormat = "bootstrap.sh"
-		klog.V(2).Infof("Using default user data format: %s", d.UserDataFormat)
-	}
-	if d.UnmanagedNodes && d.EFA && len(d.InstanceTypes) != 1 {
-		return fmt.Errorf("--efa requires a single instance type")
-	}
-	if d.UnmanagedNodes && d.AMIType != "" {
-		return fmt.Errorf("--ami-type should not be provided with --unmanaged-nodes")
+		if d.UserDataFile == "" && d.UserDataFormat == "" {
+			d.UserDataFormat = "bootstrap.sh"
+			klog.V(2).Infof("Using default user data format: %s", d.UserDataFormat)
+		}
+		if d.EFA && len(d.InstanceTypes) != 1 {
+			return fmt.Errorf("--efa requires a single instance type")
+		}
+		if d.AMIType != "" {
+			return fmt.Errorf("--ami-type should not be provided with --unmanaged-nodes")
+		}
+	} else if d.AMI != "" {
+		return fmt.Errorf("--ami should not be provided without --unmanaged-nodes")
 	}
 	if d.NodeReadyTimeout == 0 {
 		d.NodeReadyTimeout = time.Minute * 5

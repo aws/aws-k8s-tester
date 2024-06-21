@@ -8,20 +8,29 @@ import (
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/deployers/eksapi/templates"
 )
 
-func generateUserData(format string, cluster *Cluster) (string, bool, error) {
+func generateUserData(file string, format string, cluster *Cluster) (string, bool, error) {
 	userDataIsMimePart := true
 	var t *template.Template
-	switch format {
-	case "bootstrap.sh":
-		t = templates.UserDataBootstrapSh
-	case "nodeadm":
-		// TODO: replace the YAML template with proper usage of the nodeadm API go types
-		t = templates.UserDataNodeadm
-	case "bottlerocket":
-		t = templates.UserDataBottlerocket
+	if file != "" {
 		userDataIsMimePart = false
-	default:
-		return "", false, fmt.Errorf("uknown user data format: '%s'", format)
+		tFromFile, err := template.ParseFiles(file)
+		if err != nil {
+			return "", false, fmt.Errorf("failed to parse user data file as template: %s: %v", file, err)
+		}
+		t = tFromFile
+	} else {
+		switch format {
+		case "bootstrap.sh":
+			t = templates.UserDataBootstrapSh
+		case "nodeadm":
+			// TODO: replace the YAML template with proper usage of the nodeadm API go types
+			t = templates.UserDataNodeadm
+		case "bottlerocket":
+			t = templates.UserDataBottlerocket
+			userDataIsMimePart = false
+		default:
+			return "", false, fmt.Errorf("uknown user data format: '%s'", format)
+		}
 	}
 	buf := bytes.Buffer{}
 	if err := t.Execute(&buf, templates.UserDataTemplateData{
