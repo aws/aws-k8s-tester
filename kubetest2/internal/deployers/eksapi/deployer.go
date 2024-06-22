@@ -3,7 +3,6 @@ package eksapi
 import (
 	"flag"
 	"fmt"
-	"path"
 	"path/filepath"
 	"time"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/util"
 
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
-	cloudwatchtypes "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/octago/sflags/gen/gpflag"
 	"github.com/spf13/pflag"
@@ -29,16 +27,6 @@ const ResourcePrefix = "kubetest2-" + DeployerName
 
 var SupportedNodeNameStrategy = []string{"SessionName", "EC2PrivateDNSName"}
 
-var DeployerMetricNamespace = path.Join("kubetest2", DeployerName)
-
-var (
-	totalRuntimeSeconds = &metrics.MetricSpec{
-		Namespace: DeployerMetricNamespace,
-		Metric:    "TotalRuntimeSeconds",
-		Unit:      cloudwatchtypes.StandardUnitSeconds,
-	}
-)
-
 // assert that deployer implements optional interfaces
 var _ types.DeployerWithKubeconfig = &deployer{}
 var _ types.DeployerWithInit = &deployer{}
@@ -53,6 +41,8 @@ type deployer struct {
 	clusterManager   *ClusterManager
 	addonManager     *AddonManager
 	nodegroupManager *NodegroupManager
+
+	awsClients *awsClients
 
 	infra   *Infrastructure
 	cluster *Cluster
@@ -113,7 +103,7 @@ func (d *deployer) Version() string {
 func (d *deployer) Init() error {
 	d.initTime = time.Now()
 	awsConfig := awssdk.NewConfig()
-	awsClients := newAWSClients(awsConfig, d.EKSEndpointURL)
+	d.awsClients = newAWSClients(awsConfig, d.EKSEndpointURL)
 	resourceID := ResourcePrefix + "-" + d.commonOptions.RunID()
 	if d.deployerOptions.EmitMetrics {
 		client := cloudwatch.NewFromConfig(awsConfig)
@@ -121,10 +111,10 @@ func (d *deployer) Init() error {
 	} else {
 		d.metrics = metrics.NewNoopMetricRegistry()
 	}
-	d.infraManager = NewInfrastructureManager(awsClients, resourceID, d.metrics)
-	d.clusterManager = NewClusterManager(awsClients, resourceID)
-	d.addonManager = NewAddonManager(awsClients)
-	d.nodegroupManager = NewNodegroupManager(awsClients, resourceID)
+	d.infraManager = NewInfrastructureManager(d.awsClients, resourceID, d.metrics)
+	d.clusterManager = NewClusterManager(d.awsClients, resourceID)
+	d.addonManager = NewAddonManager(d.awsClients)
+	d.nodegroupManager = NewNodegroupManager(d.awsClients, resourceID)
 	return nil
 }
 
@@ -204,6 +194,11 @@ func (d *deployer) Up() error {
 	}
 	if err := waitForReadyNodes(k8sClient, d.Nodes, d.NodeReadyTimeout); err != nil {
 		return err
+	}
+	if d.EmitMetrics {
+		if err := emitNodeMetrics(d.metrics, k8sClient, d.awsClients.EC2()); err != nil {
+			return err
+		}
 	}
 	return nil
 }

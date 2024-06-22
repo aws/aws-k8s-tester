@@ -2,10 +2,14 @@ package eksapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/aws/aws-k8s-tester/kubetest2/internal/metrics"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -30,13 +34,14 @@ func waitForReadyNodes(client *kubernetes.Clientset, nodeCount int, timeout time
 	readyNodes := sets.NewString()
 	watcher, err := client.CoreV1().Nodes().Watch(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return errors.Wrap(err, "creating node watcher")
+		return fmt.Errorf("failed to create node watcher: %v", err)
 	}
 	defer watcher.Stop()
-	counter, err := getReadyNodes(client)
+	initialReadyNodes, err := getReadyNodes(client)
 	if err != nil {
-		return errors.Wrap(err, "listing nodes")
+		return fmt.Errorf("failed to get ready nodes: %v", err)
 	}
+	counter := len(initialReadyNodes)
 	ctx, _ := context.WithTimeout(context.Background(), timeout)
 	for {
 		select {
@@ -70,27 +75,35 @@ func waitForReadyNodes(client *kubernetes.Clientset, nodeCount int, timeout time
 	return nil
 }
 
-func getReadyNodes(client kubernetes.Interface) (int, error) {
+func getReadyNodes(client kubernetes.Interface) ([]corev1.Node, error) {
 	nodes, err := client.CoreV1().Nodes().List(context.TODO(), v1.ListOptions{})
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	counter := 0
+	var readyNodes []corev1.Node
 	for _, node := range nodes.Items {
 		if isNodeReady(&node) {
-			counter++
+			readyNodes = append(readyNodes, node)
 		}
 	}
-	return counter, nil
+	return readyNodes, nil
 }
 
 func isNodeReady(node *corev1.Node) bool {
+	c := getNodeReadyCondition(node)
+	if c == nil {
+		return false
+	}
+	return c.Status == corev1.ConditionTrue
+}
+
+func getNodeReadyCondition(node *corev1.Node) *corev1.NodeCondition {
 	for _, c := range node.Status.Conditions {
-		if c.Type == corev1.NodeReady && c.Status == corev1.ConditionTrue {
-			return true
+		if c.Type == corev1.NodeReady {
+			return &c
 		}
 	}
-	return false
+	return nil
 }
 
 func createAWSAuthConfigMap(client *kubernetes.Clientset, nodeNameStrategy string, nodeRoleARN string) error {
@@ -109,4 +122,67 @@ func createAWSAuthConfigMap(client *kubernetes.Clientset, nodeNameStrategy strin
 		},
 	}, metav1.CreateOptions{})
 	return err
+}
+
+func emitNodeMetrics(metricRegistry metrics.MetricRegistry, k8sClient *kubernetes.Clientset, ec2Client *ec2.Client) error {
+	nodes, err := getReadyNodes(k8sClient)
+	if err != nil {
+		return err
+	}
+	var errs []error
+	for _, node := range nodes {
+		providerId, err := parseKubernetesProviderID(node.Spec.ProviderID)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		instanceInfo, err := ec2Client.DescribeInstances(context.TODO(), &ec2.DescribeInstancesInput{
+			InstanceIds: []string{providerId.InstanceID},
+		})
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		launchTime := *instanceInfo.Reservations[0].Instances[0].LaunchTime
+		timeToRegistration := node.ObjectMeta.CreationTimestamp.Time.Sub(launchTime)
+		timeToReady := getNodeReadyCondition(&node).LastTransitionTime.Time.Sub(launchTime)
+
+		nodeDimensions := map[string]string{
+			"instanceType": node.ObjectMeta.Labels[corev1.LabelInstanceTypeStable],
+			"os":           node.Status.NodeInfo.OperatingSystem,
+			"osImage":      node.Status.NodeInfo.OSImage,
+			"arch":         node.Status.NodeInfo.Architecture,
+		}
+
+		metricRegistry.Record(nodeTimeToRegistrationSeconds, timeToRegistration.Seconds(), nodeDimensions)
+		metricRegistry.Record(nodeTimeToReadySeconds, timeToReady.Seconds(), nodeDimensions)
+	}
+	return errors.Join(errs...)
+}
+
+type KubernetesProviderID struct {
+	AvailabilityZone string
+	InstanceID       string
+}
+
+func parseKubernetesProviderID(rawProviderId string) (*KubernetesProviderID, error) {
+	url, err := url.Parse(rawProviderId)
+	if err != nil {
+		return nil, fmt.Errorf("malformed provider ID: %s", rawProviderId)
+	}
+	if url.Scheme != "aws" {
+		return nil, fmt.Errorf("usupported provider ID scheme: %s", url.Scheme)
+	}
+	if url.Path == "" {
+		return nil, fmt.Errorf("provider ID path is empty: %s", rawProviderId)
+	}
+	// example: /us-west-2a/i-12345abcdefg
+	parts := strings.Split(url.Path, "/")
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("provider ID path does not have 3 parts: %s", url.Path)
+	}
+	return &KubernetesProviderID{
+		AvailabilityZone: parts[1],
+		InstanceID:       parts[2],
+	}, nil
 }
