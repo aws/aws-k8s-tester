@@ -317,8 +317,6 @@ Resources:
     Properties:
       AutoScalingGroupName: !Ref ResourceId
       MixedInstancesPolicy:
-        InstancesDistribution:
-          OnDemandAllocationStrategy: "prioritized"
         LaunchTemplate:
           LaunchTemplateSpecification:
             LaunchTemplateId: !Ref NodeLaunchTemplate
