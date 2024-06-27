@@ -4,6 +4,10 @@ FROM nvidia/cuda:12.5.0-devel-ubuntu22.04
 # Set environment variable to disable interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Set default values for MASTER_ADDR and MASTER_PORT
+ENV MASTER_ADDR=127.0.0.1
+ENV MASTER_PORT=12355
+
 # Install Python 3.11
 RUN apt-get update && apt-get install -y \
     software-properties-common && \
