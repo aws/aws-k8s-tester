@@ -1,0 +1,30 @@
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: neuronx-single-node
+  labels:
+    app: neuronx-single-node
+spec:
+  template:
+    metadata:
+      labels:
+        app: neuronx-single-node
+    spec:
+      containers:
+      - name: neuronx-single-node-test
+        image: {{.NeuronTestImage}}
+        command:
+        - /bin/bash
+        - ./tests/singleNodeTest.sh
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: "4"
+            memory: 4Gi
+            aws.amazon.com/neuron: "1"
+          requests:
+            cpu: "1"
+            memory: 1Gi
+            aws.amazon.com/neuron: "1"
+      restartPolicy: Never
+  backoffLimit: 4
