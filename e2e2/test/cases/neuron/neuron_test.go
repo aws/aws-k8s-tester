@@ -34,7 +34,8 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			if *neuronTestImage == "" {
 				t.Fatal(fmt.Errorf("neuronTestImage must be set to run neuron single node test, use https://github.com/aws/aws-k8s-tester/blob/main/e2e2/test/images/Dockerfile.neuronx-tests to build the image and -neuronTestImage to set the image url"))
 			}
-			renderedNeuronSingleNodeManifest, err := fwext.RenderManifests(neuronSingleNodeManifest, neuronSingleNodeManifestTplVars{
+			var err error
+			renderedNeuronSingleNodeManifest, err = fwext.RenderManifests(neuronSingleNodeManifest, neuronSingleNodeManifestTplVars{
 				NeuronTestImage: *neuronTestImage,
 			})
 			if err != nil {
