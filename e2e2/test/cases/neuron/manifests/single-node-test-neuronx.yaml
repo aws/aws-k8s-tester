@@ -15,7 +15,7 @@ spec:
         image: {{.NeuronTestImage}}
         command:
         - /bin/bash
-        - ./pytorch_tests/singleNodeTest.sh
+        - ./tests/singleNodeTest.sh
         imagePullPolicy: Always
         resources:
           limits:
