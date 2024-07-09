@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+TRACE_LOG=trace.log
+TEST_TIMEOUT=1800
+BASH="/usr/bin/bash"
+CURRENT_DIR=$(pwd)
+
+timeout -k 10 ${TEST_TIMEOUT} ${BASH} gpu_unit_tests/bash_unit -f tap -t gpu_unit_tests/${TRACE_LOG} gpu_unit_tests/tests/*test*.sh
