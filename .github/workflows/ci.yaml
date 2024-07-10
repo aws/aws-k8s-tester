@@ -26,3 +26,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - run: docker build --file e2e2/test/images/neuron/Dockerfile .
+  build-nvidia:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: docker build --file e2e2/test/images/nvidia/Dockerfile .

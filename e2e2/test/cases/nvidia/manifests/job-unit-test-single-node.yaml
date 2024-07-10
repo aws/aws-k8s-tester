@@ -1,0 +1,28 @@
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: unit-test-job
+  labels:
+    app: unit-test-job
+spec:
+  template:
+    metadata:
+      labels:
+        app: unit-test-job
+    spec:
+      containers:
+      - name: unit-test-container
+        image: {{.NvidiaTestImage}}
+        command: 
+        - /bin/bash
+        - ./gpu_unit_tests/unit_test
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: "4"
+            memory: 4Gi
+          requests:
+            cpu: "1"
+            memory: 1Gi
+      restartPolicy: Never
+  backoffLimit: 4
