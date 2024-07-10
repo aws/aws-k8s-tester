@@ -31,7 +31,7 @@ type ncclTestManifestTplVars struct {
 	WorkerNodeCount     int
 	WorkerNodeGpuCount  int
 	GpuPerNode          int
-	NcclTestImage       string
+	NvidiaTestImage     string
 	EfaInterfacePerNode int
 	EfaUseDeviceRdma    int
 }
@@ -77,8 +77,8 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 		WithLabel("hardware", "gpu").
 		WithLabel("hardware", "efa").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			if *ncclTestImage == "" {
-				t.Fatal(fmt.Errorf("efaImage must be set to run nccl test, use https://github.com/aws/aws-k8s-tester/blob/main/e2e2/test/images/Dockerfile.aws-efa-nccl-tests to build the image and -efaImage to set the image url"))
+			if *nvidiaTestImage == "" {
+				t.Fatal(fmt.Errorf("nvidiaTestImage must be set to run unit test, use https://github.com/aws/aws-k8s-tester/blob/main/e2e2/test/images/nvidia/Dockerfile to build the image and -nvidiaTestImage to set the image url"))
 			}
 			// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/efa-start-nccl-base.html#nccl-start-base-test
 			var EfaUseDeviceRdma int
@@ -90,7 +90,7 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 				WorkerNodeCount:     nodeCount - 1,
 				WorkerNodeGpuCount:  (nodeCount - 1) * gpuPerNode,
 				GpuPerNode:          gpuPerNode,
-				NcclTestImage:       *ncclTestImage,
+				NvidiaTestImage:     *nvidiaTestImage,
 				EfaInterfacePerNode: efaPerNode,
 				EfaUseDeviceRdma:    EfaUseDeviceRdma,
 			})
