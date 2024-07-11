@@ -1,0 +1,117 @@
+apiVersion: kubeflow.org/v2beta1
+kind: MPIJob
+metadata:
+  name: bert-mpi-training
+spec:
+  slotsPerWorker: 8
+  runPolicy:
+    backoffLimit: 20
+    cleanPodPolicy: Running
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - image: public.ecr.aws/h2x4e7f7/aws-bert-mpi-training:latest
+            imagePullPolicy: Always
+            name: bert-training-launcher
+            env:
+            # - name: XLA_FLAGS
+            #   value: "--xla_gpu_cuda_data_dir=/usr/local/cuda"
+            # - name: TF_XLA_FLAGS
+            #   value: "--tf_xla_cpu_global_jit"
+            - name: NCCL_DEBUG
+              value: "TRACE"
+            # - name: NCCL_ALGO
+            #   value: "RING"
+            # - name: RDMAV_FORK_SAFE
+            #   value: "1"
+            # - name: NCCL_PROTO
+            #   value: "simple"
+            # - name: FI_LOG_LEVEL
+            #   value: "warn"
+            # - name: FI_EFA_USE_DEVICE_RDMA
+            #   value: "0"
+            # - name: OFI_NCCL_DISABLE_GDR_REQUIRED_CHECK
+            #   value: "0"
+            - name: MASTER_ADDR
+              value: "bert-mpi-training"
+            - name: MASTER_PORT
+              value: "12355"
+            command:
+            - /opt/amazon/openmpi/bin/mpirun
+            - --allow-run-as-root
+            - --tag-output
+            - -np
+            - "32"
+            - -bind-to
+            - none
+            - -map-by
+            - slot
+            - -x
+            - PATH
+            - -x
+            - LD_LIBRARY_PATH
+            # - -x
+            # - XLA_FLAGS
+            # - -x
+            # - TF_XLA_FLAGS
+            - -x
+            - NCCL_DEBUG
+            # - -x
+            # - NCCL_ALGO
+            # - -x
+            # - RDMAV_FORK_SAFE
+            # - -x
+            # - NCCL_PROTO
+            # - -x
+            # - FI_LOG_LEVEL
+            # - -x
+            # - FI_EFA_USE_DEVICE_RDMA
+            # - -x
+            # - OFI_NCCL_DISABLE_GDR_REQUIRED_CHECK
+            - -x
+            - MASTER_ADDR
+            - -x
+            - MASTER_PORT
+            - --mca 
+            - pml
+            - "^cm"
+            - --mca
+            - routed
+            - direct
+            - --oversubscribe
+            - --mca
+            - orte_base_help_aggregate 
+            - "0"
+            - hostname
+            # - python
+            # - train.py
+    Worker:
+      replicas: 4
+      template:
+        spec:
+          volumes:
+          - name: dshm
+            emptyDir:
+              medium: Memory
+          containers:
+          - image: public.ecr.aws/h2x4e7f7/aws-bert-mpi-training:latest
+            imagePullPolicy: Always
+            name: bert-training-worker
+            volumeMounts:
+            - mountPath: /dev/shm
+              name: dshm
+            resources:
+              requests:
+                nvidia.com/gpu: 8
+                # hugepages-2Mi: 5120Mi
+                vpc.amazonaws.com/efa: 0
+                memory: 8000Mi
+              limits:
+                nvidia.com/gpu: 8
+                # hugepages-2Mi: 5120Mi
+                vpc.amazonaws.com/efa: 0
+                memory: 8000Mi
