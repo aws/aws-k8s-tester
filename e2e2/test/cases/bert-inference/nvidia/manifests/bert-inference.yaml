@@ -14,8 +14,13 @@ spec:
                     operator: Exists
       containers:
         - name: bert-inference
+          #TODO: Templatize `image` value
           image: 905417999469.dkr.ecr.us-west-2.amazonaws.com/aws-bert-inference:latest
           command: ["python", "infer.py"]
+          env:
+          # TODO: Templatize `INFERENCE_MODE` value
+            - name: INFERENCE_MODE
+              value: "latency"
           resources:
             limits:
               nvidia.com/gpu: 1
