@@ -16,7 +16,7 @@ spec:
         spec:
           restartPolicy: OnFailure
           containers:
-          - image: {{.NcclTestImage}}
+          - image: {{.NvidiaTestImage}}
             imagePullPolicy: Always
             name: nccl-test-launcher
             env:
@@ -82,7 +82,7 @@ spec:
             emptyDir:
               medium: Memory
           containers:
-          - image: {{.NcclTestImage}}
+          - image: {{.NvidiaTestImage}}
             imagePullPolicy: Always
             name: nccl-test-worker
             volumeMounts:
