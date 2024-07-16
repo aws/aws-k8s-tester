@@ -32,7 +32,7 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			if *neuronTestImage == "" {
-				t.Fatal(fmt.Errorf("neuronTestImage must be set to run neuron single node test, use https://github.com/aws/aws-k8s-tester/blob/main/e2e2/test/images/Dockerfile.neuronx-tests to build the image and -neuronTestImage to set the image url"))
+				t.Fatal(fmt.Errorf("neuronTestImage must be set to run neuron single node test, use https://github.com/aws/aws-k8s-tester/blob/main/e2e2/test/images/neuron/Dockerfile to build the image and -neuronTestImage to set the image url"))
 			}
 			var err error
 			renderedNeuronSingleNodeManifest, err = fwext.RenderManifests(neuronSingleNodeManifest, neuronSingleNodeManifestTplVars{
