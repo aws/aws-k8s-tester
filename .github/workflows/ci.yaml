@@ -31,7 +31,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - run: docker build --file e2e2/test/images/bert-inference/Dockerfile e2e2/test/images/bert-inference
-
   build-bert-training:
     runs-on: ubuntu-latest
     steps:
