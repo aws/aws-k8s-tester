@@ -35,4 +35,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - run: docker build --file e2e2/test/images/bert-training/Dockerfile.bert-training e2e2/test/images/bert-training
+    - run: docker build --file e2e2/test/images/bert-training/Dockerfile e2e2/test/images/bert-training
