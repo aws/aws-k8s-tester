@@ -4,6 +4,7 @@ import (
 	"context"
 
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
 
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -39,5 +40,19 @@ func (c *ConditionExtension) DaemonSetReady(daemonset k8s.Object) apimachinerywa
 			done = true
 		}
 		return
+	}
+}
+
+func (c *ConditionExtension) JobSucceeded(job k8s.Object) apimachinerywait.ConditionWithContextFunc {
+	return func(ctx context.Context) (done bool, err error) {
+		if err := c.resources.Get(ctx, job.GetName(), job.GetNamespace(), job); err != nil {
+			return false, err
+		}
+		status := job.(*batchv1.Job).Status
+		spec := job.(*batchv1.Job).Spec
+		if status.Succeeded != *spec.Completions {
+			return false, nil
+		}
+		return true, nil
 	}
 }

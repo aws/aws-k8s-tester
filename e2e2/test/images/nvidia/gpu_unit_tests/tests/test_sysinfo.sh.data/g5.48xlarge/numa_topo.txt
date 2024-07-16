@@ -1,0 +1,4 @@
+/sys/devices/system/node/node0/cpulist:0-47,96-143
+/sys/devices/system/node/node1/cpulist:48-95,144-191
+/sys/devices/system/node/node0/distance:10 32
+/sys/devices/system/node/node1/distance:32 10
