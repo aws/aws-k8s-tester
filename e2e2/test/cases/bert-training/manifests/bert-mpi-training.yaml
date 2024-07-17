@@ -13,6 +13,15 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: bert-mpi-testing
+                    operator: In
+                    values:
+                    - launcher
           containers:
           - image: 905417999469.dkr.ecr.us-west-2.amazonaws.com/aws-bert-mpi-training:latest
             imagePullPolicy: Always
@@ -75,8 +84,6 @@ spec:
               requests:
                 nvidia.com/gpu: 8
                 vpc.amazonaws.com/efa: 0
-                memory: 8000Mi
               limits:
                 nvidia.com/gpu: 8
                 vpc.amazonaws.com/efa: 0
-                memory: 8000Mi
