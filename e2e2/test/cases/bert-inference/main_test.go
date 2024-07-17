@@ -1,4 +1,4 @@
-package nvidia
+package bert_inference
 
 import (
 	"context"
@@ -19,13 +19,9 @@ import (
 )
 
 var (
-	testenv       env.Environment
-	nodeType      *string
-	efaEnabled    *bool
-	ncclTestImage *string
-	nodeCount     int
-	gpuPerNode    int
-	efaPerNode    int
+	testenv            env.Environment
+	bertInferenceImage *string
+	inferenceMode      *string
 )
 
 var (
@@ -34,9 +30,8 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	nodeType = flag.String("nodeType", "", "node type for the tests")
-	ncclTestImage = flag.String("ncclTestImage", "", "nccl test image for nccl tests")
-	efaEnabled = flag.Bool("efaEnabled", false, "enable efa tests")
+	bertInferenceImage = flag.String("bertInferenceImage", "", "test image for BERT inference")
+	inferenceMode = flag.String("inferenceMode", "throughput", "inference mode to set for BERT inference test")
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
 		log.Fatalf("failed to initialize test environment: %v", err)
