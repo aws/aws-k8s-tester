@@ -23,13 +23,13 @@ import (
 )
 
 var (
-	testenv       env.Environment
-	nodeType      *string
-	efaEnabled    *bool
-	ncclTestImage *string
-	nodeCount     int
-	gpuPerNode    int
-	efaPerNode    int
+	testenv         env.Environment
+	nodeType        *string
+	efaEnabled      *bool
+	nvidiaTestImage *string
+	nodeCount       int
+	gpuPerNode      int
+	efaPerNode      int
 )
 
 var (
@@ -43,7 +43,7 @@ var (
 
 func TestMain(m *testing.M) {
 	nodeType = flag.String("nodeType", "", "node type for the tests")
-	ncclTestImage = flag.String("ncclTestImage", "", "nccl test image for nccl tests")
+	nvidiaTestImage = flag.String("nvidiaTestImage", "", "nccl test image for nccl tests")
 	efaEnabled = flag.Bool("efaEnabled", false, "enable efa tests")
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
