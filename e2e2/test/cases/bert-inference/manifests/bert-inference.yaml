@@ -5,22 +5,20 @@ metadata:
 spec:
   template:
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: nvidia.com/gpu.present
-                    operator: Exists
+      # affinity:
+      #   nodeAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #       nodeSelectorTerms:
+      #         - matchExpressions:
+      #             - key: nvidia.com/gpu.present
+      #               operator: Exists
       containers:
         - name: bert-inference
-          #TODO: Templatize `image` value
-          image: 905417999469.dkr.ecr.us-west-2.amazonaws.com/aws-bert-inference:latest
+          image: {{.BertInferenceImage}}
           command: ["python", "infer.py"]
           env:
-          # TODO: Templatize `INFERENCE_MODE` value
             - name: INFERENCE_MODE
-              value: "latency"
+              value: {{.InferenceMode}}
           resources:
             limits:
               nvidia.com/gpu: 1
