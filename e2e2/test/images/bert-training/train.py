@@ -55,8 +55,10 @@ def mask_tokens(inputs, tokenizer, mlm_probability):
 
 
 def setup(rank, world_size):
+    print(f"setup() for rank: {rank}")
     master_addr = os.environ["MASTER_ADDR"]
     master_port = os.environ["MASTER_PORT"]
+    print(f"For rank {rank} - MASTER_PORT={master_port} & MASTER_ADDR={master_addr}")
     dist.init_process_group(
         "nccl",
         init_method=f"tcp://{master_addr}:{master_port}",
@@ -72,11 +74,15 @@ def cleanup():
 
 
 def train_bert(rank, world_size, model, tokenizer):
+    print(f"entered `train_bert` function for {rank}")
     setup(rank, world_size)
+    print(f"setup complete for rank: {rank}")
 
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
     model = BertForPreTraining.from_pretrained("bert-base-uncased").to(rank)
     ddp_model = DDP(model, device_ids=[rank])
+
+    print(f"model and tokenizer loaded for {rank}")
 
     dataset = create_dummy_data(tokenizer)
     train_sampler = torch.utils.data.distributed.DistributedSampler(
@@ -88,6 +94,8 @@ def train_bert(rank, world_size, model, tokenizer):
     criterion = torch.nn.CrossEntropyLoss()
 
     start_time = time.time()
+
+    print(f"starting training for rank: {rank}")
 
     for epoch in range(1):  # Short run for testing
         ddp_model.train()
@@ -121,12 +129,16 @@ def train_bert(rank, world_size, model, tokenizer):
 
 
 def main():
+    rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
+    world_size = int(os.environ["OMPI_COMM_WORLD_SIZE"])
+    print(f"Process started for rank: {rank}")
+
     # Pre-download model and tokenizer
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
     model = BertForPreTraining.from_pretrained("bert-base-uncased")
 
-    rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
-    world_size = int(os.environ["OMPI_COMM_WORLD_SIZE"])
+    print(f"successfully downloaded model and tokenizer for rank: {rank}")
+
     train_bert(rank, world_size, model, tokenizer)
 
 
