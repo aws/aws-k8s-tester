@@ -143,12 +143,13 @@ func emitNodeMetrics(metricRegistry metrics.MetricRegistry, k8sClient *kubernete
 			errs = append(errs, err)
 			continue
 		}
-		launchTime := *instanceInfo.Reservations[0].Instances[0].LaunchTime
+		instance := instanceInfo.Reservations[0].Instances[0]
+		launchTime := *instance.LaunchTime
 		timeToRegistration := node.ObjectMeta.CreationTimestamp.Time.Sub(launchTime)
 		timeToReady := getNodeReadyCondition(&node).LastTransitionTime.Time.Sub(launchTime)
 
 		nodeDimensions := map[string]string{
-			"instanceType": node.ObjectMeta.Labels[corev1.LabelInstanceTypeStable],
+			"instanceType": string(instance.InstanceType),
 			"os":           node.Status.NodeInfo.OperatingSystem,
 			"osImage":      node.Status.NodeInfo.OSImage,
 			"arch":         node.Status.NodeInfo.Architecture,
