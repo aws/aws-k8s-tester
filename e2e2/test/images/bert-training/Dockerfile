@@ -121,10 +121,6 @@ RUN export OPAL_PREFIX="" && \
     ./configure --prefix=/opt/aws-ofi-nccl/install --with-libfabric=/opt/amazon/efa/ --with-cuda=/usr/local/cuda --with-mpi=/opt/amazon/openmpi/ && \
     make && make install
 
-# Set default values for MASTER_ADDR and MASTER_PORT for local testing
-ENV MASTER_ADDR=127.0.0.1
-ENV MASTER_PORT=12355
-
 # Set environment variables for NCCL and clean up
 ENV NCCL_PROTO simple
 RUN rm -rf /var/lib/apt/lists/*
