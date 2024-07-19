@@ -8,7 +8,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV MASTER_ADDR=127.0.0.1
 ENV MASTER_PORT=12355
 
-# Dependency version numbers
+# Python ependency version numbers
 ARG PYTHON=python3.10
 ARG PYTHON_VERSION=3.10.12
 ARG PIP=pip3
