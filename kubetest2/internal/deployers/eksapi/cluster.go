@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	clusterCreationTimeout = time.Minute * 15
-	clusterDeletionTimeout = time.Minute * 15
+	clusterCreationTimeout = time.Minute * 20
+	clusterDeletionTimeout = time.Minute * 20
 )
 
 type ClusterManager struct {
