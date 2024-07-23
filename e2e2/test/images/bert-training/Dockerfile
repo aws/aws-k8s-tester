@@ -8,6 +8,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV MASTER_ADDR=127.0.0.1
 ENV MASTER_PORT=12355
 
+# Set default number of GPUs per node
+ENV NUM_GPUS_PER_NODE=8
+
 # Python ependency version numbers
 ARG PYTHON=python3.10
 ARG PYTHON_VERSION=3.10.12

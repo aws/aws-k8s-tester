@@ -120,8 +120,8 @@ def main():
     rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
     world_size = int(os.environ["OMPI_COMM_WORLD_SIZE"])
 
-    # TODO: Consider parameterizing for nodes of any GPU count
-    num_gpus_per_node = 8  # Adjust this based on your setup
+
+    num_gpus_per_node = int(os.environ["NUM_GPUS_PER_NODE"]) 
     local_rank = rank % num_gpus_per_node
 
     print(f"Process started for rank {rank} with local rank {local_rank}")
