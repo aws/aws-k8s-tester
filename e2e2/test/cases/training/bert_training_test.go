@@ -39,7 +39,6 @@ func TestBertTraining(t *testing.T) {
 			var err error
 			renderedBertTrainingManifest, err = fwext.RenderManifests(bertTrainingManifest, bertTrainingManifestTplVars{
 				BertTrainingImage: *bertTrainingImage,
-				TrainingMode:      *trainingMode,
 			})
 			if err != nil {
 				t.Fatal(err)
