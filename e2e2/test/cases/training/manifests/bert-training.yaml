@@ -1,7 +1,7 @@
 apiVersion: kubeflow.org/v2beta1
 kind: MPIJob
 metadata:
-  name: bert-mpi-training
+  name: bert-training
 spec:
   slotsPerWorker: 8
   runPolicy:
@@ -23,14 +23,14 @@ spec:
                     values:
                     - launcher
           containers:
-          - image: 905417999469.dkr.ecr.us-west-2.amazonaws.com/aws-bert-mpi-training:latest
+          - image: 905417999469.dkr.ecr.us-west-2.amazonaws.com/aws-bert-training:latest
             imagePullPolicy: Always
             name: bert-training-launcher
             env:
             - name: NCCL_DEBUG
               value: "TRACE"
             - name: MASTER_ADDR
-              value: "bert-mpi-training"
+              value: "bert-training"
             - name: MASTER_PORT
               value: "12355"
             command:
@@ -74,7 +74,7 @@ spec:
             emptyDir:
               medium: Memory
           containers:
-          - image: 905417999469.dkr.ecr.us-west-2.amazonaws.com/aws-bert-mpi-training:latest
+          - image: 905417999469.dkr.ecr.us-west-2.amazonaws.com/aws-bert-training:latest
             imagePullPolicy: Always
             name: bert-training-worker
             volumeMounts:
