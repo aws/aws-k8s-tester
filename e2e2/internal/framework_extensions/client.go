@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/resource"
@@ -94,7 +95,10 @@ func deleteManifests(restConfig *rest.Config, manifests ...io.Reader) error {
 			if namespace == "" {
 				namespace = "default"
 			}
-			_, err = client.Delete(namespace, name)
+			deletePolicy := metav1.DeletePropagationBackground
+			_, err = client.DeleteWithOptions(namespace, name, &metav1.DeleteOptions{
+				PropagationPolicy: &deletePolicy,
+			})
 			return err
 		}); err != nil {
 			return err

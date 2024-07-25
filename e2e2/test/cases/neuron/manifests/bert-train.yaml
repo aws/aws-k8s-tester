@@ -1,0 +1,65 @@
+apiVersion: kubeflow.org/v2beta1
+kind: MPIJob
+metadata:
+  name: bert-mpi-training
+spec:
+  slotsPerWorker: 1
+  runPolicy:
+    backoffLimit: 20
+    cleanPodPolicy: Running
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - image: {{.NeuronTestImage}}
+            imagePullPolicy: Always
+            name: bert-training-launcher
+            env:
+            - name: NEURON_CORES_PER_NODE
+              value: "{{.NeuronCorePerNode}}"
+            command:
+            - /opt/amazon/openmpi/bin/mpirun
+            - --allow-run-as-root
+            - -np
+            - "{{.WorkerNodeCount}}"
+            - -bind-to
+            - none
+            - -map-by
+            - slot
+            - -x
+            - PATH
+            - -x
+            - LD_LIBRARY_PATH
+            - -x
+            - NEURON_CORES_PER_NODE
+            - bash
+            - ./e2e-test/bert-train.sh
+    Worker:
+      replicas: {{.WorkerNodeCount}}
+      template:
+        spec:
+          volumes:
+          - name: dshm
+            emptyDir:
+              medium: Memory
+          containers:
+          - image: {{.NeuronTestImage}}
+            imagePullPolicy: Always
+            name: bert-training-worker
+            volumeMounts:
+            - mountPath: /dev/shm
+              name: dshm
+            resources:
+              limits:
+                aws.amazon.com/neuron:        {{.NeuronPerNode}}
+                aws.amazon.com/neuroncore:    {{.NeuronCorePerNode}}
+                vpc.amazonaws.com/efa:        {{.EfaInterfacePerNode}}
+              requests:
+                aws.amazon.com/neuron:        {{.NeuronPerNode}}
+                aws.amazon.com/neuroncore:    {{.NeuronCorePerNode}}
+                vpc.amazonaws.com/efa:        {{.EfaInterfacePerNode}}
+          nodeSelector:
+            node.kubernetes.io/instance-type: {{.NodeType}}

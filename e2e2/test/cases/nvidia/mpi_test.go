@@ -9,13 +9,10 @@ import (
 
 	fwext "github.com/aws/aws-k8s-tester/e2e2/internal/framework_extensions"
 	kubeflowv2beta1 "github.com/kubeflow/mpi-operator/pkg/apis/kubeflow/v2beta1"
-	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
-	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -52,12 +49,11 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			if err := kubeflowv2beta1.AddToScheme(rsrc.GetScheme()); err != nil {
 				t.Fatal(err)
 			}
-			j := kubeflowv2beta1.MPIJob{
+			job := kubeflowv2beta1.MPIJob{
 				ObjectMeta: metav1.ObjectMeta{Name: "pytorch-training-single-node", Namespace: "default"},
 			}
-			timeout := time.Minute * 20
-			err := wait.For(fwext.NewConditionExtension(rsrc).ResourceMatch(&j, mpiJobSucceeded),
-				wait.WithTimeout(timeout))
+			err := wait.For(fwext.NewConditionExtension(rsrc).MpiJobSucceeded(&job),
+				wait.WithTimeout(time.Minute*20))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -108,12 +104,11 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			if err := kubeflowv2beta1.AddToScheme(rsrc.GetScheme()); err != nil {
 				t.Fatal(err)
 			}
-			j := kubeflowv2beta1.MPIJob{
+			job := kubeflowv2beta1.MPIJob{
 				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccl-test", Namespace: "default"},
 			}
-			timeout := time.Minute * 10
-			err := wait.For(conditions.New(rsrc).ResourceMatch(&j, mpiJobSucceeded),
-				wait.WithTimeout(timeout))
+			err := wait.For(fwext.NewConditionExtension(rsrc).MpiJobSucceeded(&job),
+				wait.WithTimeout(time.Minute*20))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -129,14 +124,4 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 		Feature()
 
 	testenv.Test(t, singleNode, multiNode)
-}
-
-func mpiJobSucceeded(obj k8s.Object) bool {
-	j := obj.(*kubeflowv2beta1.MPIJob)
-	for _, c := range j.Status.Conditions {
-		if c.Type == kubeflowv2beta1.JobSucceeded {
-			return c.Status == v1.ConditionTrue
-		}
-	}
-	return false
 }

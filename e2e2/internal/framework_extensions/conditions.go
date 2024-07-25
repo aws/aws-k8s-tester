@@ -3,6 +3,7 @@ package frameworkext
 import (
 	"context"
 
+	kubeflowv2beta1 "github.com/kubeflow/mpi-operator/pkg/apis/kubeflow/v2beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
@@ -54,5 +55,20 @@ func (c *ConditionExtension) JobSucceeded(job k8s.Object) apimachinerywait.Condi
 			return false, nil
 		}
 		return true, nil
+	}
+}
+
+func (c *ConditionExtension) MpiJobSucceeded(obj k8s.Object) apimachinerywait.ConditionWithContextFunc {
+	return func(ctx context.Context) (done bool, err error) {
+		if err := c.resources.Get(ctx, obj.GetName(), obj.GetNamespace(), obj); err != nil {
+			return false, err
+		}
+		j := obj.(*kubeflowv2beta1.MPIJob)
+		for _, c := range j.Status.Conditions {
+			if c.Type == kubeflowv2beta1.JobSucceeded {
+				return true, nil
+			}
+		}
+		return false, nil
 	}
 }

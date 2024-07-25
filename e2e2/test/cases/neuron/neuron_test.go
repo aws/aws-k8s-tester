@@ -3,11 +3,11 @@ package neuron
 import (
 	"context"
 	_ "embed"
-	"fmt"
 	"testing"
 	"time"
 
 	fwext "github.com/aws/aws-k8s-tester/e2e2/internal/framework_extensions"
+	kubeflowv2beta1 "github.com/kubeflow/mpi-operator/pkg/apis/kubeflow/v2beta1"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
@@ -17,39 +17,60 @@ import (
 )
 
 var (
-	//go:embed manifests/single-node-test-neuronx.yaml
-	neuronSingleNodeManifest         []byte
-	renderedNeuronSingleNodeManifest []byte
+	//go:embed manifests/unit-test.yaml
+	neuronUnitTestManifest []byte
+	//go:embed manifests/bert-infer.yaml
+	neuronInferManifest []byte
+	//go:embed manifests/bert-train.yaml
+	neuronTrainManifest            []byte
+	renderedNeuronUnitTestManifest []byte
+	renderedNeuronInferManifest    []byte
+	renderedNeuronTrainManifest    []byte
 )
 
-type neuronSingleNodeManifestTplVars struct {
+type neuronUnitTestManifestTplVars struct {
 	NeuronTestImage string
+	NodeType        string
 }
 
-func TestMPIJobPytorchTraining(t *testing.T) {
-	singleNode := features.New("single-node").
-		WithLabel("suite", "neuron").
-		WithLabel("hardware", "gpu").
+type neuronInferManifestTplVars struct {
+	NeuronTestImage   string
+	NodeType          string
+	NeuronPerNode     int
+	NeuronCorePerNode int
+}
+
+type neuronTrainManifestTplVars struct {
+	NeuronTestImage     string
+	NodeType            string
+	WorkerNodeCount     int
+	NeuronPerNode       int
+	NeuronCorePerNode   int
+	EfaInterfacePerNode int
+}
+
+func TestNeuron(t *testing.T) {
+	singleNode := features.New("single-node-unit-test").
+		WithLabel("hardware", "neuron").
+		WithLabel("task", "unit-test").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			if *neuronTestImage == "" {
-				t.Fatal(fmt.Errorf("neuronTestImage must be set to run neuron single node test, use https://github.com/aws/aws-k8s-tester/blob/main/e2e2/test/images/neuron/Dockerfile to build the image and -neuronTestImage to set the image url"))
-			}
 			var err error
-			renderedNeuronSingleNodeManifest, err = fwext.RenderManifests(neuronSingleNodeManifest, neuronSingleNodeManifestTplVars{
+			renderedNeuronUnitTestManifest, err = fwext.RenderManifests(neuronUnitTestManifest, neuronUnitTestManifestTplVars{
 				NeuronTestImage: *neuronTestImage,
+				NodeType:        *nodeType,
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedNeuronSingleNodeManifest)
+			err = fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedNeuronUnitTestManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
 			return ctx
 		}).
-		Assess("Single node test Job succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+		Assess("Single node unit test succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			job := &batchv1.Job{
-				ObjectMeta: metav1.ObjectMeta{Name: "neuronx-single-node", Namespace: "default"},
+				ObjectMeta: metav1.ObjectMeta{Name: "neuron-unit-test", Namespace: "default"},
 			}
 			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 				wait.WithTimeout(time.Minute*20))
@@ -59,13 +80,96 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedNeuronSingleNodeManifest)
+			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedNeuronUnitTestManifest)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return ctx
+		}).Feature()
+
+	singleNodeInfer := features.New("single-node-inference").
+		WithLabel("hardware", "neuron").
+		WithLabel("task", "inference").
+		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			var err error
+			renderedNeuronInferManifest, err = fwext.RenderManifests(neuronInferManifest, neuronInferManifestTplVars{
+				NeuronTestImage:   *neuronTestImage,
+				NodeType:          *nodeType,
+				NeuronPerNode:     neuronPerNode,
+				NeuronCorePerNode: neuronCorePerNode,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedNeuronInferManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
 			return ctx
 		}).
-		Feature()
+		Assess("Single node bert inference Job succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			job := &batchv1.Job{
+				ObjectMeta: metav1.ObjectMeta{Name: "bert-inference", Namespace: "default"},
+			}
+			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
+				wait.WithTimeout(time.Minute*20))
+			if err != nil {
+				t.Fatal(err)
+			}
+			return ctx
+		}).
+		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedNeuronInferManifest)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return ctx
+		}).Feature()
 
-	testenv.Test(t, singleNode)
+	multiNodeTrain := features.New("multi-node-training").
+		WithLabel("hardware", "neuron").
+		WithLabel("task", "training").
+		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			var err error
+			renderedNeuronTrainManifest, err = fwext.RenderManifests(neuronTrainManifest, neuronTrainManifestTplVars{
+				NeuronTestImage:     *neuronTestImage,
+				NodeType:            *nodeType,
+				WorkerNodeCount:     nodeCount - 1,
+				NeuronPerNode:       neuronPerNode,
+				NeuronCorePerNode:   neuronCorePerNode,
+				EfaInterfacePerNode: efaPerNode,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedNeuronTrainManifest)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return ctx
+		}).
+		Assess("Multi node bert training MPIJob succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			rsrc := cfg.Client().Resources()
+			if err := kubeflowv2beta1.AddToScheme(rsrc.GetScheme()); err != nil {
+				t.Fatal(err)
+			}
+			job := kubeflowv2beta1.MPIJob{
+				ObjectMeta: metav1.ObjectMeta{Name: "bert-mpi-training", Namespace: "default"},
+			}
+			err := wait.For(fwext.NewConditionExtension(rsrc).MpiJobSucceeded(&job),
+				wait.WithTimeout(time.Minute*20))
+			if err != nil {
+				t.Fatal(err)
+			}
+			return ctx
+		}).
+		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedNeuronTrainManifest)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return ctx
+		}).Feature()
+
+	testenv.Test(t, singleNode, singleNodeInfer, multiNodeTrain)
 }

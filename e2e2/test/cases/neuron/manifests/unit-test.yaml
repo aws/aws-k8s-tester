@@ -1,21 +1,21 @@
 kind: Job
 apiVersion: batch/v1
 metadata:
-  name: neuronx-single-node
+  name: neuron-unit-test
   labels:
-    app: neuronx-single-node
+    app: neuron-unit-test
 spec:
   template:
     metadata:
       labels:
-        app: neuronx-single-node
+        app: neuron-unit-test
     spec:
       containers:
-      - name: neuronx-single-node-test
+      - name: neuron-unit-test
         image: {{.NeuronTestImage}}
         command:
         - /bin/bash
-        - ./tests/singleNodeTest.sh
+        - ./unit-test/unit-test.sh
         imagePullPolicy: Always
         resources:
           limits:
@@ -26,5 +26,7 @@ spec:
             cpu: "1"
             memory: 1Gi
             aws.amazon.com/neuron: "1"
+      nodeSelector:
+            node.kubernetes.io/instance-type: {{.NodeType}}
       restartPolicy: Never
   backoffLimit: 4

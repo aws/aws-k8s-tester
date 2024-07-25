@@ -65,5 +65,5 @@ test_nvidia_gpu_throttled()
     # The only  bit allowed is nvmlClocksEventReasonGpuIdle 0x0000000000000001LL
     filter="egrep -v -e '(0x0000000000000000|0x0000000000000001)'"
     cmd="nvidia-smi --query-gpu index,gpu_bus_id,gpu_uuid,clocks_throttle_reasons.active --format=csv,noheader"
-    assert_status_code 1 "$cmd | $filter" "Throttled gpu detected, possible reason https://tt.amazon.com/P115211285"
+    assert_status_code 1 "$cmd | $filter" "Throttled gpu detected"
 }
