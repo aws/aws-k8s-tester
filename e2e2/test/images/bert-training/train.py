@@ -54,8 +54,7 @@ def mask_tokens(inputs, tokenizer, mlm_probability):
     return inputs, labels
 
 
-def setup(rank, world_size):
-    print(f"setup() for rank: {rank}")
+def setup(rank, world_size, local_rank):
     master_addr = os.environ["MASTER_ADDR"]
     master_port = os.environ["MASTER_PORT"]
     print(f"For rank {rank} - MASTER_PORT={master_port} & MASTER_ADDR={master_addr}")
@@ -65,30 +64,22 @@ def setup(rank, world_size):
         rank=rank,
         world_size=world_size,
     )
-    torch.cuda.set_device(rank)
-    print(f"Process {rank} initialized, using GPU {rank}")
+    torch.cuda.set_device(local_rank)
+    print(f"Process {rank} initialized, using GPU {local_rank}")
 
 
 def cleanup():
     dist.destroy_process_group()
 
 
-def train_bert(rank, world_size, model, tokenizer):
-    print(f"entered `train_bert` function for {rank}")
-    setup(rank, world_size)
-    print(f"setup complete for rank: {rank}")
+def train_bert(rank, world_size, local_rank, model, tokenizer):
+    setup(rank, world_size, local_rank)
 
-    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-    model = BertForPreTraining.from_pretrained("bert-base-uncased").to(rank)
-    ddp_model = DDP(model, device_ids=[rank])
-
-    print(f"model and tokenizer loaded for {rank}")
+    model = model.to(local_rank)
+    ddp_model = DDP(model, device_ids=[local_rank])
 
     dataset = create_dummy_data(tokenizer)
-    train_sampler = torch.utils.data.distributed.DistributedSampler(
-        dataset, num_replicas=world_size, rank=rank
-    )
-    train_dataloader = DataLoader(dataset, sampler=train_sampler, batch_size=8)
+    train_dataloader = DataLoader(dataset, batch_size=8)
 
     optimizer = torch.optim.AdamW(ddp_model.parameters(), lr=0.001)
     criterion = torch.nn.CrossEntropyLoss()
@@ -103,10 +94,10 @@ def train_bert(rank, world_size, model, tokenizer):
             optimizer.zero_grad()
             inputs, masks, labels, next_sentence_labels = batch
             inputs, masks, labels, next_sentence_labels = (
-                inputs.to(rank),
-                masks.to(rank),
-                labels.to(rank),
-                next_sentence_labels.to(rank),
+                inputs.to(local_rank),
+                masks.to(local_rank),
+                labels.to(local_rank),
+                next_sentence_labels.to(local_rank),
             )
             outputs = ddp_model(
                 input_ids=inputs,
@@ -131,7 +122,12 @@ def train_bert(rank, world_size, model, tokenizer):
 def main():
     rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
     world_size = int(os.environ["OMPI_COMM_WORLD_SIZE"])
-    print(f"Process started for rank: {rank}")
+
+
+    num_gpus_per_node = int(os.environ["NUM_GPUS_PER_NODE"]) 
+    local_rank = rank % num_gpus_per_node
+
+    print(f"Process started for rank {rank} with local rank {local_rank}")
 
     # Pre-download model and tokenizer
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
@@ -139,7 +135,7 @@ def main():
 
     print(f"successfully downloaded model and tokenizer for rank: {rank}")
 
-    train_bert(rank, world_size, model, tokenizer)
+    train_bert(rank, world_size, local_rank, model, tokenizer)
 
 
 if __name__ == "__main__":
