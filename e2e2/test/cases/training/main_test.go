@@ -6,6 +6,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -20,11 +21,8 @@ import (
 )
 
 var (
-	testenv env.Environment
-	// nodeType          *string
+	testenv           env.Environment
 	bertTrainingImage *string
-	// nodeCount         int
-	// gpuPerNode        int
 )
 
 var (
@@ -80,16 +78,16 @@ func TestMain(m *testing.M) {
 		},
 	)
 
-	// testenv.Finish(
-	// 	func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-	// 		slices.Reverse(manifests)
-	// 		err = fwext.DeleteManifests(config.Client().RESTConfig(), manifests...)
-	// 		if err != nil {
-	// 			return ctx, err
-	// 		}
-	// 		return ctx, nil
-	// 	},
-	// )
+	testenv.Finish(
+		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
+			slices.Reverse(manifests)
+			err = fwext.DeleteManifests(config.Client().RESTConfig(), manifests...)
+			if err != nil {
+				return ctx, err
+			}
+			return ctx, nil
+		},
+	)
 
 	os.Exit(testenv.Run(m))
 }

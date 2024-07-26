@@ -51,7 +51,7 @@ func TestBertTraining(t *testing.T) {
 		}).
 		Assess("BERT training Job succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			job := &batchv1.Job{
-				ObjectMeta: metav1.ObjectMeta{Name: "bert-training", Namespace: "default"},
+				ObjectMeta: metav1.ObjectMeta{Name: "bert-training-launcher", Namespace: "default"},
 			}
 			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 				wait.WithTimeout(time.Minute*20))
