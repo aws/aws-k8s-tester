@@ -13,19 +13,10 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
-          affinity:
-            nodeAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                nodeSelectorTerms:
-                - matchExpressions:
-                  - key: bert-mpi-testing
-                    operator: In
-                    values:
-                    - launcher
           containers:
-          - image: 905417999469.dkr.ecr.us-west-2.amazonaws.com/aws-bert-training:latest
+          - image: {{.BertTrainingImage}}
             imagePullPolicy: Always
-            name: bert-training-launcher
+            name: bert-training
             env:
             - name: NCCL_DEBUG
               value: "TRACE"
@@ -74,7 +65,7 @@ spec:
             emptyDir:
               medium: Memory
           containers:
-          - image: 905417999469.dkr.ecr.us-west-2.amazonaws.com/aws-bert-training:latest
+          - image: {{.BertTrainingImage}}
             imagePullPolicy: Always
             name: bert-training-worker
             volumeMounts:
