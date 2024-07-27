@@ -134,7 +134,7 @@ func TestNeuron(t *testing.T) {
 			renderedNeuronTrainManifest, err = fwext.RenderManifests(neuronTrainManifest, neuronTrainManifestTplVars{
 				NeuronTestImage:     *neuronTestImage,
 				NodeType:            *nodeType,
-				WorkerNodeCount:     nodeCount - 1,
+				WorkerNodeCount:     nodeCount,
 				NeuronPerNode:       neuronPerNode,
 				NeuronCorePerNode:   neuronCorePerNode,
 				EfaInterfacePerNode: efaPerNode,
