@@ -62,7 +62,15 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), mpiJobPytorchTrainingSingleNodeManifest)
+			log, err := fwext.GetJobLogs(ctx, cfg.Client().RESTConfig(), &kubeflowv2beta1.MPIJob{
+				ObjectMeta: metav1.ObjectMeta{Name: "pytorch-training-single-node", Namespace: "default"},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Log("Test log for pytorch-training-single-node:")
+			t.Log(log)
+			err = fwext.DeleteManifests(cfg.Client().RESTConfig(), mpiJobPytorchTrainingSingleNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -117,7 +125,15 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedMpiJobNcclTestMultiNodeManifest)
+			log, err := fwext.GetJobLogs(ctx, cfg.Client().RESTConfig(), &kubeflowv2beta1.MPIJob{
+				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccl-test", Namespace: "default"},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Log("Test log for multi-node-nccl-test:")
+			t.Log(log)
+			err = fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedMpiJobNcclTestMultiNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}

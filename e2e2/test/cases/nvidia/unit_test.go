@@ -58,7 +58,15 @@ func TestSingleNodeUnitTest(t *testing.T) {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedJobUnitTestSingleNodeManifest)
+			log, err := fwext.GetJobLogs(ctx, cfg.Client().RESTConfig(), &batchv1.Job{
+				ObjectMeta: metav1.ObjectMeta{Name: "unit-test-job", Namespace: "default"},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Log("Test log for unit-test-job:")
+			t.Log(log)
+			err = fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedJobUnitTestSingleNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
