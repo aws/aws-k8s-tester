@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"fmt"
 	"testing"
-	"time"
 
 	fwext "github.com/aws/aws-k8s-tester/e2e2/internal/framework_extensions"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -52,7 +51,7 @@ func TestSingleNodeUnitTest(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "unit-test-job", Namespace: "default"},
 			}
 			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
-				wait.WithTimeout(time.Minute*20))
+				wait.WithContext(ctx))
 			if err != nil {
 				t.Fatal(err)
 			}
