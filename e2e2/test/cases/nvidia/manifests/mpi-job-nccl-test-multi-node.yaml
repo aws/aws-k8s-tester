@@ -91,11 +91,7 @@ spec:
             resources:
               requests:
                 nvidia.com/gpu: {{.GpuPerNode}}
-                hugepages-2Mi: 5120Mi
                 vpc.amazonaws.com/efa: {{.EfaInterfacePerNode}}
-                memory: 8000Mi
               limits:
                 nvidia.com/gpu: {{.GpuPerNode}}
-                hugepages-2Mi: 5120Mi
                 vpc.amazonaws.com/efa: {{.EfaInterfacePerNode}}
-                memory: 8000Mi

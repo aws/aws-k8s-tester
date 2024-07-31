@@ -58,7 +58,15 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedNeuronSingleNodeManifest)
+			log, err := fwext.GetJobLogs(ctx, cfg.Client().RESTConfig(), &batchv1.Job{
+				ObjectMeta: metav1.ObjectMeta{Name: "neuronx-single-node", Namespace: "default"},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Log("Test log for neuronx-single-node:")
+			t.Log(log)
+			err = fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedNeuronSingleNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
