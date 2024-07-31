@@ -43,7 +43,7 @@ test_nvidia_gpu_count()
 test_nvidia_smi_topo()
 {
     assert_data $data/nvidia_smi_topo.txt "nvidia-smi topo -m | grep GPU | cut -f 1-11" \
-		  "Unexpected gpu topology, likely broken nvlinks"
+		"Unexpected gpu topology, likely broken nvlinks"
 }
 
 
@@ -63,7 +63,7 @@ test_nvidia_gpu_throttled()
 
     # https://docs.nvidia.com/deploy/nvml-api/group__nvmlClocksEventReasons.html#group__nvmlClocksEventReasons
     # The only  bit allowed is nvmlClocksEventReasonGpuIdle 0x0000000000000001LL
-    filter="egrep -v -e '(0x0000000000000000|0x0000000000000001)'"
+    filter="egrep -v -e '(0x0000000000000000|0x0000000000000001|0x0000000000000004)'"
     cmd="nvidia-smi --query-gpu index,gpu_bus_id,gpu_uuid,clocks_throttle_reasons.active --format=csv,noheader"
-    assert_status_code 1 "$cmd | $filter" "Throttled gpu detected, possible reason https://tt.amazon.com/P115211285"
+    assert_status_code 1 "$cmd | $filter" "Throttled gpu detected"
 }

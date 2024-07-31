@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"fmt"
 	"testing"
-	"time"
 
 	fwext "github.com/aws/aws-k8s-tester/e2e2/internal/framework_extensions"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -52,14 +51,22 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "neuronx-single-node", Namespace: "default"},
 			}
 			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
-				wait.WithTimeout(time.Minute*20))
+				wait.WithContext(ctx))
 			if err != nil {
 				t.Fatal(err)
 			}
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedNeuronSingleNodeManifest)
+			log, err := fwext.GetJobLogs(ctx, cfg.Client().RESTConfig(), &batchv1.Job{
+				ObjectMeta: metav1.ObjectMeta{Name: "neuronx-single-node", Namespace: "default"},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Log("Test log for neuronx-single-node:")
+			t.Log(log)
+			err = fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedNeuronSingleNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
