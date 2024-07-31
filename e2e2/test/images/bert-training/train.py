@@ -120,7 +120,6 @@ def main():
     rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
     world_size = int(os.environ["OMPI_COMM_WORLD_SIZE"])
 
-
     num_gpus_per_node = int(os.environ["NUM_GPUS_PER_NODE"]) 
     local_rank = rank % num_gpus_per_node
 
