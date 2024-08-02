@@ -62,7 +62,7 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			log, err := fwext.GetJobLogs(ctx, cfg.Client().RESTConfig(), &kubeflowv2beta1.MPIJob{
+			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), &kubeflowv2beta1.MPIJob{
 				ObjectMeta: metav1.ObjectMeta{Name: "pytorch-training-single-node", Namespace: "default"},
 			})
 			if err != nil {
@@ -125,7 +125,7 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			log, err := fwext.GetJobLogs(ctx, cfg.Client().RESTConfig(), &kubeflowv2beta1.MPIJob{
+			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), &kubeflowv2beta1.MPIJob{
 				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccl-test", Namespace: "default"},
 			})
 			if err != nil {
