@@ -123,7 +123,8 @@ func RenderManifests(file []byte, templateData interface{}) ([]byte, error) {
 }
 
 // GetJobLogs get logs from MPIJob
-func GetJobLogs(ctx context.Context, restConfig *rest.Config, job k8s.Object) (string, error) {
+func GetJobLogs(restConfig *rest.Config, job k8s.Object) (string, error) {
+	ctx := context.Background()
 	clientset, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
 		return "", err

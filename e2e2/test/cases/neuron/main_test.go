@@ -37,7 +37,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("failed to initialize test environment: %v", err)
 	}
 	testenv = env.NewWithConfig(cfg)
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 55*time.Minute)
 	defer cancel()
 	testenv = testenv.WithContext(ctx)
 

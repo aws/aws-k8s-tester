@@ -24,7 +24,7 @@ Parameters:
   NodeDiskSize:
     Type: Number
     Description: Node disk size in gigabytes.
-    Default: 20
+    Default: 100
 
   NodeCount:
     Type: Number
