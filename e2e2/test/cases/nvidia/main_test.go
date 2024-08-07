@@ -80,13 +80,19 @@ func TestMain(m *testing.M) {
 			return ctx, nil
 		},
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			ds := appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{Name: "nvidia-device-plugin-daemonset", Namespace: "kube-system"},
-			}
-			err := wait.For(fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&ds),
-				wait.WithContext(ctx))
-			if err != nil {
-				return ctx, err
+			if *efaEnabled {
+				err := fwext.ApplyManifests(cfg.Client().RESTConfig(), efaDevicePluginManifest)
+				if err != nil {
+					return ctx, err
+				}
+				efaDs := appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "aws-efa-k8s-device-plugin-daemonset", Namespace: "kube-system"},
+				}
+				err = wait.For(fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&efaDs),
+					wait.WithContext(ctx))
+				if err != nil {
+					return ctx, err
+				}
 			}
 			return ctx, nil
 		},
@@ -105,7 +111,7 @@ func TestMain(m *testing.M) {
 					return ctx, err
 				}
 				ds := appsv1.DaemonSet{
-					ObjectMeta: metav1.ObjectMeta{Name: "efa-device-plugin-daemonset", Namespace: "kube-system"},
+					ObjectMeta: metav1.ObjectMeta{Name: "aws-efa-k8s-device-plugin-daemonset", Namespace: "kube-system"},
 				}
 				err = wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).DaemonSetReady(&ds),
 					wait.WithContext(ctx))

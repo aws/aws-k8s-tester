@@ -1,16 +1,12 @@
 FROM public.ecr.aws/docker/library/ubuntu:20.04
 
-# Neuron SDK components version numbers
-ARG NEURONX_DISTRIBUTED_VERSION=0.7.0
-ARG NEURONX_CC_VERSION=2.13.72.0
-ARG NEURONX_FRAMEWORK_VERSION=2.1.2.2.1.0
-ARG NEURONX_COLLECTIVES_LIB_VERSION=2.20.22.0-c101c322e
-ARG NEURONX_RUNTIME_LIB_VERSION=2.20.22.0-1b3ca6425
-ARG NEURONX_TOOLS_VERSION=2.17.1.0
+# Neuron repos
+ARG APT_REPO=https://apt.repos.neuron.amazonaws.com
+ARG PIP_REPO=https://pip.repos.neuron.amazonaws.com
 
 ARG PYTHON=python3.10
 ARG PYTHON_VERSION=3.10.12
-ARG PIP=pip3
+ARG PIP="${PYTHON} -m pip"
 ARG OMPI_VERSION=4.1.5
 
 # This arg required to stop docker build waiting for region configuration while installing tz data from ubuntu 20
@@ -66,27 +62,6 @@ RUN apt-get update \
 RUN echo "deb https://apt.repos.neuron.amazonaws.com focal main" > /etc/apt/sources.list.d/neuron.list
 RUN wget -qO - https://apt.repos.neuron.amazonaws.com/GPG-PUB-KEY-AMAZON-AWS-NEURON.PUB | apt-key add -
 
-RUN apt-get update \
- && apt-get install -y \
-    aws-neuronx-tools=$NEURONX_TOOLS_VERSION \
-    aws-neuronx-collectives=$NEURONX_COLLECTIVES_LIB_VERSION \
-    aws-neuronx-runtime-lib=$NEURONX_RUNTIME_LIB_VERSION \
- && rm -rf /var/lib/apt/lists/* \
- && rm -rf /tmp/tmp* \
- && apt-get clean
-
-# Install Open MPI
-RUN mkdir -p /tmp/openmpi \
- && cd /tmp/openmpi \
- && wget --quiet https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-${OMPI_VERSION}.tar.gz \
- && tar zxf openmpi-${OMPI_VERSION}.tar.gz \
- && cd openmpi-${OMPI_VERSION} \
- && ./configure --enable-orterun-prefix-by-default \
- && make -j $(nproc) all \
- && make install \
- && ldconfig \
- && rm -rf /tmp/openmpi
-
 # install Python
 RUN wget -q https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tgz \
  && tar -xzf Python-$PYTHON_VERSION.tgz \
@@ -99,45 +74,6 @@ RUN wget -q https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VER
  && ${PIP} --no-cache-dir install --upgrade \
     pip \
     setuptools
-
-WORKDIR /
-
-# The ENV variables declared below are changed in the previous section
-# Grouping these ENV variables in the first section causes
-# ompi_info to fail. This is only observed in CPU containers
-ENV PATH="$PATH:/home/.openmpi/bin"
-ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/home/.openmpi/lib/"
-RUN ompi_info --parsable --all | grep mpi_built_with_cuda_support:value
-
-RUN ${PIP} install --no-cache-dir -U \
-    "bokeh>=2.3,<3" \
-    "awscli<2" \
-    scipy \
-    click \
-    "cryptography" \
-    psutil==5.6.7 \
-    dataset \
-    transformers==4.36.2 \
-    Pillow
-
-RUN mkdir -p /etc/pki/tls/certs && cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
-RUN ${PIP} config set global.extra-index-url https://pip.repos.neuron.amazonaws.com \
- && ${PIP} install --force-reinstall torch-neuronx==$NEURONX_FRAMEWORK_VERSION --extra-index-url https://pip.repos.neuron.amazonaws.com \
- && ${PIP} install --force-reinstall neuronx-cc==$NEURONX_CC_VERSION --extra-index-url https://pip.repos.neuron.amazonaws.com \
- && ${PIP} install --force-reinstall --no-deps neuronx_distributed==$NEURONX_DISTRIBUTED_VERSION --extra-index-url https://pip.repos.neuron.amazonaws.com
-
-# attrs, neuronx-cc required: >=19.2.0, sagemaker <24,>=23.1.0
-# protobuf neuronx-cc<4, sagemaker-training >=3.9.2,<=3.20.3
-# awscli 1.25.47 has requirement docutils<0.17,>=0.10
-# etcd for kubernetes installation
-# awscli 1.27.127 has requirement rsa<4.8,>=3.1.2, but you have rsa 4.9.
-# awscli 1.27.127 requires urllib3 < 1.27, python-etcd requires urllib3 >= 1.7, latest urllib3 release is 2.0.2
-RUN ${PIP} install --no-cache-dir -U \
-    "attrs<24,>=23.1.0" \
-    "protobuf>=3.18.3,<=3.20.3" \
-    "docutils>=0.10,<0.17" \
-    "rsa<4.8,>=3.1.2" \
-    "urllib3>=1.26.0,<1.27"
 
 # EFA Installer does apt get. Make sure to run apt update before that
 RUN apt-get update
@@ -152,28 +88,50 @@ RUN cd $HOME \
  && cd $HOME
 
 
+# Neuron system packages (minus driver)
+RUN echo "deb $APT_REPO focal main" > /etc/apt/sources.list.d/neuron.list \
+    && wget -qO - $APT_REPO/GPG-PUB-KEY-AMAZON-AWS-NEURON.PUB | apt-key add - \
+    && apt-get update \
+    && apt-get install -y aws-neuronx-tools aws-neuronx-collectives aws-neuronx-runtime-lib \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/tmp* \
+    && apt-get clean
+
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && $PYTHON get-pip.py && $PIP install --upgrade pip
+RUN mkdir -p /etc/pki/tls/certs && cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
+
+# PyTorch Neuron packages (2.12)
+RUN $PIP config set global.extra-index-url $PIP_REPO \
+    && $PIP install --force-reinstall torch-neuronx neuronx-cc neuronx_distributed \
+    && $PIP install --no-cache-dir -U python-etcd \
+    && $PIP install torchvision==0.16.* packaging \
+    && rm -fr /root/.cache/
+
+# Install packages and configure SSH for MPI operator in k8s
+RUN apt-get update && apt-get install -y openmpi-bin openssh-server \
+    && mkdir -p /var/run/sshd \
+    && echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config \
+    && echo "    StrictHostKeyChecking no" >> /etc/ssh/ssh_config \
+    && sed -i 's/#\(StrictModes \).*/\1no/g' /etc/ssh/sshd_config \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/tmp* \
+    && apt-get clean
+
+# Add Neuron tools to path
+RUN echo "export PATH=/opt/aws/neuron/bin:\$PATH" >> /root/.bashrc \
+    && echo "export TERM=screen" >> /root/.bashrc
+
 # Clean up after apt update
 RUN rm -rf /var/lib/apt/lists/* \
  && rm -rf /tmp/tmp* \
  && apt-get clean
 
-# Install some common packages used by training scripts
-# torchvision needed for MLP. since it depends on torch and torch neuron/torch
-# is already installed install it with nodeps
-RUN pip3 install --no-cache-dir --no-deps -U \
-    torchvision==0.16.*
+WORKDIR /app
 
+COPY e2e2/test/images/neuron/unit-test /app/unit-test
 
-RUN HOME_DIR=/root \
- && curl -o ${HOME_DIR}/oss_compliance.zip https://aws-dlinfra-utilities.s3.amazonaws.com/oss_compliance.zip \
- && unzip ${HOME_DIR}/oss_compliance.zip -d ${HOME_DIR}/ \
- && cp ${HOME_DIR}/oss_compliance/test/testOSSCompliance /usr/local/bin/testOSSCompliance \
- && chmod +x /usr/local/bin/testOSSCompliance \
- && chmod +x ${HOME_DIR}/oss_compliance/generate_oss_compliance.sh \
- && ${HOME_DIR}/oss_compliance/generate_oss_compliance.sh ${HOME_DIR} ${PYTHON} \
- && rm -rf ${HOME_DIR}/oss_compliance* \
- && rm -rf /tmp/tmp*
+COPY e2e2/test/images/neuron/e2e-test /app/e2e-test
 
-RUN curl -o /license.txt  https://aws-dlc-licenses.s3.amazonaws.com/pytorch-2.1/license.txt
-
-COPY e2e2/test/images/neuron/tests ./tests
+# Install any needed packages for multi-node-test
+RUN python -m pip install --upgrade pip && \
+    pip install --no-cache-dir -r e2e-test/requirements.txt

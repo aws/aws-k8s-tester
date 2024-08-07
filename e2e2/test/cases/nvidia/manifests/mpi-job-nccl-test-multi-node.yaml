@@ -30,6 +30,8 @@ spec:
             - --tag-output
             - -np
             - "{{.WorkerNodeGpuCount}}"
+            - -N
+            - "{{.GpuPerNode}}"
             - -bind-to
             - none
             - -map-by
