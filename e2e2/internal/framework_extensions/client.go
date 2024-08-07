@@ -3,11 +3,16 @@ package frameworkext
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"html/template"
 	"io"
 	"os"
 
+	kubeflowv2beta1 "github.com/kubeflow/mpi-operator/pkg/apis/kubeflow/v2beta1"
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/resource"
@@ -94,7 +99,10 @@ func deleteManifests(restConfig *rest.Config, manifests ...io.Reader) error {
 			if namespace == "" {
 				namespace = "default"
 			}
-			_, err = client.Delete(namespace, name)
+			deletePolicy := metav1.DeletePropagationBackground
+			_, err = client.DeleteWithOptions(namespace, name, &metav1.DeleteOptions{
+				PropagationPolicy: &deletePolicy,
+			})
 			return err
 		}); err != nil {
 			return err
@@ -112,6 +120,44 @@ func RenderManifests(file []byte, templateData interface{}) ([]byte, error) {
 	buf := bytes.Buffer{}
 	err = tpl.Execute(&buf, templateData)
 	return buf.Bytes(), err
+}
+
+// GetJobLogs get logs from MPIJob
+func GetJobLogs(restConfig *rest.Config, job k8s.Object) (string, error) {
+	ctx := context.Background()
+	clientset, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		return "", err
+	}
+	var jobLabel string
+	switch job.(type) {
+	case *kubeflowv2beta1.MPIJob:
+		jobLabel = fmt.Sprintf("job-name=%s-launcher", job.GetName())
+	case *batchv1.Job:
+		jobLabel = fmt.Sprintf("job-name=%s", job.GetName())
+	default:
+		return "", fmt.Errorf("unsupported job type %T", job)
+	}
+	pods, err := clientset.CoreV1().Pods(job.GetNamespace()).List(ctx, metav1.ListOptions{LabelSelector: jobLabel})
+	if err != nil {
+		return "", err
+	}
+	if len(pods.Items) == 0 {
+		return "", fmt.Errorf("no pods found for job %s", job.GetName())
+	}
+	log := clientset.CoreV1().Pods(job.GetNamespace()).GetLogs(pods.Items[0].Name, &corev1.PodLogOptions{})
+	podLogs, err := log.Stream(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer podLogs.Close()
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, podLogs)
+	if err != nil {
+		return "", err
+	}
+	str := buf.String()
+	return str, nil
 }
 
 func bytesSlicesToReaders(byteSlices ...[]byte) []io.Reader {

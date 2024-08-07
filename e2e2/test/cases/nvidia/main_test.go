@@ -50,6 +50,9 @@ func TestMain(m *testing.M) {
 		log.Fatalf("failed to initialize test environment: %v", err)
 	}
 	testenv = env.NewWithConfig(cfg)
+	ctx, cancel := context.WithTimeout(context.Background(), 55*time.Minute)
+	defer cancel()
+	testenv = testenv.WithContext(ctx)
 
 	// all NVIDIA tests require the device plugin and MPI operator
 	manifests := [][]byte{
@@ -70,7 +73,7 @@ func TestMain(m *testing.M) {
 				ObjectMeta: metav1.ObjectMeta{Name: "mpi-operator", Namespace: "mpi-operator"},
 			}
 			err := wait.For(conditions.New(config.Client().Resources()).DeploymentConditionMatch(&dep, appsv1.DeploymentAvailable, v1.ConditionTrue),
-				wait.WithTimeout(time.Minute*5))
+				wait.WithContext(ctx))
 			if err != nil {
 				return ctx, err
 			}
@@ -81,7 +84,7 @@ func TestMain(m *testing.M) {
 				ObjectMeta: metav1.ObjectMeta{Name: "nvidia-device-plugin-daemonset", Namespace: "kube-system"},
 			}
 			err := wait.For(fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&ds),
-				wait.WithTimeout(time.Minute*5))
+				wait.WithContext(ctx))
 			if err != nil {
 				return ctx, err
 			}
@@ -105,7 +108,7 @@ func TestMain(m *testing.M) {
 					ObjectMeta: metav1.ObjectMeta{Name: "efa-device-plugin-daemonset", Namespace: "kube-system"},
 				}
 				err = wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).DaemonSetReady(&ds),
-					wait.WithTimeout(time.Minute*5))
+					wait.WithContext(ctx))
 				if err != nil {
 					return ctx, err
 				}

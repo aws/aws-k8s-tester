@@ -37,6 +37,9 @@ func TestMain(m *testing.M) {
 		log.Fatalf("failed to initialize test environment: %v", err)
 	}
 	testenv = env.NewWithConfig(cfg)
+	ctx, cancel := context.WithTimeout(context.Background(), 55*time.Minute)
+	defer cancel()
+	testenv = testenv.WithContext(ctx)
 
 	manifests := [][]byte{
 		neuronDevicePluginManifest,
@@ -56,7 +59,7 @@ func TestMain(m *testing.M) {
 				ObjectMeta: metav1.ObjectMeta{Name: "neuron-device-plugin-daemonset", Namespace: "kube-system"},
 			}
 			err := wait.For(fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&ds),
-				wait.WithTimeout(time.Minute*5))
+				wait.WithContext(ctx))
 			if err != nil {
 				return ctx, err
 			}

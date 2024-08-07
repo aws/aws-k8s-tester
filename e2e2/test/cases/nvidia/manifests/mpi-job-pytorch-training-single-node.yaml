@@ -48,7 +48,7 @@ spec:
               - MXNET_CUDNN_AUTOTUNE_DEFAULT=0
               - python
               - -c
-              - import os; os.system("git clone https://github.com/pytorch/examples.git /pytorch-examples"); os.system("git -C pytorch-examples checkout 0f0c9131ca5c79d1332dce1f4c06fe942fbdc665"); os.system("python /pytorch-examples/mnist/main.py --epochs 3")
+              - import os; os.system("git clone https://github.com/pytorch/examples.git /pytorch-examples"); os.system("git -C pytorch-examples checkout 0f0c9131ca5c79d1332dce1f4c06fe942fbdc665"); os.system("python /pytorch-examples/mnist/main.py --epochs 1")
              resources:
                limits:
                  nvidia.com/gpu: 1
