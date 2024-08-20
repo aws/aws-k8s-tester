@@ -24,7 +24,6 @@ import (
 )
 
 const (
-	nodegroupCreationTimeout = time.Minute * 20
 	nodegroupDeletionTimeout = time.Minute * 20
 )
 
@@ -119,7 +118,7 @@ func (m *NodegroupManager) createManagedNodegroup(infra *Infrastructure, cluster
 		Wait(context.TODO(), &eks.DescribeNodegroupInput{
 			ClusterName:   input.ClusterName,
 			NodegroupName: input.NodegroupName,
-		}, nodegroupCreationTimeout)
+		}, opts.NodeCreationTimeout)
 	if err != nil {
 		return err
 	}
@@ -228,7 +227,7 @@ func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, clust
 			&cloudformation.DescribeStacksInput{
 				StackName: out.StackId,
 			},
-			infraStackCreationTimeout)
+			opts.NodeCreationTimeout)
 	if err != nil {
 		return fmt.Errorf("failed to wait for unmanaged nodegroup stack creation: %w", err)
 	}
