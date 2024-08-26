@@ -1,0 +1,54 @@
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: hpc-benckmarks-job
+  labels:
+    app: hpc-benckmarks-job
+spec:
+  completions: 20
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        app: hpc-benckmarks-job
+    spec:
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+      containers:
+      - name: hpc-benchmarks
+        image: "nvcr.io/nvidia/hpc-benchmarks:24.06"
+        command:
+        - mpirun
+        - --allow-run-as-root
+        - -np
+        - "{{.GpuPerNode}}"
+        - -bind-to
+        - none
+        - -x
+        - NCCL_DEBUG=INFO
+        - -x 
+        - HPL_FCT_COMM_POLICY=1 
+        - -x 
+        - HPL_USE_NVSHMEM=0
+        - hpl.sh 
+        - --mem-affinity 
+        - 0:0:0:0:1:1:1:1 
+        - --cpu-affinity 
+        - 0-13:14-27:28-41:42-55:56-69:70-83:84-97:98-111
+        - --no-multinode 
+        - --dat 
+        - hpl-linux-x86_64/sample-dat/HPL-dgx-1N.dat
+        volumeMounts:
+        - mountPath: /dev/shm
+          name: dshm
+        imagePullPolicy: Always
+        resources:
+          limits:
+            nvidia.com/gpu: {{.GpuPerNode}}
+        env:
+        - name: UCX_TLS
+          value: "^sysv"
+      restartPolicy: Never
+  backoffLimit: 4

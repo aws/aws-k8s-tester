@@ -40,6 +40,10 @@ Parameters:
 
   UserData:
     Type: String
+  
+  CapacityReservationId:
+    Type: String
+    Description: Capacity reservation id for the unmanaged nodegroup
 
   InstanceType:
     Type: String
@@ -51,6 +55,8 @@ Conditions:
     !Equals [Ref: InstanceType, p4d.24xlarge]
   IsP5Node:
     !Equals [Ref: InstanceType, p5.48xlarge]
+  IsCapacityReservationIdSet: 
+    !Not [!Equals [!Ref CapacityReservationId, ""]]
 
 Resources:
   EFASecurityGroup:
@@ -201,6 +207,12 @@ Resources:
               DeleteOnTermination: true
               VolumeSize: !Ref NodeDiskSize
               VolumeType: gp2
+        CapacityReservationSpecification: 
+          !If
+            - IsCapacityReservationIdSet
+            - CapacityReservationTarget:
+                CapacityReservationId: !Ref CapacityReservationId
+            - !Ref AWS::NoValue
         IamInstanceProfile:
           Arn: !GetAtt NodeInstanceProfile.Arn
         ImageId: !Ref AMIId
