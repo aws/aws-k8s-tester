@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/deployers/eksapi/templates"
 )
 
-func generateUserData(format string, cluster *Cluster) (string, bool, error) {
+func generateUserData(format string, efaEnabled bool, cluster *Cluster) (string, bool, error) {
 	userDataIsMimePart := true
 	var t *template.Template
 	switch format {
@@ -29,6 +29,7 @@ func generateUserData(format string, cluster *Cluster) (string, bool, error) {
 		CertificateAuthority: cluster.certificateAuthorityData,
 		CIDR:                 cluster.cidr,
 		Name:                 cluster.name,
+		EFAEnabled:           efaEnabled,
 	}); err != nil {
 		return "", false, err
 	}
