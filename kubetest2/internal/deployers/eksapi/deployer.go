@@ -64,6 +64,7 @@ type deployerOptions struct {
 	IPFamily                    string        `flag:"ip-family" desc:"IP family for the cluster (ipv4 or ipv6)"`
 	KubeconfigPath              string        `flag:"kubeconfig" desc:"Path to kubeconfig"`
 	KubernetesVersion           string        `flag:"kubernetes-version" desc:"cluster Kubernetes version"`
+	NodeCreationTimeout         time.Duration `flag:"node-creation-timeout" desc:"Time to wait for nodes to be created/launched. This should consider instance availability."`
 	NodeReadyTimeout            time.Duration `flag:"node-ready-timeout" desc:"Time to wait for all nodes to become ready"`
 	Nodes                       int           `flag:"nodes" desc:"number of nodes to launch in cluster"`
 	NodeNameStrategy            string        `flag:"node-name-strategy" desc:"Specifies the naming strategy for node. Allowed values: ['SessionName', 'EC2PrivateDNSName'], default to EC2PrivateDNSName"`
@@ -249,6 +250,9 @@ func (d *deployer) verifyUpFlags() error {
 	}
 	if d.UnmanagedNodes && d.AMIType != "" {
 		return fmt.Errorf("--ami-type should not be provided with --unmanaged-nodes")
+	}
+	if d.NodeCreationTimeout == 0 {
+		d.NodeCreationTimeout = time.Minute * 20
 	}
 	if d.NodeReadyTimeout == 0 {
 		d.NodeReadyTimeout = time.Minute * 5
