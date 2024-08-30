@@ -19,10 +19,17 @@ var (
 	//go:embed manifests/job-unit-test-single-node.yaml
 	jobUnitTestSingleNodeManifest         []byte
 	renderedJobUnitTestSingleNodeManifest []byte
+	//go:embed manifests/job-hpc-benchmarks.yaml
+	jobHpcBenchmarksSingleNodeManifest         []byte
+	renderedJobHpcBenchmarksSingleNodeManifest []byte
 )
 
 type unitTestManifestTplVars struct {
 	NvidiaTestImage string
+}
+
+type hpcTestManifestTplVars struct {
+	GpuPerNode int
 }
 
 func TestSingleNodeUnitTest(t *testing.T) {
@@ -74,5 +81,50 @@ func TestSingleNodeUnitTest(t *testing.T) {
 		}).
 		Feature()
 
-	testenv.Test(t, unitTest)
+	hpcTest := features.New("hpc-benckmarks").
+		WithLabel("suite", "nvidia").
+		WithLabel("hardware", "gpu").
+		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			var err error
+			renderedJobHpcBenchmarksSingleNodeManifest, err = fwext.RenderManifests(jobHpcBenchmarksSingleNodeManifest, hpcTestManifestTplVars{
+				GpuPerNode: gpuPerNode,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedJobHpcBenchmarksSingleNodeManifest)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return ctx
+		}).
+		Assess("HPC test Job succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			job := &batchv1.Job{
+				ObjectMeta: metav1.ObjectMeta{Name: "hpc-benckmarks-job", Namespace: "default"},
+			}
+			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
+				wait.WithContext(ctx))
+			if err != nil {
+				t.Fatal(err)
+			}
+			return ctx
+		}).
+		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), &batchv1.Job{
+				ObjectMeta: metav1.ObjectMeta{Name: "hpc-benckmarks-job", Namespace: "default"},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Log("Test log for hpc-benckmarks-job:")
+			t.Log(log)
+			err = fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedJobHpcBenchmarksSingleNodeManifest)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return ctx
+		}).
+		Feature()
+
+	testenv.Test(t, unitTest, hpcTest)
 }

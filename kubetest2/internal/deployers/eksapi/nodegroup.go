@@ -249,6 +249,16 @@ func (m *NodegroupManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure
 	if err != nil {
 		return err
 	}
+	var subnetId, capacityReservationId string
+	if opts.CapacityReservation {
+		subnetId, capacityReservationId, err = m.getSubnetWithCapacity(infra, opts)
+		if err != nil {
+			return err
+		}
+	} else {
+		subnetId = infra.subnetsPrivate[0]
+	}
+
 	// pull the role name out of the ARN
 	nodeRoleArnParts := strings.Split(infra.nodeRole, "/")
 	nodeRoleName := nodeRoleArnParts[len(nodeRoleArnParts)-1]
@@ -267,7 +277,7 @@ func (m *NodegroupManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure
 			},
 			{
 				ParameterKey:   aws.String("SubnetIds"),
-				ParameterValue: aws.String(infra.subnetsPrivate[0]), // this is load bearing! EFA requires a private subnet
+				ParameterValue: aws.String(subnetId), // this is load bearing! EFA requires a private subnet
 			},
 			{
 				ParameterKey:   aws.String("UserData"),
@@ -304,6 +314,10 @@ func (m *NodegroupManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure
 			{
 				ParameterKey:   aws.String("InstanceType"),
 				ParameterValue: aws.String(opts.InstanceTypes[0]),
+			},
+			{
+				ParameterKey:   aws.String("CapacityReservationId"),
+				ParameterValue: aws.String(capacityReservationId),
 			},
 		},
 	}
@@ -435,4 +449,56 @@ func (m *NodegroupManager) verifyASGAMI(asgName string, amiId string) (bool, err
 	}
 	klog.Infof("ASG instances are using expected AMI: %s", amiId)
 	return true, nil
+}
+
+func (m *NodegroupManager) getSubnetWithCapacity(infra *Infrastructure, opts *deployerOptions) (string, string, error) {
+	var capacityReservationId string
+	capacityReservations, err := m.clients.EC2().DescribeCapacityReservations(context.TODO(), &ec2.DescribeCapacityReservationsInput{
+		Filters: []ec2types.Filter{
+			{
+				Name:   aws.String("instance-type"),
+				Values: opts.InstanceTypes,
+			},
+			{
+				Name:   aws.String("state"),
+				Values: []string{"active"},
+			},
+		},
+	})
+	if err != nil {
+		return "", "", fmt.Errorf("failed to describe capacity reservation")
+	}
+	var az string
+	for _, cr := range capacityReservations.CapacityReservations {
+		if *cr.AvailableInstanceCount >= int32(opts.Nodes) {
+			capacityReservationId = *cr.CapacityReservationId
+			az = *cr.AvailabilityZone
+			break
+		}
+	}
+	if capacityReservationId == "" {
+		return "", "", fmt.Errorf("no capacity reservation found for instance type %s with %d nodes count", opts.InstanceTypes[0], opts.Nodes)
+	}
+	klog.Infof("Using capacity reservation: %s", capacityReservationId)
+	subnet, err := m.clients.EC2().DescribeSubnets(context.TODO(), &ec2.DescribeSubnetsInput{
+		Filters: []ec2types.Filter{
+			{
+				Name:   aws.String("availability-zone"),
+				Values: []string{az},
+			},
+			{
+				Name:   aws.String("subnet-id"),
+				Values: infra.subnetsPrivate,
+			},
+		},
+	})
+	if err != nil {
+		return "", "", fmt.Errorf("failed to describe subnet")
+	}
+	if subnet == nil || len(subnet.Subnets) == 0 {
+		return "", "", fmt.Errorf("no subnet found for availability zone %s", az)
+	}
+	subnetId := *subnet.Subnets[0].SubnetId
+	klog.Infof("Using subnet: %s", subnetId)
+	return subnetId, capacityReservationId, nil
 }

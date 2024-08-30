@@ -93,8 +93,8 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			}
 			renderedMpiJobNcclTestMultiNodeManifest, err := fwext.RenderManifests(mpiJobNcclTestMultiNodeManifest, ncclTestManifestTplVars{
 				// one of the nodes will be used for the master pod
-				WorkerNodeCount:     nodeCount - 1,
-				WorkerNodeGpuCount:  (nodeCount - 1) * gpuPerNode,
+				WorkerNodeCount:     nodeCount,
+				WorkerNodeGpuCount:  nodeCount * gpuPerNode,
 				GpuPerNode:          gpuPerNode,
 				NvidiaTestImage:     *nvidiaTestImage,
 				EfaInterfacePerNode: efaPerNode,
