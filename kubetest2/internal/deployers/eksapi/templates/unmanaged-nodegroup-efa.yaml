@@ -41,6 +41,12 @@ Parameters:
   UserData:
     Type: String
 
+  UserDataIsMIMEPart:
+    Description: "User data should be embedded as a part of a multi-part MIME document"
+    Default: true
+    Type: String
+    AllowedValues: [true, false]
+
   InstanceType:
     Type: String
     Description: Efa supports only one instance type in the cluster. eg. p3dn.24xlarge, p4d.24xlarge or p5.48xlarge
@@ -51,6 +57,8 @@ Conditions:
     !Equals [Ref: InstanceType, p4d.24xlarge]
   IsP5Node:
     !Equals [Ref: InstanceType, p5.48xlarge]
+  IsUserDataMIMEPart:
+    !Equals [true, !Ref UserDataIsMIMEPart]
 
 Resources:
   EFASecurityGroup:
@@ -293,24 +301,28 @@ Resources:
                   - !Ref EFASecurityGroup
         UserData:
           Fn::Base64:
-            Fn::Sub: |
-              Content-Type: multipart/mixed; boundary="BOUNDARY"
-              MIME-Version: 1.0
+            Fn::If:
+            - IsUserDataMIMEPart
+            - Fn::Sub: |
+                Content-Type: multipart/mixed; boundary="BOUNDARY"
+                MIME-Version: 1.0
 
-              --BOUNDARY
-              ${UserData}
+                --BOUNDARY
+                ${UserData}
 
-              --BOUNDARY
-              Content-Type: text/x-shellscript; charset="us-ascii"
-              MIME-Version: 1.0
+                --BOUNDARY
+                Content-Type: text/x-shellscript; charset="us-ascii"
+                MIME-Version: 1.0
 
-              #!/usr/bin/env bash
-              /opt/aws/bin/cfn-signal \
-                --stack  ${AWS::StackName} \
-                --resource NodeGroup \
-                --region ${AWS::Region}
+                #!/usr/bin/env bash
+                /opt/aws/bin/cfn-signal \
+                  --stack  ${AWS::StackName} \
+                  --resource NodeGroup \
+                  --region ${AWS::Region}
 
-              --BOUNDARY--
+                --BOUNDARY--
+            - Fn::Sub: |
+                ${UserData}
 
   NodeGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
