@@ -41,6 +41,9 @@ Parameters:
   UserData:
     Type: String
   
+  VolumeMountPath:
+    Type: String
+  
   CapacityReservationId:
     Type: String
     Description: Capacity reservation id for the unmanaged nodegroup
@@ -210,7 +213,7 @@ Resources:
       LaunchTemplateName: !Ref ResourceId
       LaunchTemplateData:
         BlockDeviceMappings:
-          - DeviceName: /dev/xvda
+          - DeviceName: !Ref VolumeMountPath
             Ebs:
               DeleteOnTermination: true
               VolumeSize: !Ref NodeDiskSize

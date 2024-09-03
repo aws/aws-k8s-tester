@@ -259,6 +259,11 @@ func (m *NodegroupManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure
 		subnetId = infra.subnetsPrivate[0]
 	}
 
+	volumeMountPath := "/dev/xvda"
+	if opts.UserDataFormat == "bottlerocket" {
+		volumeMountPath = "/dev/xvdb"
+	}
+
 	// pull the role name out of the ARN
 	nodeRoleArnParts := strings.Split(infra.nodeRole, "/")
 	nodeRoleName := nodeRoleArnParts[len(nodeRoleArnParts)-1]
@@ -286,6 +291,10 @@ func (m *NodegroupManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure
 			{
 				ParameterKey:   aws.String("UserDataIsMIMEPart"),
 				ParameterValue: aws.String(strconv.FormatBool(userDataIsMimePart)),
+			},
+			{
+				ParameterKey:   aws.String("VolumeMountPath"),
+				ParameterValue: aws.String(volumeMountPath),
 			},
 			{
 				ParameterKey:   aws.String("ClusterName"),
