@@ -31,9 +31,7 @@ var (
 	defaultInstanceTypes_x86_64 = []string{
 		"m6i.xlarge",
 		"m6i.large",
-		"m6a.large",
 		"m5.large",
-		"m5a.large",
 		"m4.large",
 	}
 
