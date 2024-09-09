@@ -75,7 +75,7 @@ func TestMain(m *testing.M) {
 			err := wait.For(conditions.New(config.Client().Resources()).DeploymentConditionMatch(&dep, appsv1.DeploymentAvailable, v1.ConditionTrue),
 				wait.WithContext(ctx))
 			if err != nil {
-				return ctx, err
+				return ctx, fmt.Errorf("failed to deploy mpi-operator: %v", err)
 			}
 			return ctx, nil
 		},
@@ -86,7 +86,7 @@ func TestMain(m *testing.M) {
 			err := wait.For(fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&ds),
 				wait.WithContext(ctx))
 			if err != nil {
-				return ctx, err
+				return ctx, fmt.Errorf("failed to deploy nvidia-device-plugin: %v", err)
 			}
 			return ctx, nil
 		},
@@ -110,7 +110,7 @@ func TestMain(m *testing.M) {
 				err = wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).DaemonSetReady(&ds),
 					wait.WithContext(ctx))
 				if err != nil {
-					return ctx, err
+					return ctx, fmt.Errorf("failed to deploy efa-device-plugin: %v", err)
 				}
 			}
 
