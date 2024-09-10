@@ -12,6 +12,7 @@ import (
 	"time"
 
 	fwext "github.com/aws/aws-k8s-tester/e2e2/internal/framework_extensions"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -95,23 +96,23 @@ func TestMain(m *testing.M) {
 			if err != nil {
 				return ctx, err
 			}
-			nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-			if err != nil {
-				return ctx, err
-			}
 			if *efaEnabled {
 				err := fwext.ApplyManifests(cfg.Client().RESTConfig(), efaDevicePluginManifest)
 				if err != nil {
 					return ctx, err
 				}
 				ds := appsv1.DaemonSet{
-					ObjectMeta: metav1.ObjectMeta{Name: "efa-device-plugin-daemonset", Namespace: "kube-system"},
+					ObjectMeta: metav1.ObjectMeta{Name: "aws-efa-k8s-device-plugin-daemonset", Namespace: "kube-system"},
 				}
 				err = wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).DaemonSetReady(&ds),
 					wait.WithContext(ctx))
 				if err != nil {
 					return ctx, fmt.Errorf("failed to deploy efa-device-plugin: %v", err)
 				}
+			}
+			nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+			if err != nil {
+				return ctx, err
 			}
 
 			singleNodeType := true
@@ -135,6 +136,7 @@ func TestMain(m *testing.M) {
 				}
 			} else {
 				log.Printf("No node type specified. Using the node type %s in the node groups.", nodes.Items[0].Labels["node.kubernetes.io/instance-type"])
+				nodeType = aws.String(nodes.Items[0].Labels["node.kubernetes.io/instance-type"])
 				nodeCount = len(nodes.Items)
 				gpu := nodes.Items[0].Status.Capacity["nvidia.com/gpu"]
 				gpuPerNode = int(gpu.Value())
