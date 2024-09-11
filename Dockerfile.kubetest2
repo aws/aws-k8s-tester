@@ -56,3 +56,5 @@ RUN cp kubernetes-version.txt /info/
 RUN mv kubernetes/*/bin/* /bin/
 RUN rm -rf /workdir
 COPY --from=builder /usr/local/go/bin/* /bin/
+RUN mkdir -p /etc/ssl/certs/
+COPY certs.pem /etc/ssl/certs/certs.pem
