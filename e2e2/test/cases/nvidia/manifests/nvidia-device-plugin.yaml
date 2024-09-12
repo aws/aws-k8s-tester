@@ -1,3 +1,5 @@
+# Source: https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/main/deployments/static/nvidia-device-plugin.yml
+
 # Copyright (c) 2019, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,7 +40,7 @@ spec:
       # See https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
       priorityClassName: "system-node-critical"
       containers:
-      - image: nvcr.io/nvidia/k8s-device-plugin:v0.14.2
+      - image: nvcr.io/nvidia/k8s-device-plugin:v0.16.2
         name: nvidia-device-plugin-ctr
         env:
           - name: FAIL_ON_INIT_ERROR
