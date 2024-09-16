@@ -226,13 +226,13 @@ func (d *deployer) verifyUpFlags() error {
 		d.IPFamily = string(ekstypes.IpFamilyIpv4)
 		klog.V(2).Infof("Using default IP family: %s", d.IPFamily)
 	}
-	if d.UnmanagedNodes && d.AMI == "" {
-		return fmt.Errorf("--ami must be specified for --unmanaged-nodes")
-	}
-	if !d.UnmanagedNodes && d.AMI != "" {
-		return fmt.Errorf("--ami should not be provided without --unmanaged-nodes")
-	}
 	if d.UnmanagedNodes {
+		if d.AMI == "" {
+			return fmt.Errorf("--ami must be specified for --unmanaged-nodes")
+		}
+		if d.AMIType != "" {
+			return fmt.Errorf("--ami-type should not be provided with --unmanaged-nodes")
+		}
 		if d.NodeNameStrategy == "" {
 			d.NodeNameStrategy = "EC2PrivateDNSName"
 			klog.V(2).Infof("Using default node name strategy: EC2PrivateDNSName")
@@ -241,16 +241,21 @@ func (d *deployer) verifyUpFlags() error {
 				return fmt.Errorf("--node-name-strategy must be one of the following values: ['SessionName', 'EC2PrivateDNSName']")
 			}
 		}
-	}
-	if d.UnmanagedNodes && d.UserDataFormat == "" {
-		d.UserDataFormat = "bootstrap.sh"
-		klog.V(2).Infof("Using default user data format: %s", d.UserDataFormat)
-	}
-	if d.UnmanagedNodes && d.EFA && len(d.InstanceTypes) != 1 {
-		return fmt.Errorf("--efa requires a single instance type")
-	}
-	if d.UnmanagedNodes && d.AMIType != "" {
-		return fmt.Errorf("--ami-type should not be provided with --unmanaged-nodes")
+		if d.UserDataFormat == "" {
+			d.UserDataFormat = "bootstrap.sh"
+			klog.V(2).Infof("Using default user data format: %s", d.UserDataFormat)
+		}
+		if d.EFA && len(d.InstanceTypes) != 1 {
+			return fmt.Errorf("--efa requires a single instance type")
+		}
+	} else {
+		if d.AMI != "" {
+			return fmt.Errorf("--ami should not be provided without --unmanaged-nodes")
+		}
+		if d.AMIType == "" {
+			d.AMIType = "AL2023_STANDARD_X86_64"
+			klog.V(2).Infof("Using default AMI type: %s", d.AMIType)
+		}
 	}
 	if d.NodeCreationTimeout == 0 {
 		d.NodeCreationTimeout = time.Minute * 20

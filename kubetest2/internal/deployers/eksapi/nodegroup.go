@@ -31,9 +31,7 @@ var (
 	defaultInstanceTypes_x86_64 = []string{
 		"m6i.xlarge",
 		"m6i.large",
-		"m6a.large",
 		"m5.large",
-		"m5a.large",
 		"m4.large",
 	}
 
@@ -44,6 +42,18 @@ var (
 		"m6g.large",
 		"t4g.xlarge",
 		"t4g.large",
+	}
+
+	defaultInstanceTypesByEC2ArchitectureValues = map[ec2types.ArchitectureValues][]string{
+		ec2types.ArchitectureValuesX8664: defaultInstanceTypes_x86_64,
+		ec2types.ArchitectureValuesArm64: defaultInstanceTypes_arm64,
+	}
+
+	defaultInstanceTypesByEKSAMITypes = map[ekstypes.AMITypes][]string{
+		ekstypes.AMITypesAl2X8664:            defaultInstanceTypes_x86_64,
+		ekstypes.AMITypesAl2Arm64:            defaultInstanceTypes_arm64,
+		ekstypes.AMITypesAl2023X8664Standard: defaultInstanceTypes_x86_64,
+		ekstypes.AMITypesAl2023Arm64Standard: defaultInstanceTypes_arm64,
 	}
 )
 
@@ -68,14 +78,11 @@ func (m *NodegroupManager) createNodegroup(infra *Infrastructure, cluster *Clust
 				return fmt.Errorf("failed to describe AMI when populating default instance types: %s: %v", opts.AMI, err)
 			} else {
 				amiArch := out.Images[0].Architecture
-				switch out.Images[0].Architecture {
-				case ec2types.ArchitectureValuesX8664:
-					opts.InstanceTypes = defaultInstanceTypes_x86_64
-				case ec2types.ArchitectureValuesArm64:
-					opts.InstanceTypes = defaultInstanceTypes_arm64
-				default:
-					return fmt.Errorf("no default instance types known for AMI architecture: %v", out.Images[0].Architecture)
+				defaultInstanceTypes, ok := defaultInstanceTypesByEC2ArchitectureValues[amiArch]
+				if !ok {
+					return fmt.Errorf("no default instance types known for AMI architecture: %v", amiArch)
 				}
+				opts.InstanceTypes = defaultInstanceTypes
 				klog.V(2).Infof("Using default instance types for AMI architecture: %v: %v", amiArch, opts.InstanceTypes)
 			}
 		}
@@ -102,12 +109,18 @@ func (m *NodegroupManager) createManagedNodegroup(infra *Infrastructure, cluster
 			MaxSize:     aws.Int32(int32(opts.Nodes)),
 			DesiredSize: aws.Int32(int32(opts.Nodes)),
 		},
-	}
-	if opts.AMIType != "" {
-		input.AmiType = ekstypes.AMITypes(opts.AMIType)
+		AmiType: ekstypes.AMITypes(opts.AMIType),
 	}
 	if len(opts.InstanceTypes) > 0 {
 		input.InstanceTypes = opts.InstanceTypes
+	} else {
+		// managed nodegroups uses a t3.medium by default at the time of writing
+		// this only supports 17 pods, which can cause some flakes in the k8s e2e suite
+		defaultInstanceTypes, ok := defaultInstanceTypesByEKSAMITypes[input.AmiType]
+		if !ok {
+			return fmt.Errorf("no default instance types known for AmiType: %v", input.AmiType)
+		}
+		input.InstanceTypes = defaultInstanceTypes
 	}
 	out, err := m.clients.EKS().CreateNodegroup(context.TODO(), &input)
 	if err != nil {
