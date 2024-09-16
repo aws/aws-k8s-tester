@@ -39,6 +39,12 @@ Parameters:
   ResourceId:
     Type: String
 
+  Subnet01AZ:
+    Type: String
+  
+  Subnet02AZ:
+    Type: String
+
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -275,10 +281,7 @@ Resources:
     DependsOn: IPv6CidrBlock
     Properties:
       AvailabilityZone:
-        Fn::Select:
-          - "0"
-          - Fn::GetAZs:
-              Ref: AWS::Region
+        Ref: Subnet01AZ
       CidrBlock:
         Ref: PublicSubnet01Block
       Ipv6CidrBlock:
@@ -298,10 +301,7 @@ Resources:
     DependsOn: IPv6CidrBlock
     Properties:
       AvailabilityZone:
-        Fn::Select:
-          - "1"
-          - Fn::GetAZs:
-              Ref: AWS::Region
+        Ref: Subnet02AZ
       CidrBlock:
         Ref: PublicSubnet02Block
       Ipv6CidrBlock:
@@ -343,10 +343,7 @@ Resources:
     DependsOn: IPv6CidrBlock
     Properties:
       AvailabilityZone:
-        Fn::Select:
-          - "0"
-          - Fn::GetAZs:
-              Ref: AWS::Region
+        Ref: Subnet01AZ
       CidrBlock:
         Ref: PrivateSubnet01Block
       Ipv6CidrBlock:
@@ -365,10 +362,7 @@ Resources:
     DependsOn: IPv6CidrBlock
     Properties:
       AvailabilityZone:
-        Fn::Select:
-          - "1"
-          - Fn::GetAZs:
-              Ref: AWS::Region
+        Ref: Subnet02AZ
       CidrBlock:
         Ref: PrivateSubnet02Block
       Ipv6CidrBlock:
