@@ -41,7 +41,6 @@ type UserDataTemplateData struct {
 	CertificateAuthority string
 	CIDR                 string
 	APIServerEndpoint    string
-	EFAEnabled           bool
 }
 
 var (

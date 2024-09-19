@@ -19,8 +19,9 @@ import (
 )
 
 var (
-	testenv         env.Environment
-	neuronTestImage *string
+	testenv             env.Environment
+	neuronTestImage     *string
+	installDevicePlugin *bool
 )
 
 var (
@@ -30,8 +31,21 @@ var (
 	neuronDevicePluginManifest []byte
 )
 
+func deployNvidiaDevicePlugin(ctx context.Context, config *envconf.Config) (context.Context, error) {
+	ds := appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{Name: "neuron-device-plugin-daemonset", Namespace: "kube-system"},
+	}
+	err := wait.For(fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&ds),
+		wait.WithContext(ctx))
+	if err != nil {
+		return ctx, err
+	}
+	return ctx, nil
+}
+
 func TestMain(m *testing.M) {
 	neuronTestImage = flag.String("neuronTestImage", "", "image for neuron single node test")
+	installDevicePlugin = flag.Bool("installDevicePlugin", true, "install neuron device plugin")
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
 		log.Fatalf("failed to initialize test environment: %v", err)
@@ -41,12 +55,8 @@ func TestMain(m *testing.M) {
 	defer cancel()
 	testenv = testenv.WithContext(ctx)
 
-	manifests := [][]byte{
-		neuronDevicePluginManifest,
-		neuronDevicePlugiRbacManifest,
-	}
-
-	testenv.Setup(
+	var manifests [][]byte
+	setUpFunctions := []env.Func{
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 			err := fwext.ApplyManifests(config.Client().RESTConfig(), manifests...)
 			if err != nil {
@@ -54,18 +64,14 @@ func TestMain(m *testing.M) {
 			}
 			return ctx, nil
 		},
-		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			ds := appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{Name: "neuron-device-plugin-daemonset", Namespace: "kube-system"},
-			}
-			err := wait.For(fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&ds),
-				wait.WithContext(ctx))
-			if err != nil {
-				return ctx, err
-			}
-			return ctx, nil
-		},
-	)
+	}
+
+	if *installDevicePlugin {
+		manifests = append(manifests, neuronDevicePluginManifest, neuronDevicePlugiRbacManifest)
+		setUpFunctions = append(setUpFunctions, deployNvidiaDevicePlugin)
+	}
+
+	testenv.Setup(setUpFunctions...)
 
 	testenv.Finish(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
