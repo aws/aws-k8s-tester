@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"fmt"
 	"regexp"
+	"strconv"
 	"testing"
 
 	fwext "github.com/aws/aws-k8s-tester/e2e2/internal/framework_extensions"
@@ -85,6 +86,7 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 
 	multiNode := features.New("multi-node").
 		WithLabel("suite", "nvidia").
+		WithLabel("suite", "nccl").
 		WithLabel("hardware", "gpu").
 		WithLabel("hardware", "efa").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -137,6 +139,16 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 					t.Fatalf("GPU Direct RDMA is not utilized for inter-node communication in NCCL tests on instances that support GDRDMA: %s", *nodeType)
 				}
 			}
+
+			// emit metrics
+			if ampMetricUrl != nil && *ampMetricUrl != "" {
+				t.Log("Emitting nccl test metrics to AMP")
+				busBandwidth, err := getNcclTestBusBandwidth(log)
+				err = metricManager.PushMetricsToAMP("nccl_average_bandwidth_gbps", "Average NCCL bandwidth in Gigabytes per second.", busBandwidth)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -159,4 +171,27 @@ func mpiJobSucceeded(obj k8s.Object) bool {
 		}
 	}
 	return false
+}
+
+// getNcclTestBusBandwidth extracts the bus bandwidth value from the given log string and returns it as a float64
+func getNcclTestBusBandwidth(log string) (float64, error) {
+	// Define the regular expression to match the bus bandwidth number
+	re := regexp.MustCompile(`# Avg bus bandwidth\s*:\s*([0-9.]+)`)
+
+	// Find the first match
+	match := re.FindStringSubmatch(log)
+
+	// Check if a match is found
+	if len(match) < 2 {
+		return 0, fmt.Errorf("no bandwidth value found in the log")
+	}
+
+	// Convert the extracted string to a float64
+	bandwidth, err := strconv.ParseFloat(match[1], 64)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse bandwidth value: %v", err)
+	}
+
+	// Return the extracted and parsed float64 value
+	return bandwidth, nil
 }
