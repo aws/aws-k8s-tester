@@ -31,7 +31,7 @@ var (
 	neuronDevicePluginManifest []byte
 )
 
-func deployNvidiaDevicePlugin(ctx context.Context, config *envconf.Config) (context.Context, error) {
+func deployNeuronDevicePlugin(ctx context.Context, config *envconf.Config) (context.Context, error) {
 	ds := appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{Name: "neuron-device-plugin-daemonset", Namespace: "kube-system"},
 	}
