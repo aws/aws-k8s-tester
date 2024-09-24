@@ -68,7 +68,7 @@ func TestMain(m *testing.M) {
 
 	if *installDevicePlugin {
 		manifests = append(manifests, neuronDevicePluginManifest, neuronDevicePlugiRbacManifest)
-		setUpFunctions = append(setUpFunctions, deployNvidiaDevicePlugin)
+		setUpFunctions = append(setUpFunctions, deployNeuronDevicePlugin)
 	}
 
 	testenv.Setup(setUpFunctions...)
