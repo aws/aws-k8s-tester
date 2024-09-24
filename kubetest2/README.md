@@ -63,6 +63,7 @@ kubetest2 \
 - `--region` - AWS region
 - `--endpoint-url` - Override the EKS endpoint URL
 - `--cluster-role-service-principal` - Additional service principal that can assume the cluster IAM role.
+- `--capacity-reservation` - Use capacity reservation for the unmanaged nodegroup. `--efa` must be set when using this flag
 
 ---
 

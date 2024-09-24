@@ -1,10 +1,15 @@
 # Start with the NVIDIA CUDA base image
 FROM nvidia/cuda:12.5.0-devel-ubuntu22.04
 
-ARG EFA_INSTALLER_VERSION=latest
+# Add ENV to make ARG values available at runtime
+ARG EFA_INSTALLER_VERSION=1.34.0
+ARG NCCL_VERSION=2.18.5
 # 1.7.4+ is required, to enforce proper EFA function with OFI_NCCL_DISABLE_GDR_REQUIRED_CHECK=0
 ARG AWS_OFI_NCCL_VERSION=1.9.1
 ARG NCCL_TESTS_VERSION=master
+ENV EFA_INSTALLER_VERSION=${EFA_INSTALLER_VERSION}
+ENV NCCL_VERSION=${NCCL_VERSION}
+ENV AWS_OFI_NCCL_VERSION=${AWS_OFI_NCCL_VERSION}
 
 # Install necessary dependencies
 RUN apt-get update -y
@@ -68,7 +73,7 @@ RUN cd $HOME \
 RUN apt-key del 7fa2af80 \
     && curl -L -O https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-keyring_1.0-1_all.deb \
     && dpkg -i cuda-keyring_1.0-1_all.deb \
-    && sudo apt install libnccl2=2.18.5-1+cuda12.2 libnccl-dev=2.18.5-1+cuda12.2
+    && sudo apt install libnccl2=${NCCL_VERSION}-1+cuda12.2 libnccl-dev=${NCCL_VERSION}-1+cuda12.2
 
 ## Install AWS-OFI-NCCL plugin
 RUN export OPAL_PREFIX="" \
@@ -77,9 +82,9 @@ RUN export OPAL_PREFIX="" \
     && git checkout v${AWS_OFI_NCCL_VERSION}-aws \
     && ./autogen.sh \
     && ./configure --prefix=/opt/aws-ofi-nccl/install \
-       --with-libfabric=/opt/amazon/efa/ \
-       --with-cuda=/usr/local/cuda \
-       --with-mpi=/opt/amazon/openmpi/ \
+        --with-libfabric=/opt/amazon/efa/ \
+        --with-cuda=/usr/local/cuda \
+        --with-mpi=/opt/amazon/openmpi/ \
     && make && make install
     
 # Install NCCL Tests
@@ -87,8 +92,8 @@ RUN git clone https://github.com/NVIDIA/nccl-tests.git /opt/nccl-tests \
     && cd /opt/nccl-tests \
     && git checkout ${NCCL_TESTS_VERSION} \
     && make MPI=1 \
-       MPI_HOME=/opt/amazon/openmpi/ \
-       CUDA_HOME=/usr/local/cuda 
+        MPI_HOME=/opt/amazon/openmpi/ \
+        CUDA_HOME=/usr/local/cuda 
 
 
 # Set a default command for debugging or modify as per requirements
@@ -98,3 +103,12 @@ ENV LD_PRELOAD /usr/lib/x86_64-linux-gnu/libnccl.so:$LD_PRELOAD
 
 COPY e2e2/test/images/nvidia/gpu_unit_tests ./gpu_unit_tests
 RUN chmod +x ./gpu_unit_tests/unit_test
+
+# Print the values of EFA_INSTALLER_VERSION and NCCL_VERSION
+ENTRYPOINT ["/bin/bash", "-c", "echo \"EFA Installer Version: $EFA_INSTALLER_VERSION\" && \
+    echo \"NCCL Version: $NCCL_VERSION\" && \
+    echo \"AWS OFI NCCL Version: $AWS_OFI_NCCL_VERSION\" && \
+    printf \"NVIDIA Driver Version: \" && \
+    nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -n 1"]
+
+

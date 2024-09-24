@@ -12,6 +12,8 @@ import (
 	"time"
 
 	fwext "github.com/aws/aws-k8s-tester/e2e2/internal/framework_extensions"
+	"github.com/aws/aws-k8s-tester/e2e2/internal/metric"
+	"github.com/aws/aws-k8s-tester/e2e2/internal/utils"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -25,13 +27,18 @@ import (
 
 var (
 	testenv             env.Environment
-	nodeType            *string
+	awsCfg              aws.Config
+	metricManager       *metric.MetricManager
 	installDevicePlugin *bool
+	nodeType            *string
 	efaEnabled          *bool
 	nvidiaTestImage     *string
 	nodeCount           int
 	gpuPerNode          int
 	efaPerNode          int
+	ampMetricUrl        *string
+	ampMetricRoleArn    *string
+	ampRegion           *string
 )
 
 var (
@@ -129,14 +136,27 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 	return ctx, nil
 }
 
+func createMetricManager(ctx context.Context, config *envconf.Config) (context.Context, error) {
+	log.Printf("AMP url is set to %s", *ampMetricUrl)
+	metricManager = metric.NewMetricManager(awsCfg, *ampMetricUrl, *ampMetricRoleArn, *ampRegion)
+	return ctx, nil
+}
+
 func TestMain(m *testing.M) {
 	nodeType = flag.String("nodeType", "", "node type for the tests")
 	nvidiaTestImage = flag.String("nvidiaTestImage", "", "nccl test image for nccl tests")
 	efaEnabled = flag.Bool("efaEnabled", false, "enable efa tests")
 	installDevicePlugin = flag.Bool("installDevicePlugin", true, "install nvidia device plugin")
+	ampMetricUrl = flag.String("ampMetricUrl", "", "amp metric url, if set, test will emit metric to the amp")
+	ampMetricRoleArn = flag.String("ampMetricRoleArn", "", "amp metric role arn, if not set, default role will be used")
+	ampRegion = flag.String("ampRegion", "us-west-2", "amp metric region, if not set us-west-2 will be used")
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
 		log.Fatalf("failed to initialize test environment: %v", err)
+	}
+	awsCfg, err = utils.NewConfig()
+	if err != nil {
+		log.Fatalf("failed to load aws config: %v", err)
 	}
 	testenv = env.NewWithConfig(cfg)
 	ctx, cancel := context.WithTimeout(context.Background(), 55*time.Minute)
@@ -166,6 +186,9 @@ func TestMain(m *testing.M) {
 
 	if *efaEnabled {
 		setUpFunctions = append(setUpFunctions, deployEFAPlugin)
+	}
+	if ampMetricUrl != nil && *ampMetricUrl != "" {
+		setUpFunctions = append(setUpFunctions, createMetricManager)
 	}
 
 	testenv.Setup(setUpFunctions...)
