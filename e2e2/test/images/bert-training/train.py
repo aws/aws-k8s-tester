@@ -57,6 +57,7 @@ def mask_tokens(inputs, tokenizer, mlm_probability):
 def setup(rank, world_size, local_rank):
     master_addr = os.environ["MASTER_ADDR"]
     master_port = os.environ["MASTER_PORT"]
+    print(f"For rank {rank} - MASTER_PORT={master_port} & MASTER_ADDR={master_addr}")
     dist.init_process_group(
         "nccl",
         init_method=f"tcp://{master_addr}:{master_port}",
@@ -84,6 +85,8 @@ def train_bert(rank, world_size, local_rank, model, tokenizer):
     criterion = torch.nn.CrossEntropyLoss()
 
     start_time = time.time()
+
+    print(f"starting training for rank: {rank}")
 
     for epoch in range(1):  # Short run for testing
         ddp_model.train()
