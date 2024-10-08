@@ -41,7 +41,8 @@ RUN apt install -y \
   cmake \
   apt-utils \
   libhwloc-dev \
-  cuda-demo-suite-${CUDA_MAJOR_VERSION}-${CUDA_MINOR_VERSION}
+  cuda-demo-suite-${CUDA_MAJOR_VERSION}-${CUDA_MINOR_VERSION} \
+  datacenter-gpu-manager
 
 RUN mkdir -p /var/run/sshd \
   && sed -i 's/[ #]\(.*StrictHostKeyChecking \).*/ \1no/g' /etc/ssh/ssh_config \

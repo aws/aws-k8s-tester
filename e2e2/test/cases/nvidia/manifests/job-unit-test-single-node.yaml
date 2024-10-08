@@ -21,6 +21,7 @@ spec:
           limits:
             cpu: "4"
             memory: 4Gi
+            nvidia.com/gpu: {{.GpuPerNode}}
           requests:
             cpu: "1"
             memory: 1Gi

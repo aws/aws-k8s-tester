@@ -1,0 +1,2 @@
+name, pci.bus_id, persistence_mode
+NVIDIA A10G, 00000000:00:1E.0, Enabled
