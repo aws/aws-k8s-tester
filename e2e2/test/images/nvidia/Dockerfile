@@ -4,7 +4,7 @@ ARG CUDA_MAJOR_VERSION=12
 ARG CUDA_MINOR_VERSION=5
 
 # Start with the NVIDIA CUDA base image
-FROM nvidia/cuda:${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION}.1-devel-ubuntu${UBUNTU_MAJOR_VERSION}.04
+FROM nvidia/cuda:$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION.1-devel-ubuntu$UBUNTU_MAJOR_VERSION.04
 
 ARG UBUNTU_MAJOR_VERSION
 ARG CUDA_MAJOR_VERSION
@@ -41,7 +41,7 @@ RUN apt install -y \
   cmake \
   apt-utils \
   libhwloc-dev \
-  cuda-demo-suite-${CUDA_MAJOR_VERSION}-${CUDA_MINOR_VERSION} \
+  cuda-demo-suite-$CUDA_MAJOR_VERSION-$CUDA_MINOR_VERSION \
   datacenter-gpu-manager
 
 RUN mkdir -p /var/run/sshd \
@@ -55,24 +55,24 @@ ENV PATH /usr/local/cuda/bin:/opt/amazon/openmpi/bin:/opt/amazon/efa/bin:/usr/sb
 # Install EFA
 ARG EFA_INSTALLER_VERSION=latest
 RUN cd /tmp \
-  && curl -sL https://efa-installer.amazonaws.com/aws-efa-installer-${EFA_INSTALLER_VERSION}.tar.gz | tar xvz \
+  && curl -sL https://efa-installer.amazonaws.com/aws-efa-installer-$EFA_INSTALLER_VERSION.tar.gz | tar xvz \
   && cd aws-efa-installer \
   && ./efa_installer.sh --yes --enable-gdr --skip-kmod --skip-limit-conf --no-verify --mpi openmpi5 \
   && rm -rf /tmp/* \
     /var/lib/apt/lists/*
 
 # Install NCCL
-ARG NCCL_VERSION=2.22.3-1+cuda${CUDA_MAJOR_VERSION}.${CUDA_MINOR_VERSION}
+ARG NCCL_VERSION=2.22.3-1+cuda12.5
 RUN apt update \
   && apt install -y \
-    libnccl2=${NCCL_VERSION}  \
-    libnccl-dev=${NCCL_VERSION}
+    libnccl2=$NCCL_VERSION  \
+    libnccl-dev=$NCCL_VERSION
 
 # Install AWS-OFI-NCCL plugin
 ARG AWS_OFI_NCCL_VERSION=1.11.0-aws
 RUN cd tmp \
-  && curl -sL https://github.com/aws/aws-ofi-nccl/releases/download/v${AWS_OFI_NCCL_VERSION}/aws-ofi-nccl-${AWS_OFI_NCCL_VERSION}.tar.gz | tar xvz \
-  && cd aws-ofi-nccl-${AWS_OFI_NCCL_VERSION} \
+  && curl -sL https://github.com/aws/aws-ofi-nccl/releases/download/v$AWS_OFI_NCCL_VERSION/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION.tar.gz | tar xvz \
+  && cd aws-ofi-nccl-$AWS_OFI_NCCL_VERSION \
   && ./configure --prefix=/opt/aws-ofi-nccl/install \
     --with-mpi=/opt/amazon/openmpi \
     --with-libfabric=/opt/amazon/efa \
@@ -85,8 +85,8 @@ RUN cd tmp \
 # Install NCCL Tests
 ARG NCCL_TESTS_VERSION=2.13.10
 RUN cd /tmp \
-  && curl -sL https://github.com/NVIDIA/nccl-tests/archive/refs/tags/v${NCCL_TESTS_VERSION}.tar.gz | tar xvz \
-  && cd nccl-tests-${NCCL_TESTS_VERSION} \
+  && curl -sL https://github.com/NVIDIA/nccl-tests/archive/refs/tags/v$NCCL_TESTS_VERSION.tar.gz | tar xvz \
+  && cd nccl-tests-$NCCL_TESTS_VERSION \
   && make MPI=1 \
     MPI_HOME=/opt/amazon/openmpi5/ \
     CUDA_HOME=/usr/local/cuda \

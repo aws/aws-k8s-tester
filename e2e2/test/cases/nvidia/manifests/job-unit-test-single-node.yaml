@@ -16,6 +16,9 @@ spec:
         command: 
         - /bin/bash
         - ./gpu_unit_tests/unit_test
+        env:
+            - name: SKIP_TESTS_SUBCOMMAND
+              value: {{.SkipTestCommand}}
         imagePullPolicy: Always
         resources:
           limits:

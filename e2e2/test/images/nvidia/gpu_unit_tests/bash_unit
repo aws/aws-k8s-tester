@@ -286,6 +286,9 @@ run_tests() {
       declare -F | "$GREP" ' setup$' >/dev/null && setup
       __bash_unit_test_skipped__=$(mktemp)
       trap "$RM  -f \"$stdout\" \"$stderr\"" EXIT
+      if [[ -n "$skip_pattern" && ("$test" =~ $skip_pattern) ]]; then
+        skip "$test as specified in skip pattern: $skip_pattern"
+      fi
       (__bash_unit_current_test__="$test" run_test) || status=$?
       test -s $__bash_unit_test_skipped__ && status=0
       declare -F | "$GREP" ' teardown$' >/dev/null && teardown
@@ -311,9 +314,10 @@ run_teardown_suite() {
 
 usage() {
   echo "$1" >&2
-  echo "$0 [-f <output format>] [-p <pattern1>] [-p <pattern2>] [-r] ... <test_file1> <test_file2> ..." >&2
+  echo "$0 [-f <output format>] [-p <pattern1>] [-p <pattern2>] [-s <skip_pattern>] [-r] ... <test_file1> <test_file2> ..." >&2
   echo >&2
   echo "Runs tests in test files that match <pattern>s" >&2
+  echo "Skip tests in test files that match <skip_pattern>s" >&2
   echo "<output format> is optional only supported value is tap" >&2
   echo "-r to execute test cases in random order" >&2
   echo "-v to get current version information" >&2
@@ -533,14 +537,19 @@ tap_format() {
 
 output_format=text
 test_pattern=""
+skip_pattern=""
 trace_file=""
 separator=""
 randomise=0
-while getopts "vp:t:f:r" option
+while getopts "vp:t:f:r:s" option
 do
   case "$option" in
     p)
       test_pattern="${test_pattern}${separator}${OPTARG}"
+      separator="|"
+      ;;
+    s)
+      skip_pattern="${skip_pattern}${separator}${OPTARG}"
       separator="|"
       ;;
     t)
