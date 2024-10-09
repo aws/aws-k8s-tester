@@ -18,7 +18,7 @@ spec:
         - ./gpu_unit_tests/unit_test
         env:
             - name: SKIP_TESTS_SUBCOMMAND
-              value: {{.SkipTestCommand}}
+              value: {{.SkipTestSubcommand}}
         imagePullPolicy: Always
         resources:
           limits:
