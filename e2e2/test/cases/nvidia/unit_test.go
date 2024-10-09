@@ -25,7 +25,9 @@ var (
 )
 
 type unitTestManifestTplVars struct {
-	NvidiaTestImage string
+	NvidiaTestImage    string
+	SkipTestSubcommand string
+	GpuPerNode         int
 }
 
 type hpcTestManifestTplVars struct {
@@ -42,7 +44,9 @@ func TestSingleNodeUnitTest(t *testing.T) {
 			}
 			var err error
 			renderedJobUnitTestSingleNodeManifest, err = fwext.RenderManifests(jobUnitTestSingleNodeManifest, unitTestManifestTplVars{
-				NvidiaTestImage: *nvidiaTestImage,
+				NvidiaTestImage:    *nvidiaTestImage,
+				SkipTestSubcommand: *skipUnitTestSubcommand,
+				GpuPerNode:         gpuPerNode,
 			})
 			if err != nil {
 				t.Fatal(err)

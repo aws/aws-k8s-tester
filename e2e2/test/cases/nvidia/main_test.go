@@ -24,14 +24,15 @@ import (
 )
 
 var (
-	testenv             env.Environment
-	nodeType            *string
-	installDevicePlugin *bool
-	efaEnabled          *bool
-	nvidiaTestImage     *string
-	nodeCount           int
-	gpuPerNode          int
-	efaPerNode          int
+	testenv                env.Environment
+	nodeType               *string
+	installDevicePlugin    *bool
+	efaEnabled             *bool
+	nvidiaTestImage        *string
+	skipUnitTestSubcommand *string
+	nodeCount              int
+	gpuPerNode             int
+	efaPerNode             int
 )
 
 var (
@@ -134,6 +135,7 @@ func TestMain(m *testing.M) {
 	nvidiaTestImage = flag.String("nvidiaTestImage", "", "nccl test image for nccl tests")
 	efaEnabled = flag.Bool("efaEnabled", false, "enable efa tests")
 	installDevicePlugin = flag.Bool("installDevicePlugin", true, "install nvidia device plugin")
+	skipUnitTestSubcommand = flag.String("skipUnitTestSubcommand", "", "optional command to skip specified unit test, `-s test1|test2|...`")
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
 		log.Fatalf("failed to initialize test environment: %v", err)
