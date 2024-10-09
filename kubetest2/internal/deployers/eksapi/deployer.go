@@ -16,6 +16,7 @@ import (
 	"github.com/octago/sflags/gen/gpflag"
 	"github.com/spf13/pflag"
 	"golang.org/x/exp/slices"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 	"sigs.k8s.io/kubetest2/pkg/types"
 )
@@ -41,11 +42,14 @@ type deployer struct {
 	clusterManager   *ClusterManager
 	addonManager     *AddonManager
 	nodegroupManager *NodegroupManager
+	logManager       *logManager
 
 	awsClients *awsClients
 
 	infra   *Infrastructure
 	cluster *Cluster
+
+	k8sClient *kubernetes.Clientset
 
 	initTime time.Time
 }
@@ -65,6 +69,7 @@ type deployerOptions struct {
 	IPFamily                    string        `flag:"ip-family" desc:"IP family for the cluster (ipv4 or ipv6)"`
 	KubeconfigPath              string        `flag:"kubeconfig" desc:"Path to kubeconfig"`
 	KubernetesVersion           string        `flag:"kubernetes-version" desc:"cluster Kubernetes version"`
+	LogBucket                   string        `flag:"log-bucket" desc:"S3 bucket for storing logs for each run. If empty, logs will not be stored."`
 	NodeCreationTimeout         time.Duration `flag:"node-creation-timeout" desc:"Time to wait for nodes to be created/launched. This should consider instance availability."`
 	NodeReadyTimeout            time.Duration `flag:"node-ready-timeout" desc:"Time to wait for all nodes to become ready"`
 	Nodes                       int           `flag:"nodes" desc:"number of nodes to launch in cluster"`
@@ -117,6 +122,7 @@ func (d *deployer) Init() error {
 	d.clusterManager = NewClusterManager(d.awsClients, resourceID)
 	d.addonManager = NewAddonManager(d.awsClients)
 	d.nodegroupManager = NewNodegroupManager(d.awsClients, resourceID)
+	d.logManager = NewLogManager(d.awsClients, resourceID)
 	return nil
 }
 
@@ -171,12 +177,12 @@ func (d *deployer) Up() error {
 	if err != nil {
 		return err
 	}
-	k8sClient, err := newKubernetesClient(kubeconfig)
+	d.k8sClient, err = newKubernetesClient(kubeconfig)
 	if err != nil {
 		return err
 	}
 	if d.UnmanagedNodes {
-		if err := createAWSAuthConfigMap(k8sClient, d.NodeNameStrategy, d.infra.nodeRole); err != nil {
+		if err := createAWSAuthConfigMap(d.k8sClient, d.NodeNameStrategy, d.infra.nodeRole); err != nil {
 			return err
 		}
 	}
@@ -187,20 +193,24 @@ func (d *deployer) Up() error {
 		return err
 	}
 	if d.deployerOptions.TuneVPCCNI {
-		if err := tuneVPCCNI(k8sClient); err != nil {
+		if err := tuneVPCCNI(d.k8sClient); err != nil {
 			return err
 		}
 	}
 	if err := d.nodegroupManager.createNodegroup(d.infra, d.cluster, &d.deployerOptions); err != nil {
 		return err
 	}
-	if err := waitForReadyNodes(k8sClient, d.Nodes, d.NodeReadyTimeout); err != nil {
+	if err := waitForReadyNodes(d.k8sClient, d.Nodes, d.NodeReadyTimeout); err != nil {
 		return err
 	}
 	if d.EmitMetrics {
-		if err := emitNodeMetrics(d.metrics, k8sClient, d.awsClients.EC2()); err != nil {
+		if err := emitNodeMetrics(d.metrics, d.k8sClient, d.awsClients.EC2()); err != nil {
 			return err
 		}
+	}
+	if err := d.logManager.gatherLogsFromNodes(d.k8sClient, &d.deployerOptions, deployerPhaseUp); err != nil {
+		klog.Warningf("failed to gather logs from nodes: %v", err)
+		// don't return err, this isn't critical
 	}
 	return nil
 }
@@ -220,11 +230,11 @@ func (d *deployer) verifyUpFlags() error {
 	}
 	if d.Nodes == 0 {
 		d.Nodes = 3
-		klog.V(2).Infof("Using default number of nodes: %d", d.Nodes)
+		klog.Infof("Using default number of nodes: %d", d.Nodes)
 	}
 	if d.IPFamily == "" {
 		d.IPFamily = string(ekstypes.IpFamilyIpv4)
-		klog.V(2).Infof("Using default IP family: %s", d.IPFamily)
+		klog.Infof("Using default IP family: %s", d.IPFamily)
 	}
 	if d.UnmanagedNodes {
 		if d.AMI == "" {
@@ -235,7 +245,7 @@ func (d *deployer) verifyUpFlags() error {
 		}
 		if d.NodeNameStrategy == "" {
 			d.NodeNameStrategy = "EC2PrivateDNSName"
-			klog.V(2).Infof("Using default node name strategy: EC2PrivateDNSName")
+			klog.Infof("Using default node name strategy: EC2PrivateDNSName")
 		} else {
 			if !slices.Contains(SupportedNodeNameStrategy, d.NodeNameStrategy) {
 				return fmt.Errorf("--node-name-strategy must be one of the following values: ['SessionName', 'EC2PrivateDNSName']")
@@ -243,7 +253,7 @@ func (d *deployer) verifyUpFlags() error {
 		}
 		if d.UserDataFormat == "" {
 			d.UserDataFormat = "bootstrap.sh"
-			klog.V(2).Infof("Using default user data format: %s", d.UserDataFormat)
+			klog.Infof("Using default user data format: %s", d.UserDataFormat)
 		}
 		if d.EFA && len(d.InstanceTypes) != 1 {
 			return fmt.Errorf("--efa requires a single instance type")
@@ -253,8 +263,8 @@ func (d *deployer) verifyUpFlags() error {
 			return fmt.Errorf("--ami should not be provided without --unmanaged-nodes")
 		}
 		if d.AMIType == "" {
-			d.AMIType = "AL2023_STANDARD_X86_64"
-			klog.V(2).Infof("Using default AMI type: %s", d.AMIType)
+			d.AMIType = "AL2023_x86_64_STANDARD"
+			klog.Infof("Using default AMI type: %s", d.AMIType)
 		}
 	}
 	if d.NodeCreationTimeout == 0 {
@@ -283,6 +293,10 @@ func (d *deployer) IsUp() (up bool, err error) {
 }
 
 func (d *deployer) Down() error {
+	if err := d.logManager.gatherLogsFromNodes(d.k8sClient, &d.deployerOptions, deployerPhaseDown); err != nil {
+		klog.Warningf("failed to gather logs from nodes: %v", err)
+		// don't return err, this isn't critical
+	}
 	return deleteResources(d.infraManager, d.clusterManager, d.nodegroupManager)
 }
 
