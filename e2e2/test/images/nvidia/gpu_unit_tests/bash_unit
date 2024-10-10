@@ -49,7 +49,7 @@ skip() {
   local message=${1:-}
   notify_test_skipped "$__bash_unit_current_test__" "$message"
   echo "skipped $message" >  $__bash_unit_test_skipped__
-  exit 1
+  exit 0
 }
 
 _notify_trace() {

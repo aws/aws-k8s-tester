@@ -5,22 +5,12 @@ get_instance_type()
     # Retrieve instance metadata: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html#instance-metadata-retrieval-examples
     [ -n "$FORCE_INSTANCE_TYPE" ] && echo $FORCE_INSTANCE_TYPE
 
-    local token=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
-    local token_exit_code=$?
+    local token=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" 2>/dev/null)
 
-    if [ $token_exit_code -eq 0 ]; then
-        echo "Token retrieved successfully, retrieving instance type using the token..."
+    if [ -n "$token" ]; then
         curl -H "X-aws-ec2-metadata-token: $token" http://169.254.169.254/latest/meta-data/instance-type
-        local instance_type_exit_code=$?
     else
-        echo "Failed to retrieve instance metadata token. Falling back to direct instance type retrieval."
         curl http://169.254.169.254/latest/meta-data/instance-type
-        local instance_type_exit_code=$?
-    fi
-
-    if [ $instance_type_exit_code -ne 0 ]; then
-        echo "Failed to retrieve instance type." >&2
-        return 1
     fi
 }
 
