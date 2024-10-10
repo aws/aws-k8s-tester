@@ -541,7 +541,7 @@ skip_pattern=""
 trace_file=""
 separator=""
 randomise=0
-while getopts "vp:t:f:r:s" option
+while getopts "vp:t:f:r:s:" option
 do
   case "$option" in
     p)
