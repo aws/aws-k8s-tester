@@ -62,11 +62,10 @@ RUN cd /tmp \
     /var/lib/apt/lists/*
 
 # Install NCCL
-ARG NCCL_VERSION=2.22.3-1+cuda12.5
 RUN apt update \
   && apt install -y \
-    libnccl2=$NCCL_VERSION  \
-    libnccl-dev=$NCCL_VERSION
+    libnccl2=2.22.3-1+cuda12.5  \
+    libnccl-dev=2.22.3-1+cuda12.5
 
 # Install AWS-OFI-NCCL plugin
 ARG AWS_OFI_NCCL_VERSION=1.11.0-aws
