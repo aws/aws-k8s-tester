@@ -25,7 +25,7 @@ spec:
             - name: TF_XLA_FLAGS
               value: "--tf_xla_cpu_global_jit"
             command:
-            - /opt/amazon/openmpi/bin/mpirun
+            - /opt/amazon/openmpi5/bin/mpirun
             - --allow-run-as-root
             - --tag-output
             - -np
@@ -53,11 +53,7 @@ spec:
             - -x
             - FI_LOG_LEVEL=warn
             - -x
-            - FI_EFA_USE_DEVICE_RDMA={{.EfaUseDeviceRdma}}
-            - -x
             - OFI_NCCL_DISABLE_GDR_REQUIRED_CHECK=0
-            - -x
-            - NCCL_PROTO=simple
             - --mca
             - pml
             - ^cm

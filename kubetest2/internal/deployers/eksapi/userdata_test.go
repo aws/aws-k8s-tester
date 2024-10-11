@@ -42,40 +42,33 @@ const bottlerocketUserData = `[settings.kubernetes]
 
 [settings.host-containers.admin]
 "enabled" = true
-
-[settings.efa]
-"enabled" = true
 `
 
 func Test_generateUserData(t *testing.T) {
 	cases := []struct {
 		format             string
-		efa                bool
 		expected           string
 		expectedIsMimePart bool
 	}{
 		{
 			format:             "bootstrap.sh",
-			efa:                false,
 			expected:           bootstrapShUserData,
 			expectedIsMimePart: true,
 		},
 		{
 			format:             "nodeadm",
-			efa:                false,
 			expected:           nodeadmUserData,
 			expectedIsMimePart: true,
 		},
 		{
 			format:             "bottlerocket",
-			efa:                true,
 			expected:           bottlerocketUserData,
 			expectedIsMimePart: false,
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.format, func(t *testing.T) {
-			actual, isMimePart, err := generateUserData(c.format, c.efa, &cluster)
+			actual, isMimePart, err := generateUserData(c.format, &cluster)
 			if err != nil {
 				t.Log(err)
 				t.Error(err)

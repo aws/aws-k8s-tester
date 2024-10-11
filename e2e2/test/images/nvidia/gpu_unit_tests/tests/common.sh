@@ -4,8 +4,14 @@ get_instance_type()
 {
     # Retrieve instance metadata: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html#instance-metadata-retrieval-examples
     [ -n "$FORCE_INSTANCE_TYPE" ] && echo $FORCE_INSTANCE_TYPE
-    local token=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
-    curl -H "X-aws-ec2-metadata-token: $token" http://169.254.169.254/latest/meta-data/instance-type
+
+    local token=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" 2>/dev/null)
+
+    if [ -n "$token" ]; then
+        curl -H "X-aws-ec2-metadata-token: $token" http://169.254.169.254/latest/meta-data/instance-type
+    else
+        curl http://169.254.169.254/latest/meta-data/instance-type
+    fi
 }
 
 assert_gpu_unused()
