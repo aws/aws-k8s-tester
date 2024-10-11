@@ -25,7 +25,7 @@ spec:
             - name: TF_XLA_FLAGS
               value: "--tf_xla_cpu_global_jit"
             command:
-            - /opt/amazon/openmpi5/bin/mpirun
+            - mpirun
             - --allow-run-as-root
             - --tag-output
             - -np
