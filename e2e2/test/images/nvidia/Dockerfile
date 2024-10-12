@@ -49,15 +49,15 @@ RUN mkdir -p /var/run/sshd \
   && echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config \
   && sed -i 's/#\(StrictModes \).*/\1no/g' /etc/ssh/sshd_config
 
-ENV LD_LIBRARY_PATH /opt/amazon/openmpi5/lib:/opt/amazon/efa/lib:/opt/aws-ofi-nccl/install/lib:/usr/local/cuda/lib:/usr/local/lib/:/usr/lib64:/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
-ENV PATH /usr/local/cuda/bin:/opt/amazon/openmpi5/bin:/opt/amazon/efa/bin:/usr/sbin:/usr/bin:/usr/local/bin:$PATH
+ENV LD_LIBRARY_PATH /opt/amazon/openmpi/lib:/opt/amazon/efa/lib:/opt/aws-ofi-nccl/install/lib:/usr/local/cuda/lib:/usr/local/lib/:/usr/lib64:/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
+ENV PATH /usr/local/cuda/bin:/opt/amazon/openmpi/bin:/opt/amazon/efa/bin:/usr/sbin:/usr/bin:/usr/local/bin:$PATH
 
 # Install EFA
 ARG EFA_INSTALLER_VERSION=latest
 RUN cd /tmp \
   && curl -sL https://efa-installer.amazonaws.com/aws-efa-installer-$EFA_INSTALLER_VERSION.tar.gz | tar xvz \
   && cd aws-efa-installer \
-  && ./efa_installer.sh --yes --enable-gdr --skip-kmod --skip-limit-conf --no-verify --mpi openmpi5 \
+  && ./efa_installer.sh --yes --enable-gdr --skip-kmod --skip-limit-conf --no-verify --mpi openmpi4 \
   && rm -rf /tmp/* \
     /var/lib/apt/lists/*
 
@@ -73,7 +73,7 @@ RUN cd tmp \
   && curl -sL https://github.com/aws/aws-ofi-nccl/releases/download/v$AWS_OFI_NCCL_VERSION/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION.tar.gz | tar xvz \
   && cd aws-ofi-nccl-$AWS_OFI_NCCL_VERSION \
   && ./configure --prefix=/opt/aws-ofi-nccl/install \
-    --with-mpi=/opt/amazon/openmpi5 \
+    --with-mpi=/opt/amazon/openmpi \
     --with-libfabric=/opt/amazon/efa \
     --with-cuda=/usr/local/cuda \
     --enable-platform-aws \
@@ -87,7 +87,7 @@ RUN cd /tmp \
   && curl -sL https://github.com/NVIDIA/nccl-tests/archive/refs/tags/v$NCCL_TESTS_VERSION.tar.gz | tar xvz \
   && cd nccl-tests-$NCCL_TESTS_VERSION \
   && make MPI=1 \
-    MPI_HOME=/opt/amazon/openmpi5/ \
+    MPI_HOME=/opt/amazon/openmpi/ \
     CUDA_HOME=/usr/local/cuda \
   && mkdir -p /opt/nccl-tests \
   && cp -r build /opt/nccl-tests/build \
