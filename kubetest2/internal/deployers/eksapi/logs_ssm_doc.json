@@ -1,0 +1,27 @@
+{
+    "schemaVersion": "2.2",
+    "description": "Collect logs from an Amazon Linux EKS node",
+    "parameters": {
+        "s3Destination": {
+            "type": "String"
+        }
+    },
+    "mainSteps": [
+        {
+            "action": "aws:runShellScript",
+            "name": "collectAndUploadLogs",
+            "precondition": {
+                "StringEquals": [
+                    "platformType",
+                    "Linux"
+                ]
+            },
+            "inputs": {
+                "runCommand": [
+                    "bash /etc/eks/log-collector-script/eks-log-collector.sh >/dev/null 2>&1",
+                    "aws s3 cp /var/log/eks_i* {{s3Destination}}"
+                ]
+            }
+        }
+    ]
+}
