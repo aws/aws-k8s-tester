@@ -75,6 +75,7 @@ type deployerOptions struct {
 	Nodes                       int           `flag:"nodes" desc:"number of nodes to launch in cluster"`
 	NodeNameStrategy            string        `flag:"node-name-strategy" desc:"Specifies the naming strategy for node. Allowed values: ['SessionName', 'EC2PrivateDNSName'], default to EC2PrivateDNSName"`
 	Region                      string        `flag:"region" desc:"AWS region for EKS cluster"`
+	StaticClusterName           string        `flag:"static-cluster-name" desc:"Optional when re-use existing cluster and node group by querying the kubeconfig and run test"`
 	TuneVPCCNI                  bool          `flag:"tune-vpc-cni" desc:"Apply tuning parameters to the VPC CNI DaemonSet"`
 	UnmanagedNodes              bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup. Requires --ami"`
 	UpClusterHeaders            []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
@@ -163,12 +164,14 @@ func (d *deployer) Up() error {
 			return err
 		}
 	}
-	if infra, err := d.infraManager.createInfrastructureStack(&d.deployerOptions); err != nil {
-		return err
-	} else {
-		d.infra = infra
+	if d.deployerOptions.StaticClusterName == "" {
+		if infra, err := d.infraManager.createInfrastructureStack(&d.deployerOptions); err != nil {
+			return err
+		} else {
+			d.infra = infra
+		}
 	}
-	cluster, err := d.clusterManager.createCluster(d.infra, &d.deployerOptions)
+	cluster, err := d.clusterManager.getOrCreateCluster(d.infra, &d.deployerOptions)
 	if err != nil {
 		return err
 	}
@@ -180,6 +183,10 @@ func (d *deployer) Up() error {
 	d.k8sClient, err = newKubernetesClient(kubeconfig)
 	if err != nil {
 		return err
+	}
+	if d.deployerOptions.StaticClusterName != "" {
+		klog.Infof("inited k8sclient, skip the rest resource creation for static cluster")
+		return nil
 	}
 	if d.UnmanagedNodes {
 		if err := createAWSAuthConfigMap(d.k8sClient, d.NodeNameStrategy, d.infra.nodeRole); err != nil {
@@ -236,6 +243,16 @@ func (d *deployer) verifyUpFlags() error {
 		d.IPFamily = string(ekstypes.IpFamilyIpv4)
 		klog.Infof("Using default IP family: %s", d.IPFamily)
 	}
+	if d.NodeCreationTimeout == 0 {
+		d.NodeCreationTimeout = time.Minute * 20
+	}
+	if d.NodeReadyTimeout == 0 {
+		d.NodeReadyTimeout = time.Minute * 5
+	}
+	if d.StaticClusterName != "" {
+		klog.Infof("Skip configuration for static cluster")
+		return nil
+	}
 	if d.UnmanagedNodes {
 		if d.AMI == "" {
 			return fmt.Errorf("--ami must be specified for --unmanaged-nodes")
@@ -266,12 +283,6 @@ func (d *deployer) verifyUpFlags() error {
 			d.AMIType = "AL2023_x86_64_STANDARD"
 			klog.Infof("Using default AMI type: %s", d.AMIType)
 		}
-	}
-	if d.NodeCreationTimeout == 0 {
-		d.NodeCreationTimeout = time.Minute * 20
-	}
-	if d.NodeReadyTimeout == 0 {
-		d.NodeReadyTimeout = time.Minute * 5
 	}
 	return nil
 }
@@ -307,6 +318,7 @@ func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *Nodegrou
 	// the EKS-managed cluster security group may be associated with a leaked ENI
 	// so we need to make sure we've deleted leaked ENIs before we delete the cluster
 	// otherwise, the cluster security group will be left behind and will block deletion of our VPC
+
 	if err := im.deleteLeakedENIs(); err != nil {
 		return err
 	}
