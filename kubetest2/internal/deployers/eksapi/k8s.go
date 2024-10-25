@@ -124,6 +124,23 @@ func createAWSAuthConfigMap(client *kubernetes.Clientset, nodeNameStrategy strin
 	return err
 }
 
+func getNodeInstanceIDs(nodes []corev1.Node) ([]string, error) {
+	var instanceIds []string
+	var errs []error
+	for _, node := range nodes {
+		providerId, err := parseKubernetesProviderID(node.Spec.ProviderID)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		instanceIds = append(instanceIds, providerId.InstanceID)
+	}
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
+	}
+	return instanceIds, nil
+}
+
 func emitNodeMetrics(metricRegistry metrics.MetricRegistry, k8sClient *kubernetes.Clientset, ec2Client *ec2.Client) error {
 	nodes, err := getReadyNodes(k8sClient)
 	if err != nil {

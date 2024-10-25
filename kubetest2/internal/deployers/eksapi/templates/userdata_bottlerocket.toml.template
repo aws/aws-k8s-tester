@@ -5,6 +5,3 @@
 
 [settings.host-containers.admin]
 "enabled" = true
-
-[settings.efa]
-"enabled" = {{.EFAEnabled}}

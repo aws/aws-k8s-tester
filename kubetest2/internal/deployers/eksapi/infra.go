@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"slices"
 	"strings"
 	"time"
 
@@ -84,6 +85,31 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 	if err != nil {
 		return nil, err
 	}
+	// get two AZs for the subnets
+	azs, err := m.clients.EC2().DescribeAvailabilityZones(context.TODO(), &ec2.DescribeAvailabilityZonesInput{})
+	if err != nil {
+		return nil, err
+	}
+	var subnetAzs []string
+	if opts.CapacityReservation {
+		subnetAzs, err = m.getAZsWithCapacity(opts)
+		if err != nil {
+			return nil, err
+		}
+		for _, az := range azs.AvailabilityZones {
+			if len(subnetAzs) == 2 {
+				break
+			}
+			if !slices.Contains(subnetAzs, *az.ZoneName) {
+				subnetAzs = append(subnetAzs, *az.ZoneName)
+			}
+		}
+	} else {
+		for i := 0; i < 2; i++ {
+			subnetAzs = append(subnetAzs, *azs.AvailabilityZones[i].ZoneName)
+		}
+	}
+	klog.Infof("creating infrastructure stack with AZs: %v", subnetAzs)
 	input := cloudformation.CreateStackInput{
 		StackName:    aws.String(m.resourceID),
 		TemplateBody: aws.String(templates.Infrastructure),
@@ -96,6 +122,14 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 			{
 				ParameterKey:   aws.String("ResourceId"),
 				ParameterValue: aws.String(m.resourceID),
+			},
+			{
+				ParameterKey:   aws.String("Subnet01AZ"),
+				ParameterValue: aws.String(subnetAzs[0]),
+			},
+			{
+				ParameterKey:   aws.String("Subnet02AZ"),
+				ParameterValue: aws.String(subnetAzs[1]),
 			},
 		},
 	}
@@ -232,7 +266,7 @@ func (m *InfrastructureManager) deleteLeakedENIs() error {
 		}
 	}
 	klog.Infof("deleted %d leaked ENI(s)!", len(enis))
-	m.metrics.Record(infraLeakedENIs, float64(len(enis)), nil)	
+	m.metrics.Record(infraLeakedENIs, float64(len(enis)), nil)
 	return nil
 }
 
@@ -265,4 +299,30 @@ func (m *InfrastructureManager) getVPCCNINetworkInterfaceIds(vpcId string) ([]st
 		}
 	}
 	return enis, nil
+}
+
+func (m *InfrastructureManager) getAZsWithCapacity(opts *deployerOptions) ([]string, error) {
+	var subnetAzs []string
+	capacityReservations, err := m.clients.EC2().DescribeCapacityReservations(context.TODO(), &ec2.DescribeCapacityReservationsInput{
+		Filters: []ec2types.Filter{
+			{
+				Name:   aws.String("instance-type"),
+				Values: opts.InstanceTypes,
+			},
+			{
+				Name:   aws.String("state"),
+				Values: []string{"active"},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, cr := range capacityReservations.CapacityReservations {
+		if *cr.AvailableInstanceCount >= int32(opts.Nodes) {
+			subnetAzs = append(subnetAzs, *cr.AvailabilityZone)
+			break
+		}
+	}
+	return subnetAzs, nil
 }

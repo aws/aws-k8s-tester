@@ -1,0 +1,2 @@
+name, index, pci.bus_id
+NVIDIA A10G, 0, 00000000:00:1E.0

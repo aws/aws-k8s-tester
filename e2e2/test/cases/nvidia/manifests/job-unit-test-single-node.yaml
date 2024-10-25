@@ -16,11 +16,15 @@ spec:
         command: 
         - /bin/bash
         - ./gpu_unit_tests/unit_test
+        env:
+            - name: SKIP_TESTS_SUBCOMMAND
+              value: {{.SkipTestSubcommand}}
         imagePullPolicy: Always
         resources:
           limits:
             cpu: "4"
             memory: 4Gi
+            nvidia.com/gpu: {{.GpuPerNode}}
           requests:
             cpu: "1"
             memory: 1Gi
