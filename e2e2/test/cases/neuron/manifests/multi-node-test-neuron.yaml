@@ -1,0 +1,53 @@
+apiVersion: kubeflow.org/v2beta1
+kind: MPIJob
+metadata:
+  name: nccom-mpijob
+spec:
+  slotsPerWorker: 1
+  runPolicy:
+    cleanPodPolicy: Running
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+        spec:
+          nodeSelector:
+            node.kubernetes.io/instance-type: {{.InstanceType}}
+          containers:
+          - name: nccom-launcher
+            command: ["/bin/sh", "-c"]
+            args: ["echo password | sudo -S service ssh start; while true; do sleep 30; done"]
+            image: {{.NeuronTestImage}}
+            ports:
+            - containerPort: 63182
+            - containerPort: 60006
+            - containerPort: 22
+            securityContext:
+              privileged: false
+            imagePullPolicy: Always
+    Worker:
+      replicas: 2
+      template:
+        spec:
+          nodeSelector:
+            node.kubernetes.io/instance-type: {{.InstanceType}}
+          restartPolicy: Never
+          containers:
+          - image: {{.NeuronTestImage}}
+            ports:
+            - containerPort: 63182
+            - containerPort: 60006
+            - containerPort: 22
+            name: nccom-worker
+            command: ["/bin/sh", "-c"]
+            args: ["echo password | sudo -S service ssh start; while true; do sleep 30; done"]
+            imagePullPolicy: Always
+            securityContext:
+              privileged: false
+            resources:
+              limits:
+                aws.amazon.com/neuron: {{.NeuronPerNode}}
+                vpc.amazonaws.com/efa: {{.EfaPerNode}}
+              requests:
+                aws.amazon.com/neuron: {{.NeuronPerNode}}
+                vpc.amazonaws.com/efa: {{.EfaPerNode}}
