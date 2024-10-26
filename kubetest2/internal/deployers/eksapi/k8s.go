@@ -172,6 +172,19 @@ func emitNodeMetrics(metricRegistry metrics.MetricRegistry, k8sClient *kubernete
 			"arch":         node.Status.NodeInfo.Architecture,
 		}
 
+		var osDistro string
+		if strings.HasPrefix(node.Status.NodeInfo.OSImage, "Amazon Linux") {
+			// on al2: "Amazon Linux 2"
+			// on al2023: "Amazon Linux 2023.6.20241010"
+			parts := strings.Split(node.Status.NodeInfo.OSImage, ".")
+			amazonLinuxMajorVersion := parts[0]
+			osDistro = amazonLinuxMajorVersion
+		}
+
+		if osDistro != "" {
+			nodeDimensions["osDistro"] = osDistro
+		}
+
 		metricRegistry.Record(nodeTimeToRegistrationSeconds, timeToRegistration.Seconds(), nodeDimensions)
 		metricRegistry.Record(nodeTimeToReadySeconds, timeToReady.Seconds(), nodeDimensions)
 	}
