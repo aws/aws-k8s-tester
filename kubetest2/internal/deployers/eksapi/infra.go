@@ -168,6 +168,7 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 		return nil, fmt.Errorf("failed to get infrastructure stack resources: %w", err)
 	}
 	klog.Infof("created infrastructure: %+v", infra)
+
 	return infra, nil
 }
 

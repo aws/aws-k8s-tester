@@ -39,36 +39,50 @@ type Cluster struct {
 	cidr                     string
 }
 
-func (m *ClusterManager) createCluster(infra *Infrastructure, opts *deployerOptions) (*Cluster, error) {
-	input := eks.CreateClusterInput{
-		Name: aws.String(m.resourceID),
-		ResourcesVpcConfig: &ekstypes.VpcConfigRequest{
-			EndpointPrivateAccess: aws.Bool(true),
-			EndpointPublicAccess:  aws.Bool(true),
-			SubnetIds:             append(infra.subnetsPublic, infra.subnetsPrivate...),
-		},
-		RoleArn: aws.String(infra.clusterRole),
-		KubernetesNetworkConfig: &ekstypes.KubernetesNetworkConfigRequest{
-			IpFamily: ekstypes.IpFamily(opts.IPFamily),
-		},
-		Version: aws.String(opts.KubernetesVersion),
+func (m *ClusterManager) getOrCreateCluster(infra *Infrastructure, opts *deployerOptions) (*Cluster, error) {
+	targetClusterName := &opts.StaticClusterName
+	if *targetClusterName == "" {
+		klog.Infof("No StaticClusterName specified creating new cluster...")
+		input := eks.CreateClusterInput{
+			Name: aws.String(m.resourceID),
+			ResourcesVpcConfig: &ekstypes.VpcConfigRequest{
+				EndpointPrivateAccess: aws.Bool(true),
+				EndpointPublicAccess:  aws.Bool(true),
+				SubnetIds:             append(infra.subnetsPublic, infra.subnetsPrivate...),
+			},
+			RoleArn: aws.String(infra.clusterRole),
+			KubernetesNetworkConfig: &ekstypes.KubernetesNetworkConfigRequest{
+				IpFamily: ekstypes.IpFamily(opts.IPFamily),
+			},
+			Version: aws.String(opts.KubernetesVersion),
+		}
+		apiOpts, err := util.NewHTTPHeaderAPIOptions(opts.UpClusterHeaders)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create API options: %v", err)
+		}
+		createOutput, err := m.clients.EKS().CreateCluster(context.TODO(), &input,
+			func(o *eks.Options) {
+				o.APIOptions = apiOpts
+			})
+		if err != nil {
+			return nil, fmt.Errorf("failed to create cluster: %v", err)
+		}
+		targetClusterName = createOutput.Cluster.Name
+	} else {
+		klog.Infof("reusing existing static cluster %s", *targetClusterName)
 	}
-	apiOpts, err := util.NewHTTPHeaderAPIOptions(opts.UpClusterHeaders)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create API options: %v", err)
+	cluster, waitErr := m.waitClusterReady(targetClusterName)
+	if waitErr != nil {
+		return nil, fmt.Errorf("failed to wait for cluster to become active: %v", waitErr)
 	}
-	klog.Infof("creating cluster...")
-	createOutput, err := m.clients.EKS().CreateCluster(context.TODO(), &input,
-		func(o *eks.Options) {
-			o.APIOptions = apiOpts
-		})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cluster: %v", err)
-	}
+	return cluster, nil
+}
+
+func (m *ClusterManager) waitClusterReady(clusterName *string) (*Cluster, error) {
 	describeInput := eks.DescribeClusterInput{
-		Name: createOutput.Cluster.Name,
+		Name: clusterName,
 	}
-	klog.Infof("waiting for cluster to be active: %s", *createOutput.Cluster.Arn)
+	klog.Infof("waiting for cluster to be active: %s", *clusterName)
 	waitErr := eks.NewClusterActiveWaiter(m.clients.EKS()).Wait(context.TODO(), &describeInput, clusterCreationTimeout)
 	describeOutput, describeErr := m.clients.EKS().DescribeCluster(context.TODO(), &describeInput)
 	if describeErr != nil {
@@ -76,9 +90,9 @@ func (m *ClusterManager) createCluster(infra *Infrastructure, opts *deployerOpti
 	}
 	klog.Infof("cluster details after creation: %+v", describeOutput.Cluster)
 	if waitErr != nil {
-		return nil, fmt.Errorf("failed to wait for cluster to become active: %v", waitErr)
+		return nil, waitErr
 	}
-	klog.Infof("cluster is active: %s", *createOutput.Cluster.Arn)
+	klog.Infof("cluster is active: %s", *describeOutput.Cluster.Arn)
 	var cidr string
 	switch describeOutput.Cluster.KubernetesNetworkConfig.IpFamily {
 	case ekstypes.IpFamilyIpv4:
