@@ -1,6 +1,8 @@
 package eksapi
 
 import (
+	"bytes"
+	"context"
 	"flag"
 	"fmt"
 	"path/filepath"
@@ -8,14 +10,20 @@ import (
 
 	"github.com/aws/aws-k8s-tester/kubetest2/internal"
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/awssdk"
+	"github.com/aws/aws-k8s-tester/kubetest2/internal/deployers/eksapi/templates"
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/metrics"
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/util"
+	"sigs.k8s.io/yaml"
 
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/octago/sflags/gen/gpflag"
 	"github.com/spf13/pflag"
 	"golang.org/x/exp/slices"
+	v1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 	"sigs.k8s.io/kubetest2/pkg/types"
@@ -186,6 +194,11 @@ func (d *deployer) Up() error {
 	}
 	if d.deployerOptions.StaticClusterName != "" {
 		klog.Infof("inited k8sclient, skip the rest resource creation for static cluster")
+		if err := d.DeployBusyboxAndWaitForNodes(); err != nil {
+			klog.Errorf("Failed to deploy Busybox pods: %v", err)
+			return err
+		}
+		klog.Infof("Deployed busybox pods")
 		return nil
 	}
 	if d.UnmanagedNodes {
@@ -308,7 +321,77 @@ func (d *deployer) Down() error {
 		klog.Warningf("failed to gather logs from nodes: %v", err)
 		// don't return err, this isn't critical
 	}
+	if d.deployerOptions.StaticClusterName != "" {
+		return d.TearDownBusyboxAndNodes()
+	}
 	return deleteResources(d.infraManager, d.clusterManager, d.nodegroupManager)
+}
+
+type NodeCondition func(nodes []corev1.Node) bool
+
+func (d *deployer) DeployBusyboxAndWaitForNodes() error {
+	klog.Infof("Deploying busybox pods")
+
+	t := templates.BusyboxDeployment
+	var buf bytes.Buffer
+	if err := t.Execute(&buf, templates.BusyboxDeploymentTemplateData{
+		Nodes: d.deployerOptions.Nodes,
+	}); err != nil {
+		return err
+	}
+
+	deployment := &v1.Deployment{}
+	err := yaml.Unmarshal(buf.Bytes(), deployment)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal deployment: %v", err)
+	}
+
+	result, err := d.k8sClient.AppsV1().Deployments("default").Create(context.TODO(), deployment, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	klog.Infof("Created deployment %q.\n", result.GetObjectMeta().GetName())
+	return waitForNodeCondition(d.k8sClient, func(nodes []corev1.Node) bool {
+		readyNodes := 0
+		for _, node := range nodes {
+			if isNodeReady(&node) {
+				readyNodes++
+			}
+		}
+		klog.Infof("Ready nodes: %d, Expected nodes: %d", readyNodes, d.deployerOptions.Nodes)
+		return readyNodes >= d.deployerOptions.Nodes
+	}, 5*time.Minute, "Waiting for nodes to be ready")
+
+}
+
+func (d *deployer) TearDownBusyboxAndNodes() error {
+	klog.Infof("Cleaning up busybox pods")
+
+	err := d.k8sClient.AppsV1().Deployments("default").Delete(context.TODO(), "busybox-deployment", metav1.DeleteOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to delete deployment: %v", err)
+	}
+	klog.Info("Busybox deployment deleted successfully")
+
+	return waitForNodeCondition(d.k8sClient, func(nodes []corev1.Node) bool {
+		return len(nodes) == 0
+	}, 5*time.Minute, "Waiting for nodes to be removed")
+}
+
+func waitForNodeCondition(clientset *kubernetes.Clientset, condition NodeCondition, timeout time.Duration, description string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return wait.PollUntilContextTimeout(ctx, 15*time.Second, timeout, true, func(ctx context.Context) (bool, error) {
+		nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		conditionMet := condition(nodes.Items)
+		klog.Infof("%s: Current node count: %d", description, len(nodes.Items))
+		return conditionMet, nil
+	})
 }
 
 func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *NodegroupManager) error {
