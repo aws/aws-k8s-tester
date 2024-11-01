@@ -20,20 +20,16 @@ spec:
             imagePullPolicy: Always
             name: nccl-test-launcher
             env:
-              - name: PATH
-                value: $PATH:/opt/amazon/efa/bin:/usr/bin
-              - name: LD_LIBRARY_PATH
-                value: /opt/amazon/openmpi/lib:/opt/nccl/build/lib:/opt/amazon/efa/lib:/opt/aws-ofi-nccl/install/lib:/usr/local/nvidia/lib:$LD_LIBRARY_PATH
             command:
-            - /opt/amazon/openmpi/bin/mpirun
+            - mpirun
             - --allow-run-as-root
             - --tag-output
             - -np
             - "{{.WorkerNodeGpuCount}}"
-            - -N
-            - {{.GpuPerNode}}
             - -bind-to
             - none
+            - -map-by
+            - slot
             - -x
             - PATH
             - -x
@@ -63,7 +59,7 @@ spec:
             - -b
             - "8"
             - -e
-            - 16G
+            - "16G"
             - -f
             - "2"
             - -g
