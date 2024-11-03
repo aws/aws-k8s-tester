@@ -38,6 +38,7 @@ type ncclTestManifestTplVars struct {
 	GpuPerNode          int
 	NvidiaTestImage     string
 	EfaInterfacePerNode int
+	MaxBytes			string
 }
 
 func TestMPIJobPytorchTraining(t *testing.T) {
@@ -95,6 +96,11 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			if *nvidiaTestImage == "" {
 				t.Fatal(fmt.Errorf("nvidiaTestImage must be set to run unit test, use https://github.com/aws/aws-k8s-tester/blob/main/e2e2/test/images/nvidia/Dockerfile to build the image and -nvidiaTestImage to set the image url"))
 			}
+			maxBytes := "2G"
+			if slices.Contains(instanceSupportsRdmaRead, *nodeType) {
+				t.Log("Instance supports RDMA")
+				maxBytes = "16G"
+			}
 			renderedMpiJobNcclTestMultiNodeManifest, err := fwext.RenderManifests(mpiJobNcclTestMultiNodeManifest, ncclTestManifestTplVars{
 				// one of the nodes will be used for the master pod
 				WorkerNodeCount:     nodeCount,
@@ -102,6 +108,7 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 				GpuPerNode:          gpuPerNode,
 				NvidiaTestImage:     *nvidiaTestImage,
 				EfaInterfacePerNode: efaPerNode,
+				MaxBytes: 			 maxBytes,
 			})
 			if err != nil {
 				t.Fatal(err)
