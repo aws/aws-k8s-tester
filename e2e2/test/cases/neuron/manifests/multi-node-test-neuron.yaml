@@ -1,53 +1,66 @@
 apiVersion: kubeflow.org/v2beta1
 kind: MPIJob
 metadata:
-  name: nccom-mpijob
+  name: multi-node-nccom-test
 spec:
-  slotsPerWorker: 1
+  slotsPerWorker: {{.NeuronPerNode}}
   runPolicy:
+    backoffLimit: 20
     cleanPodPolicy: Running
   mpiReplicaSpecs:
     Launcher:
       replicas: 1
       template:
         spec:
-          nodeSelector:
-            node.kubernetes.io/instance-type: {{.InstanceType}}
+          restartPolicy: OnFailure
           containers:
-          - name: nccom-launcher
-            command: ["/bin/sh", "-c"]
-            args: ["echo password | sudo -S service ssh start; while true; do sleep 30; done"]
-            image: {{.NeuronTestImage}}
+          - image: {{.NeuronTestImage}}
+            imagePullPolicy: Always
+            name: nccom-test-launcher
+            command:
+            - nccom-test
+            - -x
+            - CCOM_SOCKET_IFNAME=eth0
+            - -x
+            - NEURON_RT_ROOT_COMM_ID=multi-node-nccl-test-worker-0:63182
+            - -r 
+            - "{{.WorkerNodeNeuronCount}}"
+            - -N
+            - "{{.WorkerNodeCount}}"
+            - -b
+            - "8"
+            - -e
+            - "16G"
+            - -f
+            - "2"
+            - -n
+            - "50"
+            - -w
+            - "5"
+            - -d 
+            - "fp32"
+            - allr
+            - --debug
             ports:
             - containerPort: 63182
             - containerPort: 60006
             - containerPort: 22
-            securityContext:
-              privileged: false
-            imagePullPolicy: Always
     Worker:
-      replicas: 2
+      replicas: {{.WorkerNodeCount}}
       template:
         spec:
-          nodeSelector:
-            node.kubernetes.io/instance-type: {{.InstanceType}}
-          restartPolicy: Never
           containers:
           - image: {{.NeuronTestImage}}
             ports:
             - containerPort: 63182
             - containerPort: 60006
             - containerPort: 22
-            name: nccom-worker
-            command: ["/bin/sh", "-c"]
-            args: ["echo password | sudo -S service ssh start; while true; do sleep 30; done"]
+            name: nccom-test-worker
             imagePullPolicy: Always
-            securityContext:
-              privileged: false
             resources:
               limits:
                 aws.amazon.com/neuron: {{.NeuronPerNode}}
-                vpc.amazonaws.com/efa: {{.EfaPerNode}}
+                vpc.amazonaws.com/efa: {{.EfaInterfacePerNode}}
               requests:
                 aws.amazon.com/neuron: {{.NeuronPerNode}}
-                vpc.amazonaws.com/efa: {{.EfaPerNode}}
+                vpc.amazonaws.com/efa: {{.EfaInterfacePerNode}}

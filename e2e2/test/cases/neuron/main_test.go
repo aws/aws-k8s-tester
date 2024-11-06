@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"slices"
@@ -11,9 +12,13 @@ import (
 	"time"
 
 	fwext "github.com/aws/aws-k8s-tester/e2e2/internal/framework_extensions"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/wait"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
@@ -118,7 +123,7 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		nodeType = aws.String(nodes.Items[0].Labels["node.kubernetes.io/instance-type"])
 		nodeCount = len(nodes.Items)
 		neuron := nodes.Items[0].Status.Capacity["aws.amazon.com/neuron"]
-		neuronPerNode = int(gpu.Value())
+		neuronPerNode = int(neuron.Value())
 		efa := nodes.Items[0].Status.Capacity["vpc.amazonaws.com/efa"]
 		efaPerNode = int(efa.Value())
 	}
@@ -156,7 +161,7 @@ func TestMain(m *testing.M) {
 	}
 
 	if *installDevicePlugin {
-		manifests = append(manifests, neuronDevicePluginManifest, neuronDevicePlugiRbacManifest)
+		manifests = append(manifests, neuronDevicePluginManifest, neuronDevicePluginRbacManifest)
 		setUpFunctions = append(setUpFunctions, deployNeuronDevicePlugin)
 	}
 

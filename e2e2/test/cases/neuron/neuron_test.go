@@ -4,15 +4,25 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"regexp"
 	"testing"
 
 	fwext "github.com/aws/aws-k8s-tester/e2e2/internal/framework_extensions"
+	kubeflowv2beta1 "github.com/kubeflow/mpi-operator/pkg/apis/kubeflow/v2beta1"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 
+	v1 "k8s.io/api/core/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/strings/slices"
+)
+
+var (
+	instanceSupportsRdmaRead = []string{"trn1.32xlarge", "trn1n.32xlarge"}
 )
 
 var (
@@ -85,7 +95,7 @@ func TestNeuronNodes(t *testing.T) {
 		}).
 		Feature()
 
-		multiNode := features.New("multi-node").
+	multiNode := features.New("multi-node").
 		WithLabel("suite", "neuron").
 		WithLabel("hardware", "neuron").
 		WithLabel("hardware", "efa").
@@ -104,10 +114,12 @@ func TestNeuronNodes(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			t.Log("Applying multi node manifest")
 			err = fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedNeuronMultiNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
+			t.Log("Applied manifest successfully")
 			return ctx
 		}).
 		Assess("NCCOM test succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -118,6 +130,7 @@ func TestNeuronNodes(t *testing.T) {
 			j := kubeflowv2beta1.MPIJob{
 				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccom-test", Namespace: "default"},
 			}
+			t.Log("Waiting for MPIJob to complete")
 			err := wait.For(conditions.New(rsrc).ResourceMatch(&j, mpiJobRunning),
 				wait.WithContext(ctx))
 			if err != nil {
@@ -126,23 +139,23 @@ func TestNeuronNodes(t *testing.T) {
 
 			// Verify GPU Direct RDMA is used on P4/P5
 			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), &kubeflowv2beta1.MPIJob{
-				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccl-test", Namespace: "default"},
+				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccom-test", Namespace: "default"},
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
-			t.Log("Test log for multi-node-nccl-test:")
+			t.Log("Test log for multi-node-nccom-test:")
 			t.Log(log)
 			if *efaEnabled && slices.Contains(instanceSupportsRdmaRead, *nodeType) {
 				pattern := regexp.MustCompile(`\[send\] via NET/.*Libfabric/.*/GDRDMA`)
 				if !pattern.MatchString(log) {
-					t.Fatalf("GPU Direct RDMA is not utilized for inter-node communication in NCCL tests on instances that support GDRDMA: %s", *nodeType)
+					t.Fatalf("GPU Direct RDMA is not utilized for inter-node communication in NCCOM tests on instances that support GDRDMA: %s", *nodeType)
 				}
 			}
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedMpiJobNcclTestMultiNodeManifest)
+			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedNeuronMultiNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -150,7 +163,7 @@ func TestNeuronNodes(t *testing.T) {
 		}).
 		Feature()
 
-	testenv.Test(t, singleNode)
+	testenv.Test(t, singleNode, multiNode)
 }
 
 func mpiJobRunning(obj k8s.Object) bool {
