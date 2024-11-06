@@ -59,7 +59,7 @@ spec:
             - -c
             - "1"
             - -n
-            - "100"
+            - "50"
     Worker:
       replicas: {{.WorkerNodeCount}}
       template:
