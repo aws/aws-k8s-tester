@@ -37,7 +37,9 @@ spec:
             - -x
             - NCCL_DEBUG=INFO
             - -x
-            - NCCL_ALGO=RING
+            - NCCL_BUFFSIZE={{.NcclBuffSize}}
+            - -x
+            - NCCL_P2P_NET_CHUNKSIZE="524288"
             - -x
             - NCCL_TUNER_PLUGIN=/opt/aws-ofi-nccl/install/lib/libnccl-ofi-tuner.so
             - --mca
