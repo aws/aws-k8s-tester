@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	instanceSupportsRdmaRead = []string{"p5.48xlarge", "p4d.24xlarge", "p4de.24xlarge"}
+	instanceSupportsRdmaRead = []string{"p5.48xlarge", "p4d.24xlarge", "p4de.24xlarge", "p5e.48xlarge"}
 )
 
 var (
@@ -38,6 +38,8 @@ type ncclTestManifestTplVars struct {
 	GpuPerNode          int
 	NvidiaTestImage     string
 	EfaInterfacePerNode int
+	MaxBytes            string
+	NcclBuffSize        string
 }
 
 func TestMPIJobPytorchTraining(t *testing.T) {
@@ -45,10 +47,12 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 		WithLabel("suite", "nvidia").
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			t.Log("Applying single node manifest")
 			err := fwext.ApplyManifests(cfg.Client().RESTConfig(), mpiJobPytorchTrainingSingleNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
+			t.Log("Manifest applied successfully")
 			return ctx
 		}).
 		Assess("MPIJob succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -59,11 +63,13 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			j := kubeflowv2beta1.MPIJob{
 				ObjectMeta: metav1.ObjectMeta{Name: "pytorch-training-single-node", Namespace: "default"},
 			}
+			t.Log("Waiting for single node job to complete")
 			err := wait.For(fwext.NewConditionExtension(rsrc).ResourceMatch(&j, mpiJobSucceeded),
 				wait.WithContext(ctx))
 			if err != nil {
 				t.Fatal(err)
 			}
+			t.Log("Single node job completed")
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -91,6 +97,13 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			if *nvidiaTestImage == "" {
 				t.Fatal(fmt.Errorf("nvidiaTestImage must be set to run unit test, use https://github.com/aws/aws-k8s-tester/blob/main/e2e2/test/images/nvidia/Dockerfile to build the image and -nvidiaTestImage to set the image url"))
 			}
+			maxBytes := "2G"
+			ncclBuffSize := "4194304"
+			if slices.Contains(instanceSupportsRdmaRead, *nodeType) {
+				t.Log("Instance supports RDMA")
+				maxBytes = "16G"
+				ncclBuffSize = "8388608"
+			}
 			renderedMpiJobNcclTestMultiNodeManifest, err := fwext.RenderManifests(mpiJobNcclTestMultiNodeManifest, ncclTestManifestTplVars{
 				// one of the nodes will be used for the master pod
 				WorkerNodeCount:     nodeCount,
@@ -98,14 +111,18 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 				GpuPerNode:          gpuPerNode,
 				NvidiaTestImage:     *nvidiaTestImage,
 				EfaInterfacePerNode: efaPerNode,
+				MaxBytes:            maxBytes,
+				NcclBuffSize:        ncclBuffSize,
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
+			t.Log("Applying multi node manifest")
 			err = fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedMpiJobNcclTestMultiNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
+			t.Log("Manifest applied successfully")
 			return ctx
 		}).
 		Assess("MPIJob succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -116,11 +133,13 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			j := kubeflowv2beta1.MPIJob{
 				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccl-test", Namespace: "default"},
 			}
+			t.Log("Waiting for multi node job to complete")
 			err := wait.For(conditions.New(rsrc).ResourceMatch(&j, mpiJobSucceeded),
 				wait.WithContext(ctx))
 			if err != nil {
 				t.Fatal(err)
 			}
+			t.Log("Multi node job completed")
 
 			// Verify GPU Direct RDMA is used on P4/P5
 			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), &kubeflowv2beta1.MPIJob{
