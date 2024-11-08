@@ -38,8 +38,8 @@ type ncclTestManifestTplVars struct {
 	GpuPerNode          int
 	NvidiaTestImage     string
 	EfaInterfacePerNode int
-	MaxBytes			string
-	NcclBuffSize		string
+	MaxBytes            string
+	NcclBuffSize        string
 }
 
 func TestMPIJobPytorchTraining(t *testing.T) {
@@ -111,8 +111,8 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 				GpuPerNode:          gpuPerNode,
 				NvidiaTestImage:     *nvidiaTestImage,
 				EfaInterfacePerNode: efaPerNode,
-				MaxBytes: 			 maxBytes,
-				NcclBuffSize: 		 ncclBuffSize,
+				MaxBytes:            maxBytes,
+				NcclBuffSize:        ncclBuffSize,
 			})
 			if err != nil {
 				t.Fatal(err)
