@@ -1,7 +1,7 @@
 ARG UBUNTU_MAJOR_VERSION=22
 
 ARG CUDA_MAJOR_VERSION=12
-ARG CUDA_MINOR_VERSION=6
+ARG CUDA_MINOR_VERSION=5
 
 # Start with the NVIDIA CUDA base image
 FROM nvidia/cuda:$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION.1-devel-ubuntu$UBUNTU_MAJOR_VERSION.04
@@ -41,6 +41,7 @@ RUN apt install -y \
   cmake \
   apt-utils \
   libhwloc-dev \
+  cuda-demo-suite-$CUDA_MAJOR_VERSION-$CUDA_MINOR_VERSION \
   datacenter-gpu-manager
 
 RUN mkdir -p /var/run/sshd \
@@ -63,8 +64,8 @@ RUN cd /tmp \
 # Install NCCL
 RUN apt update \
   && apt install -y \
-    libnccl2=2.23.4-1+cuda12.6  \
-    libnccl-dev=2.23.4-1+cuda12.6
+    libnccl2=2.22.3-1+cuda12.5  \
+    libnccl-dev=2.22.3-1+cuda12.5
 
 # Install AWS-OFI-NCCL plugin
 ARG AWS_OFI_NCCL_VERSION=1.12.1-aws
@@ -81,7 +82,7 @@ RUN cd tmp \
   && make install
 
 # Install NCCL Tests
-ARG NCCL_TESTS_VERSION=2.13.11
+ARG NCCL_TESTS_VERSION=2.13.10
 RUN cd /tmp \
   && curl -sL https://github.com/NVIDIA/nccl-tests/archive/refs/tags/v$NCCL_TESTS_VERSION.tar.gz | tar xvz \
   && cd nccl-tests-$NCCL_TESTS_VERSION \
