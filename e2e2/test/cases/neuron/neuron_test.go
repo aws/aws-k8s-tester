@@ -14,8 +14,8 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 
-	v1 "k8s.io/api/core/v1"
 	batchv1 "k8s.io/api/batch/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,7 +25,7 @@ var (
 
 var (
 	//go:embed manifests/single-node-test-neuronx.yaml
-	neuronSingleNodeManifest         []byte
+	neuronSingleNodeManifest []byte
 	//go:embed manifests/multi-node-test-neuron.yaml
 	neuronMultiNodeManifest          []byte
 	renderedNeuronSingleNodeManifest []byte
@@ -37,12 +37,12 @@ type neuronSingleNodeManifestTplVars struct {
 }
 
 type neuronMultiNodeTestManifestTplVars struct {
-	WorkerNodeCount        int
-	WorkerNodeNeuronCount  int
-	NeuronPerNode          int
-	NeuronCorePerNode	   int
-	NeuronTestImage        string
-	EfaInterfacePerNode    int
+	WorkerNodeCount       int
+	WorkerNodeNeuronCount int
+	NeuronPerNode         int
+	NeuronCorePerNode     int
+	NeuronTestImage       string
+	EfaInterfacePerNode   int
 }
 
 func TestNeuronNodes(t *testing.T) {
@@ -107,12 +107,12 @@ func TestNeuronNodes(t *testing.T) {
 			}
 			renderedNeuronMultiNodeManifest, err := fwext.RenderManifests(neuronMultiNodeManifest, neuronMultiNodeTestManifestTplVars{
 				// one of the nodes will be used for the master pod
-				WorkerNodeCount:     	nodeCount,
-				WorkerNodeNeuronCount:  nodeCount * neuronPerNode,
-				NeuronPerNode:          neuronPerNode,
-				NeuronCorePerNode:      neuronCorePerNode,
-				NeuronTestImage:     	*neuronTestImage,
-				EfaInterfacePerNode: 	efaPerNode,
+				WorkerNodeCount:       nodeCount,
+				WorkerNodeNeuronCount: nodeCount * neuronPerNode,
+				NeuronPerNode:         neuronPerNode,
+				NeuronCorePerNode:     neuronCorePerNode,
+				NeuronTestImage:       *neuronTestImage,
+				EfaInterfacePerNode:   efaPerNode,
 			})
 			if err != nil {
 				t.Fatal(err)
