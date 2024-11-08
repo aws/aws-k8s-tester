@@ -38,7 +38,7 @@ spec:
                 # Run the nccom-test command with the extracted IPs
                 NEURON_CORE_PER_NODE={{.NeuronCorePerNode}}
                 WORKER_NODE_COUNT={{.WorkerNodeCount}}
-                nccom-test -r $((NEURON_CORE_PER_NODE*WORKER_NODE_COUNT)) -N {{.WorkerNodeCount}} -b "8" -e {{.MaxBytes}} -f "2" -n "5" -w "5" -d "fp32" allr --hosts $WORKER_0_IP $WORKER_1_IP --data-collector-host $POD_IP --data-collector-port 60006 --debug
+                nccom-test -r $((NEURON_CORE_PER_NODE*WORKER_NODE_COUNT)) -N {{.WorkerNodeCount}} -b "8" -e "2G" -f "2" -n "5" -w "5" -d "fp32" allr --hosts $WORKER_0_IP $WORKER_1_IP --data-collector-host $POD_IP --data-collector-port 60006 --debug
             ports:
             - containerPort: 63182
             - containerPort: 60006

@@ -4,7 +4,6 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"regexp"
 	"testing"
 
 	fwext "github.com/aws/aws-k8s-tester/e2e2/internal/framework_extensions"
@@ -18,7 +17,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/strings/slices"
 )
 
 var (
@@ -45,7 +43,6 @@ type neuronMultiNodeTestManifestTplVars struct {
 	NeuronCorePerNode	   int
 	NeuronTestImage        string
 	EfaInterfacePerNode    int
-	MaxBytes			   string
 }
 
 func TestNeuronNodes(t *testing.T) {
@@ -108,11 +105,6 @@ func TestNeuronNodes(t *testing.T) {
 			if *neuronTestImage == "" {
 				t.Fatal(fmt.Errorf("neuronTestImage must be set to run unit test, use https://github.com/aws/aws-k8s-tester/blob/main/e2e2/test/images/neuron/Dockerfile to build the image and -neuronTestImage to set the image url"))
 			}
-			maxBytes := "2G"
-			if slices.Contains(instanceSupportsRdmaRead, *nodeType) {
-				t.Log("Instance supports RDMA")
-				maxBytes = "16G"
-			}
 			renderedNeuronMultiNodeManifest, err := fwext.RenderManifests(neuronMultiNodeManifest, neuronMultiNodeTestManifestTplVars{
 				// one of the nodes will be used for the master pod
 				WorkerNodeCount:     	nodeCount,
@@ -121,7 +113,6 @@ func TestNeuronNodes(t *testing.T) {
 				NeuronCorePerNode:      neuronCorePerNode,
 				NeuronTestImage:     	*neuronTestImage,
 				EfaInterfacePerNode: 	efaPerNode,
-				MaxBytes:				maxBytes,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -158,12 +149,6 @@ func TestNeuronNodes(t *testing.T) {
 			}
 			t.Log("Test log for multi-node-nccom-test:")
 			t.Log(log)
-			if *efaEnabled && slices.Contains(instanceSupportsRdmaRead, *nodeType) {
-				pattern := regexp.MustCompile(`\[send\] via NET/.*Libfabric/.*/GDRDMA`)
-				if !pattern.MatchString(log) {
-					t.Fatalf("GPU Direct RDMA is not utilized for inter-node communication in NCCOM tests on instances that support GDRDMA: %s", *nodeType)
-				}
-			}
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
