@@ -20,10 +20,6 @@ import (
 )
 
 var (
-	instanceSupportsRdmaRead = []string{"trn1.32xlarge", "trn1n.32xlarge"}
-)
-
-var (
 	//go:embed manifests/single-node-test-neuronx.yaml
 	neuronSingleNodeManifest []byte
 	//go:embed manifests/multi-node-test-neuron.yaml
