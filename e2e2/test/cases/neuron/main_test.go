@@ -29,6 +29,7 @@ var (
 	efaEnabled          *bool
 	nodeCount           int
 	neuronPerNode       int
+	neuronCorePerNode   int
 	efaPerNode          int
 	neuronTestImage     *string
 	installDevicePlugin *bool
@@ -124,6 +125,8 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		nodeCount = len(nodes.Items)
 		neuron := nodes.Items[0].Status.Capacity["aws.amazon.com/neuron"]
 		neuronPerNode = int(neuron.Value())
+		neuronCore := nodes.Items[0].Status.Capacity["aws.amazon.com/neuroncore"]
+		neuronCorePerNode = int(neuronCore.Value())
 		efa := nodes.Items[0].Status.Capacity["vpc.amazonaws.com/efa"]
 		efaPerNode = int(efa.Value())
 	}

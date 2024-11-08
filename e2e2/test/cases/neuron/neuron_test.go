@@ -42,8 +42,10 @@ type neuronMultiNodeTestManifestTplVars struct {
 	WorkerNodeCount        int
 	WorkerNodeNeuronCount  int
 	NeuronPerNode          int
+	NeuronCorePerNode	   int
 	NeuronTestImage        string
 	EfaInterfacePerNode    int
+	MaxBytes			   string
 }
 
 func TestNeuronNodes(t *testing.T) {
@@ -61,16 +63,19 @@ func TestNeuronNodes(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			t.Log("Applying single node manifest")
 			err = fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedNeuronSingleNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
+			t.Log("Manifest applied successfully")
 			return ctx
 		}).
 		Assess("Single node test Job succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			job := &batchv1.Job{
 				ObjectMeta: metav1.ObjectMeta{Name: "neuronx-single-node", Namespace: "default"},
 			}
+			t.Log("Waiting for single node job to complete")
 			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 				wait.WithContext(ctx))
 			if err != nil {
@@ -103,13 +108,20 @@ func TestNeuronNodes(t *testing.T) {
 			if *neuronTestImage == "" {
 				t.Fatal(fmt.Errorf("neuronTestImage must be set to run unit test, use https://github.com/aws/aws-k8s-tester/blob/main/e2e2/test/images/neuron/Dockerfile to build the image and -neuronTestImage to set the image url"))
 			}
+			maxBytes := "2G"
+			if slices.Contains(instanceSupportsRdmaRead, *nodeType) {
+				t.Log("Instance supports RDMA")
+				maxBytes = "16G"
+			}
 			renderedNeuronMultiNodeManifest, err := fwext.RenderManifests(neuronMultiNodeManifest, neuronMultiNodeTestManifestTplVars{
 				// one of the nodes will be used for the master pod
 				WorkerNodeCount:     	nodeCount,
 				WorkerNodeNeuronCount:  nodeCount * neuronPerNode,
 				NeuronPerNode:          neuronPerNode,
+				NeuronCorePerNode:      neuronCorePerNode,
 				NeuronTestImage:     	*neuronTestImage,
 				EfaInterfacePerNode: 	efaPerNode,
+				MaxBytes:				maxBytes,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -131,7 +143,7 @@ func TestNeuronNodes(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccom-test", Namespace: "default"},
 			}
 			t.Log("Waiting for MPIJob to complete")
-			err := wait.For(conditions.New(rsrc).ResourceMatch(&j, mpiJobRunning),
+			err := wait.For(conditions.New(rsrc).ResourceMatch(&j, mpiJobSucceeded),
 				wait.WithContext(ctx))
 			if err != nil {
 				t.Fatal(err)
@@ -166,10 +178,10 @@ func TestNeuronNodes(t *testing.T) {
 	testenv.Test(t, singleNode, multiNode)
 }
 
-func mpiJobRunning(obj k8s.Object) bool {
+func mpiJobSucceeded(obj k8s.Object) bool {
 	j := obj.(*kubeflowv2beta1.MPIJob)
 	for _, c := range j.Status.Conditions {
-		if c.Type == kubeflowv2beta1.JobRunning {
+		if c.Type == kubeflowv2beta1.JobSucceeded {
 			return c.Status == v1.ConditionTrue
 		}
 	}
