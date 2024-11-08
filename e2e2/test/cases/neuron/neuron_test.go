@@ -136,7 +136,6 @@ func TestNeuronNodes(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			// Verify GPU Direct RDMA is used on P4/P5
 			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), &kubeflowv2beta1.MPIJob{
 				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccom-test", Namespace: "default"},
 			})
