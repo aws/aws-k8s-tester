@@ -27,7 +27,7 @@ WARMUP_STEPS = 2
 BATCH_SIZE = 32
 
 # Load MNIST train dataset
-train_dataset = mnist.MNIST(root=os.path.join('./MNIST_DATA_train', str(xm.get_ordinal())),
+train_dataset = mnist.MNIST(root=os.path.join(os.path.expanduser("~") + '/MNIST_DATA_train', str(xm.get_ordinal())),
                             train=True, download=True, transform=ToTensor())
 
 # Declare 3-layer MLP for MNIST dataset
@@ -94,9 +94,9 @@ def main():
     print("Final loss is {:0.4f}".format(loss.detach().to('cpu')))
 
     # Save checkpoint for evaluation (xm.save ensures only one process save)
-    os.makedirs("checkpoints", exist_ok=True)
+    os.makedirs(os.path.expanduser("~") + "/checkpoints", exist_ok=True)
     checkpoint = {'state_dict': model.state_dict()}
-    xm.save(checkpoint,'checkpoints/checkpoint.pt')
+    xm.save(checkpoint, os.path.expanduser("~") + '/checkpoints/checkpoint.pt')
 
     print('----------End Training ---------------')
 
