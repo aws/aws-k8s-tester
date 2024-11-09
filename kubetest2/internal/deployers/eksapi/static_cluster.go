@@ -84,7 +84,7 @@ func (s *StaticClusterManager) CreateNodePool() error {
 
 	t := templates.NvidiaStaticClusterNodepool
 	var buf bytes.Buffer
-	if err := t.Execute(&buf, templates.NvidiaStaticClusterNodepoolTempalteData{
+	if err := t.Execute(&buf, templates.NvidiaStaticClusterNodepoolTemplateData{
 		Arch:          arch,
 		InstanceTypes: s.options.InstanceTypes,
 	}); err != nil {
