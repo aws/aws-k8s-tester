@@ -26,7 +26,7 @@ type BusyboxDeploymentTemplateData struct {
 	Nodes int
 }
 
-type nvidiaStaticClusterNodepoolTemplateData struct {
+type NvidiaStaticClusterNodepoolTemplateData struct {
 	Arch          string
 	InstanceTypes []string
 }
