@@ -496,7 +496,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-          CidrIp: 0.0.0.0/0
+          CidrIp: 127.0.0.1/32
 
   SSHKeyPair:
     Type: AWS::EC2::KeyPair
