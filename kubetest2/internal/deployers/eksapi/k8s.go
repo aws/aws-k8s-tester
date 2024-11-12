@@ -172,6 +172,10 @@ func emitNodeMetrics(metricRegistry metrics.MetricRegistry, k8sClient *kubernete
 			"arch":         node.Status.NodeInfo.Architecture,
 		}
 
+		// we'll emit the metrics with different subset(s) of dimensions, to make aggregation simpler
+		var nodeDimensionSets []map[string]string
+		nodeDimensionSets = append(nodeDimensionSets, nodeDimensions)
+
 		var osDistro string
 		if strings.HasPrefix(node.Status.NodeInfo.OSImage, "Amazon Linux") {
 			// on al2: "Amazon Linux 2"
@@ -183,10 +187,19 @@ func emitNodeMetrics(metricRegistry metrics.MetricRegistry, k8sClient *kubernete
 
 		if osDistro != "" {
 			nodeDimensions["osDistro"] = osDistro
+
+			// if we have an osDistro, add a pared-down dimension set that includes it
+			nodeDimensionSets = append(nodeDimensionSets, map[string]string{
+				"osDistro":     nodeDimensions["osDistro"],
+				"instanceType": nodeDimensions["instanceType"],
+				"arch":         nodeDimensions["arch"],
+			})
 		}
 
-		metricRegistry.Record(nodeTimeToRegistrationSeconds, timeToRegistration.Seconds(), nodeDimensions)
-		metricRegistry.Record(nodeTimeToReadySeconds, timeToReady.Seconds(), nodeDimensions)
+		for _, nodeDimensionSet := range nodeDimensionSets {
+			metricRegistry.Record(nodeTimeToRegistrationSeconds, timeToRegistration.Seconds(), nodeDimensionSet)
+			metricRegistry.Record(nodeTimeToReadySeconds, timeToReady.Seconds(), nodeDimensionSet)
+		}
 	}
 	return errors.Join(errs...)
 }
