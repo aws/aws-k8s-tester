@@ -24,7 +24,7 @@ spec:
             {{- range .InstanceTypes}}
             - "{{.}}"
             {{- end}}
-        - key: karpenter.k8s.aws/instance-gpu-count
+        - key: eks.amazonaws.com/instance-gpu-count
           operator: Exists
       nodeClassRef:
         group: eks.amazonaws.com
