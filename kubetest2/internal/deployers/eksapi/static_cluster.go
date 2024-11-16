@@ -179,7 +179,7 @@ func (s *StaticClusterManager) TearDownBusyboxAndNodes() error {
 
 	return waitForNodeCondition(s.k8sClient, func(nodes []corev1.Node) bool {
 		return len(nodes) == 0
-	}, 10*time.Minute, "Waiting for nodes to be removed")
+	}, 30*time.Minute, "Waiting for nodes to be removed")
 }
 
 func waitForNodeCondition(clientset *kubernetes.Clientset, condition NodeCondition, timeout time.Duration, description string) error {
