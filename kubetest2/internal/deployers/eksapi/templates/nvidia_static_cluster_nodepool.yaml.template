@@ -34,5 +34,5 @@ spec:
   disruption:
     budgets:
       - nodes: 10%
-    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidationPolicy: WhenEmpty
     consolidateAfter: 30s
