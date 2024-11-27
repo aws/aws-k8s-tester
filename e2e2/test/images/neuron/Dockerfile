@@ -189,6 +189,8 @@ RUN curl -o /license.txt  https://aws-dlc-licenses.s3.amazonaws.com/pytorch-2.1/
 # Allow ssh to work without password/prompt so mpirun does not get stuck
 RUN sed -i -e 's/#   StrictHostKeyChecking ask/    StrictHostKeyChecking accept-new/g' /etc/ssh/ssh_config
 
+WORKDIR /home/ubuntu
+
 USER ubuntu
 RUN mkdir /home/ubuntu/.ssh
 RUN ssh-keygen -t rsa -f /home/ubuntu/.ssh/id_rsa -N ''

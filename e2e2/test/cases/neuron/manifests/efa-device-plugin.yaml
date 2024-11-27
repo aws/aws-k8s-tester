@@ -145,6 +145,7 @@ spec:
                     - p5e.48xlarge
                     - trn1.32xlarge
                     - trn1n.32xlarge
+                    - trn2.48xlarge
                     - vt1.24xlarge
                     - hpc6a.48xlarge
                     - hpc6id.32xlarge
