@@ -157,6 +157,7 @@ spec:
                       - inf1.24xlarge
                       - trn1.2xlarge
                       - trn1.32xlarge
+                      - trn2.48xlarge
               - matchExpressions:
                   - key: "node.kubernetes.io/instance-type"
                     operator: In
@@ -167,6 +168,7 @@ spec:
                       - inf1.24xlarge
                       - trn1.2xlarge
                       - trn1.32xlarge
+                      - trn2.48xlarge
       containers:
         - image: public.ecr.aws/neuron/neuron-device-plugin:1.9.3.0
           imagePullPolicy: IfNotPresent
