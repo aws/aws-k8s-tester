@@ -172,6 +172,10 @@ func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, clust
 	if err != nil {
 		return err
 	}
+	volumeMountPath := "/dev/xvda"
+	if opts.UserDataFormat == "bottlerocket" {
+		volumeMountPath = "/dev/xvdb"
+	}
 	// pull the role name out of the ARN
 	nodeRoleArnParts := strings.Split(infra.nodeRole, "/")
 	nodeRoleName := nodeRoleArnParts[len(nodeRoleArnParts)-1]
@@ -227,6 +231,10 @@ func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, clust
 			{
 				ParameterKey:   aws.String("AMIId"),
 				ParameterValue: aws.String(opts.AMI),
+			},
+			{
+				ParameterKey:   aws.String("VolumeMountPath"),
+				ParameterValue: aws.String(volumeMountPath),
 			},
 		},
 	}

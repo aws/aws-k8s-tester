@@ -45,6 +45,9 @@ Parameters:
   UserData:
     Type: String
 
+  VolumeMountPath:
+    Type: String
+
   UserDataIsMIMEPart:
     Description: "User data should be embedded as a part of a multi-part MIME document"
     Default: true
@@ -130,7 +133,7 @@ Resources:
         ImageId: !Ref AMIId
         InstanceType: "{{index .InstanceTypes 0}}"
         BlockDeviceMappings:
-          - DeviceName: /dev/xvda
+          - DeviceName: !Ref VolumeMountPath
             Ebs:
               VolumeSize: !Ref NodeDiskSize
               VolumeType: gp2
