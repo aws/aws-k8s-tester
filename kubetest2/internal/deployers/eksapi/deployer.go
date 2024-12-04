@@ -11,6 +11,8 @@ import (
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/metrics"
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/util"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/octago/sflags/gen/gpflag"
@@ -82,6 +84,7 @@ type deployerOptions struct {
 	UnmanagedNodes              bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup. Requires --ami"`
 	UpClusterHeaders            []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
 	UserDataFormat              string        `flag:"user-data-format" desc:"Format of the node instance user data"`
+	CertsPath                   string        `flag:"certs-path" desc:"Optional, path to the certs that would be applied to aws clients"`
 }
 
 // NewDeployer implements deployer.New for EKS using the EKS (and other AWS) API(s) directly (no cloudformation)
@@ -110,9 +113,23 @@ func (d *deployer) Version() string {
 	return internal.Version
 }
 
+func initAWSConfig(d *deployer) aws.Config {
+	opts := []func(*config.LoadOptions) error{
+		config.WithRegion(d.Region),
+	}
+
+	if d.CertsPath != "" {
+		klog.Infof("certificate file provided: %s", d.CertsPath)
+		opts = append(opts, awssdk.WithCertsPath(d.CertsPath))
+	}
+
+	return awssdk.NewConfig(opts...)
+}
+
+
 func (d *deployer) Init() error {
 	d.initTime = time.Now()
-	awsConfig := awssdk.NewConfig()
+	awsConfig := initAWSConfig(d)
 	d.awsClients = newAWSClients(awsConfig, d.EKSEndpointURL)
 	resourceID := ResourcePrefix + "-" + d.commonOptions.RunID()
 	if d.deployerOptions.EmitMetrics {
