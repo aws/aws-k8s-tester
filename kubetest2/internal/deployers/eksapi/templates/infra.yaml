@@ -41,7 +41,7 @@ Parameters:
 
   Subnet01AZ:
     Type: String
-  
+
   Subnet02AZ:
     Type: String
 
@@ -196,7 +196,7 @@ Resources:
     Type: AWS::EC2::Route
     DependsOn:
       - InternetGateway
-      - VPCGatewayAttachment    
+      - VPCGatewayAttachment
     Properties:
       DestinationIpv6CidrBlock: ::/0
       GatewayId:
@@ -401,7 +401,9 @@ Resources:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Action: "sts:AssumeRole"
+          - Action:
+            - "sts:AssumeRole"
+            - "sts:TagSession"
             Effect: Allow
             Principal:
               Service:
@@ -416,6 +418,26 @@ Resources:
           - - "arn:"
             - !Ref "AWS::Partition"
             - ":iam::aws:policy/AmazonEKSClusterPolicy"
+        - !Join
+          - ""
+          - - "arn:"
+            - !Ref "AWS::Partition"
+            - ":iam::aws:policy/AmazonEKSBlockStoragePolicy"
+        - !Join
+          - ""
+          - - "arn:"
+            - !Ref "AWS::Partition"
+            - ":iam::aws:policy/AmazonEKSComputePolicy"
+        - !Join
+          - ""
+          - - "arn:"
+            - !Ref "AWS::Partition"
+            - ":iam::aws:policy/AmazonEKSLoadBalancingPolicy"
+        - !Join
+          - ""
+          - - "arn:"
+            - !Ref "AWS::Partition"
+            - ":iam::aws:policy/AmazonEKSNetworkingPolicy"
 
   NodeRole:
     Type: AWS::IAM::Role

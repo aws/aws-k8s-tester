@@ -56,6 +56,25 @@ func (m *ClusterManager) getOrCreateCluster(infra *Infrastructure, opts *deploye
 			},
 			Version: aws.String(opts.KubernetesVersion),
 		}
+		if opts.AutoMode {
+			input.ComputeConfig = &ekstypes.ComputeConfigRequest{
+				Enabled:     aws.Bool(true),
+				NodePools:   []string{"general-purpose", "system"},
+				NodeRoleArn: &infra.nodeRole,
+			}
+			input.StorageConfig = &ekstypes.StorageConfigRequest{
+				BlockStorage: &ekstypes.BlockStorage{
+					Enabled: aws.Bool(true),
+				},
+			}
+			input.KubernetesNetworkConfig.ElasticLoadBalancing = &ekstypes.ElasticLoadBalancing{
+				Enabled: aws.Bool(true),
+			}
+			input.AccessConfig = &ekstypes.CreateAccessConfigRequest{
+				AuthenticationMode: ekstypes.AuthenticationModeApi,
+			}
+			input.BootstrapSelfManagedAddons = aws.Bool(false)
+		}
 		apiOpts, err := util.NewHTTPHeaderAPIOptions(opts.UpClusterHeaders)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create API options: %v", err)

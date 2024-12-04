@@ -59,6 +59,7 @@ type deployerOptions struct {
 	Addons                      []string      `flag:"addons" desc:"Managed addons (name:version pairs) to create in the cluster. Use 'latest' for the most recent version, or 'default' for the default version."`
 	AMI                         string        `flag:"ami" desc:"AMI for unmanaged nodes"`
 	AMIType                     string        `flag:"ami-type" desc:"AMI type for managed nodes"`
+	AutoMode                    bool          `flag:"auto-mode" desc:"Enable EKS Auto Mode"`
 	CapacityReservation         bool          `flag:"capacity-reservation" desc:"Use capacity reservation for the unmanaged nodegroup"`
 	ClusterRoleServicePrincipal string        `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
 	EFA                         bool          `flag:"efa" desc:"Create EFA interfaces on the node of an unmanaged nodegroup. Requires --unmanaged-nodes."`
@@ -188,7 +189,7 @@ func (d *deployer) Up() error {
 	if err != nil {
 		return err
 	}
-	if d.deployerOptions.StaticClusterName != "" {
+	if d.deployerOptions.StaticClusterName != "" || d.deployerOptions.AutoMode {
 		klog.Infof("inited k8sclient, skip the rest resource creation for static cluster")
 		d.staticClusterManager.SetK8sClient(kubeconfig)
 		if err := d.staticClusterManager.EnsureNodeForStaticCluster(); err != nil {
