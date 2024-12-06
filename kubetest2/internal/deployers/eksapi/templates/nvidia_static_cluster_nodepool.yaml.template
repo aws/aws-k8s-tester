@@ -35,4 +35,4 @@ spec:
     budgets:
       - nodes: 10%
     consolidationPolicy: WhenEmpty
-    consolidateAfter: 300s
+    consolidateAfter: 600s
