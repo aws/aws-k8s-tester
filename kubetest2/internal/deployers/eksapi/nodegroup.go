@@ -81,7 +81,7 @@ func (m *NodegroupManager) createNodegroup(infra *Infrastructure, cluster *Clust
 				amiArch := out.Images[0].Architecture
 				defaultInstanceTypes, err := m.getValidDefaultInstanceTypesByEC2Arch(amiArch)
 				if err != nil {
-					return err
+					return fmt.Errorf("failed to get default instance types for AmiArch: %s: %v", amiArch, err)
 				}
 				opts.InstanceTypes = defaultInstanceTypes
 				klog.V(2).Infof("Using default instance types for AMI architecture: %v: %v", amiArch, opts.InstanceTypes)
@@ -119,7 +119,7 @@ func (m *NodegroupManager) createManagedNodegroup(infra *Infrastructure, cluster
 		// this only supports 17 pods, which can cause some flakes in the k8s e2e suite
 		defaultInstanceTypes, err := m.getValidDefaultInstanceTypesByEKSAMIType(input.AmiType)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get default instance types for AmiType: %s: %v", input.AmiType, err)
 		}
 		input.InstanceTypes = defaultInstanceTypes
 	}
@@ -537,7 +537,7 @@ func (m *NodegroupManager) getSubnetWithCapacity(infra *Infrastructure, opts *de
 func (m *NodegroupManager) getValidDefaultInstanceTypesByEKSAMIType(amiType ekstypes.AMITypes) ([]string, error) {
 	defaults, ok := defaultInstanceTypesByEKSAMITypes[amiType]
 	if !ok {
-		return []string{}, fmt.Errorf("no default instance types known for AmiType: %v", amiType)
+		return nil, fmt.Errorf("no default instance types known for AmiType: %v", amiType)
 	}
 	return m.getValidInstanceTypesFromList(defaults)
 }
@@ -545,7 +545,7 @@ func (m *NodegroupManager) getValidDefaultInstanceTypesByEKSAMIType(amiType ekst
 func (m *NodegroupManager) getValidDefaultInstanceTypesByEC2Arch(arch ec2types.ArchitectureValues) ([]string, error) {
 	defaults, ok := defaultInstanceTypesByEC2ArchitectureValues[arch]
 	if !ok {
-		return []string{}, fmt.Errorf("no default instance types known for AMI architecture: %v", arch)
+		return nil, fmt.Errorf("no default instance types known for AMI architecture: %v", arch)
 	}
 	return m.getValidInstanceTypesFromList(defaults)
 }
@@ -562,7 +562,7 @@ func (m *NodegroupManager) getValidInstanceTypesFromList(desiredInstanceTypes []
 			if errors.As(err, &apierr) && apierr.ErrorCode() == "InvalidInstanceType" {
 				klog.Infof("Eliminating instance type %s as an option", instanceType)
 			} else {
-				return []string{}, fmt.Errorf("could not determine invalid instance types, received error: %s", err)
+				return nil, fmt.Errorf("failed to describe instance type: %s: %v", instanceType, err)
 			}
 		} else {
 			validInstanceTypes = append(validInstanceTypes, instanceType)
