@@ -121,7 +121,6 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		// Check for Neuron capacity
 		neuron, ok := node.Status.Capacity["aws.amazon.com/neuron"]
 		if ok {
-			log.Printf("[WARN] Node %s has neuron capacity: %d", node.Name, neuron.Value())
 			totalNeuronCount += int(neuron.Value())
 		} else {
 			log.Printf("[WARN] Node %s does not have 'aws.amazon.com/neuron' capacity", node.Name)
@@ -130,7 +129,6 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		// Check for NeuronCore capacity
 		neuronCore, ok := node.Status.Capacity["aws.amazon.com/neuroncore"]
 		if ok {
-			log.Printf("[WARN] Node %s has neuroncore capacity: %d", node.Name, neuronCore.Value())
 			totalNeuronCoreCount += int(neuronCore.Value())
 		} else {
 			log.Printf("[WARN] Node %s does not have 'aws.amazon.com/neuroncore' capacity", node.Name)
@@ -139,7 +137,6 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		// Check for EFA capacity
 		efa, ok := node.Status.Capacity["vpc.amazonaws.com/efa"]
 		if ok {
-			log.Printf("[WARN] Node %s has efa capacity: %d", node.Name, efa.Value())
 			totalEfaCount += int(efa.Value())
 		} else {
 			log.Printf("[WARN] Node %s does not have 'vpc.amazonaws.com/efa' capacity", node.Name)
