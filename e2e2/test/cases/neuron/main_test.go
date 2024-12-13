@@ -12,7 +12,6 @@ import (
 	"time"
 
 	fwext "github.com/aws/aws-k8s-tester/e2e2/internal/framework_extensions"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -99,36 +98,55 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		return ctx, err
 	}
 
-	singleNodeType := true
-	for i := 1; i < len(nodes.Items)-1; i++ {
+	for i := 1; i < len(nodes.Items); i++ {
 		if nodes.Items[i].Labels["node.kubernetes.io/instance-type"] != nodes.Items[i-1].Labels["node.kubernetes.io/instance-type"] {
-			singleNodeType = false
+			return ctx, fmt.Errorf("Node types are not the same, all node types must be the same in the cluster")
 		}
-	}
-	if !singleNodeType {
-		return ctx, fmt.Errorf("Node types are not the same, all node types must be the same in the cluster")
 	}
 
-	if *nodeType != "" {
-		for _, v := range nodes.Items {
-			if v.Labels["node.kubernetes.io/instance-type"] == *nodeType {
-				nodeCount++
-				neuron := v.Status.Capacity["aws.amazon.com/neuron"]
-				neuronPerNode = int(neuron.Value())
-				efa := v.Status.Capacity["vpc.amazonaws.com/efa"]
-				efaPerNode = int(efa.Value())
-			}
+	totalNeuronCount := 0
+	totalNeuronCoreCount := 0
+	totalEfaCount := 0
+
+	for _, node := range nodes.Items {
+		log.Printf("[INFO] Processing node %s", node.Name)
+
+		// Check for Neuron capacity
+		neuron, ok := node.Status.Capacity["aws.amazon.com/neuron"]
+		if ok {
+			totalNeuronCount += int(neuron.Value())
+		} else {
+			log.Printf("[WARN] Node %s does not have 'aws.amazon.com/neuron' capacity", node.Name)
 		}
+
+		// Check for NeuronCore capacity
+		neuronCore, ok := node.Status.Capacity["aws.amazon.com/neuroncore"]
+		if ok {
+			totalNeuronCoreCount += int(neuronCore.Value())
+		} else {
+			log.Printf("[WARN] Node %s does not have 'aws.amazon.com/neuroncore' capacity", node.Name)
+		}
+
+		// Check for EFA capacity
+		efa, ok := node.Status.Capacity["vpc.amazonaws.com/efa"]
+		if ok {
+			totalEfaCount += int(efa.Value())
+		} else {
+			log.Printf("[WARN] Node %s does not have 'vpc.amazonaws.com/efa' capacity", node.Name)
+		}
+	}
+
+	if nodeCount := len(nodes.Items); nodeCount > 0 {
+		neuronPerNode := totalNeuronCount / nodeCount
+		neuronCorePerNode := totalNeuronCoreCount / nodeCount
+		efaPerNode := totalEfaCount / nodeCount
+
+		log.Printf("[INFO] Total Nodes: %d", nodeCount)
+		log.Printf("[INFO] Total Neuron Count: %d, Neuron Per Node: %d", totalNeuronCount, neuronPerNode)
+		log.Printf("[INFO] Total Neuron Core Count: %d, Neuron Core Per Node: %d", totalNeuronCoreCount, neuronCorePerNode)
+		log.Printf("[INFO] Total EFA Count: %d, EFA Per Node: %d", totalEfaCount, efaPerNode)
 	} else {
-		log.Printf("No node type specified. Using the node type %s in the node groups.", nodes.Items[0].Labels["node.kubernetes.io/instance-type"])
-		nodeType = aws.String(nodes.Items[0].Labels["node.kubernetes.io/instance-type"])
-		nodeCount = len(nodes.Items)
-		neuron := nodes.Items[0].Status.Capacity["aws.amazon.com/neuron"]
-		neuronPerNode = int(neuron.Value())
-		neuronCore := nodes.Items[0].Status.Capacity["aws.amazon.com/neuroncore"]
-		neuronCorePerNode = int(neuronCore.Value())
-		efa := nodes.Items[0].Status.Capacity["vpc.amazonaws.com/efa"]
-		efaPerNode = int(efa.Value())
+		log.Printf("[WARN] No nodes found, setting capacities to 0")
 	}
 
 	return ctx, nil
