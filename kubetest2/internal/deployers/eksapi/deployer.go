@@ -41,7 +41,7 @@ type deployer struct {
 	infraManager         *InfrastructureManager
 	clusterManager       *ClusterManager
 	addonManager         *AddonManager
-	nodegroupManager     *NodegroupManager
+	nodeManager          *nodeManager
 	logManager           *logManager
 	staticClusterManager *StaticClusterManager
 
@@ -124,7 +124,7 @@ func (d *deployer) Init() error {
 	d.infraManager = NewInfrastructureManager(d.awsClients, resourceID, d.metrics)
 	d.clusterManager = NewClusterManager(d.awsClients, resourceID)
 	d.addonManager = NewAddonManager(d.awsClients)
-	d.nodegroupManager = NewNodegroupManager(d.awsClients, resourceID)
+	d.nodeManager = NewNodeManager(d.awsClients, resourceID)
 	d.logManager = NewLogManager(d.awsClients, resourceID)
 	if d.deployerOptions.StaticClusterName != "" {
 		d.staticClusterManager = NewStaticClusterManager(&d.deployerOptions)
@@ -189,7 +189,7 @@ func (d *deployer) Up() error {
 	if err != nil {
 		return err
 	}
-	if d.deployerOptions.StaticClusterName != "" || d.deployerOptions.AutoMode {
+	if d.deployerOptions.StaticClusterName != "" {
 		klog.Infof("inited k8sclient, skip the rest resource creation for static cluster")
 		d.staticClusterManager.SetK8sClient(kubeconfig)
 		if err := d.staticClusterManager.EnsureNodeForStaticCluster(); err != nil {
@@ -215,7 +215,7 @@ func (d *deployer) Up() error {
 			return err
 		}
 	}
-	if err := d.nodegroupManager.createNodegroup(d.infra, d.cluster, &d.deployerOptions); err != nil {
+	if err := d.nodeManager.createNodes(d.infra, d.cluster, &d.deployerOptions, d.k8sClient); err != nil {
 		return err
 	}
 	if err := waitForReadyNodes(d.k8sClient, d.Nodes, d.NodeReadyTimeout); err != nil {
@@ -322,11 +322,11 @@ func (d *deployer) Down() error {
 	if d.deployerOptions.StaticClusterName != "" {
 		return d.staticClusterManager.TearDownNodeForStaticCluster()
 	}
-	return deleteResources(d.infraManager, d.clusterManager, d.nodegroupManager)
+	return deleteResources(d.infraManager, d.clusterManager, d.nodeManager)
 }
 
-func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *NodegroupManager) error {
-	if err := nm.deleteNodegroup(); err != nil {
+func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *nodeManager) error {
+	if err := nm.deleteNodes(); err != nil {
 		return err
 	}
 	// the EKS-managed cluster security group may be associated with a leaked ENI
