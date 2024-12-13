@@ -39,6 +39,11 @@ func (m *logManager) gatherLogsFromNodes(k8sClient *kubernetes.Clientset, opts *
 		klog.Info("--log-bucket is empty, no logs will be gathered!")
 		return nil
 	}
+	// TODO: gather logs from Auto nodes
+	if opts.AutoMode {
+		klog.Info("--auto-mode was used, no logs will be gathered!")
+		return nil
+	}
 	switch opts.UserDataFormat {
 	case "bootstrap.sh", "nodeadm", "": // if no --user-data-format was passed, we must be using managed nodes, which default to AL-based AMIs
 		return m.gatherLogsUsingScript(k8sClient, opts, phase)

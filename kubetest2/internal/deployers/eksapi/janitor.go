@@ -66,9 +66,9 @@ func (j *janitor) Sweep(ctx context.Context) error {
 			clients := j.awsClientsForStack(stack)
 			infraManager := NewInfrastructureManager(clients, resourceID, j.metrics)
 			clusterManager := NewClusterManager(clients, resourceID)
-			nodegroupManager := NewNodegroupManager(clients, resourceID)
+			nodeManager := NewNodeManager(clients, resourceID)
 			klog.Infof("deleting resources (%v old): %s", resourceAge, resourceID)
-			if err := deleteResources(infraManager, clusterManager, nodegroupManager); err != nil {
+			if err := deleteResources(infraManager, clusterManager, nodeManager); err != nil {
 				errs = append(errs, fmt.Errorf("failed to delete resources: %s: %v", resourceID, err))
 			}
 		}
