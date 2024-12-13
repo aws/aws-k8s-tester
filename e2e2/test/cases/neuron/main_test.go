@@ -116,7 +116,7 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 
 	for _, node := range nodes.Items {
 		nodeCount++
-		log.Printf("[WARN] Processing node %s", node.Name)
+		log.Printf("[INFO] Processing node %s", node.Name)
 
 		// Check for Neuron capacity
 		neuron, ok := node.Status.Capacity["aws.amazon.com/neuron"]
