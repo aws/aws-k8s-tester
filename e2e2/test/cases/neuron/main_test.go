@@ -98,24 +98,17 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		return ctx, err
 	}
 
-	singleNodeType := true
 	for i := 1; i < len(nodes.Items); i++ {
 		if nodes.Items[i].Labels["node.kubernetes.io/instance-type"] != nodes.Items[i-1].Labels["node.kubernetes.io/instance-type"] {
-			singleNodeType = false
+			return ctx, fmt.Errorf("Node types are not the same, all node types must be the same in the cluster")
 		}
 	}
-	if !singleNodeType {
-		return ctx, fmt.Errorf("Node types are not the same, all node types must be the same in the cluster")
-	}
 
-	// Calculate capacities for all nodes
-	nodeCount = 0
 	totalNeuronCount := 0
 	totalNeuronCoreCount := 0
 	totalEfaCount := 0
 
 	for _, node := range nodes.Items {
-		nodeCount++
 		log.Printf("[INFO] Processing node %s", node.Name)
 
 		// Check for Neuron capacity
@@ -143,22 +136,18 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		}
 	}
 
-	// Calculate per-node capacities
-	if nodeCount > 0 {
-		neuronPerNode = totalNeuronCount / nodeCount
-		neuronCorePerNode = totalNeuronCoreCount / nodeCount
-		efaPerNode = totalEfaCount / nodeCount
+	if nodeCount := len(nodes.Items); nodeCount > 0 {
+		neuronPerNode := totalNeuronCount / nodeCount
+		neuronCorePerNode := totalNeuronCoreCount / nodeCount
+		efaPerNode := totalEfaCount / nodeCount
+
+		log.Printf("[INFO] Total Nodes: %d", nodeCount)
+		log.Printf("[INFO] Total Neuron Count: %d, Neuron Per Node: %d", totalNeuronCount, neuronPerNode)
+		log.Printf("[INFO] Total Neuron Core Count: %d, Neuron Core Per Node: %d", totalNeuronCoreCount, neuronCorePerNode)
+		log.Printf("[INFO] Total EFA Count: %d, EFA Per Node: %d", totalEfaCount, efaPerNode)
 	} else {
 		log.Printf("[WARN] No nodes found, setting capacities to 0")
-		neuronPerNode = 0
-		neuronCorePerNode = 0
-		efaPerNode = 0
 	}
-
-	log.Printf("[INFO] Total Nodes: %d", nodeCount)
-	log.Printf("[INFO] Total Neuron Count: %d, Neuron Per Node: %d", totalNeuronCount, neuronPerNode)
-	log.Printf("[INFO] Total Neuron Core Count: %d, Neuron Core Per Node: %d", totalNeuronCoreCount, neuronCorePerNode)
-	log.Printf("[INFO] Total EFA Count: %d, EFA Per Node: %d", totalEfaCount, efaPerNode)
 
 	return ctx, nil
 }
