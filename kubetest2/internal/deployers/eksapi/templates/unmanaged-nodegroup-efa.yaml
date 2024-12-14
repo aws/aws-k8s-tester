@@ -64,6 +64,8 @@ Conditions:
     !Equals [Ref: InstanceType, p4d.24xlarge]
   IsP5Node:
     !Equals [Ref: InstanceType, p5.48xlarge]
+  IsTRN1Node:
+    !Equals [Ref: InstanceType, trn1.32xlarge]
   IsCapacityReservationIdSet: 
     !Not [!Equals [!Ref CapacityReservationId, ""]]
   IsUserDataMIMEPart:
@@ -455,6 +457,57 @@ Resources:
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 0
                 DeviceIndex: 0
+                InterfaceType: efa
+                Groups:
+                  - !Ref EFASecurityGroup
+          !If
+            - IsTRN1Node
+            - 
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 0
+                DeviceIndex: 0
+                InterfaceType: efa
+                Groups:
+                  - !Ref EFASecurityGroup
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 1
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref EFASecurityGroup
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 2
+                DeviceIndex: 2
+                InterfaceType: efa
+                Groups:
+                  - !Ref EFASecurityGroup
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 3
+                DeviceIndex: 3
+                InterfaceType: efa
+                Groups:
+                  - !Ref EFASecurityGroup
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 4
+                DeviceIndex: 4
+                InterfaceType: efa
+                Groups:
+                  - !Ref EFASecurityGroup
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 5
+                DeviceIndex: 5
+                InterfaceType: efa
+                Groups:
+                  - !Ref EFASecurityGroup
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 6
+                DeviceIndex: 6
+                InterfaceType: efa
+                Groups:
+                  - !Ref EFASecurityGroup
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 7
+                DeviceIndex: 7
                 InterfaceType: efa
                 Groups:
                   - !Ref EFASecurityGroup
