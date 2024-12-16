@@ -1,0 +1,80 @@
+apiVersion: kubeflow.org/v2beta1
+kind: MPIJob
+metadata:
+  name: bert-training
+spec:
+  slotsPerWorker: 8
+  runPolicy:
+    backoffLimit: 20
+    cleanPodPolicy: Running
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - image: {{.BertTrainingImage}}
+            imagePullPolicy: Always
+            name: bert-training
+            env:
+            - name: NCCL_DEBUG
+              value: "TRACE"
+            - name: MASTER_ADDR
+              value: "bert-training"
+            - name: MASTER_PORT
+              value: "12355"
+            command:
+            - /opt/amazon/openmpi/bin/mpirun
+            - --allow-run-as-root
+            - --tag-output
+            - -np
+            - "32"
+            - -bind-to
+            - none
+            - -map-by
+            - slot
+            - -x
+            - PATH
+            - -x
+            - LD_LIBRARY_PATH
+            - -x
+            - NCCL_DEBUG
+            - -x
+            - MASTER_ADDR
+            - -x
+            - MASTER_PORT
+            - --mca 
+            - pml
+            - "^cm"
+            - --mca
+            - routed
+            - direct
+            - --oversubscribe
+            - --mca
+            - orte_base_help_aggregate 
+            - "0"
+            - python
+            - train.py
+    Worker:
+      replicas: 4
+      template:
+        spec:
+          volumes:
+          - name: dshm
+            emptyDir:
+              medium: Memory
+          containers:
+          - image: {{.BertTrainingImage}}
+            imagePullPolicy: Always
+            name: bert-training-worker
+            volumeMounts:
+            - mountPath: /dev/shm
+              name: dshm
+            resources:
+              requests:
+                nvidia.com/gpu: 8
+                vpc.amazonaws.com/efa: 0
+              limits:
+                nvidia.com/gpu: 8
+                vpc.amazonaws.com/efa: 0
