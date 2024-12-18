@@ -90,23 +90,30 @@ func deployEFAPlugin(ctx context.Context, config *envconf.Config) (context.Conte
 func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Context, error) {
 	clientset, err := kubernetes.NewForConfig(config.Client().RESTConfig())
 	if err != nil {
-		return ctx, err
+		return ctx, fmt.Errorf("failed to create Kubernetes client: %w", err)
 	}
 
 	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return ctx, err
+		return ctx, fmt.Errorf("failed to list nodes: %w", err)
 	}
 
+	if len(nodes.Items) == 0 {
+		return ctx, fmt.Errorf("no nodes found in the cluster")
+	}
+
+	// Check if all nodes have the same instance type
 	for i := 1; i < len(nodes.Items); i++ {
 		if nodes.Items[i].Labels["node.kubernetes.io/instance-type"] != nodes.Items[i-1].Labels["node.kubernetes.io/instance-type"] {
-			return ctx, fmt.Errorf("Node types are not the same, all node types must be the same in the cluster")
+			return ctx, fmt.Errorf("inconsistent node types detected, all nodes must have the same instance type")
 		}
 	}
 
+	// Calculate capacities for all nodes
 	totalNeuronCount := 0
 	totalNeuronCoreCount := 0
 	totalEfaCount := 0
+	nodeCount = len(nodes.Items) // Store global node count
 
 	for _, node := range nodes.Items {
 		log.Printf("[INFO] Processing node %s", node.Name)
@@ -136,18 +143,22 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		}
 	}
 
-	if nodeCount := len(nodes.Items); nodeCount > 0 {
-		neuronPerNode := totalNeuronCount / nodeCount
-		neuronCorePerNode := totalNeuronCoreCount / nodeCount
-		efaPerNode := totalEfaCount / nodeCount
-
-		log.Printf("[INFO] Total Nodes: %d", nodeCount)
-		log.Printf("[INFO] Total Neuron Count: %d, Neuron Per Node: %d", totalNeuronCount, neuronPerNode)
-		log.Printf("[INFO] Total Neuron Core Count: %d, Neuron Core Per Node: %d", totalNeuronCoreCount, neuronCorePerNode)
-		log.Printf("[INFO] Total EFA Count: %d, EFA Per Node: %d", totalEfaCount, efaPerNode)
+	// Update global capacities
+	if nodeCount > 0 {
+		neuronPerNode = totalNeuronCount / nodeCount
+		neuronCorePerNode = totalNeuronCoreCount / nodeCount
+		efaPerNode = totalEfaCount / nodeCount
 	} else {
 		log.Printf("[WARN] No nodes found, setting capacities to 0")
+		neuronPerNode = 0
+		neuronCorePerNode = 0
+		efaPerNode = 0
 	}
+
+	log.Printf("[INFO] Total Nodes: %d", nodeCount)
+	log.Printf("[INFO] Total Neuron Count: %d, Neuron Per Node: %d", totalNeuronCount, neuronPerNode)
+	log.Printf("[INFO] Total Neuron Core Count: %d, Neuron Core Per Node: %d", totalNeuronCoreCount, neuronCorePerNode)
+	log.Printf("[INFO] Total EFA Count: %d, EFA Per Node: %d", totalEfaCount, efaPerNode)
 
 	return ctx, nil
 }
