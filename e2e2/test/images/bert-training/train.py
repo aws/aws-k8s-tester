@@ -81,11 +81,11 @@ def train_bert(rank, world_size, local_rank, model, tokenizer):
     train_dataloader = DataLoader(dataset, batch_size=8)
 
     optimizer = torch.optim.AdamW(ddp_model.parameters(), lr=0.001)
-    criterion = torch.nn.CrossEntropyLoss()
 
     start_time = time.time()
 
-    for epoch in range(1):  # Short run for testing
+    # Simple single-epoch training loop
+    for epoch in range(1):
         ddp_model.train()
         for batch in train_dataloader:
             optimizer.zero_grad()
@@ -96,6 +96,8 @@ def train_bert(rank, world_size, local_rank, model, tokenizer):
                 labels.to(local_rank),
                 next_sentence_labels.to(local_rank),
             )
+
+            # BertForPreTraining returns an object with `.loss`
             outputs = ddp_model(
                 input_ids=inputs,
                 attention_mask=masks,
@@ -115,6 +117,9 @@ def train_bert(rank, world_size, local_rank, model, tokenizer):
 
     cleanup()
 
+    # Return the throughput so rank 0 can print "Average Throughput" line.
+    return throughput
+
 
 def main():
     rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
@@ -131,7 +136,13 @@ def main():
 
     print(f"successfully downloaded model and tokenizer for rank: {rank}")
 
-    train_bert(rank, world_size, local_rank, model, tokenizer)
+    throughput = train_bert(rank, world_size, local_rank, model, tokenizer)
+
+    # Only print the Average Throughput line from rank 0
+    # The ECS code expects exactly this line format:
+    # "Average Throughput: <value> samples/second"
+    if rank == 0:
+        print(f"Average Throughput: {throughput:.2f} samples/second")
 
 
 if __name__ == "__main__":
