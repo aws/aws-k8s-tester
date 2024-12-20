@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
+// Use the parameterized manifest
 var (
 	//go:embed manifests/bert-training.yaml
 	bertTrainingManifest []byte
@@ -29,13 +30,28 @@ func TestBertTraining(t *testing.T) {
 		t.Fatal(fmt.Errorf("bertTrainingImage must be set to run the test"))
 	}
 
+	slotsPerWorker := gpuPerNode
+	workerReplicas := nodeCount
+	np := slotsPerWorker * workerReplicas
+	efaRequested := 0
+	if *efaEnabled && efaPerNode > 0 {
+		efaRequested = 1
+	}
+
 	bertTraining := features.New("bert-training").
 		WithLabel("suite", "nvidia").
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			renderedManifest, err := fwext.RenderManifests(bertTrainingManifest, map[string]string{
+			renderVars := map[string]string{
 				"BertTrainingImage": *bertTrainingImage,
-			})
+				"SlotsPerWorker":    fmt.Sprintf("%d", slotsPerWorker),
+				"NP":                fmt.Sprintf("%d", np),
+				"WorkerReplicas":    fmt.Sprintf("%d", workerReplicas),
+				"GPUPerNode":        fmt.Sprintf("%d", gpuPerNode),
+				"EFARequested":      fmt.Sprintf("%d", efaRequested),
+			}
+
+			renderedManifest, err := fwext.RenderManifests(bertTrainingManifest, renderVars)
 			if err != nil {
 				t.Fatal(err)
 			}

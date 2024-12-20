@@ -3,7 +3,7 @@ kind: MPIJob
 metadata:
   name: bert-training
 spec:
-  slotsPerWorker: 8
+  slotsPerWorker: {{.SlotsPerWorker}}
   runPolicy:
     backoffLimit: 20
     cleanPodPolicy: Running
@@ -29,7 +29,7 @@ spec:
             - --allow-run-as-root
             - --tag-output
             - -np
-            - "32"
+            - "{{.NP}}"           # Number of processes derived from node/gpu calculations
             - -bind-to
             - none
             - -map-by
@@ -57,7 +57,7 @@ spec:
             - python
             - train.py
     Worker:
-      replicas: 4
+      replicas: {{.WorkerReplicas}}
       template:
         spec:
           volumes:
@@ -73,8 +73,8 @@ spec:
               name: dshm
             resources:
               requests:
-                nvidia.com/gpu: 8
-                vpc.amazonaws.com/efa: 0
+                nvidia.com/gpu: {{.GPUPerNode}}
+                vpc.amazonaws.com/efa: {{.EFARequested}}
               limits:
-                nvidia.com/gpu: 8
-                vpc.amazonaws.com/efa: 0
+                nvidia.com/gpu: {{.GPUPerNode}}
+                vpc.amazonaws.com/efa: {{.EFARequested}}
