@@ -460,7 +460,7 @@ Resources:
                 InterfaceType: efa
                 Groups:
                   - !Ref EFASecurityGroup
-          !If
+          - !If
             - IsTRN1Node
             - 
               - Description: NetworkInterfaces Configuration For EFA and EKS
