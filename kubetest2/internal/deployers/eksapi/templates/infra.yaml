@@ -33,9 +33,6 @@ Parameters:
     Default: ""
     Description: Additional service principal with sts:AssumeRole permissions on the ClusterRole
 
-  SSHPublicKeyMaterial:
-    Type: String
-
   ResourceId:
     Type: String
 
@@ -509,23 +506,6 @@ Resources:
       Roles:
         - !Ref NodeRole
 
-  SSHSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: "SSH access for worker nodes"
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 127.0.0.1/32
-
-  SSHKeyPair:
-    Type: AWS::EC2::KeyPair
-    Properties:
-      PublicKeyMaterial: !Ref SSHPublicKeyMaterial
-      KeyName: !Ref ResourceId
-
 Outputs:
   SubnetsPrivate:
     Value:
@@ -553,19 +533,6 @@ Outputs:
     Export:
       Name:
         Fn::Sub: "${AWS::StackName}::VPC"
-
-  SSHSecurityGroup:
-    Value: !GetAtt SSHSecurityGroup.GroupId
-    Export:
-      Name:
-        Fn::Sub: "${AWS::StackName}::SSHSecurityGroup"
-
-  SSHKeyPair:
-    Value:
-      Ref: SSHKeyPair
-    Export:
-      Name:
-        Fn::Sub: "${AWS::StackName}::SSHKeyPair"
 
   ClusterRole:
     Value:

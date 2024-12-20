@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	ssmtypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 )
 
@@ -34,7 +33,7 @@ func NewLogManager(clients *awsClients, resourceID string) *logManager {
 	}
 }
 
-func (m *logManager) gatherLogsFromNodes(k8sClient *kubernetes.Clientset, opts *deployerOptions, phase deployerPhase) error {
+func (m *logManager) gatherLogsFromNodes(k8sClient *k8sClient, opts *deployerOptions, phase deployerPhase) error {
 	if opts.LogBucket == "" {
 		klog.Info("--log-bucket is empty, no logs will be gathered!")
 		return nil
@@ -58,9 +57,9 @@ var logCollectorScriptSsmDocumentContent string
 
 const logCollectorSsmDocumentTimeout = 5 * time.Minute
 
-func (m *logManager) gatherLogsUsingScript(k8sClient *kubernetes.Clientset, opts *deployerOptions, phase deployerPhase) error {
+func (m *logManager) gatherLogsUsingScript(k8sClient *k8sClient, opts *deployerOptions, phase deployerPhase) error {
 	klog.Info("gathering logs from nodes...")
-	nodes, err := k8sClient.CoreV1().Nodes().List(context.TODO(), v1.ListOptions{})
+	nodes, err := k8sClient.clientset.CoreV1().Nodes().List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		return err
 	}

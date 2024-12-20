@@ -9,35 +9,55 @@ import (
 	"time"
 
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/metrics"
+	"github.com/aws/aws-k8s-tester/kubetest2/internal/util"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	crlog "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-func newKubernetesClient(kubeconfigPath string) (*kubernetes.Clientset, error) {
-	c, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+func init() {
+	// controller-runtime will complain loudly if this isn't set, even though we don't use this logger
+	crlog.SetLogger(zap.New())
+}
+
+type k8sClient struct {
+	config    *rest.Config
+	clientset kubernetes.Interface
+	client    client.Client
+}
+
+func newK8sClient(kubeconfigPath string) (*k8sClient, error) {
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
 		return nil, err
 	}
-	return kubernetes.NewForConfig(c)
+	return &k8sClient{
+		config:    config,
+		clientset: kubernetes.NewForConfigOrDie(config),
+		client:    util.Must(client.New(config, client.Options{})),
+	}, nil
 }
 
-func waitForReadyNodes(client *kubernetes.Clientset, nodeCount int, timeout time.Duration) error {
+func (k *k8sClient) waitForReadyNodes(nodeCount int, timeout time.Duration) error {
 	klog.Infof("waiting up to %v for %d node(s) to be ready...", timeout, nodeCount)
 	readyNodes := sets.NewString()
-	watcher, err := client.CoreV1().Nodes().Watch(context.TODO(), metav1.ListOptions{})
+	watcher, err := k.clientset.CoreV1().Nodes().Watch(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to create node watcher: %v", err)
 	}
 	defer watcher.Stop()
-	initialReadyNodes, err := getReadyNodes(client)
+	initialReadyNodes, err := k.getReadyNodes()
 	if err != nil {
 		return fmt.Errorf("failed to get ready nodes: %v", err)
 	}
@@ -75,8 +95,8 @@ func waitForReadyNodes(client *kubernetes.Clientset, nodeCount int, timeout time
 	return nil
 }
 
-func getReadyNodes(client kubernetes.Interface) ([]corev1.Node, error) {
-	nodes, err := client.CoreV1().Nodes().List(context.TODO(), v1.ListOptions{})
+func (k *k8sClient) getReadyNodes() ([]corev1.Node, error) {
+	nodes, err := k.clientset.CoreV1().Nodes().List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -106,13 +126,13 @@ func getNodeReadyCondition(node *corev1.Node) *corev1.NodeCondition {
 	return nil
 }
 
-func createAWSAuthConfigMap(client *kubernetes.Clientset, nodeNameStrategy string, nodeRoleARN string) error {
+func (k *k8sClient) createAWSAuthConfigMap(nodeNameStrategy string, nodeRoleARN string) error {
 	mapRoles, err := generateAuthMapRole(nodeNameStrategy, nodeRoleARN)
 	if err != nil {
 		return err
 	}
 	klog.Infof("generated AuthMapRole %s", mapRoles)
-	_, err = client.CoreV1().ConfigMaps("kube-system").Create(context.TODO(), &corev1.ConfigMap{
+	_, err = k.clientset.CoreV1().ConfigMaps("kube-system").Create(context.TODO(), &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "aws-auth",
 			Namespace: "kube-system",
@@ -141,8 +161,8 @@ func getNodeInstanceIDs(nodes []corev1.Node) ([]string, error) {
 	return instanceIds, nil
 }
 
-func emitNodeMetrics(metricRegistry metrics.MetricRegistry, k8sClient *kubernetes.Clientset, ec2Client *ec2.Client) error {
-	nodes, err := getReadyNodes(k8sClient)
+func (k *k8sClient) emitNodeMetrics(metricRegistry metrics.MetricRegistry, ec2Client *ec2.Client) error {
+	nodes, err := k.getReadyNodes()
 	if err != nil {
 		return err
 	}
