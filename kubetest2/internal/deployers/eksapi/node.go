@@ -99,7 +99,17 @@ func (m *nodeManager) createNodes(infra *Infrastructure, cluster *Cluster, opts 
 func (m *nodeManager) resolveInstanceTypes(opts *deployerOptions) (err error) {
 	instanceTypes := opts.InstanceTypes
 	if len(instanceTypes) == 0 {
-		if opts.UnmanagedNodes {
+
+		if len(opts.InstanceTypeArchs) > 0 {
+			klog.Infof("choosing instance types based on architecture(s): %v", opts.InstanceTypeArchs)
+			for _, arch := range opts.InstanceTypeArchs {
+				instanceTypesForArch, ok := defaultInstanceTypesByEC2ArchitectureValues[ec2types.ArchitectureValues(arch)]
+				if !ok {
+					return fmt.Errorf("no default instance types known for architecture: '%s'", arch)
+				}
+				instanceTypes = append(instanceTypes, instanceTypesForArch...)
+			}
+		} else if opts.UnmanagedNodes {
 			klog.Infof("choosing instance types based on AMI architecture...")
 			if out, err := m.clients.EC2().DescribeImages(context.TODO(), &ec2.DescribeImagesInput{
 				ImageIds: []string{opts.AMI},

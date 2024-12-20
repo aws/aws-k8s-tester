@@ -67,7 +67,8 @@ type deployerOptions struct {
 	ExpectedAMI                 string   `flag:"expected-ami" desc:"Expected AMI of nodes. Up will fail if the actual nodes are not utilizing the expected AMI. Defaults to --ami if defined."`
 	// TODO: remove this once it's no longer used in downstream jobs
 	GenerateSSHKey      bool          `flag:"generate-ssh-key" desc:"Generate an SSH key to use for tests. The generated key should not be used in production, as it will not have a passphrase."`
-	InstanceTypes       []string      `flag:"instance-types" desc:"Node instance types"`
+	InstanceTypes       []string      `flag:"instance-types" desc:"Node instance types. Cannot be used with --instance-type-archs"`
+	InstanceTypeArchs   []string      `flag:"instance-type-archs" desc:"Use default node instance types for specific architectures. Cannot be used with --instance-types"`
 	IPFamily            string        `flag:"ip-family" desc:"IP family for the cluster (ipv4 or ipv6)"`
 	KubeconfigPath      string        `flag:"kubeconfig" desc:"Path to kubeconfig"`
 	KubernetesVersion   string        `flag:"kubernetes-version" desc:"cluster Kubernetes version"`
@@ -258,6 +259,9 @@ func (d *deployer) verifyUpFlags() error {
 	if d.StaticClusterName != "" {
 		klog.Infof("Skip configuration for static cluster")
 		return nil
+	}
+	if len(d.InstanceTypes) > 0 && len(d.InstanceTypeArchs) > 0 {
+		return fmt.Errorf("--instance-types and --instance-type-archs are mutually exclusive")
 	}
 	if d.UnmanagedNodes {
 		if d.AMI == "" {
