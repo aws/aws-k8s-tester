@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 )
 
@@ -15,6 +16,7 @@ type awsClients struct {
 	_ec2 *ec2.Client
 	_asg *autoscaling.Client
 	_ssm *ssm.Client
+	_iam *iam.Client
 }
 
 func newAWSClients(config aws.Config, eksEndpointURL string) *awsClients {
@@ -23,6 +25,7 @@ func newAWSClients(config aws.Config, eksEndpointURL string) *awsClients {
 		_ec2: ec2.NewFromConfig(config),
 		_asg: autoscaling.NewFromConfig(config),
 		_ssm: ssm.NewFromConfig(config),
+		_iam: iam.NewFromConfig(config),
 	}
 	if eksEndpointURL != "" {
 		clients._eks = eks.NewFromConfig(config, func(o *eks.Options) {
@@ -52,4 +55,8 @@ func (c *awsClients) ASG() *autoscaling.Client {
 
 func (c *awsClients) SSM() *ssm.Client {
 	return c._ssm
+}
+
+func (c *awsClients) IAM() *iam.Client {
+	return c._iam
 }

@@ -35,9 +35,6 @@ Parameters:
     Description: The IAM role name  of worker nodes.
     Type: String
 
-  SSHKeyPair:
-    Type: String
-
   UserData:
     Type: String
   
@@ -124,28 +121,6 @@ Resources:
       CidrIpv6: "::/0"
       GroupId: !Ref EFASecurityGroup
       IpProtocol: "-1"
-  
-  EFASecurityGroupIngressSSHIpv4:
-    Type: "AWS::EC2::SecurityGroupIngress"
-    DependsOn: EFASecurityGroup
-    Properties:
-      Description: Allow SSH
-      FromPort: 22
-      ToPort: 22
-      CidrIp: "0.0.0.0/0"
-      GroupId: !Ref EFASecurityGroup
-      IpProtocol: "tcp"
-      
-  EFASecurityGroupIngressSSHIpv6:
-    Type: "AWS::EC2::SecurityGroupIngress"
-    DependsOn: EFASecurityGroup
-    Properties:
-      Description: Allow SSH
-      FromPort: 22
-      ToPort: 22
-      CidrIpv6: "::/0"
-      GroupId: !Ref EFASecurityGroup
-      IpProtocol: "tcp"
 
   EFASecurityGroupIngressControlPlane:
     Type: "AWS::EC2::SecurityGroupIngress"
@@ -230,7 +205,6 @@ Resources:
           Arn: !GetAtt NodeInstanceProfile.Arn
         ImageId: !Ref AMIId
         InstanceType: !Ref InstanceType
-        KeyName: !Ref SSHKeyPair
         NetworkInterfaces: !If
           - IsP5Node
           -
