@@ -99,11 +99,19 @@ func (m *nodeManager) createNodes(infra *Infrastructure, cluster *Cluster, opts 
 func (m *nodeManager) resolveInstanceTypes(opts *deployerOptions) (err error) {
 	instanceTypes := opts.InstanceTypes
 	if len(instanceTypes) == 0 {
-
 		if len(opts.InstanceTypeArchs) > 0 {
 			klog.Infof("choosing instance types based on architecture(s): %v", opts.InstanceTypeArchs)
 			for _, arch := range opts.InstanceTypeArchs {
-				instanceTypesForArch, ok := defaultInstanceTypesByEC2ArchitectureValues[ec2types.ArchitectureValues(arch)]
+				var ec2Arch ec2types.ArchitectureValues
+				switch arch {
+				case "x86_64", "amd64":
+					ec2Arch = ec2types.ArchitectureValuesX8664
+				case "aarch64", "arm64":
+					ec2Arch = ec2types.ArchitectureValuesArm64
+				default:
+					return fmt.Errorf("unknown architecture: '%s'", arch)
+				}
+				instanceTypesForArch, ok := defaultInstanceTypesByEC2ArchitectureValues[ec2Arch]
 				if !ok {
 					return fmt.Errorf("no default instance types known for architecture: '%s'", arch)
 				}
