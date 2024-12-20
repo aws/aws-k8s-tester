@@ -26,8 +26,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - run: docker build --file e2e2/test/images/nvidia/Dockerfile .
-  build-bert-training:
+  build-nvidia-training:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - run: docker build --file e2e2/test/images/bert-training/Dockerfile e2e2/test/images/bert-training
+    - run: docker build --file e2e2/test/images/nvidia-training/Dockerfile e2e2/test/images/nvidia-training
