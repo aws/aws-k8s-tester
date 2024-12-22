@@ -212,192 +212,224 @@ Resources:
               NetworkCardIndex: 0
               DeviceIndex: 0
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 1
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 2
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 3
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 4
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 5
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 6
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 7
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 8
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 9
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 10
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 11
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 12
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 13
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 14
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 15
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 16
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 17
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 18
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 19
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 20
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 21
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 22
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 23
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 24
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 25
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 26
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 27
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 28
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 29
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 30
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
             - Description: NetworkInterfaces Configuration For EFA and EKS
               NetworkCardIndex: 31
               DeviceIndex: 1
               InterfaceType: efa
+              DeleteOnTermination: true
               Groups:
                 - !Ref EFASecurityGroup
           - !If
@@ -407,24 +439,28 @@ Resources:
                 NetworkCardIndex: 0
                 DeviceIndex: 0
                 InterfaceType: efa
+                DeleteOnTermination: true
                 Groups:
                   - !Ref EFASecurityGroup
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 1
                 DeviceIndex: 1
                 InterfaceType: efa
+                DeleteOnTermination: true
                 Groups:
                 - !Ref EFASecurityGroup
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 2
                 DeviceIndex: 2
                 InterfaceType: efa
+                DeleteOnTermination: true
                 Groups:
                 - !Ref EFASecurityGroup
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 3
                 DeviceIndex: 3
                 InterfaceType: efa
+                DeleteOnTermination: true
                 Groups:
                 - !Ref EFASecurityGroup
             -
@@ -432,6 +468,7 @@ Resources:
                 NetworkCardIndex: 0
                 DeviceIndex: 0
                 InterfaceType: efa
+                DeleteOnTermination: true
                 Groups:
                   - !Ref EFASecurityGroup
           - !If
@@ -441,48 +478,56 @@ Resources:
                 NetworkCardIndex: 0
                 DeviceIndex: 0
                 InterfaceType: efa
+                DeleteOnTermination: true
                 Groups:
                   - !Ref EFASecurityGroup
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 1
                 DeviceIndex: 1
                 InterfaceType: efa
+                DeleteOnTermination: true
                 Groups:
                   - !Ref EFASecurityGroup
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 2
                 DeviceIndex: 2
                 InterfaceType: efa
+                DeleteOnTermination: true
                 Groups:
                   - !Ref EFASecurityGroup
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 3
                 DeviceIndex: 3
                 InterfaceType: efa
+                DeleteOnTermination: true
                 Groups:
                   - !Ref EFASecurityGroup
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 4
                 DeviceIndex: 4
                 InterfaceType: efa
+                DeleteOnTermination: true
                 Groups:
                   - !Ref EFASecurityGroup
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 5
                 DeviceIndex: 5
                 InterfaceType: efa
+                DeleteOnTermination: true
                 Groups:
                   - !Ref EFASecurityGroup
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 6
                 DeviceIndex: 6
                 InterfaceType: efa
+                DeleteOnTermination: true
                 Groups:
                   - !Ref EFASecurityGroup
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 7
                 DeviceIndex: 7
                 InterfaceType: efa
+                DeleteOnTermination: true
                 Groups:
                   - !Ref EFASecurityGroup
         UserData:
