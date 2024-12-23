@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"os"
 	"text/template"
-	"fmt"
 
 	"k8s.io/klog"
 )
@@ -47,9 +46,6 @@ type kubeconfigTemplateParameters struct {
 }
 
 func writeKubeconfig(cluster *Cluster, kubeconfigPath string) error {
-	if cluster == nil {
-		return fmt.Errorf("Cluster is nil, you might need set --static-cluster-name or set --up to initial cluster resrouces")
-	}
 	klog.Infof("writing kubeconfig to %s for cluster: %s", kubeconfigPath, cluster.arn)
 	templateParams := kubeconfigTemplateParameters{
 		ClusterCertificateAuthority: cluster.certificateAuthorityData,
