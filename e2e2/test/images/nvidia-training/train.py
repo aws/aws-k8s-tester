@@ -9,10 +9,7 @@ import numpy as np
 
 
 def create_dummy_data(tokenizer, num_samples=100, max_length=128):
-    # Create dummy input data
-    sentences = [
-        "This is a dummy sentence number {}".format(i) for i in range(num_samples)
-    ]
+    sentences = [f"This is a dummy sentence number {i}" for i in range(num_samples)]
     tokenized_inputs = tokenizer(
         sentences,
         max_length=max_length,
@@ -24,16 +21,12 @@ def create_dummy_data(tokenizer, num_samples=100, max_length=128):
 
     # MLM task: randomly mask some tokens
     mlm_probability = 0.15
-    input_ids, labels = mask_tokens(
-        tokenized_inputs.input_ids, tokenizer, mlm_probability
-    )
+    input_ids, labels = mask_tokens(tokenized_inputs.input_ids, tokenizer, mlm_probability)
 
     # NSP task: create dummy pairs
     next_sentence_labels = torch.randint(0, 2, (num_samples,))
 
-    return TensorDataset(
-        input_ids, tokenized_inputs.attention_mask, labels, next_sentence_labels
-    )
+    return TensorDataset(input_ids, tokenized_inputs.attention_mask, labels, next_sentence_labels)
 
 
 def mask_tokens(inputs, tokenizer, mlm_probability):
@@ -43,14 +36,10 @@ def mask_tokens(inputs, tokenizer, mlm_probability):
         tokenizer.get_special_tokens_mask(val, already_has_special_tokens=True)
         for val in labels.tolist()
     ]
-    probability_matrix.masked_fill_(
-        torch.tensor(special_tokens_mask, dtype=torch.bool), value=0.0
-    )
+    probability_matrix.masked_fill_(torch.tensor(special_tokens_mask, dtype=torch.bool), value=0.0)
     masked_indices = torch.bernoulli(probability_matrix).bool()
-    labels[~masked_indices] = -100  # We only compute loss on masked tokens
-
+    labels[~masked_indices] = -100
     inputs[masked_indices] = tokenizer.convert_tokens_to_ids(tokenizer.mask_token)
-
     return inputs, labels
 
 
@@ -81,21 +70,20 @@ def train_bert(rank, world_size, local_rank, model, tokenizer):
     train_dataloader = DataLoader(dataset, batch_size=8)
 
     optimizer = torch.optim.AdamW(ddp_model.parameters(), lr=0.001)
-    criterion = torch.nn.CrossEntropyLoss()
 
     start_time = time.time()
 
-    for epoch in range(1):  # Short run for testing
+    # Simple single-epoch training loop
+    for epoch in range(1):
         ddp_model.train()
         for batch in train_dataloader:
             optimizer.zero_grad()
             inputs, masks, labels, next_sentence_labels = batch
-            inputs, masks, labels, next_sentence_labels = (
-                inputs.to(local_rank),
-                masks.to(local_rank),
-                labels.to(local_rank),
-                next_sentence_labels.to(local_rank),
-            )
+            inputs = inputs.to(local_rank)
+            masks = masks.to(local_rank)
+            labels = labels.to(local_rank)
+            next_sentence_labels = next_sentence_labels.to(local_rank)
+
             outputs = ddp_model(
                 input_ids=inputs,
                 attention_mask=masks,
@@ -115,12 +103,14 @@ def train_bert(rank, world_size, local_rank, model, tokenizer):
 
     cleanup()
 
+    return throughput
+
 
 def main():
-    rank = int(os.environ["OMPI_COMM_WORLD_RANK"])
-    world_size = int(os.environ["OMPI_COMM_WORLD_SIZE"])
-
-    num_gpus_per_node = int(os.environ["NUM_GPUS_PER_NODE"]) 
+    # Retrieve environment variables
+    rank = int(os.getenv("OMPI_COMM_WORLD_RANK", "0"))
+    world_size = int(os.getenv("OMPI_COMM_WORLD_SIZE", "1"))
+    num_gpus_per_node = int(os.getenv("NUM_GPUS_PER_NODE", "8"))
     local_rank = rank % num_gpus_per_node
 
     print(f"Process started for rank {rank} with local rank {local_rank}")
@@ -131,7 +121,11 @@ def main():
 
     print(f"successfully downloaded model and tokenizer for rank: {rank}")
 
-    train_bert(rank, world_size, local_rank, model, tokenizer)
+    throughput = train_bert(rank, world_size, local_rank, model, tokenizer)
+
+    # Only rank 0 prints the "Average Throughput" line
+    if rank == 0:
+        print(f"Average Throughput: {throughput:.2f} samples/second")
 
 
 if __name__ == "__main__":
