@@ -237,7 +237,6 @@ Resources:
                 Groups:
                   - !Ref EFASecurityGroup
                 DeleteOnTermination: true
-                DeleteOnTermination: true
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 1
                 DeviceIndex: 1
