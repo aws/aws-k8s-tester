@@ -1,0 +1,80 @@
+apiVersion: kubeflow.org/v2beta1
+kind: MPIJob
+metadata:
+  name: neuron-bert-training
+spec:
+  slotsPerWorker: {{.SlotsPerWorker}}
+  runPolicy:
+    backoffLimit: 20
+    cleanPodPolicy: Running
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - image: {{.BertTrainingImage}}
+              imagePullPolicy: Always
+              name: neuron-bert-training
+              env:
+                - name: NCCL_DEBUG
+                  value: "TRACE"
+                - name: MASTER_ADDR
+                  value: "neuron-bert-training"
+                - name: MASTER_PORT
+                  value: "12355"
+              command:
+                - /opt/amazon/openmpi/bin/mpirun
+                - --allow-run-as-root
+                - --tag-output
+                - -np
+                - "{{.NP}}"           # Number of processes derived from node/neuron calculations
+                - -bind-to
+                - none
+                - -map-by
+                - slot
+                - -x
+                - PATH
+                - -x
+                - LD_LIBRARY_PATH
+                - -x
+                - NCCL_DEBUG
+                - -x
+                - MASTER_ADDR
+                - -x
+                - MASTER_PORT
+                - --mca 
+                - pml
+                - "^cm"
+                - --mca
+                - routed
+                - direct
+                - --oversubscribe
+                - --mca
+                - orte_base_help_aggregate 
+                - "0"
+                - python
+                - train.py
+    Worker:
+      replicas: {{.WorkerReplicas}}
+      template:
+        spec:
+          volumes:
+            - name: dshm
+              emptyDir:
+                medium: Memory
+          containers:
+            - image: {{.BertTrainingImage}}
+              imagePullPolicy: Always
+              name: neuron-bert-training-worker
+              volumeMounts:
+                - mountPath: /dev/shm
+                  name: dshm
+              resources:
+                requests:
+                  aws.amazon.com/neuron: {{.NeuronPerNode}}
+                  vpc.amazonaws.com/efa: {{.EFARequested}}
+                limits:
+                  aws.amazon.com/neuron: {{.NeuronPerNode}}
+                  vpc.amazonaws.com/efa: {{.EFARequested}}
