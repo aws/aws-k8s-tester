@@ -3,7 +3,6 @@ package training
 import (
 	"context"
 	_ "embed"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -22,41 +21,24 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-// Embedding Neuron-related manifests
 var (
-	// Neuron Device Plugin RBAC Manifest
 	//go:embed manifests/k8s-neuron-device-plugin-rbac.yml
 	neuronDevicePluginRbacManifest []byte
-
-	// Neuron Device Plugin Manifest
 	//go:embed manifests/k8s-neuron-device-plugin.yml
 	neuronDevicePluginManifest []byte
-
-	// MPI Operator Manifest
 	//go:embed manifests/mpi-operator.yaml
 	mpiOperatorManifest []byte
-
-	// EFA Device Plugin Manifest
 	//go:embed manifests/efa-device-plugin.yaml
 	efaDevicePluginManifest []byte
-
-	// Rendered manifests (if any preprocessing is needed)
-	renderedNeuronSingleNodeManifest []byte
-	renderedNeuronMultiNodeManifest  []byte
 )
 
 func TestMain(m *testing.M) {
-	// Initialize flags
-	flag.Parse()
-
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
 		log.Fatalf("failed to initialize test environment: %v", err)
 	}
-
 	testenv = env.NewWithConfig(cfg)
 
-	// List of manifests to apply
 	manifests := [][]byte{
 		neuronDevicePluginRbacManifest,
 		neuronDevicePluginManifest,
@@ -65,18 +47,15 @@ func TestMain(m *testing.M) {
 	}
 
 	testenv.Setup(
-		// Apply all manifests
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Applying Neuron RBAC, Neuron Device Plugin, MPI Operator, and EFA Device Plugin manifests.")
+			log.Println("Applying Neuron device plugin RBAC, Neuron device plugin, MPI operator, and EFA device plugin manifests.")
 			err := fwext.ApplyManifests(config.Client().RESTConfig(), manifests...)
 			if err != nil {
 				return ctx, fmt.Errorf("failed to apply manifests: %w", err)
 			}
-			log.Println("Successfully applied all device plugin and MPI operator manifests.")
+			log.Println("Successfully applied Neuron device plugin RBAC, Neuron device plugin, MPI operator, and EFA device plugin manifests.")
 			return ctx, nil
 		},
-
-		// Wait for MPI Operator deployment
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 			log.Println("Waiting for MPI Operator deployment to be available.")
 			deployment := appsv1.Deployment{
@@ -94,15 +73,13 @@ func TestMain(m *testing.M) {
 			log.Println("MPI Operator deployment is available.")
 			return ctx, nil
 		},
-
-		// Wait for Neuron Device Plugin DaemonSet
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 			log.Println("Waiting for Neuron Device Plugin daemonset to be ready.")
 			daemonset := appsv1.DaemonSet{
 				ObjectMeta: metav1.ObjectMeta{Name: "neuron-device-plugin-daemonset", Namespace: "kube-system"},
 			}
 			err := wait.For(
-				conditions.New(config.Client().Resources()).DaemonSetReady(&daemonset),
+				fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&daemonset),
 				wait.WithTimeout(time.Minute*5),
 			)
 			if err != nil {
@@ -111,15 +88,13 @@ func TestMain(m *testing.M) {
 			log.Println("Neuron Device Plugin daemonset is ready.")
 			return ctx, nil
 		},
-
-		// Wait for EFA Device Plugin DaemonSet
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 			log.Println("Waiting for EFA Device Plugin daemonset to be ready.")
 			daemonset := appsv1.DaemonSet{
 				ObjectMeta: metav1.ObjectMeta{Name: "aws-efa-k8s-device-plugin-daemonset", Namespace: "kube-system"},
 			}
 			err := wait.For(
-				conditions.New(config.Client().Resources()).DaemonSetReady(&daemonset),
+				fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&daemonset),
 				wait.WithTimeout(time.Minute*5),
 			)
 			if err != nil {
@@ -128,20 +103,18 @@ func TestMain(m *testing.M) {
 			log.Println("EFA Device Plugin daemonset is ready.")
 			return ctx, nil
 		},
-
-		checkNodeTypes, // Dynamically check node types and capacities after device plugins are ready
+		checkNodeTypes,
 	)
 
 	testenv.Finish(
-		// Teardown: Delete all applied manifests
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Deleting all device plugin and MPI operator manifests.")
+			log.Println("Deleting Neuron device plugin, MPI operator, and EFA device plugin manifests.")
 			slices.Reverse(manifests)
 			err := fwext.DeleteManifests(config.Client().RESTConfig(), manifests...)
 			if err != nil {
 				return ctx, fmt.Errorf("failed to delete manifests: %w", err)
 			}
-			log.Println("Successfully deleted all device plugin and MPI operator manifests.")
+			log.Println("Successfully deleted Neuron device plugin, MPI operator, and EFA device plugin manifests.")
 			return ctx, nil
 		},
 	)
@@ -152,22 +125,18 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-// checkNodeTypes checks that all nodes are of the same type and records resource capacities
 func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Context, error) {
 	clientset, err := kubernetes.NewForConfig(config.Client().RESTConfig())
 	if err != nil {
 		return ctx, fmt.Errorf("failed to create Kubernetes client: %w", err)
 	}
-
 	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return ctx, fmt.Errorf("failed to list nodes: %w", err)
 	}
-
 	if len(nodes.Items) == 0 {
 		return ctx, fmt.Errorf("no nodes found in the cluster")
 	}
-
 	singleNodeType := true
 	for i := 1; i < len(nodes.Items); i++ {
 		if nodes.Items[i].Labels["node.kubernetes.io/instance-type"] != nodes.Items[i-1].Labels["node.kubernetes.io/instance-type"] {
@@ -178,19 +147,15 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 	if !singleNodeType {
 		return ctx, fmt.Errorf("node types are not the same, all node types must be the same in the cluster")
 	}
-
 	if *nodeType != "" {
 		count := 0
-		for _, v := range nodes.Items {
-			if v.Labels["node.kubernetes.io/instance-type"] == *nodeType {
+		for _, nd := range nodes.Items {
+			if nd.Labels["node.kubernetes.io/instance-type"] == *nodeType {
 				count++
-				if gpuCap, ok := v.Status.Capacity["nvidia.com/gpu"]; ok {
-					gpuPerNode = int(gpuCap.Value())
-				}
-				if efaCap, ok := v.Status.Capacity["vpc.amazonaws.com/efa"]; ok {
+				if efaCap, ok := nd.Status.Capacity["vpc.amazonaws.com/efa"]; ok {
 					efaPerNode = int(efaCap.Value())
 				}
-				if neuronCap, ok := v.Status.Capacity["aws.amazon.com/neuron"]; ok {
+				if neuronCap, ok := nd.Status.Capacity["aws.amazon.com/neuron"]; ok {
 					neuronPerNode = int(neuronCap.Value())
 				}
 			}
@@ -202,9 +167,6 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 	} else {
 		*nodeType = nodes.Items[0].Labels["node.kubernetes.io/instance-type"]
 		nodeCount = len(nodes.Items)
-		if gpuCap, ok := nodes.Items[0].Status.Capacity["nvidia.com/gpu"]; ok {
-			gpuPerNode = int(gpuCap.Value())
-		}
 		if efaCap, ok := nodes.Items[0].Status.Capacity["vpc.amazonaws.com/efa"]; ok {
 			efaPerNode = int(efaCap.Value())
 		}
@@ -212,12 +174,9 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 			neuronPerNode = int(neuronCap.Value())
 		}
 	}
-
 	log.Printf("[INFO] Node Type: %s", *nodeType)
 	log.Printf("[INFO] Node Count: %d", nodeCount)
-	log.Printf("[INFO] GPU Per Node: %d", gpuPerNode)
 	log.Printf("[INFO] EFA Per Node: %d", efaPerNode)
 	log.Printf("[INFO] Neuron Per Node: %d", neuronPerNode)
-
 	return ctx, nil
 }

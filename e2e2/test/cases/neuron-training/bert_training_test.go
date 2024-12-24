@@ -20,7 +20,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-// Embedding Neuron test manifests
 var (
 	//go:embed manifests/neuron-bert-training.yaml
 	neuronBertTrainingManifest []byte
@@ -32,41 +31,32 @@ func TestNeuronTraining(t *testing.T) {
 		t.Fatal("bertTrainingImage must be set to run the test")
 	}
 
-	// Render the manifests with dynamic variables
+	// Render the templated manifest with dynamic variables
 	renderVars := map[string]string{
 		"BertTrainingImage": *bertTrainingImage,
 		"SlotsPerWorker":    fmt.Sprintf("%d", neuronPerNode),
 		"WorkerReplicas":    fmt.Sprintf("%d", nodeCount),
 		"NP":                fmt.Sprintf("%d", neuronPerNode*nodeCount),
 		"NeuronPerNode":     fmt.Sprintf("%d", neuronPerNode),
-		"EFARequested":      fmt.Sprintf("%d", 0),
+		// EFARequested could be set to 1 if you want to request EFA in the worker pods
+		"EFARequested": fmt.Sprintf("%d", 0),
 	}
 
-	var renderedManifest []byte
-	var err error
-	if nodeCount == 1 {
-		renderedNeuronSingleNodeManifest, err = fwext.RenderManifests(neuronSingleNodeManifest, renderVars)
-		if err != nil {
-			t.Fatalf("failed to render single-node manifest: %v", err)
-		}
-		renderedManifest = renderedNeuronSingleNodeManifest
-	} else {
-		renderedNeuronMultiNodeManifest, err = fwext.RenderManifests(neuronMultiNodeManifest, renderVars)
-		if err != nil {
-			t.Fatalf("failed to render multi-node manifest: %v", err)
-		}
-		renderedManifest = renderedNeuronMultiNodeManifest
+	// Render the manifest
+	renderedManifest, err := fwext.RenderManifests(neuronBertTrainingManifest, renderVars)
+	if err != nil {
+		t.Fatalf("failed to render neuron BERT training manifest: %v", err)
 	}
 
-	// Define the feature
+	// Define a feature for the Neuron BERT training
 	neuronTraining := features.New("neuron-training").
 		WithLabel("suite", "neuron").
 		WithLabel("hardware", "neuron").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			log.Println("Applying Neuron training manifest.")
-			err := fwext.ApplyManifests(cfg.Client().RESTConfig(), neuronBertTrainingManifest)
+			log.Println("Applying rendered Neuron training manifest.")
+			err := fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedManifest)
 			if err != nil {
-				t.Fatalf("failed to apply neuron training manifest: %v", err)
+				t.Fatalf("failed to apply Neuron training manifest: %v", err)
 			}
 			log.Println("Successfully applied Neuron training manifest.")
 			return ctx
@@ -75,15 +65,17 @@ func TestNeuronTraining(t *testing.T) {
 			job := &batchv1.Job{
 				ObjectMeta: metav1.ObjectMeta{Name: "neuron-training-launcher", Namespace: "default"},
 			}
-			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
-				wait.WithTimeout(time.Minute*30))
+			err := wait.For(
+				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
+				wait.WithTimeout(time.Minute*30),
+			)
 			if err != nil {
-				return ctx
+				t.Fatalf("Neuron training Job did not succeed: %v", err)
 			}
 
-			err = printJobLogs(ctx, cfg, "default", "neuron-training-launcher")
-			if err != nil {
-				t.Logf("Warning: failed to retrieve neuron-training job logs: %v", err)
+			// Print logs from the training pods
+			if logErr := printJobLogs(ctx, cfg, "default", "neuron-training-launcher"); logErr != nil {
+				t.Logf("Warning: failed to retrieve neuron-training job logs: %v", logErr)
 			}
 
 			return ctx
@@ -122,11 +114,11 @@ func printJobLogs(ctx context.Context, cfg *envconf.Config, namespace, jobName s
 
 		buf := make([]byte, 4096)
 		for {
-			n, err := logStream.Read(buf)
+			n, readErr := logStream.Read(buf)
 			if n > 0 {
 				fmt.Printf("Logs from Pod %s:\n%s\n", pod.Name, string(buf[:n]))
 			}
-			if err != nil {
+			if readErr != nil {
 				break
 			}
 		}
