@@ -16,7 +16,14 @@ spec:
           containers:
             - name: neuron-bert-training
               image: {{.BertTrainingImage}}
+            - name: neuron-bert-training
+              image: {{.BertTrainingImage}}
               imagePullPolicy: Always
+              #
+              # We remove the "run-as-root" environment variables and flag, 
+              # because our container is running as user "ubuntu" with a known password 
+              # (the "NCCOM" style).
+              #
               env:
                 - name: NCCL_DEBUG
                   value: "TRACE"
@@ -35,6 +42,7 @@ spec:
                   echo password | sudo -S service ssh start
 
                   echo "Launcher: Running mpirun for BERT training..."
+                  # No '--allow-run-as-root', since we're non-root
                   /opt/amazon/openmpi/bin/mpirun --tag-output \
                     -np {{.NP}} \
                     -bind-to none \
@@ -61,10 +69,24 @@ spec:
           containers:
             - name: neuron-bert-training-worker
               image: {{.BertTrainingImage}}
+            - name: neuron-bert-training-worker
+              image: {{.BertTrainingImage}}
               imagePullPolicy: Always
               volumeMounts:
                 - mountPath: /dev/shm
                   name: dshm
+              command:
+                - /bin/sh
+              args:
+                - -c
+                - |
+                  echo "Worker: whoami => $(whoami)"
+                  echo "Worker: Starting SSH..."
+                  # Also use password-based sudo for the worker:
+                  echo password | sudo -S service ssh start
+                  while true; do
+                    sleep 30
+                  done
               command:
                 - /bin/sh
               args:
