@@ -8,15 +8,17 @@ import (
 
 // Shared global variables
 var (
-	testenv           env.Environment
+	testenv env.Environment
+
 	bertTrainingImage *string
 	efaEnabled        *bool
 	nodeType          *string
 
-	nodeCount     int
-	gpuPerNode    int
-	efaPerNode    int
-	neuronPerNode int
+	nodeCount         int
+	gpuPerNode        int
+	efaPerNode        int
+	neuronPerNode     int
+	neuronCorePerNode int
 )
 
 func init() {

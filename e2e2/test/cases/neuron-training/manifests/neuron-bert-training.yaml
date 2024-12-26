@@ -1,7 +1,7 @@
 apiVersion: kubeflow.org/v2beta1
 kind: MPIJob
 metadata:
-  name: neuron-bert-training
+  name: neuron-training
 spec:
   slotsPerWorker: {{.SlotsPerWorker}}
   runPolicy:
@@ -14,48 +14,48 @@ spec:
         spec:
           restartPolicy: OnFailure
           containers:
-            - image: {{.BertTrainingImage}}
+            - name: neuron-bert-training
+              image: {{.BertTrainingImage}}
               imagePullPolicy: Always
-              name: neuron-bert-training
+              #
+              # We remove the "run-as-root" environment variables and flag, 
+              # because our container is running as user "ubuntu" with a known password 
+              # (the "NCCOM" style).
+              #
               env:
                 - name: NCCL_DEBUG
                   value: "TRACE"
                 - name: MASTER_ADDR
-                  value: "neuron-bert-training"
+                  value: "neuron-training"
                 - name: MASTER_PORT
                   value: "12355"
               command:
-                - /opt/amazon/openmpi/bin/mpirun
-                - --allow-run-as-root
-                - --tag-output
-                - -np
-                - "{{.NP}}"           # Number of processes derived from node/neuron calculations
-                - -bind-to
-                - none
-                - -map-by
-                - slot
-                - -x
-                - PATH
-                - -x
-                - LD_LIBRARY_PATH
-                - -x
-                - NCCL_DEBUG
-                - -x
-                - MASTER_ADDR
-                - -x
-                - MASTER_PORT
-                - --mca 
-                - pml
-                - "^cm"
-                - --mca
-                - routed
-                - direct
-                - --oversubscribe
-                - --mca
-                - orte_base_help_aggregate 
-                - "0"
-                - python
-                - train.py
+                - /bin/sh
+              args:
+                - -c
+                - |
+                  echo "Launcher: whoami => $(whoami)"
+                  echo "Launcher: Starting SSH..."
+                  # Use password-based sudo to start SSH (NCCOM style)
+                  echo password | sudo -S service ssh start
+
+                  echo "Launcher: Running mpirun for BERT training..."
+                  # No '--allow-run-as-root', since we're non-root
+                  /opt/amazon/openmpi/bin/mpirun --tag-output \
+                    -np {{.NP}} \
+                    -bind-to none \
+                    -map-by slot \
+                    -x PATH \
+                    -x LD_LIBRARY_PATH \
+                    -x NCCL_DEBUG \
+                    -x MASTER_ADDR \
+                    -x MASTER_PORT \
+                    --mca pml cm \
+                    --mca routed direct \
+                    --oversubscribe \
+                    --mca orte_base_help_aggregate 0 \
+                    python /home/ubuntu/train.py
+
     Worker:
       replicas: {{.WorkerReplicas}}
       template:
@@ -65,12 +65,24 @@ spec:
               emptyDir:
                 medium: Memory
           containers:
-            - image: {{.BertTrainingImage}}
+            - name: neuron-bert-training-worker
+              image: {{.BertTrainingImage}}
               imagePullPolicy: Always
-              name: neuron-bert-training-worker
               volumeMounts:
                 - mountPath: /dev/shm
                   name: dshm
+              command:
+                - /bin/sh
+              args:
+                - -c
+                - |
+                  echo "Worker: whoami => $(whoami)"
+                  echo "Worker: Starting SSH..."
+                  # Also use password-based sudo for the worker:
+                  echo password | sudo -S service ssh start
+                  while true; do
+                    sleep 30
+                  done
               resources:
                 requests:
                   aws.amazon.com/neuron: {{.NeuronPerNode}}

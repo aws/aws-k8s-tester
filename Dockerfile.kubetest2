@@ -23,6 +23,7 @@ RUN go test -c ./test/cases/quick -o $GOPATH/bin/e2e-quick
 RUN go test -c ./test/cases/neuron -o $GOPATH/bin/e2e-neuron
 RUN go test -c ./test/cases/inference -o $GOPATH/bin/e2e-inference
 RUN go test -c ./test/cases/nvidia-training -o $GOPATH/bin/e2e-nvidia-training
+RUN go test -c ./test/cases/neuron-training -o $GOPATH/bin/e2e-neuron-training
 
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 ARG TARGETOS
