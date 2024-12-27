@@ -17,11 +17,6 @@ spec:
             - name: neuron-bert-training
               image: {{.BertTrainingImage}}
               imagePullPolicy: Always
-              #
-              # We remove the "run-as-root" environment variables and flag, 
-              # because our container is running as user "ubuntu" with a known password 
-              # (the "NCCOM" style).
-              #
               env:
                 - name: NCCL_DEBUG
                   value: "TRACE"
@@ -40,7 +35,6 @@ spec:
                   echo password | sudo -S service ssh start
 
                   echo "Launcher: Running mpirun for BERT training..."
-                  # No '--allow-run-as-root', since we're non-root
                   /opt/amazon/openmpi/bin/mpirun --tag-output \
                     -np {{.NP}} \
                     -bind-to none \

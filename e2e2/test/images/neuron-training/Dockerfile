@@ -74,16 +74,15 @@ RUN useradd -ms /bin/bash ubuntu \
 ###############################################################################
 RUN . /etc/os-release \
  && echo "deb https://apt.repos.neuron.amazonaws.com focal main" > /etc/apt/sources.list.d/neuron.list \
- && wget -qO - https://apt.repos.neuron.amazonaws.com/GPG-PUB-KEY-AMAZON-AWS-NEURON.PUB | apt-key add -
-
-# -- Only change below: remove "=$VERSION" pinning so these packages install
-RUN apt-get update \
+ && wget -qO - https://apt.repos.neuron.amazonaws.com/GPG-PUB-KEY-AMAZON-AWS-NEURON.PUB | apt-key add - \
+ && apt-get update \
  && apt-get install -y \
-    aws-neuronx-tools \
-    aws-neuronx-collectives \
-    aws-neuronx-runtime-lib \
+      aws-neuronx-tools=$NEURONX_TOOLS_VERSION \
+      aws-neuronx-collectives=$NEURONX_COLLECTIVES_LIB_VERSION \
+      aws-neuronx-runtime-lib=$NEURONX_RUNTIME_LIB_VERSION \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean
+
 
 ###############################################################################
 # 3) EFA installer (provides /opt/amazon/efa, /opt/amazon/openmpi, etc.)
@@ -119,17 +118,7 @@ RUN wget -q https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VER
  && pip --no-cache-dir install --upgrade pip setuptools
 
 ###############################################################################
-# 5) Install a newer CMake (>=3.18)
-###############################################################################
-RUN apt-get update && apt-get install -y xz-utils && apt-get clean
-RUN cd /tmp \
- && wget https://github.com/Kitware/CMake/releases/download/v3.24.3/cmake-3.24.3-linux-x86_64.sh \
- && chmod +x cmake-3.24.3-linux-x86_64.sh \
- && ./cmake-3.24.3-linux-x86_64.sh --prefix=/usr/local --skip-license \
- && rm -f cmake-3.24.3-linux-x86_64.sh
-
-###############################################################################
-# 6) Base Python packages (Neuron, others)
+# 5) Base Python packages (Neuron, others)
 ###############################################################################
 RUN pip install --no-cache-dir -U \
     "bokeh>=2.3,<3" \
@@ -158,12 +147,12 @@ RUN pip install --no-cache-dir -U \
     "urllib3>=1.26.0,<1.27"
 
 ###############################################################################
-# 7) TorchVision (no-deps)
+# 6) TorchVision (no-deps)
 ###############################################################################
 RUN pip install --no-cache-dir --no-deps -U torchvision==0.16.*
 
 ###############################################################################
-# 8) OSS compliance steps 
+# 7) OSS compliance steps 
 ###############################################################################
 RUN HOME_DIR=/root \
  && curl -o ${HOME_DIR}/oss_compliance.zip https://aws-dlinfra-utilities.s3.amazonaws.com/oss_compliance.zip \
@@ -177,7 +166,7 @@ RUN HOME_DIR=/root \
 RUN curl -o /license.txt https://aws-dlc-licenses.s3.amazonaws.com/pytorch-2.1/license.txt
 
 ###############################################################################
-# 9) SSH, finalize
+# 8) SSH, finalize
 ###############################################################################
 # 1) Configure SSH so we don't prompt on first connect:
 RUN sed -i -e 's/#   StrictHostKeyChecking ask/    StrictHostKeyChecking accept-new/g' /etc/ssh/ssh_config
