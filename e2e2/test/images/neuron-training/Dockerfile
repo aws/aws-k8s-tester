@@ -137,7 +137,7 @@ RUN mkdir -p /etc/pki/tls/certs && cp /etc/ssl/certs/ca-certificates.crt /etc/pk
 RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com \
  && pip install --force-reinstall torch-neuronx==$NEURONX_FRAMEWORK_VERSION \
  && pip install --force-reinstall neuronx-cc==$NEURONX_CC_VERSION \
- && pip install --force-reinstall --no-deps neuronx_distributed==$NEURONX_DISTRIBUTED_VERSION
+ && pip install --force-reinstall --no-deps neuronx-distributed==$NEURONX_DISTRIBUTED_VERSION
 
 RUN pip install --no-cache-dir -U \
     "attrs<24,>=23.1.0" \
