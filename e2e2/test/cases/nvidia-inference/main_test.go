@@ -20,13 +20,9 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-// Embedded manifest for the NVIDIA device plugin.
-var (
-	//go:embed manifests/nvidia-device-plugin.yaml
-	nvidiaDevicePluginManifest []byte
-)
+//go:embed manifests/nvidia-device-plugin.yaml
+var nvidiaDevicePluginManifest []byte
 
-// Global test environment and flags.
 var (
 	testenv            env.Environment
 	bertInferenceImage *string
@@ -34,12 +30,10 @@ var (
 	gpuRequested       *int
 )
 
-// TestMain sets up the GPU device plugin, verifies GPU capacity, and tears down afterward.
 func TestMain(m *testing.M) {
-	// Command-line flags for inference.
 	bertInferenceImage = flag.String("bertInferenceImage", "", "BERT inference container image")
 	inferenceMode = flag.String("inferenceMode", "throughput", "Inference mode for BERT (throughput or latency)")
-	gpuRequested = flag.Int("gpuRequested", 1, "Number of GPUs to request for the inference job")
+	gpuRequested = flag.Int("gpuRequested", 1, "Number of GPUs required for inference")
 
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
@@ -74,7 +68,7 @@ func TestMain(m *testing.M) {
 			log.Println("[INFO] NVIDIA device plugin is ready.")
 			return ctx, nil
 		},
-		checkGpuCapacity, // Ensure at least one node has the requested GPU capacity
+		checkGpuCapacity,
 	)
 
 	testenv.Finish(
@@ -89,12 +83,13 @@ func TestMain(m *testing.M) {
 		},
 	)
 
-	code := testenv.Run(m)
-	log.Printf("[INFO] Test environment finished with exit code %d", code)
-	os.Exit(code)
+	exitCode := testenv.Run(m)
+	log.Printf("[INFO] Test environment finished with exit code %d", exitCode)
+	os.Exit(exitCode)
 }
 
-// checkGpuCapacity ensures at least one node has >= the requested number of GPUs.
+// checkGpuCapacity ensures at least one node has >= the requested number of GPUs,
+// and logs each node's instance type.
 func checkGpuCapacity(ctx context.Context, config *envconf.Config) (context.Context, error) {
 	log.Printf("[INFO] Validating cluster has at least %d GPU(s).", *gpuRequested)
 
@@ -113,15 +108,22 @@ func checkGpuCapacity(ctx context.Context, config *envconf.Config) (context.Cont
 
 	var found bool
 	for _, node := range nodes.Items {
-		if gpuCap, ok := node.Status.Capacity["nvidia.com/gpu"]; ok {
-			if int(gpuCap.Value()) >= *gpuRequested {
-				log.Printf("[INFO] Node %s has %d GPUs, which meets the request of %d.",
-					node.Name, gpuCap.Value(), *gpuRequested)
-				found = true
-				break
-			}
+		instanceType := node.Labels["node.kubernetes.io/instance-type"]
+		gpuCap, ok := node.Status.Capacity["nvidia.com/gpu"]
+		if !ok {
+			log.Printf("[INFO] Node %s (type: %s) has no GPU capacity.", node.Name, instanceType)
+			continue
+		}
+
+		log.Printf("[INFO] Node %s (type: %s) reports %d GPU(s).", node.Name, instanceType, gpuCap.Value())
+
+		if int(gpuCap.Value()) >= *gpuRequested {
+			log.Printf("[INFO] Node %s (type: %s) meets the request of %d GPU(s).",
+				node.Name, instanceType, *gpuRequested)
+			found = true
 		}
 	}
+
 	if !found {
 		return ctx, fmt.Errorf("no node has >= %d GPU(s)", *gpuRequested)
 	}

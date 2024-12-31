@@ -55,10 +55,13 @@ func TestBertInference(t *testing.T) {
 			}
 
 			log.Println("[INFO] Applying BERT inference manifest...")
-			if err := fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedBertInferenceManifest); err != nil {
-				t.Fatalf("[ERROR] Failed to apply BERT inference manifest: %v", err)
+			if applyErr := fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedBertInferenceManifest); applyErr != nil {
+				t.Fatalf("[ERROR] Failed to apply BERT inference manifest: %v", applyErr)
 			}
 			log.Println("[INFO] BERT inference manifest applied successfully.")
+
+			// Record time after applying the manifest
+			ctx = context.WithValue(ctx, "applyTime", time.Now())
 			return ctx
 		}).
 		Assess("BERT inference Job succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -75,6 +78,16 @@ func TestBertInference(t *testing.T) {
 			}
 			log.Println("[INFO] BERT inference job succeeded. Gathering logs...")
 
+			// Compute duration from manifest apply to job success
+			startVal := ctx.Value("applyTime")
+			if startVal != nil {
+				if applyTime, ok := startVal.(time.Time); ok {
+					duration := time.Since(applyTime)
+					log.Printf("[INFO] BERT inference job completed in %s", duration)
+				}
+			}
+
+			// Print logs (including node name) for the Pod
 			if err := printJobLogs(ctx, cfg, "default", "bert-inference"); err != nil {
 				t.Logf("[WARNING] Failed to retrieve BERT inference job logs: %v", err)
 			}
@@ -110,6 +123,8 @@ func printJobLogs(ctx context.Context, cfg *envconf.Config, namespace, jobName s
 	}
 
 	for _, pod := range pods.Items {
+		log.Printf("[INFO] Pod %s is running on node %s", pod.Name, pod.Spec.NodeName)
+
 		log.Printf("[INFO] Retrieving logs from pod %s...", pod.Name)
 		stream, err := cs.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &v1.PodLogOptions{}).Stream(ctx)
 		if err != nil {
