@@ -16,14 +16,15 @@ logging.basicConfig(
 logger = logging.getLogger("BERTInference")
 
 
-def create_dummy_data(tokenizer, batch_size, num_samples=100, max_length=128):
+def create_dummy_data(tokenizer, batch_size, num_samples=100, max_length=128, seed=42):
     """
     Creates a realistic NSP-style dataset:
       - 50% true next-sentence pairs
       - 50% random second sentences
     Ensures the final number of samples is a multiple of 'batch_size'.
     """
-    # Align total samples to a multiple of batch_size
+    random.seed(seed)
+
     if num_samples % batch_size != 0:
         adjusted = (num_samples // batch_size) * batch_size
         logger.info(
@@ -32,7 +33,6 @@ def create_dummy_data(tokenizer, batch_size, num_samples=100, max_length=128):
         )
         num_samples = adjusted
 
-    # Some sentences to simulate more realistic text
     sample_sentences = [
         "The dog loves playing fetch in the park.",
         "Artificial intelligence is reshaping the future.",
@@ -48,12 +48,10 @@ def create_dummy_data(tokenizer, batch_size, num_samples=100, max_length=128):
 
     sentences_a = []
     sentences_b = []
-    nsp_labels = []  # 1 = next, 0 = random
+    nsp_labels = []
 
     for _ in range(num_samples):
         idx_a = random.randint(0, len(sample_sentences) - 1)
-
-        # 50% chance for the second sentence to be the 'true' next
         if random.random() < 0.5:
             idx_b = (idx_a + 1) % len(sample_sentences)
             nsp_labels.append(1)
@@ -73,20 +71,19 @@ def create_dummy_data(tokenizer, batch_size, num_samples=100, max_length=128):
         return_tensors="pt",
     )
 
-    next_sentence_labels = torch.tensor(nsp_labels, dtype=torch.long)
     return TensorDataset(
         tokenized_inputs.input_ids,
         tokenized_inputs.attention_mask,
-        next_sentence_labels
+        torch.tensor(nsp_labels, dtype=torch.long)
     )
 
 
-def run_inference(model, tokenizer, batch_size, mode):
+def run_inference(model, tokenizer, batch_size, mode, device):
     """
-    Run a dummy BERT inference workload using the given model and tokenizer.
+    Runs a dummy BERT inference workload using the given model and tokenizer.
     Calculates average time per batch and throughput.
+    Expects 'device' to be GPU only (validated in main()).
     """
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     model.eval()
 
@@ -117,6 +114,7 @@ def run_inference(model, tokenizer, batch_size, mode):
                     next_sentence_label=next_sentence_labels
                 )
                 end_time = time.time()
+
             except Exception:
                 logger.exception(f"[ERROR] Inference failed on batch {batch_idx}.")
                 raise
@@ -147,6 +145,7 @@ def main():
         logger.error("[ERROR] GPU is not available. Exiting.")
         sys.exit(1)
 
+    device = torch.device("cuda")
     num_gpus = torch.cuda.device_count()
     logger.info(f"[INFO] Found {num_gpus} GPU(s). GPU is available.")
 
@@ -168,7 +167,7 @@ def main():
         logger.exception("[ERROR] Failed to load model/tokenizer. Exiting.")
         sys.exit(1)
 
-    run_inference(model, tokenizer, batch_size, mode)
+    run_inference(model, tokenizer, batch_size, mode, device)
 
 
 if __name__ == "__main__":

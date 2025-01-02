@@ -9,7 +9,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Python build args
 ARG PYTHON=python3.10
 ARG PYTHON_VERSION=3.10.12
-ARG PIP=pip3
 
 # General Python environment
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -67,7 +66,7 @@ RUN wget -q https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VER
  && cd .. && rm -rf Python-$PYTHON_VERSION* \
  && ln -s /usr/local/bin/pip3 /usr/bin/pip \
  && ln -s /usr/local/bin/$PYTHON /usr/local/bin/python \
- && ${PIP} --no-cache-dir install --upgrade pip setuptools
+ && pip3 --no-cache-dir install --upgrade pip setuptools
 
 ###############################################################################
 # 3) Application files and Python dependencies
