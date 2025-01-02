@@ -611,16 +611,25 @@ func (m *nodeManager) cleanupLeakageENIs(efaSecurityGroupID string) error {
 }
 
 func (m *nodeManager) waitForASGDeletion(asgName string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 20 * time.Minute)
+	defer cancel()
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
 	for {
-		deleted, err := m.isASGDeleted(m.resourceID)
-		if err != nil {
-			return fmt.Errorf("failed to wait for ASG Deletion: %w", err)
-		} else if deleted {
-			return nil
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("timed out waiting for ASG %s deletion", asgName)
+		case <-ticker.C:
+			deleted, err := m.isASGDeleted(asgName)
+			if err != nil {
+				return fmt.Errorf("failed to check ASG deletion: %w", err)
+			} else if deleted {
+				return nil
+			}
 		}
-		time.Sleep(10 * time.Second)
 	}
 }
+
 
 func (m *nodeManager) isASGDeleted(asgName string) (bool, error) {
 	asgOutput, err := m.clients.ASG().DescribeAutoScalingGroups(context.TODO(), &autoscaling.DescribeAutoScalingGroupsInput{
