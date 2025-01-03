@@ -6,11 +6,11 @@ FROM public.ecr.aws/docker/library/ubuntu:20.04
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Neuron SDK components version numbers
-ARG NEURONX_DISTRIBUTED_VERSION=0.9.0
+ARG NEURONX_DISTRIBUTED_TRAINING_VERSION=1.0.1
 ARG NEURONX_CC_VERSION=2.15.143.0
-ARG NEURONX_FRAMEWORK_VERSION=2.1.2.2.3.2
-ARG NEURONX_COLLECTIVES_LIB_VERSION=2.22.133.0
-ARG NEURONX_RUNTIME_LIB_VERSION=2.22.19.0
+ARG NEURONX_FRAMEWORK_VERSION=2.1.2.2.3.1
+ARG NEURONX_COLLECTIVES_LIB_VERSION=2.22.33.0-d2128d1aa
+ARG NEURONX_RUNTIME_LIB_VERSION=2.22.19.0-5856c0b42
 ARG NEURONX_TOOLS_VERSION=2.19.0.0
 
 # Python
@@ -137,7 +137,7 @@ RUN mkdir -p /etc/pki/tls/certs && cp /etc/ssl/certs/ca-certificates.crt /etc/pk
 RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com \
  && pip install --force-reinstall torch-neuronx==$NEURONX_FRAMEWORK_VERSION \
  && pip install --force-reinstall neuronx-cc==$NEURONX_CC_VERSION \
- && pip install --force-reinstall --no-deps neuronx-distributed==$NEURONX_DISTRIBUTED_VERSION
+ && pip install --force-reinstall --no-deps neuronx-distributed-training==$NEURONX_DISTRIBUTED_TRAINING_VERSION
 
 RUN pip install --no-cache-dir -U \
     "attrs<24,>=23.1.0" \
