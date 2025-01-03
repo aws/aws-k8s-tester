@@ -413,8 +413,6 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 }
 
 func (m *nodeManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
-	//update cluster default security group With EFA required ingress egress rule 
-	m.updateDefaultSecurityGroupWithEFA(cluster.securityGroupId)
 	stackName := m.getUnmanagedNodegroupStackName()
 	klog.Infof("creating unmanaged nodegroup with EFA stack...")
 	userData, userDataIsMimePart, err := generateUserData(opts.UserDataFormat, cluster)
@@ -519,60 +517,6 @@ func (m *nodeManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure, clu
 	return nil
 }
 
-func (m *nodeManager) updateDefaultSecurityGroupWithEFA(defaultSGID string) error {
-	// Add ingress rules
-	ingressInput := &ec2.AuthorizeSecurityGroupIngressInput{
-		GroupId: aws.String(defaultSGID),
-		IpPermissions: []ec2types.IpPermission{
-			{
-				IpProtocol: aws.String("tcp"),
-				FromPort: aws.Int32(443),
-				ToPort: aws.Int32(443),
-				UserIdGroupPairs: []ec2types.UserIdGroupPair{
-					{
-						GroupId: aws.String(defaultSGID),
-					},
-				},
-			},
-			{
-				IpProtocol: aws.String("tcp"),
-				FromPort: aws.Int32(1025),
-				ToPort: aws.Int32(65535),
-				UserIdGroupPairs: []ec2types.UserIdGroupPair{
-					{
-						GroupId: aws.String(defaultSGID),
-					},
-				},
-			},
-		},
-	}
-	_, err := m.clients.EC2().AuthorizeSecurityGroupIngress(context.TODO(), ingressInput)
-	if err != nil {
-		return fmt.Errorf("failed to authorize security group ingress: %v", err)
-	}
-
-	// Add egress rules
-	egressInput := &ec2.AuthorizeSecurityGroupEgressInput{
-		GroupId: aws.String(defaultSGID),
-		IpPermissions: []ec2types.IpPermission{
-			{
-				IpProtocol: aws.String("-1"),
-				UserIdGroupPairs: []ec2types.UserIdGroupPair{
-					{
-						GroupId: aws.String(defaultSGID),
-					},
-				},
-			},
-		},
-	}
-	_, err = m.clients.EC2().AuthorizeSecurityGroupEgress(context.TODO(), egressInput)
-	if err != nil {
-		return fmt.Errorf("failed to authorize security group egress: %v", err)
-	}
-
-	return nil
-}
-
 func (m *nodeManager) deleteNodes() error {
 	if err := m.deleteUnmanagedNodegroup(); err != nil {
 		return err
@@ -623,7 +567,6 @@ func (m *nodeManager) deleteUnmanagedNodegroup() error {
 		}
 		return fmt.Errorf("failed to delete unmanaged nodegroup stack: %w", err)
 	}
-
 	klog.Infof("waiting for unmanaged nodegroup stack to be deleted: %s", stackName)
 	err = cloudformation.NewStackDeleteCompleteWaiter(m.clients.CFN()).
 		Wait(context.TODO(),
