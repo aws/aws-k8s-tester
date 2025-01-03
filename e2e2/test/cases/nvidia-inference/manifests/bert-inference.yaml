@@ -1,0 +1,30 @@
+# Single-node BERT inference job with GPU. Memory-backed volume for /dev/shm
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: bert-inference
+spec:
+  backoffLimit: 4
+  template:
+    spec:
+      restartPolicy: OnFailure
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+      containers:
+      - name: bert-inference
+        image: {{.BertInferenceImage}}
+        imagePullPolicy: Always
+        command: ["python", "infer.py"]
+        env:
+        - name: INFERENCE_MODE
+          value: "{{.InferenceMode}}"
+        volumeMounts:
+        - mountPath: /dev/shm
+          name: dshm
+        resources:
+          requests:
+            nvidia.com/gpu: {{.GPUPerNode}}
+          limits:
+            nvidia.com/gpu: {{.GPUPerNode}}

@@ -21,9 +21,12 @@ RUN go test -c ./test/cases/nvidia -o $GOPATH/bin/e2e-nvidia
 RUN go test -c ./test/cases/netpol -o $GOPATH/bin/e2e-netpol
 RUN go test -c ./test/cases/quick -o $GOPATH/bin/e2e-quick
 RUN go test -c ./test/cases/neuron -o $GOPATH/bin/e2e-neuron
-RUN go test -c ./test/cases/inference -o $GOPATH/bin/e2e-inference
 RUN go test -c ./test/cases/nvidia-training -o $GOPATH/bin/e2e-nvidia-training
+<<<<<<< HEAD
 RUN go test -c ./test/cases/neuron-training -o $GOPATH/bin/e2e-neuron-training
+=======
+RUN go test -c ./test/cases/nvidia-inference -o $GOPATH/bin/e2e-nvidia-inference
+>>>>>>> aa14d5e8 (Enhance NVIDIA Inference Test Harness, Parameterize GPU Usage, Update CI, and Upgrade PyTorch to v2.5 (#533))
 
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 ARG TARGETOS
