@@ -31,3 +31,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - run: docker build --file e2e2/test/images/nvidia-training/Dockerfile e2e2/test/images/nvidia-training
+  build-nvidia-inference:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: docker build --file e2e2/test/images/nvidia-inference/Dockerfile e2e2/test/images/nvidia-inference
