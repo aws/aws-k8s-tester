@@ -64,7 +64,8 @@ Conditions:
   IsUserDataMIMEPart: !Equals [true, !Ref UserDataIsMIMEPart]
 
 Resources:
-  Type: "AWS::EC2::SecurityGroupIngress"
+  EFASecurityGroupIngress:
+    Type: "AWS::EC2::SecurityGroupIngress"
     Properties:
       Description: Allow node to communicate with each other
       FromPort: 0
