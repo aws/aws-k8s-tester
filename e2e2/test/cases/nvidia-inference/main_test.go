@@ -98,33 +98,28 @@ func checkGpuCapacity(ctx context.Context, config *envconf.Config) (context.Cont
 		return ctx, fmt.Errorf("failed to create kubernetes client: %w", err)
 	}
 
-	nodes, err := cs.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return ctx, fmt.Errorf("failed to list nodes: %w", err)
-	}
-	if len(nodes.Items) == 0 {
-		return ctx, fmt.Errorf("no nodes found in the cluster")
-	}
-
-	var found bool
-	for _, node := range nodes.Items {
-		instanceType := node.Labels["node.kubernetes.io/instance-type"]
-		gpuCap, ok := node.Status.Capacity["nvidia.com/gpu"]
-		if !ok {
+	err = wait.For(func(ctx context.Context) (bool, error) {
+		nodes, err := cs.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return false, fmt.Errorf("failed to list nodes: %w", err)
+		} else if len(nodes.Items) == 0 {
+			return false, fmt.Errorf("no nodes found in the cluster")
+		}
+		for _, node := range nodes.Items {
+			instanceType := node.Labels["node.kubernetes.io/instance-type"]
+			gpuCap, ok := node.Status.Capacity["nvidia.com/gpu"]
+			if ok && int(gpuCap.Value()) >= *gpuRequested {
+				log.Printf("[INFO] Node %s (type: %s) meets the request of %d GPU(s).",
+					node.Name, instanceType, *gpuRequested)
+				return true, nil
+			}
 			log.Printf("[INFO] Node %s (type: %s) has no GPU capacity.", node.Name, instanceType)
-			continue
 		}
+		log.Printf("[INFO] No node meets the GPU requirement. The GPU info might not be propagated yet. Retrying...")
+		return false, nil
+	}, wait.WithTimeout(5 * time.Minute), wait.WithInterval(10 * time.Second))
 
-		log.Printf("[INFO] Node %s (type: %s) reports %d GPU(s).", node.Name, instanceType, gpuCap.Value())
-
-		if int(gpuCap.Value()) >= *gpuRequested {
-			log.Printf("[INFO] Node %s (type: %s) meets the request of %d GPU(s).",
-				node.Name, instanceType, *gpuRequested)
-			found = true
-		}
-	}
-
-	if !found {
+	if err != nil {
 		return ctx, fmt.Errorf("no node has >= %d GPU(s)", *gpuRequested)
 	}
 
