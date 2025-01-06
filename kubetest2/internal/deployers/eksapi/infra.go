@@ -27,7 +27,7 @@ import (
 
 const (
 	infraStackCreationTimeout         = time.Minute * 15
-	infraStackDeletionTimeout         = time.Minute * 15
+	infraStackDeletionTimeout         = time.Minute * 30
 	networkInterfaceDetachmentTimeout = time.Minute * 5
 )
 
