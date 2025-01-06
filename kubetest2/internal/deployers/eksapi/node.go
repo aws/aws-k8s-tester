@@ -6,7 +6,6 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"math/rand/v2"
 	"strconv"
 	"strings"
 	"time"
@@ -28,10 +27,11 @@ import (
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/deployers/eksapi/templates"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 const (
-	nodegroupDeletionTimeout = time.Minute * 20
+	nodeDeletionTimeout = time.Minute * 20
 )
 
 var (
@@ -209,6 +209,24 @@ func (m *nodeManager) createNodePool(opts *deployerOptions, k8sClient *k8sClient
 	return nil
 }
 
+func (m *nodeManager) deleteNodePool(k8sClient *k8sClient) error {
+	nodePool := karpv1.NodePool{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: m.resourceID,
+		},
+	}
+	klog.Infof("deleting node pool...")
+	if err := k8sClient.client.Delete(context.TODO(), &nodePool); err != nil {
+		if apierrors.IsNotFound(err) {
+			klog.Infof("node pool does not exist: %s", m.resourceID)
+			return nil
+		}
+		return fmt.Errorf("failed to delete node pool: %v", err)
+	}
+	klog.Infof("deleted node pool!")
+	return nil
+}
+
 // createPlaceholderDeployment creates a Deployment with the specified number of replicas that requires
 // each replica to be scheduled on different nodes.
 // This ensures that (at least) the specified number of nodes exist in an EKS Auto cluster
@@ -217,12 +235,11 @@ func (m *nodeManager) createPlaceholderDeployment(opts *deployerOptions, k8sClie
 		klog.Info("not creating placeholder deployment!")
 		return nil, nil
 	}
-	disambiguator := fmt.Sprintf("-%d", rand.IntN(1000))
 	labels := map[string]string{
-		"app": "placeholder-deployment" + disambiguator,
+		"app": m.resourceID,
 	}
 	d := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{Name: "placeholder" + disambiguator, Namespace: "default"},
+		ObjectMeta: metav1.ObjectMeta{Name: m.resourceID, Namespace: "default"},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: pointer.Int32(int32(opts.Nodes)),
 			Selector: &metav1.LabelSelector{
@@ -263,6 +280,19 @@ func (m *nodeManager) createPlaceholderDeployment(opts *deployerOptions, k8sClie
 	}
 	klog.Infof("created placeholder deployment: %+v", d)
 	return d, nil
+}
+
+func (m *nodeManager) deletePlaceholderDeployment(k8sClient *k8sClient) error {
+	klog.Infof("deleting placeholder deployment...")
+	if err := k8sClient.clientset.AppsV1().Deployments("default").Delete(context.TODO(), m.resourceID, *metav1.NewDeleteOptions( /* no grace period */ 0)); err != nil {
+		if apierrors.IsNotFound(err) {
+			klog.Infof("placeholder deployment does not exist: %s", m.resourceID)
+			return nil
+		}
+		return fmt.Errorf("failed to delete placeholder deployment: %v", err)
+	}
+	klog.Infof("deleted placeholder deployment!")
+	return nil
 }
 
 func (m *nodeManager) createManagedNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
@@ -517,11 +547,30 @@ func (m *nodeManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure, clu
 	return nil
 }
 
-func (m *nodeManager) deleteNodes() error {
+// deleteNodes cleans up any nodes in the cluster
+// it will be called outside the context of a deployer run (by the janitor, for example)
+// so will try to delete nodes of any type
+func (m *nodeManager) deleteNodes(k8sClient *k8sClient) error {
 	if err := m.deleteUnmanagedNodegroup(); err != nil {
 		return err
 	}
-	return m.deleteManagedNodegroup()
+	if err := m.deleteManagedNodegroup(); err != nil {
+		return err
+	}
+	// we only have a k8sClient when this is called by the deployer, not by the janitor
+	// TODO implement cleanup of Auto nodes in the janitor
+	if k8sClient != nil {
+		if err := m.deletePlaceholderDeployment(k8sClient); err != nil {
+			return err
+		}
+		if err := m.deleteNodePool(k8sClient); err != nil {
+			return err
+		}
+		if err := k8sClient.waitForNodeDeletion(nodeDeletionTimeout); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (m *nodeManager) deleteManagedNodegroup() error {
@@ -544,7 +593,7 @@ func (m *nodeManager) deleteManagedNodegroup() error {
 		Wait(context.TODO(), &eks.DescribeNodegroupInput{
 			ClusterName:   input.ClusterName,
 			NodegroupName: input.NodegroupName,
-		}, nodegroupDeletionTimeout)
+		}, nodeDeletionTimeout)
 	if err != nil {
 		return fmt.Errorf("failed to wait for nodegroup deletion: %v", err)
 	}
