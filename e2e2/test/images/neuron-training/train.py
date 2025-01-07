@@ -1,4 +1,3 @@
-import os
 import time
 
 import torch
@@ -6,9 +5,7 @@ import torch_neuronx
 from transformers import BertForPreTraining, BertTokenizer
 from torch.utils.data import DataLoader, TensorDataset
 
-# == New XLA imports (instead of torch.distributed) ==
 import torch_xla.core.xla_model as xm
-import torch_xla.distributed.xla_backend
 
 def create_dummy_data(tokenizer, num_samples=100, max_length=128):
     sentences = [f"This is a dummy sentence number {i}" for i in range(num_samples)]
@@ -44,7 +41,6 @@ def mask_tokens(inputs, tokenizer, mlm_probability):
     return inputs, labels
 
 def init_distributed():
-    # Use XLA’s process info instead of dist.init_process_group('mpi')
     rank = xm.get_ordinal()
     world_size = xm.xrt_world_size()
     return rank, world_size
@@ -69,8 +65,6 @@ def main():
     device = xm.xla_device()
     model_neuron = model_neuron.to(device)
 
-    # (Removed the old torch.nn.parallel.DistributedDataParallel line)
-    # We'll just call this "ddp_model" to keep the rest of the code unchanged
     ddp_model = model_neuron
 
     dataset = create_dummy_data(tokenizer)
