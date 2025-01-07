@@ -551,7 +551,7 @@ func (m *nodeManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure, clu
 // it will be called outside the context of a deployer run (by the janitor, for example)
 // so will try to delete nodes of any type
 func (m *nodeManager) deleteNodes(k8sClient *k8sClient, opts *deployerOptions) error {
-	if err := m.deleteUnmanagedNodegroup(); err != nil {
+	if err := m.deleteUnmanagedNodegroup(opts); err != nil {
 		return err
 	}
 	if err := m.deleteManagedNodegroup(); err != nil {
@@ -601,7 +601,7 @@ func (m *nodeManager) deleteManagedNodegroup() error {
 	return nil
 }
 
-func (m *nodeManager) deleteUnmanagedNodegroup() error {
+func (m *nodeManager) deleteUnmanagedNodegroup(opts *deployerOptions) error {
 	stackName := m.getUnmanagedNodegroupStackName()
 	input := cloudformation.DeleteStackInput{
 		StackName: aws.String(stackName),
@@ -617,16 +617,17 @@ func (m *nodeManager) deleteUnmanagedNodegroup() error {
 		return fmt.Errorf("failed to delete unmanaged nodegroup stack: %w", err)
 	}
 
-	efaSecurityGroupID, err := m.getEFASecurityGroupIDFromStack(stackName)
-	if err != nil {
-		return fmt.Errorf("failed to get EFASecurityGroup ID from stack: %w", err)
-	}
-
-	if efaSecurityGroupID != "" {
-		klog.Infof("clean up leakage ENIs in EFA Security Group")
-		err = m.cleanupLeakageENIs(efaSecurityGroupID)
+	if opts.EFA {
+		efaSecurityGroupID, err := m.getEFASecurityGroupIDFromStack(stackName)
 		if err != nil {
-			return fmt.Errorf("failed to wait for ASG deletion: %w", err)
+			return fmt.Errorf("failed to get EFASecurityGroup ID from stack: %w", err)
+		}
+		if efaSecurityGroupID != "" {
+			klog.Infof("clean up leakage ENIs in EFA Security Group")
+			err = m.cleanupLeakageENIs(efaSecurityGroupID)
+			if err != nil {
+				return fmt.Errorf("failed to wait for ASG deletion: %w", err)
+			}
 		}
 	}
 
