@@ -321,17 +321,16 @@ func (d *deployer) Down() error {
 	if d.deployerOptions.StaticClusterName != "" {
 		return d.staticClusterManager.TearDownNodeForStaticCluster()
 	}
-	return deleteResources(d.infraManager, d.clusterManager, d.nodeManager)
+	return deleteResources(d.infraManager, d.clusterManager, d.nodeManager, d.k8sClient)
 }
 
-func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *nodeManager) error {
-	if err := nm.deleteNodes(); err != nil {
+func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *nodeManager /* nillable */, k8sClient *k8sClient) error {
+	if err := nm.deleteNodes(k8sClient); err != nil {
 		return err
 	}
 	// the EKS-managed cluster security group may be associated with a leaked ENI
 	// so we need to make sure we've deleted leaked ENIs before we delete the cluster
 	// otherwise, the cluster security group will be left behind and will block deletion of our VPC
-
 	if err := im.deleteLeakedENIs(); err != nil {
 		return err
 	}
