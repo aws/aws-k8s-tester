@@ -105,8 +105,6 @@ def main():
     if rank == 0:
         print(f"Average Throughput: {throughput:.2f} samples/second")
 
-    # No dist.destroy_process_group() needed under XLA
-    # All done!
 
 if __name__ == "__main__":
     main()
