@@ -6,3 +6,5 @@
 /aws-k8s-tester
 */*/.DS_Store
 */.DS_Store
+/_artifacts
+/_rundir

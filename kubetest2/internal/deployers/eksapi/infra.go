@@ -16,6 +16,9 @@ import (
 	cloudwatchtypes "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
+	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
+	"github.com/aws/aws-sdk-go/aws/arn"
 	"k8s.io/klog"
 
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/deployers/eksapi/templates"
@@ -24,13 +27,16 @@ import (
 
 const (
 	infraStackCreationTimeout         = time.Minute * 15
-	infraStackDeletionTimeout         = time.Minute * 15
+	infraStackDeletionTimeout         = time.Minute * 30
 	networkInterfaceDetachmentTimeout = time.Minute * 5
 )
 
 const (
 	// the VPC CNI will always add this tag to ENI's that it creates
 	vpcCNIENITagKey = "node.k8s.amazonaws.com/createdAt"
+
+	// the IPAM controller will add this tag to the ENI's that it creates
+	ipamControllerENITagKey = "eks:kubernetes-cni-node-name"
 )
 
 // eksEndpointURLTag is the key for an optional tag on the infrastructure CloudFormation stack,
@@ -67,13 +73,12 @@ func NewInfrastructureManager(clients *awsClients, resourceID string, metrics me
 }
 
 type Infrastructure struct {
-	vpc              string
-	subnetsPublic    []string
-	subnetsPrivate   []string
-	clusterRole      string
-	nodeRole         string
-	sshSecurityGroup string
-	sshKeyPair       string
+	vpc            string
+	subnetsPublic  []string
+	subnetsPrivate []string
+	clusterRoleARN string
+	nodeRoleARN    string
+	nodeRoleName   string
 }
 
 func (i *Infrastructure) subnets() []string {
@@ -81,10 +86,6 @@ func (i *Infrastructure) subnets() []string {
 }
 
 func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions) (*Infrastructure, error) {
-	publicKeyMaterial, err := loadSSHPublicKey()
-	if err != nil {
-		return nil, err
-	}
 	// get two AZs for the subnets
 	azs, err := m.clients.EC2().DescribeAvailabilityZones(context.TODO(), &ec2.DescribeAvailabilityZonesInput{})
 	if err != nil {
@@ -115,10 +116,6 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 		TemplateBody: aws.String(templates.Infrastructure),
 		Capabilities: []cloudformationtypes.Capability{cloudformationtypes.CapabilityCapabilityIam},
 		Parameters: []cloudformationtypes.Parameter{
-			{
-				ParameterKey:   aws.String("SSHPublicKeyMaterial"),
-				ParameterValue: aws.String(publicKeyMaterial),
-			},
 			{
 				ParameterKey:   aws.String("ResourceId"),
 				ParameterValue: aws.String(m.resourceID),
@@ -168,6 +165,7 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 		return nil, fmt.Errorf("failed to get infrastructure stack resources: %w", err)
 	}
 	klog.Infof("created infrastructure: %+v", infra)
+
 	return infra, nil
 }
 
@@ -176,7 +174,7 @@ func (m *InfrastructureManager) getInfrastructureStackResources() (*Infrastructu
 		StackName: aws.String(m.resourceID),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to describe infrastructure stack: %w", err)
+		return nil, err
 	}
 	infra := Infrastructure{}
 	for _, output := range stack.Stacks[0].Outputs {
@@ -189,24 +187,43 @@ func (m *InfrastructureManager) getInfrastructureStackResources() (*Infrastructu
 		case "SubnetsPrivate":
 			infra.subnetsPrivate = strings.Split(value, ",")
 		case "ClusterRole":
-			infra.clusterRole = value
+			arn, err := arn.Parse(value)
+			if err != nil {
+				return nil, fmt.Errorf("infrastructure stack ClusterRole output is not a valid ARN: '%s': %v", value, err)
+			}
+			infra.clusterRoleARN = arn.String()
 		case "NodeRole":
-			infra.nodeRole = value
-		case "SSHSecurityGroup":
-			infra.sshSecurityGroup = value
-		case "SSHKeyPair":
-			infra.sshKeyPair = value
+			arn, err := arn.Parse(value)
+			if err != nil {
+				return nil, fmt.Errorf("infrastructure stack NodeRole output is not a valid ARN: '%s': %v", value, err)
+			}
+			infra.nodeRoleARN = arn.String()
+			// Resource looks like 'role:/MyRole'
+			resourceParts := strings.Split(arn.Resource, "/")
+			infra.nodeRoleName = resourceParts[len(resourceParts)-1]
 		}
 	}
 	return &infra, nil
 }
 
 func (m *InfrastructureManager) deleteInfrastructureStack() error {
+	infra, err := m.getInfrastructureStackResources()
+	if err != nil {
+		var notFound *cloudformationtypes.StackNotFoundException
+		if errors.As(err, &notFound) {
+			klog.Infof("infrastructure stack does not exist: %s", m.resourceID)
+			return nil
+		}
+		return err
+	}
+	if err := m.deleteLeakedInstanceProfiles(infra); err != nil {
+		return err
+	}
 	input := cloudformation.DeleteStackInput{
 		StackName: aws.String(m.resourceID),
 	}
 	klog.Infof("deleting infrastructure stack: %s", m.resourceID)
-	_, err := m.clients.CFN().DeleteStack(context.TODO(), &input)
+	_, err = m.clients.CFN().DeleteStack(context.TODO(), &input)
 	if err != nil {
 		var notFound *cloudformationtypes.StackNotFoundException
 		if errors.As(err, &notFound) {
@@ -229,6 +246,53 @@ func (m *InfrastructureManager) deleteInfrastructureStack() error {
 		return nil
 	}
 	klog.Infof("deleted infrastructure stack: %s", m.resourceID)
+	return nil
+}
+
+// deleteLeakedIntanceProfiles deletes any instance profiles to which the node role is attached,
+// because this will block node role deletion (and deletion of the infrastructure stack).
+// For example, when --auto-mode is used, an instance profile will be created for us and won't be deleted automatically with the cluster.
+func (m *InfrastructureManager) deleteLeakedInstanceProfiles(infra *Infrastructure) error {
+	out, err := m.clients.IAM().ListInstanceProfilesForRole(context.TODO(), &iam.ListInstanceProfilesForRoleInput{
+		RoleName: aws.String(infra.nodeRoleName),
+	})
+	if err != nil {
+		var notFound *iamtypes.NoSuchEntityException
+		if errors.As(err, &notFound) {
+			klog.Infof("instance profile for role does not exist: %s", m.resourceID)
+			// continue deletion
+		}
+		return fmt.Errorf("failed to list instance profiles for role name: '%s': %v", infra.nodeRoleName, err)
+	} else if len(out.InstanceProfiles) > 0 {
+		var deletedInstanceProfiles []string
+		for _, instanceProfile := range out.InstanceProfiles {
+			_, err := m.clients.IAM().RemoveRoleFromInstanceProfile(context.TODO(), &iam.RemoveRoleFromInstanceProfileInput{
+				RoleName:            aws.String(infra.nodeRoleName),
+				InstanceProfileName: instanceProfile.InstanceProfileName,
+			})
+			if err != nil {
+				var notFound *iamtypes.NoSuchEntityException
+				if errors.As(err, &notFound) {
+					klog.Infof("instance profile does not exist: %s", aws.ToString(instanceProfile.InstanceProfileName))
+					continue
+				}
+				return fmt.Errorf("failed to remove node role %s from instance profile: %s: %v", infra.nodeRoleName, aws.ToString(instanceProfile.InstanceProfileName), err)
+			}
+			_, err = m.clients.IAM().DeleteInstanceProfile(context.TODO(), &iam.DeleteInstanceProfileInput{
+				InstanceProfileName: instanceProfile.InstanceProfileName,
+			})
+			if err != nil {
+				var notFound *iamtypes.NoSuchEntityException
+				if errors.As(err, &notFound) {
+					klog.Infof("instance profile does not exist: %s", aws.ToString(instanceProfile.InstanceProfileName))
+					continue
+				}
+				return fmt.Errorf("failed to delete instance profile: %s: %v", aws.ToString(instanceProfile.InstanceProfileName), err)
+			}
+			deletedInstanceProfiles = append(deletedInstanceProfiles, aws.ToString(instanceProfile.InstanceProfileName))
+		}
+		klog.Infof("deleted %d leaked instance profile(s): %v", len(deletedInstanceProfiles), deletedInstanceProfiles)
+	}
 	return nil
 }
 
@@ -284,7 +348,7 @@ func (m *InfrastructureManager) getVPCCNINetworkInterfaceIds(vpcId string) ([]st
 			},
 			{
 				Name:   aws.String("tag-key"),
-				Values: []string{vpcCNIENITagKey},
+				Values: []string{vpcCNIENITagKey, ipamControllerENITagKey},
 			},
 		},
 	})

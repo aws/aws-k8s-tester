@@ -68,7 +68,7 @@ RUN apt update \
     libnccl-dev=2.22.3-1+cuda12.5
 
 # Install AWS-OFI-NCCL plugin
-ARG AWS_OFI_NCCL_VERSION=1.11.0-aws
+ARG AWS_OFI_NCCL_VERSION=1.12.1-aws
 RUN cd tmp \
   && curl -sL https://github.com/aws/aws-ofi-nccl/releases/download/v$AWS_OFI_NCCL_VERSION/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION.tar.gz | tar xvz \
   && cd aws-ofi-nccl-$AWS_OFI_NCCL_VERSION \

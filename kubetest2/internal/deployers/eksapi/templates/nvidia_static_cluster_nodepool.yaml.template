@@ -1,0 +1,38 @@
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: eks
+  name: nvidia
+spec:
+  weight: 50
+  template:
+    spec:
+      requirements:
+        - key: kubernetes.io/arch
+          operator: In
+          values: [{{.Arch}}]
+        - key: kubernetes.io/os
+          operator: In
+          values: ["linux"]
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["on-demand"]
+        - key: node.kubernetes.io/instance-type
+          operator: In
+          values: 
+            {{- range .InstanceTypes}}
+            - "{{.}}"
+            {{- end}}
+        - key: eks.amazonaws.com/instance-gpu-count
+          operator: Exists
+      nodeClassRef:
+        group: eks.amazonaws.com
+        kind: NodeClass
+        name: default
+      expireAfter: 336h 
+  disruption:
+    budgets:
+      - nodes: 10%
+    consolidationPolicy: WhenEmpty
+    consolidateAfter: 600s

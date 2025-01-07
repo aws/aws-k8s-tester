@@ -16,7 +16,6 @@ import (
 	"github.com/octago/sflags/gen/gpflag"
 	"github.com/spf13/pflag"
 	"golang.org/x/exp/slices"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 	"sigs.k8s.io/kubetest2/pkg/types"
 )
@@ -37,48 +36,53 @@ type deployer struct {
 	commonOptions types.Options
 	deployerOptions
 
-	metrics          metrics.MetricRegistry
-	infraManager     *InfrastructureManager
-	clusterManager   *ClusterManager
-	addonManager     *AddonManager
-	nodegroupManager *NodegroupManager
-	logManager       *logManager
+	metrics              metrics.MetricRegistry
+	infraManager         *InfrastructureManager
+	clusterManager       *ClusterManager
+	addonManager         *AddonManager
+	nodeManager          *nodeManager
+	logManager           *logManager
+	staticClusterManager *StaticClusterManager
 
 	awsClients *awsClients
 
 	infra   *Infrastructure
 	cluster *Cluster
 
-	k8sClient *kubernetes.Clientset
+	k8sClient *k8sClient
 
 	initTime time.Time
 }
 
 type deployerOptions struct {
-	Addons                      []string      `flag:"addons" desc:"Managed addons (name:version pairs) to create in the cluster. Use 'latest' for the most recent version, or 'default' for the default version."`
-	AMI                         string        `flag:"ami" desc:"AMI for unmanaged nodes"`
-	AMIType                     string        `flag:"ami-type" desc:"AMI type for managed nodes"`
-	CapacityReservation         bool          `flag:"capacity-reservation" desc:"Use capacity reservation for the unmanaged nodegroup"`
-	ClusterRoleServicePrincipal string        `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
-	EFA                         bool          `flag:"efa" desc:"Create EFA interfaces on the node of an unmanaged nodegroup. Requires --unmanaged-nodes."`
-	EKSEndpointURL              string        `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
-	EmitMetrics                 bool          `flag:"emit-metrics" desc:"Record and emit metrics to CloudWatch"`
-	ExpectedAMI                 string        `flag:"expected-ami" desc:"Expected AMI of nodes. Up will fail if the actual nodes are not utilizing the expected AMI. Defaults to --ami if defined."`
-	GenerateSSHKey              bool          `flag:"generate-ssh-key" desc:"Generate an SSH key to use for tests. The generated key should not be used in production, as it will not have a passphrase."`
-	InstanceTypes               []string      `flag:"instance-types" desc:"Node instance types"`
-	IPFamily                    string        `flag:"ip-family" desc:"IP family for the cluster (ipv4 or ipv6)"`
-	KubeconfigPath              string        `flag:"kubeconfig" desc:"Path to kubeconfig"`
-	KubernetesVersion           string        `flag:"kubernetes-version" desc:"cluster Kubernetes version"`
-	LogBucket                   string        `flag:"log-bucket" desc:"S3 bucket for storing logs for each run. If empty, logs will not be stored."`
-	NodeCreationTimeout         time.Duration `flag:"node-creation-timeout" desc:"Time to wait for nodes to be created/launched. This should consider instance availability."`
-	NodeReadyTimeout            time.Duration `flag:"node-ready-timeout" desc:"Time to wait for all nodes to become ready"`
-	Nodes                       int           `flag:"nodes" desc:"number of nodes to launch in cluster"`
-	NodeNameStrategy            string        `flag:"node-name-strategy" desc:"Specifies the naming strategy for node. Allowed values: ['SessionName', 'EC2PrivateDNSName'], default to EC2PrivateDNSName"`
-	Region                      string        `flag:"region" desc:"AWS region for EKS cluster"`
-	TuneVPCCNI                  bool          `flag:"tune-vpc-cni" desc:"Apply tuning parameters to the VPC CNI DaemonSet"`
-	UnmanagedNodes              bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup. Requires --ami"`
-	UpClusterHeaders            []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
-	UserDataFormat              string        `flag:"user-data-format" desc:"Format of the node instance user data"`
+	Addons                      []string `flag:"addons" desc:"Managed addons (name:version pairs) to create in the cluster. Use 'latest' for the most recent version, or 'default' for the default version."`
+	AMI                         string   `flag:"ami" desc:"AMI for unmanaged nodes"`
+	AMIType                     string   `flag:"ami-type" desc:"AMI type for managed nodes"`
+	AutoMode                    bool     `flag:"auto-mode" desc:"Enable EKS Auto Mode"`
+	CapacityReservation         bool     `flag:"capacity-reservation" desc:"Use capacity reservation for the unmanaged nodegroup"`
+	ClusterRoleServicePrincipal string   `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
+	EFA                         bool     `flag:"efa" desc:"Create EFA interfaces on the node of an unmanaged nodegroup. Requires --unmanaged-nodes."`
+	EKSEndpointURL              string   `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
+	EmitMetrics                 bool     `flag:"emit-metrics" desc:"Record and emit metrics to CloudWatch"`
+	ExpectedAMI                 string   `flag:"expected-ami" desc:"Expected AMI of nodes. Up will fail if the actual nodes are not utilizing the expected AMI. Defaults to --ami if defined."`
+	// TODO: remove this once it's no longer used in downstream jobs
+	GenerateSSHKey      bool          `flag:"generate-ssh-key" desc:"Generate an SSH key to use for tests. The generated key should not be used in production, as it will not have a passphrase."`
+	InstanceTypes       []string      `flag:"instance-types" desc:"Node instance types. Cannot be used with --instance-type-archs"`
+	InstanceTypeArchs   []string      `flag:"instance-type-archs" desc:"Use default node instance types for specific architectures. Cannot be used with --instance-types"`
+	IPFamily            string        `flag:"ip-family" desc:"IP family for the cluster (ipv4 or ipv6)"`
+	KubeconfigPath      string        `flag:"kubeconfig" desc:"Path to kubeconfig"`
+	KubernetesVersion   string        `flag:"kubernetes-version" desc:"cluster Kubernetes version"`
+	LogBucket           string        `flag:"log-bucket" desc:"S3 bucket for storing logs for each run. If empty, logs will not be stored."`
+	NodeCreationTimeout time.Duration `flag:"node-creation-timeout" desc:"Time to wait for nodes to be created/launched. This should consider instance availability."`
+	NodeReadyTimeout    time.Duration `flag:"node-ready-timeout" desc:"Time to wait for all nodes to become ready"`
+	Nodes               int           `flag:"nodes" desc:"number of nodes to launch in cluster"`
+	NodeNameStrategy    string        `flag:"node-name-strategy" desc:"Specifies the naming strategy for node. Allowed values: ['SessionName', 'EC2PrivateDNSName'], default to EC2PrivateDNSName"`
+	Region              string        `flag:"region" desc:"AWS region for EKS cluster"`
+	StaticClusterName   string        `flag:"static-cluster-name" desc:"Optional when re-use existing cluster and node group by querying the kubeconfig and run test"`
+	TuneVPCCNI          bool          `flag:"tune-vpc-cni" desc:"Apply tuning parameters to the VPC CNI DaemonSet"`
+	UnmanagedNodes      bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup. Requires --ami"`
+	UpClusterHeaders    []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
+	UserDataFormat      string        `flag:"user-data-format" desc:"Format of the node instance user data"`
 }
 
 // NewDeployer implements deployer.New for EKS using the EKS (and other AWS) API(s) directly (no cloudformation)
@@ -121,8 +125,11 @@ func (d *deployer) Init() error {
 	d.infraManager = NewInfrastructureManager(d.awsClients, resourceID, d.metrics)
 	d.clusterManager = NewClusterManager(d.awsClients, resourceID)
 	d.addonManager = NewAddonManager(d.awsClients)
-	d.nodegroupManager = NewNodegroupManager(d.awsClients, resourceID)
+	d.nodeManager = NewNodeManager(d.awsClients, resourceID)
 	d.logManager = NewLogManager(d.awsClients, resourceID)
+	if d.deployerOptions.StaticClusterName != "" {
+		d.staticClusterManager = NewStaticClusterManager(&d.deployerOptions)
+	}
 	return nil
 }
 
@@ -158,17 +165,14 @@ func (d *deployer) Up() error {
 	if err := d.verifyUpFlags(); err != nil {
 		return fmt.Errorf("up flags are invalid: %v", err)
 	}
-	if d.GenerateSSHKey {
-		if err := generateSSHKey(); err != nil {
+	if d.deployerOptions.StaticClusterName == "" {
+		if infra, err := d.infraManager.createInfrastructureStack(&d.deployerOptions); err != nil {
 			return err
+		} else {
+			d.infra = infra
 		}
 	}
-	if infra, err := d.infraManager.createInfrastructureStack(&d.deployerOptions); err != nil {
-		return err
-	} else {
-		d.infra = infra
-	}
-	cluster, err := d.clusterManager.createCluster(d.infra, &d.deployerOptions)
+	cluster, err := d.clusterManager.getOrCreateCluster(d.infra, &d.deployerOptions)
 	if err != nil {
 		return err
 	}
@@ -177,12 +181,22 @@ func (d *deployer) Up() error {
 	if err != nil {
 		return err
 	}
-	d.k8sClient, err = newKubernetesClient(kubeconfig)
+	d.k8sClient, err = newK8sClient(kubeconfig)
 	if err != nil {
 		return err
 	}
+	if d.deployerOptions.StaticClusterName != "" {
+		klog.Infof("inited k8sclient, skip the rest resource creation for static cluster")
+		d.staticClusterManager.SetK8sClient(kubeconfig)
+		if err := d.staticClusterManager.EnsureNodeForStaticCluster(); err != nil {
+			klog.Errorf("Failed to launch nodes: %v", err)
+			return err
+		}
+		klog.Infof("Nodes launched for static cluster")
+		return nil
+	}
 	if d.UnmanagedNodes {
-		if err := createAWSAuthConfigMap(d.k8sClient, d.NodeNameStrategy, d.infra.nodeRole); err != nil {
+		if err := d.k8sClient.createAWSAuthConfigMap(d.NodeNameStrategy, d.infra.nodeRoleARN); err != nil {
 			return err
 		}
 	}
@@ -193,18 +207,18 @@ func (d *deployer) Up() error {
 		return err
 	}
 	if d.deployerOptions.TuneVPCCNI {
-		if err := tuneVPCCNI(d.k8sClient); err != nil {
+		if err := d.k8sClient.tuneVPCCNI(); err != nil {
 			return err
 		}
 	}
-	if err := d.nodegroupManager.createNodegroup(d.infra, d.cluster, &d.deployerOptions); err != nil {
+	if err := d.nodeManager.createNodes(d.infra, d.cluster, &d.deployerOptions, d.k8sClient); err != nil {
 		return err
 	}
-	if err := waitForReadyNodes(d.k8sClient, d.Nodes, d.NodeReadyTimeout); err != nil {
+	if err := d.k8sClient.waitForReadyNodes(d.Nodes, d.NodeReadyTimeout); err != nil {
 		return err
 	}
 	if d.EmitMetrics {
-		if err := emitNodeMetrics(d.metrics, d.k8sClient, d.awsClients.EC2()); err != nil {
+		if err := d.k8sClient.emitNodeMetrics(d.metrics, d.awsClients.EC2()); err != nil {
 			return err
 		}
 	}
@@ -235,6 +249,19 @@ func (d *deployer) verifyUpFlags() error {
 	if d.IPFamily == "" {
 		d.IPFamily = string(ekstypes.IpFamilyIpv4)
 		klog.Infof("Using default IP family: %s", d.IPFamily)
+	}
+	if d.NodeCreationTimeout == 0 {
+		d.NodeCreationTimeout = time.Minute * 20
+	}
+	if d.NodeReadyTimeout == 0 {
+		d.NodeReadyTimeout = time.Minute * 5
+	}
+	if d.StaticClusterName != "" {
+		klog.Infof("Skip configuration for static cluster")
+		return nil
+	}
+	if len(d.InstanceTypes) > 0 && len(d.InstanceTypeArchs) > 0 {
+		return fmt.Errorf("--instance-types and --instance-type-archs are mutually exclusive")
 	}
 	if d.UnmanagedNodes {
 		if d.AMI == "" {
@@ -267,12 +294,6 @@ func (d *deployer) verifyUpFlags() error {
 			klog.Infof("Using default AMI type: %s", d.AMIType)
 		}
 	}
-	if d.NodeCreationTimeout == 0 {
-		d.NodeCreationTimeout = time.Minute * 20
-	}
-	if d.NodeReadyTimeout == 0 {
-		d.NodeReadyTimeout = time.Minute * 5
-	}
 	return nil
 }
 
@@ -297,11 +318,14 @@ func (d *deployer) Down() error {
 		klog.Warningf("failed to gather logs from nodes: %v", err)
 		// don't return err, this isn't critical
 	}
-	return deleteResources(d.infraManager, d.clusterManager, d.nodegroupManager)
+	if d.deployerOptions.StaticClusterName != "" {
+		return d.staticClusterManager.TearDownNodeForStaticCluster()
+	}
+	return deleteResources(d.infraManager, d.clusterManager, d.nodeManager, d.k8sClient)
 }
 
-func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *NodegroupManager) error {
-	if err := nm.deleteNodegroup(); err != nil {
+func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *nodeManager /* nillable */, k8sClient *k8sClient) error {
+	if err := nm.deleteNodes(k8sClient); err != nil {
 		return err
 	}
 	// the EKS-managed cluster security group may be associated with a leaked ENI

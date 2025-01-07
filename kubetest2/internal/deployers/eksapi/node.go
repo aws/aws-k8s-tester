@@ -18,13 +18,20 @@ import (
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
+	"github.com/aws/smithy-go"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/pointer"
+	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 
 	"github.com/aws/aws-k8s-tester/kubetest2/internal/deployers/eksapi/templates"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 const (
-	nodegroupDeletionTimeout = time.Minute * 20
+	nodeDeletionTimeout = time.Minute * 20
 )
 
 var (
@@ -57,35 +64,29 @@ var (
 	}
 )
 
-type NodegroupManager struct {
+type nodeManager struct {
 	clients    *awsClients
 	resourceID string
 }
 
-func NewNodegroupManager(clients *awsClients, resourceID string) *NodegroupManager {
-	return &NodegroupManager{
+func NewNodeManager(clients *awsClients, resourceID string) *nodeManager {
+	return &nodeManager{
 		clients:    clients,
 		resourceID: resourceID,
 	}
 }
 
-func (m *NodegroupManager) createNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
-	if opts.UnmanagedNodes {
-		if len(opts.InstanceTypes) == 0 {
-			if out, err := m.clients.EC2().DescribeImages(context.TODO(), &ec2.DescribeImagesInput{
-				ImageIds: []string{opts.AMI},
-			}); err != nil {
-				return fmt.Errorf("failed to describe AMI when populating default instance types: %s: %v", opts.AMI, err)
-			} else {
-				amiArch := out.Images[0].Architecture
-				defaultInstanceTypes, ok := defaultInstanceTypesByEC2ArchitectureValues[amiArch]
-				if !ok {
-					return fmt.Errorf("no default instance types known for AMI architecture: %v", amiArch)
-				}
-				opts.InstanceTypes = defaultInstanceTypes
-				klog.V(2).Infof("Using default instance types for AMI architecture: %v: %v", amiArch, opts.InstanceTypes)
-			}
+func (m *nodeManager) createNodes(infra *Infrastructure, cluster *Cluster, opts *deployerOptions, k8sClient *k8sClient) error {
+	if err := m.resolveInstanceTypes(opts); err != nil {
+		return fmt.Errorf("failed to resolve instance types: %v", err)
+	}
+	if opts.AutoMode {
+		if err := m.createNodePool(opts, k8sClient); err != nil {
+			return err
 		}
+		_, err := m.createPlaceholderDeployment(opts, k8sClient)
+		return err
+	} else if opts.UnmanagedNodes {
 		if opts.EFA {
 			return m.createUnmanagedNodegroupWithEFA(infra, cluster, opts)
 		}
@@ -95,12 +96,211 @@ func (m *NodegroupManager) createNodegroup(infra *Infrastructure, cluster *Clust
 	}
 }
 
-func (m *NodegroupManager) createManagedNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
+func (m *nodeManager) resolveInstanceTypes(opts *deployerOptions) (err error) {
+	instanceTypes := opts.InstanceTypes
+	if len(instanceTypes) == 0 {
+		if len(opts.InstanceTypeArchs) > 0 {
+			klog.Infof("choosing instance types based on architecture(s): %v", opts.InstanceTypeArchs)
+			for _, arch := range opts.InstanceTypeArchs {
+				var ec2Arch ec2types.ArchitectureValues
+				switch arch {
+				case "x86_64", "amd64":
+					ec2Arch = ec2types.ArchitectureValuesX8664
+				case "aarch64", "arm64":
+					ec2Arch = ec2types.ArchitectureValuesArm64
+				default:
+					return fmt.Errorf("unknown architecture: '%s'", arch)
+				}
+				instanceTypesForArch, ok := defaultInstanceTypesByEC2ArchitectureValues[ec2Arch]
+				if !ok {
+					return fmt.Errorf("no default instance types known for architecture: '%s'", arch)
+				}
+				instanceTypes = append(instanceTypes, instanceTypesForArch...)
+			}
+		} else if opts.UnmanagedNodes {
+			klog.Infof("choosing instance types based on AMI architecture...")
+			if out, err := m.clients.EC2().DescribeImages(context.TODO(), &ec2.DescribeImagesInput{
+				ImageIds: []string{opts.AMI},
+			}); err != nil {
+				return fmt.Errorf("failed to describe AMI: %s: %v", opts.AMI, err)
+			} else {
+				amiArch := out.Images[0].Architecture
+				instanceTypesForAMIArchitecture, ok := defaultInstanceTypesByEC2ArchitectureValues[amiArch]
+				if !ok {
+					return fmt.Errorf("no default instance types known for AMI architecture: %v", amiArch)
+				}
+				instanceTypes = instanceTypesForAMIArchitecture
+			}
+		} else {
+			// we don't rely on the service's default instance types, because they're a bit too small for the k8s e2e suite
+			klog.Infof("choosing instance types based on managed nodegroup's AMI type...")
+			instanceTypesForAMIType, ok := defaultInstanceTypesByEKSAMITypes[ekstypes.AMITypes(opts.AMIType)]
+			if !ok {
+				return fmt.Errorf("no default instance types known for AMI type: %v", opts.AMIType)
+			}
+			instanceTypes = instanceTypesForAMIType
+		}
+	}
+	validInstanceTypes, err := m.getValidInstanceTypes(instanceTypes)
+	if err != nil {
+		return err
+	}
+	opts.InstanceTypes = validInstanceTypes
+	klog.Infof("using instance types: %v", opts.InstanceTypes)
+	return nil
+}
+
+func (m *nodeManager) createNodePool(opts *deployerOptions, k8sClient *k8sClient) error {
+	nodePool := karpv1.NodePool{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: m.resourceID,
+		},
+		Spec: karpv1.NodePoolSpec{
+			Weight: pointer.Int32(100), // max
+			Disruption: karpv1.Disruption{
+				Budgets: []karpv1.Budget{
+					{
+						Nodes: "10%",
+					},
+				},
+				ConsolidationPolicy: karpv1.ConsolidationPolicyWhenEmpty,
+				ConsolidateAfter:    karpv1.MustParseNillableDuration("600s"),
+			},
+			Template: karpv1.NodeClaimTemplate{
+				Spec: karpv1.NodeClaimTemplateSpec{
+					ExpireAfter: karpv1.MustParseNillableDuration("24h"),
+					NodeClassRef: &karpv1.NodeClassReference{
+						Group: "eks.amazonaws.com",
+						Kind:  "NodeClass",
+						Name:  "default",
+					},
+					Requirements: []karpv1.NodeSelectorRequirementWithMinValues{
+						{
+							NodeSelectorRequirement: corev1.NodeSelectorRequirement{
+								Key:      "kubernetes.io/os",
+								Operator: corev1.NodeSelectorOpIn,
+								Values:   []string{"linux"},
+							},
+						},
+						{
+							NodeSelectorRequirement: corev1.NodeSelectorRequirement{
+								Key:      "karpenter.sh/capacity-type",
+								Operator: corev1.NodeSelectorOpIn,
+								Values:   []string{"on-demand"},
+							},
+						},
+						{
+							NodeSelectorRequirement: corev1.NodeSelectorRequirement{
+								Key:      "node.kubernetes.io/instance-type",
+								Operator: corev1.NodeSelectorOpIn,
+								Values:   opts.InstanceTypes,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	klog.Infof("creating node pool...")
+	if err := k8sClient.client.Create(context.TODO(), &nodePool); err != nil {
+		return fmt.Errorf("failed to create node pool: %v", err)
+	}
+	klog.Infof("created node pool: %+v", nodePool)
+	return nil
+}
+
+func (m *nodeManager) deleteNodePool(k8sClient *k8sClient) error {
+	nodePool := karpv1.NodePool{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: m.resourceID,
+		},
+	}
+	klog.Infof("deleting node pool...")
+	if err := k8sClient.client.Delete(context.TODO(), &nodePool); err != nil {
+		if apierrors.IsNotFound(err) {
+			klog.Infof("node pool does not exist: %s", m.resourceID)
+			return nil
+		}
+		return fmt.Errorf("failed to delete node pool: %v", err)
+	}
+	klog.Infof("deleted node pool!")
+	return nil
+}
+
+// createPlaceholderDeployment creates a Deployment with the specified number of replicas that requires
+// each replica to be scheduled on different nodes.
+// This ensures that (at least) the specified number of nodes exist in an EKS Auto cluster
+func (m *nodeManager) createPlaceholderDeployment(opts *deployerOptions, k8sClient *k8sClient) (*appsv1.Deployment, error) {
+	if opts.Nodes == 0 {
+		klog.Info("not creating placeholder deployment!")
+		return nil, nil
+	}
+	labels := map[string]string{
+		"app": m.resourceID,
+	}
+	d := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{Name: m.resourceID, Namespace: "default"},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: pointer.Int32(int32(opts.Nodes)),
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: labels,
+				},
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						PodAntiAffinity: &corev1.PodAntiAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+								{
+									LabelSelector: &metav1.LabelSelector{
+										MatchLabels: labels,
+									},
+									TopologyKey: "kubernetes.io/hostname",
+								},
+							},
+						},
+					},
+					Containers: []corev1.Container{
+						{
+							Name:    "main",
+							Image:   "public.ecr.aws/amazonlinux/amazonlinux:2023",
+							Command: []string{"sleep", "infinity"},
+						},
+					},
+				},
+			},
+		},
+	}
+	klog.Infof("creating placeholder deployment...")
+	d, err := k8sClient.clientset.AppsV1().Deployments("default").Create(context.TODO(), d, metav1.CreateOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create placeholder deployment: %v", err)
+	}
+	klog.Infof("created placeholder deployment: %+v", d)
+	return d, nil
+}
+
+func (m *nodeManager) deletePlaceholderDeployment(k8sClient *k8sClient) error {
+	klog.Infof("deleting placeholder deployment...")
+	if err := k8sClient.clientset.AppsV1().Deployments("default").Delete(context.TODO(), m.resourceID, *metav1.NewDeleteOptions( /* no grace period */ 0)); err != nil {
+		if apierrors.IsNotFound(err) {
+			klog.Infof("placeholder deployment does not exist: %s", m.resourceID)
+			return nil
+		}
+		return fmt.Errorf("failed to delete placeholder deployment: %v", err)
+	}
+	klog.Infof("deleted placeholder deployment!")
+	return nil
+}
+
+func (m *nodeManager) createManagedNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
 	klog.Infof("creating nodegroup...")
 	input := eks.CreateNodegroupInput{
 		ClusterName:   aws.String(m.resourceID),
 		NodegroupName: aws.String(m.resourceID),
-		NodeRole:      aws.String(infra.nodeRole),
+		NodeRole:      aws.String(infra.nodeRoleARN),
 		Subnets:       infra.subnets(),
 		DiskSize:      aws.Int32(100),
 		CapacityType:  ekstypes.CapacityTypesOnDemand,
@@ -109,18 +309,8 @@ func (m *NodegroupManager) createManagedNodegroup(infra *Infrastructure, cluster
 			MaxSize:     aws.Int32(int32(opts.Nodes)),
 			DesiredSize: aws.Int32(int32(opts.Nodes)),
 		},
-		AmiType: ekstypes.AMITypes(opts.AMIType),
-	}
-	if len(opts.InstanceTypes) > 0 {
-		input.InstanceTypes = opts.InstanceTypes
-	} else {
-		// managed nodegroups uses a t3.medium by default at the time of writing
-		// this only supports 17 pods, which can cause some flakes in the k8s e2e suite
-		defaultInstanceTypes, ok := defaultInstanceTypesByEKSAMITypes[input.AmiType]
-		if !ok {
-			return fmt.Errorf("no default instance types known for AmiType: %v", input.AmiType)
-		}
-		input.InstanceTypes = defaultInstanceTypes
+		AmiType:       ekstypes.AMITypes(opts.AMIType),
+		InstanceTypes: opts.InstanceTypes,
 	}
 	out, err := m.clients.EKS().CreateNodegroup(context.TODO(), &input)
 	if err != nil {
@@ -154,7 +344,7 @@ func (m *NodegroupManager) createManagedNodegroup(infra *Infrastructure, cluster
 	return nil
 }
 
-func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
+func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
 	stackName := m.getUnmanagedNodegroupStackName()
 	klog.Infof("creating unmanaged nodegroup stack...")
 	userData, userDataIsMimePart, err := generateUserData(opts.UserDataFormat, cluster)
@@ -172,9 +362,10 @@ func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, clust
 	if err != nil {
 		return err
 	}
-	// pull the role name out of the ARN
-	nodeRoleArnParts := strings.Split(infra.nodeRole, "/")
-	nodeRoleName := nodeRoleArnParts[len(nodeRoleArnParts)-1]
+	volumeMountPath := "/dev/xvda"
+	if opts.UserDataFormat == "bottlerocket" {
+		volumeMountPath = "/dev/xvdb"
+	}
 	input := cloudformation.CreateStackInput{
 		StackName:    aws.String(stackName),
 		TemplateBody: aws.String(templateBuf.String()),
@@ -206,7 +397,7 @@ func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, clust
 			},
 			{
 				ParameterKey:   aws.String("NodeRoleName"),
-				ParameterValue: aws.String(nodeRoleName),
+				ParameterValue: aws.String(infra.nodeRoleName),
 			},
 			{
 				ParameterKey:   aws.String("NodeCount"),
@@ -217,16 +408,12 @@ func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, clust
 				ParameterValue: aws.String(cluster.securityGroupId),
 			},
 			{
-				ParameterKey:   aws.String("SSHSecurityGroup"),
-				ParameterValue: aws.String(infra.sshSecurityGroup),
-			},
-			{
-				ParameterKey:   aws.String("SSHKeyPair"),
-				ParameterValue: aws.String(infra.sshKeyPair),
-			},
-			{
 				ParameterKey:   aws.String("AMIId"),
 				ParameterValue: aws.String(opts.AMI),
+			},
+			{
+				ParameterKey:   aws.String("VolumeMountPath"),
+				ParameterValue: aws.String(volumeMountPath),
 			},
 		},
 	}
@@ -255,7 +442,7 @@ func (m *NodegroupManager) createUnmanagedNodegroup(infra *Infrastructure, clust
 	return nil
 }
 
-func (m *NodegroupManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
+func (m *nodeManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
 	stackName := m.getUnmanagedNodegroupStackName()
 	klog.Infof("creating unmanaged nodegroup with EFA stack...")
 	userData, userDataIsMimePart, err := generateUserData(opts.UserDataFormat, cluster)
@@ -276,10 +463,6 @@ func (m *NodegroupManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure
 	if opts.UserDataFormat == "bottlerocket" {
 		volumeMountPath = "/dev/xvdb"
 	}
-
-	// pull the role name out of the ARN
-	nodeRoleArnParts := strings.Split(infra.nodeRole, "/")
-	nodeRoleName := nodeRoleArnParts[len(nodeRoleArnParts)-1]
 	input := cloudformation.CreateStackInput{
 		StackName:    aws.String(stackName),
 		TemplateBody: aws.String(templates.UnmanagedNodegroupEFA),
@@ -315,7 +498,7 @@ func (m *NodegroupManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure
 			},
 			{
 				ParameterKey:   aws.String("NodeRoleName"),
-				ParameterValue: aws.String(nodeRoleName),
+				ParameterValue: aws.String(infra.nodeRoleName),
 			},
 			{
 				ParameterKey:   aws.String("NodeCount"),
@@ -324,10 +507,6 @@ func (m *NodegroupManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure
 			{
 				ParameterKey:   aws.String("SecurityGroup"),
 				ParameterValue: aws.String(cluster.securityGroupId),
-			},
-			{
-				ParameterKey:   aws.String("SSHKeyPair"),
-				ParameterValue: aws.String(infra.sshKeyPair),
 			},
 			{
 				ParameterKey:   aws.String("AMIId"),
@@ -368,14 +547,33 @@ func (m *NodegroupManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure
 	return nil
 }
 
-func (m *NodegroupManager) deleteNodegroup() error {
+// deleteNodes cleans up any nodes in the cluster
+// it will be called outside the context of a deployer run (by the janitor, for example)
+// so will try to delete nodes of any type
+func (m *nodeManager) deleteNodes(k8sClient *k8sClient) error {
 	if err := m.deleteUnmanagedNodegroup(); err != nil {
 		return err
 	}
-	return m.deleteManagedNodegroup()
+	if err := m.deleteManagedNodegroup(); err != nil {
+		return err
+	}
+	// we only have a k8sClient when this is called by the deployer, not by the janitor
+	// TODO implement cleanup of Auto nodes in the janitor
+	if k8sClient != nil {
+		if err := m.deletePlaceholderDeployment(k8sClient); err != nil {
+			return err
+		}
+		if err := m.deleteNodePool(k8sClient); err != nil {
+			return err
+		}
+		if err := k8sClient.waitForNodeDeletion(nodeDeletionTimeout); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func (m *NodegroupManager) deleteManagedNodegroup() error {
+func (m *nodeManager) deleteManagedNodegroup() error {
 	input := eks.DeleteNodegroupInput{
 		ClusterName:   aws.String(m.resourceID),
 		NodegroupName: aws.String(m.resourceID),
@@ -395,7 +593,7 @@ func (m *NodegroupManager) deleteManagedNodegroup() error {
 		Wait(context.TODO(), &eks.DescribeNodegroupInput{
 			ClusterName:   input.ClusterName,
 			NodegroupName: input.NodegroupName,
-		}, nodegroupDeletionTimeout)
+		}, nodeDeletionTimeout)
 	if err != nil {
 		return fmt.Errorf("failed to wait for nodegroup deletion: %v", err)
 	}
@@ -403,7 +601,7 @@ func (m *NodegroupManager) deleteManagedNodegroup() error {
 	return nil
 }
 
-func (m *NodegroupManager) deleteUnmanagedNodegroup() error {
+func (m *nodeManager) deleteUnmanagedNodegroup() error {
 	stackName := m.getUnmanagedNodegroupStackName()
 	input := cloudformation.DeleteStackInput{
 		StackName: aws.String(stackName),
@@ -432,11 +630,11 @@ func (m *NodegroupManager) deleteUnmanagedNodegroup() error {
 	return nil
 }
 
-func (m *NodegroupManager) getUnmanagedNodegroupStackName() string {
+func (m *nodeManager) getUnmanagedNodegroupStackName() string {
 	return fmt.Sprintf("%s-unmanaged-nodegroup", m.resourceID)
 }
 
-func (m *NodegroupManager) verifyASGAMI(asgName string, amiId string) (bool, error) {
+func (m *nodeManager) verifyASGAMI(asgName string, amiId string) (bool, error) {
 	klog.Infof("verifying AMI is %s for ASG: %s", amiId, asgName)
 	asgOut, err := m.clients.ASG().DescribeAutoScalingGroups(context.TODO(), &autoscaling.DescribeAutoScalingGroupsInput{
 		AutoScalingGroupNames: []string{asgName},
@@ -473,7 +671,7 @@ func (m *NodegroupManager) verifyASGAMI(asgName string, amiId string) (bool, err
 	return true, nil
 }
 
-func (m *NodegroupManager) getSubnetWithCapacity(infra *Infrastructure, opts *deployerOptions) (string, string, error) {
+func (m *nodeManager) getSubnetWithCapacity(infra *Infrastructure, opts *deployerOptions) (string, string, error) {
 	var capacityReservationId string
 	capacityReservations, err := m.clients.EC2().DescribeCapacityReservations(context.TODO(), &ec2.DescribeCapacityReservationsInput{
 		Filters: []ec2types.Filter{
@@ -523,4 +721,25 @@ func (m *NodegroupManager) getSubnetWithCapacity(infra *Infrastructure, opts *de
 	subnetId := *subnet.Subnets[0].SubnetId
 	klog.Infof("Using subnet: %s", subnetId)
 	return subnetId, capacityReservationId, nil
+}
+
+func (m *nodeManager) getValidInstanceTypes(desiredInstanceTypes []string) ([]string, error) {
+	var validInstanceTypes []string
+	for _, instanceType := range desiredInstanceTypes {
+		ec2InstanceType := ec2types.InstanceType(instanceType)
+		_, err := m.clients.EC2().DescribeInstanceTypes(context.TODO(), &ec2.DescribeInstanceTypesInput{
+			InstanceTypes: []ec2types.InstanceType{ec2InstanceType},
+		})
+		if err != nil {
+			var apierr smithy.APIError
+			if errors.As(err, &apierr) && apierr.ErrorCode() == "InvalidInstanceType" {
+				klog.Infof("Eliminating instance type %s as an option", instanceType)
+			} else {
+				return nil, fmt.Errorf("failed to describe instance type: %s: %v", instanceType, err)
+			}
+		} else {
+			validInstanceTypes = append(validInstanceTypes, instanceType)
+		}
+	}
+	return validInstanceTypes, nil
 }

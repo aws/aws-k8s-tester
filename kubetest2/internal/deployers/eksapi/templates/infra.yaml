@@ -33,15 +33,12 @@ Parameters:
     Default: ""
     Description: Additional service principal with sts:AssumeRole permissions on the ClusterRole
 
-  SSHPublicKeyMaterial:
-    Type: String
-
   ResourceId:
     Type: String
 
   Subnet01AZ:
     Type: String
-  
+
   Subnet02AZ:
     Type: String
 
@@ -196,7 +193,7 @@ Resources:
     Type: AWS::EC2::Route
     DependsOn:
       - InternetGateway
-      - VPCGatewayAttachment    
+      - VPCGatewayAttachment
     Properties:
       DestinationIpv6CidrBlock: ::/0
       GatewayId:
@@ -401,7 +398,9 @@ Resources:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Action: "sts:AssumeRole"
+          - Action:
+            - "sts:AssumeRole"
+            - "sts:TagSession"
             Effect: Allow
             Principal:
               Service:
@@ -416,6 +415,26 @@ Resources:
           - - "arn:"
             - !Ref "AWS::Partition"
             - ":iam::aws:policy/AmazonEKSClusterPolicy"
+        - !Join
+          - ""
+          - - "arn:"
+            - !Ref "AWS::Partition"
+            - ":iam::aws:policy/AmazonEKSBlockStoragePolicy"
+        - !Join
+          - ""
+          - - "arn:"
+            - !Ref "AWS::Partition"
+            - ":iam::aws:policy/AmazonEKSComputePolicy"
+        - !Join
+          - ""
+          - - "arn:"
+            - !Ref "AWS::Partition"
+            - ":iam::aws:policy/AmazonEKSLoadBalancingPolicy"
+        - !Join
+          - ""
+          - - "arn:"
+            - !Ref "AWS::Partition"
+            - ":iam::aws:policy/AmazonEKSNetworkingPolicy"
 
   NodeRole:
     Type: AWS::IAM::Role
@@ -487,23 +506,6 @@ Resources:
       Roles:
         - !Ref NodeRole
 
-  SSHSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: "SSH access for worker nodes"
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-
-  SSHKeyPair:
-    Type: AWS::EC2::KeyPair
-    Properties:
-      PublicKeyMaterial: !Ref SSHPublicKeyMaterial
-      KeyName: !Ref ResourceId
-
 Outputs:
   SubnetsPrivate:
     Value:
@@ -531,19 +533,6 @@ Outputs:
     Export:
       Name:
         Fn::Sub: "${AWS::StackName}::VPC"
-
-  SSHSecurityGroup:
-    Value: !GetAtt SSHSecurityGroup.GroupId
-    Export:
-      Name:
-        Fn::Sub: "${AWS::StackName}::SSHSecurityGroup"
-
-  SSHKeyPair:
-    Value:
-      Ref: SSHKeyPair
-    Export:
-      Name:
-        Fn::Sub: "${AWS::StackName}::SSHKeyPair"
 
   ClusterRole:
     Value:

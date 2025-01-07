@@ -36,13 +36,10 @@ Parameters:
     Description: The IAM role name  of worker nodes.
     Type: String
 
-  SSHKeyPair:
-    Type: String
-
-  SSHSecurityGroup:
-    Type: String
-
   UserData:
+    Type: String
+
+  VolumeMountPath:
     Type: String
 
   UserDataIsMIMEPart:
@@ -99,8 +96,6 @@ Resources:
       LaunchTemplateData:
         SecurityGroupIds:
           - !Ref SecurityGroup
-          - !Ref SSHSecurityGroup
-        KeyName: !Ref SSHKeyPair
         UserData:
           Fn::Base64:
             Fn::If:
@@ -130,7 +125,7 @@ Resources:
         ImageId: !Ref AMIId
         InstanceType: "{{index .InstanceTypes 0}}"
         BlockDeviceMappings:
-          - DeviceName: /dev/xvda
+          - DeviceName: !Ref VolumeMountPath
             Ebs:
               VolumeSize: !Ref NodeDiskSize
               VolumeType: gp2

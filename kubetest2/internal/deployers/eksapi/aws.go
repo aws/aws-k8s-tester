@@ -6,15 +6,20 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 )
 
 type awsClients struct {
-	_eks *eks.Client
-	_cfn *cloudformation.Client
-	_ec2 *ec2.Client
-	_asg *autoscaling.Client
-	_ssm *ssm.Client
+	_eks       *eks.Client
+	_cfn       *cloudformation.Client
+	_ec2       *ec2.Client
+	_asg       *autoscaling.Client
+	_ssm       *ssm.Client
+	_iam       *iam.Client
+	_s3        *s3.Client
+	_s3Presign *s3.PresignClient
 }
 
 func newAWSClients(config aws.Config, eksEndpointURL string) *awsClients {
@@ -23,7 +28,10 @@ func newAWSClients(config aws.Config, eksEndpointURL string) *awsClients {
 		_ec2: ec2.NewFromConfig(config),
 		_asg: autoscaling.NewFromConfig(config),
 		_ssm: ssm.NewFromConfig(config),
+		_iam: iam.NewFromConfig(config),
+		_s3:  s3.NewFromConfig(config),
 	}
+	clients._s3Presign = s3.NewPresignClient(clients._s3)
 	if eksEndpointURL != "" {
 		clients._eks = eks.NewFromConfig(config, func(o *eks.Options) {
 			o.BaseEndpoint = aws.String(eksEndpointURL)
@@ -52,4 +60,16 @@ func (c *awsClients) ASG() *autoscaling.Client {
 
 func (c *awsClients) SSM() *ssm.Client {
 	return c._ssm
+}
+
+func (c *awsClients) IAM() *iam.Client {
+	return c._iam
+}
+
+func (c *awsClients) S3() *s3.Client {
+	return c._s3
+}
+
+func (c *awsClients) S3Presign() *s3.PresignClient {
+	return c._s3Presign
 }

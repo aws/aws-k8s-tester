@@ -63,6 +63,16 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean
 
+# new user to avoid mpirun --allow-run-as-root
+RUN useradd -ms /bin/bash ubuntu
+RUN echo 'ubuntu:password' | chpasswd
+RUN usermod -aG sudo ubuntu
+
+RUN apt update
+RUN apt install -y openssh-server wget gnupg2 sudo
+
+# Install Neuron packages
+RUN . /etc/os-release
 RUN echo "deb https://apt.repos.neuron.amazonaws.com focal main" > /etc/apt/sources.list.d/neuron.list
 RUN wget -qO - https://apt.repos.neuron.amazonaws.com/GPG-PUB-KEY-AMAZON-AWS-NEURON.PUB | apt-key add -
 
@@ -175,5 +185,17 @@ RUN HOME_DIR=/root \
  && rm -rf /tmp/tmp*
 
 RUN curl -o /license.txt  https://aws-dlc-licenses.s3.amazonaws.com/pytorch-2.1/license.txt
+
+# Allow ssh to work without password/prompt so mpirun does not get stuck
+RUN sed -i -e 's/#   StrictHostKeyChecking ask/    StrictHostKeyChecking accept-new/g' /etc/ssh/ssh_config
+
+WORKDIR /home/ubuntu
+
+USER ubuntu
+RUN mkdir /home/ubuntu/.ssh
+RUN ssh-keygen -t rsa -f /home/ubuntu/.ssh/id_rsa -N ''
+RUN echo password | sudo -S chmod 600 /home/ubuntu/.ssh/id_rsa
+RUN echo password | sudo -S chmod 600 /home/ubuntu/.ssh/id_rsa.pub
+RUN echo password | sudo -S cat /home/ubuntu/.ssh/id_rsa.pub >> /home/ubuntu/.ssh/authorized_keys
 
 COPY e2e2/test/images/neuron/tests ./tests

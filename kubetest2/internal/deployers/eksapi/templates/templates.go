@@ -22,6 +22,15 @@ type UnmanagedNodegroupTemplateData struct {
 	InstanceTypes     []string
 }
 
+type BusyboxDeploymentTemplateData struct {
+	Nodes int
+}
+
+type NvidiaStaticClusterNodepoolTemplateData struct {
+	Arch          string
+	InstanceTypes []string
+}
+
 var (
 	//go:embed userdata_bootstrap.sh.mimepart.template
 	userDataBootstrapShTemplate string
@@ -34,6 +43,14 @@ var (
 	//go:embed userdata_bottlerocket.toml.template
 	userDataBottlerocketTemplate string
 	UserDataBottlerocket         = template.Must(template.New("userDataBottlerocket").Parse(userDataBottlerocketTemplate))
+
+	//go:embed busybox_deployment.yaml.template
+	busyboxDeploymentTemplate string
+	BusyboxDeployment         = template.Must(template.New("busyboxDeployment").Parse(busyboxDeploymentTemplate))
+
+	//go:embed nvidia_static_cluster_nodepool.yaml.template
+	nvidiaStaticClusterNodepoolTemplate string
+	NvidiaStaticClusterNodepool         = template.Must(template.New("nvidiaStaticClusterNodepool").Parse(nvidiaStaticClusterNodepoolTemplate))
 )
 
 type UserDataTemplateData struct {

@@ -32,18 +32,15 @@ Parameters:
     Type: String
 
   NodeRoleName:
-    Description: The IAM role name  of worker nodes.
-    Type: String
-
-  SSHKeyPair:
+    Description: The IAM role name of worker nodes.
     Type: String
 
   UserData:
     Type: String
-  
+
   VolumeMountPath:
     Type: String
-  
+
   CapacityReservationId:
     Type: String
     Description: Capacity reservation id for the unmanaged nodegroup
@@ -60,108 +57,78 @@ Parameters:
     Default: "p5.48xlarge"
 
 Conditions:
-  IsP4Node:
-    !Equals [Ref: InstanceType, p4d.24xlarge]
-  IsP5Node:
-    !Equals [Ref: InstanceType, p5.48xlarge]
-  IsCapacityReservationIdSet: 
-    !Not [!Equals [!Ref CapacityReservationId, ""]]
-  IsUserDataMIMEPart:
-    !Equals [true, !Ref UserDataIsMIMEPart]
+  IsP4Node: !Equals [!Ref InstanceType, "p4d.24xlarge"]
+  IsP5Node: !Equals [!Ref InstanceType, "p5.48xlarge"]
+  IsTRN1Node: !Equals [!Ref InstanceType, "trn1.32xlarge"]
+  IsCapacityReservationIdSet: !Not [!Equals [!Ref CapacityReservationId, ""]]
+  IsUserDataMIMEPart: !Equals [true, !Ref UserDataIsMIMEPart]
 
 Resources:
-  EFASecurityGroup:
-    Type: "AWS::EC2::SecurityGroup"
-    Properties:
-      GroupDescription: Security group for all nodes in the cluster
-      Tags:
-        - Key: !Sub kubernetes.io/cluster/${ClusterName}
-          Value: owned
-      VpcId: !Ref VpcId
-
   EFASecurityGroupIngress:
     Type: "AWS::EC2::SecurityGroupIngress"
-    DependsOn: EFASecurityGroup
     Properties:
       Description: Allow node to communicate with each other
       FromPort: 0
       ToPort: 65535
-      GroupId: !Ref EFASecurityGroup
+      GroupId: !Ref SecurityGroup
       IpProtocol: "-1"
-      SourceSecurityGroupId: !Ref EFASecurityGroup
-
-  EFASecurityGroupEgress:
-    Type: "AWS::EC2::SecurityGroupEgress"
-    DependsOn: EFASecurityGroup
-    Properties:
-      Description: Allow the efa worker nodes outbound communication
-      DestinationSecurityGroupId: !Ref EFASecurityGroup
-      FromPort: 0
-      ToPort: 65536
-      GroupId: !Ref EFASecurityGroup
-      IpProtocol: "-1"
-  
-  EFASecurityGroupEgressAllIpv4:
-    Type: "AWS::EC2::SecurityGroupEgress"
-    DependsOn: EFASecurityGroup
-    Properties:
-      Description: Allow the efa worker nodes outbound communication
-      FromPort: 0
-      ToPort: 65536
-      CidrIp: "0.0.0.0/0"
-      GroupId: !Ref EFASecurityGroup
-      IpProtocol: "-1"
-
-  EFASecurityGroupEgressAllIpv6:
-    Type: "AWS::EC2::SecurityGroupEgress"
-    DependsOn: EFASecurityGroup
-    Properties:
-      Description: Allow the efa worker nodes outbound communication
-      FromPort: 0
-      ToPort: 65536
-      CidrIpv6: "::/0"
-      GroupId: !Ref EFASecurityGroup
-      IpProtocol: "-1"
-  
-  EFASecurityGroupIngressSSHIpv4:
-    Type: "AWS::EC2::SecurityGroupIngress"
-    DependsOn: EFASecurityGroup
-    Properties:
-      Description: Allow SSH
-      FromPort: 22
-      ToPort: 22
-      CidrIp: "0.0.0.0/0"
-      GroupId: !Ref EFASecurityGroup
-      IpProtocol: "tcp"
-      
-  EFASecurityGroupIngressSSHIpv6:
-    Type: "AWS::EC2::SecurityGroupIngress"
-    DependsOn: EFASecurityGroup
-    Properties:
-      Description: Allow SSH
-      FromPort: 22
-      ToPort: 22
-      CidrIpv6: "::/0"
-      GroupId: !Ref EFASecurityGroup
-      IpProtocol: "tcp"
+      SourceSecurityGroupId: !Ref SecurityGroup
 
   EFASecurityGroupIngressControlPlane:
     Type: "AWS::EC2::SecurityGroupIngress"
-    DependsOn: EFASecurityGroup
     Properties:
       Description: Allow pods to communicate with the cluster API Server
       FromPort: 443
       ToPort: 443
       GroupId: !Ref SecurityGroup
       IpProtocol: tcp
-      SourceSecurityGroupId: !Ref EFASecurityGroup
+      SourceSecurityGroupId: !Ref SecurityGroup
+
+  EFASecurityGroupFromControlPlaneIngress:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      Description: Allow worker Kubelets and pods to receive communication from the cluster control plane
+      FromPort: 1025
+      ToPort: 65535
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      SourceSecurityGroupId: !Ref SecurityGroup
+
+  EFASecurityGroupEgress:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      Description: Allow the efa worker nodes outbound communication
+      DestinationSecurityGroupId: !Ref SecurityGroup
+      FromPort: 0
+      ToPort: 65536
+      GroupId: !Ref SecurityGroup
+      IpProtocol: "-1"
+  
+  EFASecurityGroupEgressAllIpv4:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      Description: Allow the efa worker nodes outbound communication
+      FromPort: 0
+      ToPort: 65536
+      CidrIp: "0.0.0.0/0"
+      GroupId: !Ref SecurityGroup
+      IpProtocol: "-1"
+
+  EFASecurityGroupEgressAllIpv6:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      Description: Allow the efa worker nodes outbound communication
+      FromPort: 0
+      ToPort: 65536
+      CidrIpv6: "::/0"
+      GroupId: !Ref SecurityGroup
+      IpProtocol: "-1"
 
   EFASecurityGroupEgressControlPlane:
     Type: "AWS::EC2::SecurityGroupEgress"
-    DependsOn: EFASecurityGroup
     Properties:
       Description: Allow the cluster control plane to communicate with worker Kubelet and pods
-      DestinationSecurityGroupId: !Ref EFASecurityGroup
+      DestinationSecurityGroupId: !Ref SecurityGroup
       FromPort: 1025
       ToPort: 65535
       GroupId: !Ref SecurityGroup
@@ -169,43 +136,20 @@ Resources:
 
   ControlPlaneEgressToEFASecurityGroupOn443:
     Type: "AWS::EC2::SecurityGroupEgress"
-    DependsOn: EFASecurityGroup
     Properties:
       Description: Allow the cluster control plane to communicate with pods running extension API servers on port 443
-      DestinationSecurityGroupId: !Ref EFASecurityGroup
+      DestinationSecurityGroupId: !Ref SecurityGroup
       FromPort: 443
       ToPort: 443
       GroupId: !Ref SecurityGroup
       IpProtocol: tcp
-
-  EFASecurityGroupFromControlPlaneIngress:
-    Type: "AWS::EC2::SecurityGroupIngress"
-    DependsOn: EFASecurityGroup
-    Properties:
-      Description: Allow worker Kubelets and pods to receive communication from the cluster control plane
-      FromPort: 1025
-      ToPort: 65535
-      GroupId: !Ref EFASecurityGroup
-      IpProtocol: tcp
-      SourceSecurityGroupId: !Ref SecurityGroup
-
-  EFASecurityGroupFromControlPlaneOn443Ingress:
-    Type: "AWS::EC2::SecurityGroupIngress"
-    DependsOn: EFASecurityGroup
-    Properties:
-      Description: Allow pods running extension API servers on port 443 to receive communication from cluster control plane
-      FromPort: 443
-      ToPort: 443
-      GroupId: !Ref EFASecurityGroup
-      IpProtocol: tcp
-      SourceSecurityGroupId: !Ref SecurityGroup
 
   NodeInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: "/"
       Roles:
-      - !Ref NodeRoleName
+        - !Ref NodeRoleName
 
   NodeLaunchTemplate:
     Type: "AWS::EC2::LaunchTemplate"
@@ -218,8 +162,8 @@ Resources:
               DeleteOnTermination: true
               VolumeSize: !Ref NodeDiskSize
               VolumeType: gp2
-        CapacityReservationSpecification: 
-          !If
+        CapacityReservationSpecification:
+          Fn::If:
             - IsCapacityReservationIdSet
             - CapacityReservationTarget:
                 CapacityReservationId: !Ref CapacityReservationId
@@ -228,260 +172,349 @@ Resources:
           Arn: !GetAtt NodeInstanceProfile.Arn
         ImageId: !Ref AMIId
         InstanceType: !Ref InstanceType
-        KeyName: !Ref SSHKeyPair
-        NetworkInterfaces: !If
-          - IsP5Node
-          -
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 0
-              DeviceIndex: 0
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 1
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 2
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 3
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 4
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 5
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 6
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 7
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 8
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 9
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 10
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 11
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 12
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 13
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 14
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 15
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 16
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 17
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 18
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 19
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 20
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 21
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 22
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 23
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 24
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 25
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 26
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 27
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 28
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 29
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 30
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-            - Description: NetworkInterfaces Configuration For EFA and EKS
-              NetworkCardIndex: 31
-              DeviceIndex: 1
-              InterfaceType: efa
-              Groups:
-                - !Ref EFASecurityGroup
-          - !If
-            - IsP4Node
+        NetworkInterfaces:
+          Fn::If:
+            - IsP5Node
             -
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 0
                 DeviceIndex: 0
                 InterfaceType: efa
                 Groups:
-                  - !Ref EFASecurityGroup
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 1
                 DeviceIndex: 1
                 InterfaceType: efa
                 Groups:
-                - !Ref EFASecurityGroup
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 2
-                DeviceIndex: 2
+                DeviceIndex: 1
                 InterfaceType: efa
                 Groups:
-                - !Ref EFASecurityGroup
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
               - Description: NetworkInterfaces Configuration For EFA and EKS
                 NetworkCardIndex: 3
-                DeviceIndex: 3
+                DeviceIndex: 1
                 InterfaceType: efa
                 Groups:
-                - !Ref EFASecurityGroup
-            -
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
               - Description: NetworkInterfaces Configuration For EFA and EKS
-                NetworkCardIndex: 0
-                DeviceIndex: 0
+                NetworkCardIndex: 4
+                DeviceIndex: 1
                 InterfaceType: efa
                 Groups:
-                  - !Ref EFASecurityGroup
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 5
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 6
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 7
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 8
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 9
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 10
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 11
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 12
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 13
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 14
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 15
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 16
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 17
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 18
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 19
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 20
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 21
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 22
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 23
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 24
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 25
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 26
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 27
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 28
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 29
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 30
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+              - Description: NetworkInterfaces Configuration For EFA and EKS
+                NetworkCardIndex: 31
+                DeviceIndex: 1
+                InterfaceType: efa
+                Groups:
+                  - !Ref SecurityGroup
+                DeleteOnTermination: true
+            - Fn::If:
+                - IsP4Node
+                -
+                  - Description: NetworkInterfaces Configuration For EFA and EKS
+                    NetworkCardIndex: 0
+                    DeviceIndex: 0
+                    InterfaceType: efa
+                    Groups:
+                      - !Ref SecurityGroup
+                    DeleteOnTermination: true
+                  - Description: NetworkInterfaces Configuration For EFA and EKS
+                    NetworkCardIndex: 1
+                    DeviceIndex: 1
+                    InterfaceType: efa
+                    Groups:
+                      - !Ref SecurityGroup
+                    DeleteOnTermination: true
+                  - Description: NetworkInterfaces Configuration For EFA and EKS
+                    NetworkCardIndex: 2
+                    DeviceIndex: 1
+                    InterfaceType: efa
+                    Groups:
+                      - !Ref SecurityGroup
+                    DeleteOnTermination: true
+                  - Description: NetworkInterfaces Configuration For EFA and EKS
+                    NetworkCardIndex: 3
+                    DeviceIndex: 1
+                    InterfaceType: efa
+                    Groups:
+                      - !Ref SecurityGroup
+                    DeleteOnTermination: true
+                - Fn::If:
+                    - IsTRN1Node
+                    -
+                      - Description: NetworkInterfaces Configuration For EFA and EKS
+                        NetworkCardIndex: 0
+                        DeviceIndex: 0
+                        InterfaceType: efa
+                        Groups:
+                          - !Ref SecurityGroup
+                        DeleteOnTermination: true
+                      - Description: NetworkInterfaces Configuration For EFA and EKS
+                        NetworkCardIndex: 1
+                        DeviceIndex: 1
+                        InterfaceType: efa
+                        Groups:
+                          - !Ref SecurityGroup
+                        DeleteOnTermination: true
+                      - Description: NetworkInterfaces Configuration For EFA and EKS
+                        NetworkCardIndex: 2
+                        DeviceIndex: 1
+                        InterfaceType: efa
+                        Groups:
+                          - !Ref SecurityGroup
+                        DeleteOnTermination: true
+                      - Description: NetworkInterfaces Configuration For EFA and EKS
+                        NetworkCardIndex: 3
+                        DeviceIndex: 1
+                        InterfaceType: efa
+                        Groups:
+                          - !Ref SecurityGroup
+                        DeleteOnTermination: true
+                      - Description: NetworkInterfaces Configuration For EFA and EKS
+                        NetworkCardIndex: 4
+                        DeviceIndex: 1
+                        InterfaceType: efa
+                        Groups:
+                          - !Ref SecurityGroup
+                        DeleteOnTermination: true
+                      - Description: NetworkInterfaces Configuration For EFA and EKS
+                        NetworkCardIndex: 5
+                        DeviceIndex: 1
+                        InterfaceType: efa
+                        Groups:
+                          - !Ref SecurityGroup
+                        DeleteOnTermination: true
+                      - Description: NetworkInterfaces Configuration For EFA and EKS
+                        NetworkCardIndex: 6
+                        DeviceIndex: 1
+                        InterfaceType: efa
+                        Groups:
+                          - !Ref SecurityGroup
+                        DeleteOnTermination: true
+                      - Description: NetworkInterfaces Configuration For EFA and EKS
+                        NetworkCardIndex: 7
+                        DeviceIndex: 1
+                        InterfaceType: efa
+                        Groups:
+                          - !Ref SecurityGroup
+                        DeleteOnTermination: true
+                    - []
         UserData:
           Fn::Base64:
             Fn::If:
-            - IsUserDataMIMEPart
-            - Fn::Sub: |
-                Content-Type: multipart/mixed; boundary="BOUNDARY"
-                MIME-Version: 1.0
+              - IsUserDataMIMEPart
+              - Fn::Sub: |
+                  Content-Type: multipart/mixed; boundary="BOUNDARY"
+                  MIME-Version: 1.0
 
-                --BOUNDARY
-                ${UserData}
+                  --BOUNDARY
+                  ${UserData}
 
-                --BOUNDARY
-                Content-Type: text/x-shellscript; charset="us-ascii"
-                MIME-Version: 1.0
+                  --BOUNDARY
+                  Content-Type: text/x-shellscript; charset="us-ascii"
+                  MIME-Version: 1.0
 
-                #!/usr/bin/env bash
-                /opt/aws/bin/cfn-signal \
-                  --stack  ${AWS::StackName} \
-                  --resource NodeGroup \
-                  --region ${AWS::Region}
+                  #!/usr/bin/env bash
+                  /opt/aws/bin/cfn-signal \
+                    --stack  ${AWS::StackName} \
+                    --resource NodeGroup \
+                    --region ${AWS::Region}
 
-                --BOUNDARY--
-            - Fn::Sub: |
-                ${UserData}
+                  --BOUNDARY--
+              - Fn::Sub: |
+                  ${UserData}
 
   NodeGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -498,8 +531,8 @@ Resources:
       VPCZoneIdentifier: !Ref SubnetIds
       Tags:
         - Key: Name
-          Value: !Sub ${ClusterName}-Node
+          Value: !Sub "${ClusterName}-Node"
           PropagateAtLaunch: true
-        - Key: !Sub kubernetes.io/cluster/${ClusterName}
+        - Key: !Sub "kubernetes.io/cluster/${ClusterName}"
           Value: owned
           PropagateAtLaunch: true
