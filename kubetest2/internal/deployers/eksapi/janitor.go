@@ -68,7 +68,7 @@ func (j *janitor) Sweep(ctx context.Context) error {
 			clusterManager := NewClusterManager(clients, resourceID)
 			nodeManager := NewNodeManager(clients, resourceID)
 			klog.Infof("deleting resources (%v old): %s", resourceAge, resourceID)
-			if err := deleteResources(infraManager, clusterManager, nodeManager); err != nil {
+			if err := deleteResources(infraManager, clusterManager, nodeManager /* TODO: pass a k8sClient */, nil); err != nil {
 				errs = append(errs, fmt.Errorf("failed to delete resources: %s: %v", resourceID, err))
 			}
 		}

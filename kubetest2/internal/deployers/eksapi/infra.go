@@ -27,13 +27,16 @@ import (
 
 const (
 	infraStackCreationTimeout         = time.Minute * 15
-	infraStackDeletionTimeout         = time.Minute * 15
+	infraStackDeletionTimeout         = time.Minute * 30
 	networkInterfaceDetachmentTimeout = time.Minute * 5
 )
 
 const (
 	// the VPC CNI will always add this tag to ENI's that it creates
 	vpcCNIENITagKey = "node.k8s.amazonaws.com/createdAt"
+
+	// the IPAM controller will add this tag to the ENI's that it creates
+	ipamControllerENITagKey = "eks:kubernetes-cni-node-name"
 )
 
 // eksEndpointURLTag is the key for an optional tag on the infrastructure CloudFormation stack,
@@ -345,7 +348,7 @@ func (m *InfrastructureManager) getVPCCNINetworkInterfaceIds(vpcId string) ([]st
 			},
 			{
 				Name:   aws.String("tag-key"),
-				Values: []string{vpcCNIENITagKey},
+				Values: []string{vpcCNIENITagKey, ipamControllerENITagKey},
 			},
 		},
 	})
