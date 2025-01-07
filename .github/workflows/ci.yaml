@@ -10,29 +10,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - run: make build
-  build-kubetest2:
+    - run: go build ./...
+  build-test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - run: docker build --build-arg=KUBERNETES_MINOR_VERSION=latest --file Dockerfile.kubetest2 .
-  build-neuronx:
+    - run: go test -c ./test/...
+  build-image:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - run: docker build --file e2e2/test/images/neuron/Dockerfile .
-  build-nvidia:
+    - run: docker build --build-arg=KUBERNETES_MINOR_VERSION=latest --file Dockerfile .
+  build-image-neuronx:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - run: docker build --file e2e2/test/images/nvidia/Dockerfile .
-  build-nvidia-training:
+    - run: docker build --file test/images/neuron/Dockerfile .
+  build-image-nvidia:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - run: docker build --file e2e2/test/images/nvidia-training/Dockerfile e2e2/test/images/nvidia-training
-  build-nvidia-inference:
+    - run: docker build --file test/images/nvidia/Dockerfile .
+  build-image-nvidia-training:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - run: docker build --file e2e2/test/images/nvidia-inference/Dockerfile e2e2/test/images/nvidia-inference
+    - run: docker build --file test/images/nvidia-training/Dockerfile test/images/nvidia-training
+  build-image-nvidia-inference:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: docker build --file test/images/nvidia-inference/Dockerfile test/images/nvidia-inference

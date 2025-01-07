@@ -1,73 +1,53 @@
-ARG GO_VERSION
-ARG AL_VERSION
+FROM public.ecr.aws/amazonlinux/amazonlinux:2 AS builder
+ARG TARGETOS
+ARG TARGETARCH
+RUN yum install -y git tar gzip make unzip gcc rsync wget jq curl
+ARG GO_MINOR_VERSION="1.23"
+RUN curl https://go.dev/dl/?mode=json | jq -r .[].version | grep "^go${GO_MINOR_VERSION}" | head -n1 > go-version.txt
+RUN  wget -O go.tar.gz https://go.dev/dl/$(cat go-version.txt).${TARGETOS}-${TARGETARCH}.tar.gz && \
+    rm -rf /usr/local/go && \
+    tar -C /usr/local -xzf go.tar.gz
+ENV GOPATH=/usr/local/go
+ENV PATH=$PATH:$GOPATH/bin
+ENV GOPROXY=direct
+ARG KUBETEST2_VERSION=v0.0.0-20231113220322-d7fcb799ce84
+RUN go install sigs.k8s.io/kubetest2/...@${KUBETEST2_VERSION}
 
-FROM golang:${GO_VERSION} AS aws-k8s-tester-builder
-ARG GOPROXY
-ARG RELEASE_VERSION
-RUN go version
-ADD ./ /go/src/github.com/aws/aws-k8s-tester
-WORKDIR /go/src/github.com/aws/aws-k8s-tester
-RUN GOPROXY=${GOPROXY} RELEASE_VERSION=${RELEASE_VERSION} ./hack/build.sh
+WORKDIR $GOPATH/src/github.com/aws/aws-k8s-tester
+COPY . .
+RUN go install ./...
+RUN go test -c ./test/... -o $GOPATH/bin/
 
-FROM golang:${GO_VERSION} AS clusterloader2-builder
-ARG GOPROXY
-ARG OS_TARGET
-ARG OS_ARCH
-RUN go version
-RUN git clone https://github.com/kubernetes/perf-tests.git /perf-tests
-WORKDIR /perf-tests/clusterloader2
-RUN GOPROXY=${GOPROXY} GOOS=${OS_TARGET} GOARCH=${OS_ARCH} go mod tidy && go build -o ./clusterloader2 ./cmd
-
-FROM amazonlinux:${AL_VERSION} AS sonobuoy-builder
-ARG SONOBUOY_VERSION
-ARG OS_TARGET
-ARG OS_ARCH
-RUN yum update -y && yum install -y tar gzip
-RUN curl -o /sonobuoy.tar.gz -LO https://github.com/vmware-tanzu/sonobuoy/releases/download/${SONOBUOY_VERSION}/sonobuoy_${SONOBUOY_VERSION:1}_${OS_TARGET}_${OS_ARCH}.tar.gz
-RUN tar zxvf /sonobuoy.tar.gz
-
-FROM amazonlinux:${AL_VERSION}
-ARG K8S_VERSION
-ARG RELEASE_VERSION
-ARG OS_TARGET
-ARG OS_ARCH
-RUN yum update -y && yum install -y which python3 python3-pip && yum clean all && pip3 install awscli --upgrade --user
-ENV PATH=/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-RUN echo ${PATH}
-RUN aws --version
-
-COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/aws-k8s-tester-${RELEASE_VERSION}-${OS_TARGET}-${OS_ARCH} /aws-k8s-tester
-COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/ec2-utils-${RELEASE_VERSION}-${OS_TARGET}-${OS_ARCH} /ec2-utils
-COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/ecr-utils-${RELEASE_VERSION}-${OS_TARGET}-${OS_ARCH} /ecr-utils
-COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/eks-utils-${RELEASE_VERSION}-${OS_TARGET}-${OS_ARCH} /eks-utils
-COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/etcd-utils-${RELEASE_VERSION}-${OS_TARGET}-${OS_ARCH} /etcd-utils
-COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/cw-utils-${RELEASE_VERSION}-${OS_TARGET}-${OS_ARCH} /cw-utils
-COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/s3-utils-${RELEASE_VERSION}-${OS_TARGET}-${OS_ARCH} /s3-utils
-COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/bin/sts-utils-${RELEASE_VERSION}-${OS_TARGET}-${OS_ARCH} /sts-utils
-# must copy all files from https://github.com/kubernetes/perf-tests/tree/master/clusterloader2/testing/load
-# the main config.yaml reads other resource spec (e.g. job.yaml) from the same directory
-# RUN curl -o /clusterloader2-test-config.yaml -LO https://raw.githubusercontent.com/kubernetes/perf-tests/master/clusterloader2/testing/load/config.yaml
-COPY --from=clusterloader2-builder /perf-tests/clusterloader2/testing/load /clusterloader2-testing-load
-COPY --from=clusterloader2-builder /perf-tests/clusterloader2/testing/load/config.yaml /clusterloader2-test-config.yaml
-COPY --from=clusterloader2-builder /perf-tests/clusterloader2/clusterloader2 /clusterloader2
-COPY --from=aws-k8s-tester-builder /go/src/github.com/aws/aws-k8s-tester/eks /eks
-RUN rm -rf /go/src/github.com/aws/aws-k8s-tester
-RUN chmod +x /aws-k8s-tester /cw-utils /ec2-utils /eks-utils /etcd-utils /s3-utils /sts-utils /clusterloader2
-WORKDIR /
-
-COPY --from=sonobuoy-builder /sonobuoy /tmp/sonobuoy
-RUN curl -o /kubectl -LO https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/${OS_TARGET}/${OS_ARCH}/kubectl && chmod +x /kubectl && cp /kubectl /usr/local/bin/kubectl
-RUN ls /
-RUN ls /*.yaml
-RUN aws --version
-RUN /aws-k8s-tester version
-RUN /cw-utils version
-RUN /ec2-utils version
-RUN /ecr-utils version
-RUN /eks-utils version
-RUN /etcd-utils version
-RUN /s3-utils version
-RUN /sts-utils version
-RUN cat /clusterloader2-test-config.yaml
-RUN /clusterloader2 --help || true
-RUN kubectl version --client=true
+FROM public.ecr.aws/amazonlinux/amazonlinux:2
+ARG TARGETOS
+ARG TARGETARCH
+WORKDIR /workdir
+RUN yum install -y tar gzip unzip wget openssh
+RUN wget -O awscli.zip https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && \
+    unzip awscli.zip && \
+    ./aws/install
+# we need gsutil from the gcloud CLI for kubetest-tester-ginkgo
+RUN amazon-linux-extras install python3.8
+ARG GCLOUD_SDK_URL=https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.tar.gz
+RUN wget -O google-cloud-sdk.tar.gz -q $GCLOUD_SDK_URL && \
+    tar xzf google-cloud-sdk.tar.gz -C / && \
+    rm google-cloud-sdk.tar.gz && \
+    /google-cloud-sdk/install.sh \
+        --disable-installation-options \
+        --bash-completion=false \
+        --path-update=false \
+        --usage-reporting=false
+ENV PATH=$PATH:/google-cloud-sdk/bin
+ARG EKSCTL_VERSION=latest
+RUN wget -O eksctl.tar.gz "https://github.com/eksctl-io/eksctl/releases/${EKSCTL_VERSION}/download/eksctl_Linux_${TARGETARCH}.tar.gz" && \
+    tar xzf eksctl.tar.gz -C /bin/ && \
+    rm eksctl.tar.gz
+ARG KUBERNETES_MINOR_VERSION
+COPY hack/download-kubernetes-binaries.sh .
+RUN ./download-kubernetes-binaries.sh "${KUBERNETES_MINOR_VERSION}" "${TARGETOS}" "${TARGETARCH}"
+RUN mkdir /info
+ENV PATH=$PATH:/info
+RUN cp kubernetes-version.txt /info/
+RUN mv kubernetes/*/bin/* /bin/
+RUN rm -rf /workdir
+COPY --from=builder /usr/local/go/bin/* /bin/
