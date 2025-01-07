@@ -550,7 +550,7 @@ func (m *nodeManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure, clu
 // deleteNodes cleans up any nodes in the cluster
 // it will be called outside the context of a deployer run (by the janitor, for example)
 // so will try to delete nodes of any type
-func (m *nodeManager) deleteNodes(k8sClient *k8sClient) error {
+func (m *nodeManager) deleteNodes(k8sClient *k8sClient, opts *deployerOptions) error {
 	if err := m.deleteUnmanagedNodegroup(); err != nil {
 		return err
 	}
@@ -559,7 +559,7 @@ func (m *nodeManager) deleteNodes(k8sClient *k8sClient) error {
 	}
 	// we only have a k8sClient when this is called by the deployer, not by the janitor
 	// TODO implement cleanup of Auto nodes in the janitor
-	if k8sClient != nil {
+	if k8sClient != nil && opts != nil && opts.AutoMode {
 		if err := m.deletePlaceholderDeployment(k8sClient); err != nil {
 			return err
 		}

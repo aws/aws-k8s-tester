@@ -321,11 +321,11 @@ func (d *deployer) Down() error {
 	if d.deployerOptions.StaticClusterName != "" {
 		return d.staticClusterManager.TearDownNodeForStaticCluster()
 	}
-	return deleteResources(d.infraManager, d.clusterManager, d.nodeManager, d.k8sClient)
+	return deleteResources(d.infraManager, d.clusterManager, d.nodeManager, d.k8sClient, &d.deployerOptions)
 }
 
-func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *nodeManager /* nillable */, k8sClient *k8sClient) error {
-	if err := nm.deleteNodes(k8sClient); err != nil {
+func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *nodeManager /* nillable */, k8sClient *k8sClient, opts *deployerOptions) error {
+	if err := nm.deleteNodes(k8sClient, opts); err != nil {
 		return err
 	}
 	// the EKS-managed cluster security group may be associated with a leaked ENI
