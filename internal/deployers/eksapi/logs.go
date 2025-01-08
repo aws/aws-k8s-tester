@@ -43,6 +43,10 @@ func (m *logManager) gatherLogsFromNodes(k8sClient *k8sClient, opts *deployerOpt
 		klog.Info("--log-bucket is empty, no logs will be gathered!")
 		return nil
 	}
+	if k8sClient == nil {
+		klog.Infof("no k8s client available, no logs will be gathered!")
+		return nil
+	}
 	if opts.AutoMode {
 		return m.gatherLogsUsingNodeDiagnostic(k8sClient, opts, phase)
 	}
