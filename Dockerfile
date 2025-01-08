@@ -16,7 +16,7 @@ RUN go install sigs.k8s.io/kubetest2/...@${KUBETEST2_VERSION}
 WORKDIR $GOPATH/src/github.com/aws/aws-k8s-tester
 COPY . .
 RUN go install ./...
-RUN go test -c ./test/... -o $GOPATH/bin/
+RUN go test -c -tags=e2e ./test/... -o $GOPATH/bin/
 
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 ARG TARGETOS

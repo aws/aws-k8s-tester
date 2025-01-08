@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - run: go test -c ./test/...
+    - run: go test -c -tags=e2e ./test/...
   build-image:
     runs-on: ubuntu-latest
     steps:
