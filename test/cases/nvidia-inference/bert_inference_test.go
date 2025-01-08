@@ -71,7 +71,7 @@ func TestBertInference(t *testing.T) {
 			}
 			err := wait.For(
 				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
-				wait.WithTimeout(60*time.Minute),
+				wait.WithTimeout(20*time.Minute),
 			)
 			if err != nil {
 				t.Fatalf("[ERROR] BERT inference job did not succeed: %v", err)
