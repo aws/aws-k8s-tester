@@ -259,8 +259,7 @@ func (m *InfrastructureManager) deleteLeakedInstanceProfiles(infra *Infrastructu
 	if err != nil {
 		var notFound *iamtypes.NoSuchEntityException
 		if errors.As(err, &notFound) {
-			klog.Infof("instance profile for role does not exist: %s", m.resourceID)
-			// continue deletion
+			return nil
 		}
 		return fmt.Errorf("failed to list instance profiles for role name: '%s': %v", infra.nodeRoleName, err)
 	} else if len(out.InstanceProfiles) > 0 {
