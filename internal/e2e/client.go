@@ -8,8 +8,6 @@ import (
 	"io"
 	"os"
 
-	kubeflowv2beta1 "github.com/kubeflow/mpi-operator/pkg/apis/kubeflow/v2beta1"
-	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -130,10 +128,10 @@ func GetJobLogs(restConfig *rest.Config, job k8s.Object) (string, error) {
 		return "", err
 	}
 	var jobLabel string
-	switch job.(type) {
-	case *kubeflowv2beta1.MPIJob:
+	switch job.GetObjectKind().GroupVersionKind().Kind {
+	case "MPIJob":
 		jobLabel = fmt.Sprintf("job-name=%s-launcher", job.GetName())
-	case *batchv1.Job:
+	case "Job":
 		jobLabel = fmt.Sprintf("job-name=%s", job.GetName())
 	default:
 		return "", fmt.Errorf("unsupported job type %T", job)

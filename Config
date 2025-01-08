@@ -6,19 +6,11 @@
 package.Aws-k8s-tester-mirror = {
     interfaces = (1.0);
 
-    deploy = {
-        generic = true;
-    };
-
-    build-environment = {
-        chroot = basic;
-        network-access = blocked;
-    };
-
-    build-system = archivebuild;
+    build-system = bgo-wrap-make;
     build-tools = {
         1.0 = {
-            ArchiveBuild = 1.0;
+            BrazilMakeGo = 3.0;
+            GoLang = 1.x;
         };
     };
 };

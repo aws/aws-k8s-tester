@@ -1,3 +1,5 @@
+//go:build e2e
+
 package neuron
 
 import (
@@ -7,7 +9,7 @@ import (
 	"testing"
 
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
-	kubeflowv2beta1 "github.com/kubeflow/mpi-operator/pkg/apis/kubeflow/v2beta1"
+	"github.com/aws/aws-k8s-tester/internal/e2e/mpioperator"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
@@ -15,7 +17,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 
 	batchv1 "k8s.io/api/batch/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -123,10 +124,10 @@ func TestNeuronNodes(t *testing.T) {
 		}).
 		Assess("NCCOM test succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			rsrc := cfg.Client().Resources()
-			if err := kubeflowv2beta1.AddToScheme(rsrc.GetScheme()); err != nil {
+			if err := mpioperator.AddFacadesToScheme(rsrc.GetScheme()); err != nil {
 				t.Fatal(err)
 			}
-			j := kubeflowv2beta1.MPIJob{
+			j := mpioperator.MPIJobFacade{
 				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccom-test", Namespace: "default"},
 			}
 			t.Log("Waiting for MPIJob to complete")
@@ -136,7 +137,7 @@ func TestNeuronNodes(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), &kubeflowv2beta1.MPIJob{
+			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), &mpioperator.MPIJobFacade{
 				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccom-test", Namespace: "default"},
 			})
 			if err != nil {
@@ -159,10 +160,10 @@ func TestNeuronNodes(t *testing.T) {
 }
 
 func mpiJobSucceeded(obj k8s.Object) bool {
-	j := obj.(*kubeflowv2beta1.MPIJob)
+	j := obj.(*mpioperator.MPIJobFacade)
 	for _, c := range j.Status.Conditions {
-		if c.Type == kubeflowv2beta1.JobSucceeded {
-			return c.Status == v1.ConditionTrue
+		if c.Type == "Succeeded" {
+			return c.Status == "True"
 		}
 	}
 	return false
