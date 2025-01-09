@@ -5,8 +5,10 @@ FROM public.ecr.aws/docker/library/ubuntu:20.04
 ###############################################################################
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Neuron SDK component versions
+# Neuron SDK component versions (pin these precisely)
+ARG NEURONX_CC_VERSION=2.15.143.0
 ARG NEURONX_TOOLS_VERSION=2.19.0.0
+ARG NEURONX_FRAMEWORK_VERSION=2.1.2.2.3.2
 ARG NEURONX_RUNTIME_LIB_VERSION=2.22.19.0-5856c0b42
 ARG NEURONX_COLLECTIVES_LIB_VERSION=2.22.33.0-d2128d1aa
 
@@ -21,11 +23,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     LC_ALL=C.UTF-8
 
 # Extend library paths for Neuron & EFA
-ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/aws/neuron/lib"
-ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/amazon/efa/lib"
-ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/amazon/efa/lib64"
-ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
-ENV PATH=/opt/aws/neuron/bin/:$PATH
+ENV LD_LIBRARY_PATH="/opt/aws/neuron/lib:/opt/amazon/efa/lib:/opt/amazon/efa/lib64:/usr/local/lib:${LD_LIBRARY_PATH}"
+ENV PATH="/opt/aws/neuron/bin:${PATH}"
 
 ###############################################################################
 # 1) Base system packages, user setup
@@ -71,17 +70,17 @@ RUN . /etc/os-release \
  && wget -qO - https://apt.repos.neuron.amazonaws.com/GPG-PUB-KEY-AMAZON-AWS-NEURON.PUB | apt-key add - \
  && apt-get update \
  && apt-get install -y \
-      aws-neuronx-tools=$NEURONX_TOOLS_VERSION \
-      aws-neuronx-collectives=$NEURONX_COLLECTIVES_LIB_VERSION \
-      aws-neuronx-runtime-lib=$NEURONX_RUNTIME_LIB_VERSION \
+      aws-neuronx-tools=${NEURONX_TOOLS_VERSION} \
+      aws-neuronx-collectives=${NEURONX_COLLECTIVES_LIB_VERSION} \
+      aws-neuronx-runtime-lib=${NEURONX_RUNTIME_LIB_VERSION} \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean
 
 ###############################################################################
 # 3) EFA installer (for MPI-based jobs)
 ###############################################################################
-RUN apt-get update
-RUN cd $HOME \
+RUN apt-get update \
+ && cd /tmp \
  && curl -O https://efa-installer.amazonaws.com/aws-efa-installer-latest.tar.gz \
  && wget https://efa-installer.amazonaws.com/aws-efa-installer.key \
  && gpg --import aws-efa-installer.key \
@@ -91,7 +90,7 @@ RUN cd $HOME \
  && tar -xf aws-efa-installer-latest.tar.gz \
  && cd aws-efa-installer \
  && ./efa_installer.sh -y -g -d --skip-kmod --skip-limit-conf --no-verify \
- && cd $HOME \
+ && cd /tmp \
  && rm -rf aws-efa-installer* \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean
@@ -102,48 +101,48 @@ ENV LD_LIBRARY_PATH="/opt/amazon/openmpi/lib64:${LD_LIBRARY_PATH}"
 ###############################################################################
 # 4) Python 3.10 from source
 ###############################################################################
-RUN wget -q https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tgz \
- && tar -xzf Python-$PYTHON_VERSION.tgz \
- && cd Python-$PYTHON_VERSION \
+RUN wget -q https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz \
+ && tar -xzf Python-${PYTHON_VERSION}.tgz \
+ && cd Python-${PYTHON_VERSION} \
  && ./configure --enable-shared --prefix=/usr/local \
  && make -j $(nproc) && make install \
- && cd .. && rm -rf Python-$PYTHON_VERSION* \
+ && cd .. && rm -rf Python-${PYTHON_VERSION}* \
  && ln -s /usr/local/bin/pip3 /usr/bin/pip \
- && ln -s /usr/local/bin/$PYTHON /usr/local/bin/python \
+ && ln -s /usr/local/bin/${PYTHON} /usr/local/bin/python \
  && pip --no-cache-dir install --upgrade pip setuptools wheel
 
 ###############################################################################
-# 5) Install minimal Python packages
+# 5) Install pinned Python packages
 ###############################################################################
 RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com \
- && pip install --no-cache-dir --upgrade \
-    torch-neuronx \
-    torch-xla \
-    transformers
+ && pip install --force-reinstall \
+      "torch-neuronx==${NEURONX_FRAMEWORK_VERSION}" \
+      "neuronx-cc==${NEURONX_CC_VERSION}" \
+      "transformers==4.36.2"
 
 ###############################################################################
 # 6) SSH and finalize
 ###############################################################################
-# 1) Configure SSH (auto-accept new host keys)
+# Configure SSH (auto-accept new host keys)
 RUN sed -i -e 's/#   StrictHostKeyChecking ask/    StrictHostKeyChecking accept-new/g' /etc/ssh/ssh_config
 
-# 2) Give 'ubuntu' a known password so 'sudo -S' works:
+# Give 'ubuntu' a known password so 'sudo -S' works:
 RUN echo 'ubuntu:password' | chpasswd
 
-# 3) Switch to 'ubuntu' user (non-root).
+# Switch to 'ubuntu' user (non-root).
 WORKDIR /home/ubuntu
 USER ubuntu
 
-# 4) Create SSH keypair in /home/ubuntu/.ssh
+# Create SSH keypair in /home/ubuntu/.ssh
 RUN mkdir -p /home/ubuntu/.ssh \
  && ssh-keygen -t rsa -f /home/ubuntu/.ssh/id_rsa -N '' \
  && echo password | sudo -S chmod 600 /home/ubuntu/.ssh/id_rsa \
  && echo password | sudo -S chmod 600 /home/ubuntu/.ssh/id_rsa.pub \
  && echo password | sudo -S cat /home/ubuntu/.ssh/id_rsa.pub >> /home/ubuntu/.ssh/authorized_keys
 
-# 5) Copy training script (if you have one)
+# Copy training script (optional)
 COPY train.py /home/ubuntu/
 
-# 6) Expose SSH port and run sshd
+# Expose SSH port and run sshd
 EXPOSE 22
 CMD ["/usr/sbin/sshd","-D"]
