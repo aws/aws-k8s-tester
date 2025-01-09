@@ -253,6 +253,11 @@ func (m *InfrastructureManager) deleteInfrastructureStack() error {
 // because this will block node role deletion (and deletion of the infrastructure stack).
 // For example, when --auto-mode is used, an instance profile will be created for us and won't be deleted automatically with the cluster.
 func (m *InfrastructureManager) deleteLeakedInstanceProfiles(infra *Infrastructure) error {
+	if infra.nodeRoleName == "" {
+		// if the infra stack failed to create, it could end up in a weird state with no node role
+		// we know there aren't any instance profiles in that case, so all good
+		return nil
+	}
 	out, err := m.clients.IAM().ListInstanceProfilesForRole(context.TODO(), &iam.ListInstanceProfilesForRoleInput{
 		RoleName: aws.String(infra.nodeRoleName),
 	})
