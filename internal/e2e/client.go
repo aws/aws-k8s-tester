@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	kubeflowv2beta1 "github.com/kubeflow/mpi-operator/pkg/apis/kubeflow/v2beta1"
+	"github.com/aws/aws-k8s-tester/internal/e2e/mpioperator"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -131,7 +131,7 @@ func GetJobLogs(restConfig *rest.Config, job k8s.Object) (string, error) {
 	}
 	var jobLabel string
 	switch job.(type) {
-	case *kubeflowv2beta1.MPIJob:
+	case *mpioperator.MPIJobFacade:
 		jobLabel = fmt.Sprintf("job-name=%s-launcher", job.GetName())
 	case *batchv1.Job:
 		jobLabel = fmt.Sprintf("job-name=%s", job.GetName())

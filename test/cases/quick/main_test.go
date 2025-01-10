@@ -1,9 +1,12 @@
+//go:build e2e
+
 package quick
 
 import (
 	"os"
-	"sigs.k8s.io/e2e-framework/pkg/env"
 	"testing"
+
+	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
 var (

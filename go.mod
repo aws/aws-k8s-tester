@@ -312,7 +312,6 @@ require (
 )
 
 require (
-	github.com/kubeflow/mpi-operator v0.4.0
 	k8s.io/cli-runtime v0.28.3
 	sigs.k8s.io/e2e-framework v0.3.0
 )
@@ -322,7 +321,6 @@ require (
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/kubeflow/common v0.4.6 // indirect
 	github.com/moby/spdystream v0.4.0 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect

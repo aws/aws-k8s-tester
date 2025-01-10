@@ -2,8 +2,9 @@
 
 ## Installation
 
+This project will use rolling releases going forward; we recommend fetching the latest commit:
 ```
-go install github.com/aws/aws-k8s-tester/...@latest
+go install github.com/aws/aws-k8s-tester/...@HEAD
 ```
 
 ## `kubetest2` deployers and testers for EKS
