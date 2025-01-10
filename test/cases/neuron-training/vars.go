@@ -14,7 +14,6 @@ var (
 	efaEnabled        *bool
 	nodeType          *string
 	nodeCount         int
-	gpuPerNode        int
 	efaPerNode        int
 	neuronPerNode     int
 	neuronCorePerNode int

@@ -20,7 +20,9 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
+	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -51,13 +53,13 @@ func TestNeuronTraining(t *testing.T) {
 	// Render the templated manifest with dynamic variables
 	renderVars := map[string]string{
 		"BertTrainingImage": *bertTrainingImage,
-		"NodeType":          fmt.Sprintf("%d", nodeType),
-		"SlotsPerWorker":    fmt.Sprintf("%d", neuronCorePerNode),
+		"NodeType":          *nodeType,
+		"SlotsPerWorker":    fmt.Sprintf("%d", 1), // Hardcode to 1 for now
 		"WorkerReplicas":    fmt.Sprintf("%d", nodeCount),
-		"NP":                fmt.Sprintf("%d", neuronCorePerNode*nodeCount),
+		"NP":                fmt.Sprintf("%d", nodeCount),
 		"NeuronPerNode":     fmt.Sprintf("%d", neuronPerNode),
 		"NeuronCorePerNode": fmt.Sprintf("%d", neuronCorePerNode),
-		"EFARequested":      fmt.Sprintf("%d", 0),
+		"EFARequested":      fmt.Sprintf("%d", efaPerNode),
 	}
 
 	// Render the manifest
@@ -81,17 +83,37 @@ func TestNeuronTraining(t *testing.T) {
 		}).
 		Assess("Neuron training Job succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			job := &batchv1.Job{
-				ObjectMeta: metav1.ObjectMeta{Name: "neuron-training-launcher", Namespace: "default"},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "neuron-training-launcher",
+					Namespace: "default",
+				},
 			}
+
+			// Step 1: Wait for the Job resource to appear
+			log.Println("Waiting for the 'neuron-training-launcher' Job resource to be created...")
 			err := wait.For(
+				conditions.New(cfg.Client().Resources()).ResourceMatch(job, func(object k8s.Object) bool {
+					return true
+				}),
+				wait.WithTimeout(time.Minute*5),
+			)
+			if err != nil {
+				t.Fatalf("Failed to detect creation of Job 'neuron-training-launcher': %v", err)
+			}
+			log.Println("Job 'neuron-training-launcher' is created in the cluster.")
+
+			// Step 2: Wait for the Job to succeed (i.e., complete)
+			log.Println("Waiting for 'neuron-training-launcher' Job to succeed...")
+			err = wait.For(
 				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
-				wait.WithTimeout(time.Minute*30),
+				wait.WithTimeout(30*time.Minute),
 			)
 			if err != nil {
 				t.Fatalf("Neuron training Job did not succeed: %v", err)
 			}
+			log.Println("Job 'neuron-training-launcher' succeeded!")
 
-			// Gather logs from the training pods
+			// Gather logs from the training pods (launcher)
 			logsBuf, logErr := gatherJobLogs(ctx, cfg, "default", "neuron-training-launcher")
 			if logErr != nil {
 				log.Printf("Warning: failed to retrieve neuron-training job logs: %v", logErr)
@@ -187,9 +209,12 @@ func aggregateThroughputFromLogs(logs string) (avg float64, sum float64, count i
 	return avg, sum, count
 }
 
-// rankEpochTimeRegex matches lines like [Rank 0] ... local_avg_epoch_time=12.50s
+// aggregateEpochTimeFromLogs scans log output for lines like:
+//
+//	[Rank 0] ... local_avg_epoch_time=12.50s
+//
+// returning the average, sum, and count for rank epoch times.
 func aggregateEpochTimeFromLogs(logs string) (avg float64, sum float64, count int) {
-	// We reuse the same approach as above, but with a separate regex
 	scanner := bufio.NewScanner(strings.NewReader(logs))
 	for scanner.Scan() {
 		line := scanner.Text()
