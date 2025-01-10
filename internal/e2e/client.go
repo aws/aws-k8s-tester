@@ -8,6 +8,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/aws/aws-k8s-tester/internal/e2e/mpioperator"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -128,10 +130,10 @@ func GetJobLogs(restConfig *rest.Config, job k8s.Object) (string, error) {
 		return "", err
 	}
 	var jobLabel string
-	switch job.GetObjectKind().GroupVersionKind().Kind {
-	case "MPIJob":
+	switch job.(type) {
+	case *mpioperator.MPIJobFacade:
 		jobLabel = fmt.Sprintf("job-name=%s-launcher", job.GetName())
-	case "Job":
+	case *batchv1.Job:
 		jobLabel = fmt.Sprintf("job-name=%s", job.GetName())
 	default:
 		return "", fmt.Errorf("unsupported job type %T", job)
