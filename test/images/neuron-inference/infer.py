@@ -1,4 +1,3 @@
-import logging
 import os
 import sys
 import time
@@ -9,12 +8,20 @@ import torch_neuronx
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import BertForPreTraining, BertTokenizer
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s',
-    handlers=[logging.StreamHandler(sys.stdout)]
-)
-logger = logging.getLogger("BERTInferenceNeuron")
+
+def print_info(msg: str):
+    """Helper function to prefix all info messages uniformly."""
+    print(f"[INFO] {msg}")
+
+
+def print_warning(msg: str):
+    """Helper function for warnings."""
+    print(f"[WARNING] {msg}")
+
+
+def print_error(msg: str):
+    """Helper function for errors."""
+    print(f"[ERROR] {msg}")
 
 
 def create_dummy_data(tokenizer, batch_size, num_samples=100, max_length=128, seed=42):
@@ -26,9 +33,9 @@ def create_dummy_data(tokenizer, batch_size, num_samples=100, max_length=128, se
 
     if num_samples % batch_size != 0:
         adjusted = (num_samples // batch_size) * batch_size
-        logger.info(
-            f"[INFO] Adjusting num_samples from {num_samples} to {adjusted} "
-            f"to ensure full batches."
+        print_info(
+            f"Adjusting num_samples from {num_samples} to {adjusted} "
+            "to ensure full batches."
         )
         num_samples = adjusted
 
@@ -73,8 +80,8 @@ def create_dummy_data(tokenizer, batch_size, num_samples=100, max_length=128, se
     )
 
     return TensorDataset(
-        inputs.input_ids,        # shape: (batch_size, seq_len)
-        inputs.attention_mask,   # shape: (batch_size, seq_len)
+        inputs.input_ids,
+        inputs.attention_mask,
         torch.tensor(nsp_labels, dtype=torch.long)
     )
 
@@ -86,25 +93,26 @@ def run_inference(model, tokenizer, batch_size, mode):
     3) Defines a wrapper for torch_neuronx.trace(...) that expects 2 positional arguments
     4) Traces and then runs inference in a loop
     """
-    logger.info("[INFO] About to create dummy data...")
+    print_info("About to create dummy data...")
     try:
         dataset = create_dummy_data(tokenizer, batch_size=batch_size)
-    except Exception:
-        logger.exception("[ERROR] Failed to create dummy data.")
+    except Exception as e:
+        print_error(f"Failed to create dummy data: {e}")
         raise
-    logger.info("[INFO] Dummy data creation completed.")
+
+    print_info("Dummy data creation completed.")
 
     dataloader = DataLoader(dataset, batch_size=batch_size)
-    logger.info(f"[INFO] DataLoader created with {len(dataloader)} batches.")
+    print_info(f"DataLoader created with {len(dataloader)} batches.")
 
     # The XLA device for Inf2 usage.
     device = torch.device("xla")
-    logger.info(f"[INFO] Using device: {device}")
+    print_info(f"Using device: {device}")
 
-    logger.info("[INFO] Moving model to XLA device...")
+    print_info("Moving model to XLA device...")
     model.to(device)
     model.eval()
-    logger.info("[INFO] Model moved to device and set to eval mode.")
+    print_info("Model moved to device and set to eval mode.")
 
     def bert_inference_func(input_ids, attention_mask):
         # BERT forward pass with two inputs
@@ -114,32 +122,32 @@ def run_inference(model, tokenizer, batch_size, mode):
     try:
         sample_inputs, sample_masks, _ = next(iter(dataloader))
     except StopIteration:
-        logger.error("[ERROR] DataLoader returned no batches; cannot trace model.")
-        raise
+        print_error("DataLoader returned no batches; cannot trace model.")
+        raise RuntimeError("No data to perform tracing.")
 
-    logger.info("[INFO] Casting sample inputs to long and moving to device...")
+    print_info("Casting sample inputs to long and moving to device...")
     sample_inputs = sample_inputs.long().to(device)
     sample_masks = sample_masks.long().to(device)
 
-    logger.info("[INFO] About to trace model with torch_neuronx.trace().")
+    print_info("About to trace model with torch_neuronx.trace()...")
     try:
         model_neuron = torch_neuronx.trace(
             bert_inference_func,
             (sample_inputs, sample_masks)
         )
-    except Exception:
-        logger.exception("[ERROR] Model tracing failed.")
+    except Exception as e:
+        print_error(f"Model tracing failed: {e}")
         raise
-    logger.info("[INFO] Model tracing completed successfully.")
+    print_info("Model tracing completed successfully.")
 
     total_time = 0.0
     total_batches = len(dataloader)
 
-    logger.info(f"[INFO] Starting Neuron inference loop with {total_batches} total batches...")
+    print_info(f"Starting Neuron inference loop with {total_batches} total batches...")
     with torch.no_grad():
         for batch_idx, batch in enumerate(dataloader):
             inputs, masks, _ = batch
-            logger.info(f"[INFO] Processing batch {batch_idx}/{total_batches-1}.")
+            print_info(f"Processing batch {batch_idx}/{total_batches - 1}.")
 
             inputs = inputs.long().to(device)
             masks = masks.long().to(device)
@@ -147,62 +155,58 @@ def run_inference(model, tokenizer, batch_size, mode):
             start_time = time.time()
             try:
                 _ = model_neuron(inputs, masks)
-            except Exception:
-                logger.exception(f"[ERROR] Inference failed on batch {batch_idx}.")
+            except Exception as e:
+                print_error(f"Inference failed on batch {batch_idx}: {e}")
                 raise
             batch_time = time.time() - start_time
             total_time += batch_time
-            logger.info(f"[INFO] Batch {batch_idx} inference time: {batch_time:.4f} seconds.")
+            print_info(f"Batch {batch_idx} inference time: {batch_time:.4f} seconds.")
 
     if total_time == 0.0:
-        logger.error("[ERROR] Inference produced 0 total_time, raising RuntimeError.")
+        print_error("Inference produced 0 total_time. No inference time recorded.")
         raise RuntimeError("No inference time recorded (total_time == 0).")
 
     avg_time_per_batch = total_time / total_batches
     throughput = (total_batches * batch_size) / total_time
 
-    logger.info("[INFO] Neuron inference loop completed.")
-    logger.info(
-        "[BERT_INFERENCE_NEURON_METRICS] "
-        f"mode={mode} "
+    print_info("Neuron inference loop completed.")
+    print_info(
+        f"[BERT_INFERENCE_NEURON_METRICS] mode={mode} "
         f"avg_time_per_batch={avg_time_per_batch:.6f} "
         f"throughput_samples_per_sec={throughput:.6f}"
     )
 
 
 def main():
-    """
-    Main entry. Requires NEURON_RT_VISIBLE_CORES or fails.
-    Loads a BERT model, moves it to XLA device, runs a traced inference.
-    """
-    logger.info("[INFO] Starting main()...")
+    """Main entry. Requires NEURON_RT_VISIBLE_CORES or fails."""
+    print_info("Starting main()...")
     if "NEURON_RT_VISIBLE_CORES" not in os.environ:
-        logger.error("[ERROR] Neuron environment not detected (NEURON_RT_VISIBLE_CORES not set). Exiting.")
+        print_error("Neuron environment not detected (NEURON_RT_VISIBLE_CORES not set). Exiting.")
         sys.exit(1)
-    logger.info("[INFO] NEURON_RT_VISIBLE_CORES is set.")
+    print_info("NEURON_RT_VISIBLE_CORES is set.")
 
     mode = os.environ.get("INFERENCE_MODE", "throughput").lower()
     if mode not in ["throughput", "latency"]:
-        logger.warning(
-            f"[WARNING] Unrecognized INFERENCE_MODE '{mode}'. "
+        print_warning(
+            f"Unrecognized INFERENCE_MODE '{mode}'. "
             "Falling back to 'throughput'."
         )
         mode = "throughput"
 
     batch_size = 1 if mode == "latency" else 8
-    logger.info(f"[INFO] Running Neuron inference in {mode} mode with batch size {batch_size}.")
+    print_info(f"Running Neuron inference in {mode} mode with batch size {batch_size}.")
 
-    logger.info("[INFO] Loading tokenizer and model...")
+    print_info("Loading tokenizer and model...")
     try:
         tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
         model = BertForPreTraining.from_pretrained("bert-base-uncased")
-    except Exception:
-        logger.exception("[ERROR] Failed to load model/tokenizer. Exiting.")
+    except Exception as e:
+        print_error(f"Failed to load model/tokenizer: {e}")
         sys.exit(1)
-    logger.info("[INFO] Model and tokenizer loaded successfully.")
+    print_info("Model and tokenizer loaded successfully.")
 
     run_inference(model, tokenizer, batch_size, mode)
-    logger.info("[INFO] main() completed all steps successfully.")
+    print_info("main() completed all steps successfully.")
 
 
 if __name__ == "__main__":

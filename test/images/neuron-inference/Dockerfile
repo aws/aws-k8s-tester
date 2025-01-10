@@ -6,8 +6,10 @@ FROM ubuntu:22.04
 # Disable interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Ensure Python prints are unbuffered so we see logs in real time
+ENV PYTHONUNBUFFERED=1
+
 # Neuron SDK components version numbers
-ARG NEURONX_DISTRIBUTED_TRAINING_VERSION=1.0.1
 ARG NEURONX_CC_VERSION=2.15.143.0
 ARG NEURONX_FRAMEWORK_VERSION=2.1.2.2.3.1
 ARG NEURONX_COLLECTIVES_LIB_VERSION=2.22.33.0-d2128d1aa
@@ -20,7 +22,6 @@ ARG PYTHON_VERSION=3.10.12
 
 # General Python environment
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
@@ -97,7 +98,6 @@ RUN . /etc/os-release \
 RUN pip install --no-cache-dir \
     torch-neuronx==$NEURONX_FRAMEWORK_VERSION \
     neuronx-cc==$NEURONX_CC_VERSION \
-    neuronx_distributed_training==$NEURONX_DISTRIBUTED_TRAINING_VERSION \
     transformers-neuronx
 
 ###############################################################################
@@ -105,3 +105,9 @@ RUN pip install --no-cache-dir \
 ###############################################################################
 WORKDIR /app
 COPY infer.py /app/
+
+# Optionally install extra dependencies if needed, e.g.:
+# RUN pip install --no-cache-dir ...
+
+# Default command
+CMD ["python", "/app/infer.py"]
