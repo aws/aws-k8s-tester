@@ -10,43 +10,41 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 
 # Neuron SDK components version numbers
-ARG NEURONX_CC_VERSION=2.15.143.0
-ARG NEURONX_FRAMEWORK_VERSION=2.1.2.2.3.1
-ARG NEURONX_COLLECTIVES_LIB_VERSION=2.22.33.0-d2128d1aa
-ARG NEURONX_RUNTIME_LIB_VERSION=2.22.19.0-5856c0b42
-ARG NEURONX_TOOLS_VERSION=2.19.0.0
+ARG NEURONX_CC_VERSION=2.16.345.0
+ARG NEURONX_FRAMEWORK_VERSION=2.5.1.2.4.0
+ARG NEURONX_COLLECTIVES_LIB_VERSION=2.23.133.0-3e70920f2
+ARG NEURONX_RUNTIME_LIB_VERSION=2.23.110.0-9b5179492
+ARG NEURONX_TOOLS_VERSION=2.20.204.0
 
 # Python
 ARG PYTHON=python3.10
 ARG PYTHON_VERSION=3.10.12
 
-# General Python environment
 ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONIOENCODING=UTF-8 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
+# Extend library paths for Neuron
+ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/aws/neuron/lib"
+ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib"
+ENV PATH="/opt/aws/neuron/bin:${PATH}"
+
 ###############################################################################
-# 1) System packages
+# 1) Base system packages, user setup
 ###############################################################################
 RUN apt-get update \
  && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends \
     build-essential \
     ca-certificates \
-    cmake \
     curl \
-    emacs \
     git \
     jq \
-    libopencv-dev \
-    software-properties-common \
     wget \
     unzip \
     vim \
-    pkg-config \
-    gdb \
-    lcov \
-    libbz2-dev \
     zlib1g-dev \
     openssl \
     libssl-dev \
@@ -57,57 +55,54 @@ RUN apt-get update \
     libncurses-dev \
     tk-dev \
     libffi-dev \
-    libcap-dev \
     gnupg2 \
     gpg-agent \
+    openssh-server \
+    sudo \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean
 
 ###############################################################################
-# 2) Build and install Python from source
-###############################################################################
-RUN wget -q https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tgz \
- && tar -xzf Python-$PYTHON_VERSION.tgz \
- && cd Python-$PYTHON_VERSION \
- && ./configure --enable-shared --prefix=/usr/local \
- && make -j"$(nproc)" \
- && make install \
- && cd .. && rm -rf Python-$PYTHON_VERSION* \
- && ln -s /usr/local/bin/pip3 /usr/bin/pip \
- && ln -s /usr/local/bin/$PYTHON /usr/local/bin/python \
- && pip --no-cache-dir install --upgrade pip setuptools
-
-###############################################################################
-# 3) AWS Neuron packages
+# 2) Neuron SDK
 ###############################################################################
 RUN . /etc/os-release \
- && echo "deb https://apt.repos.neuron.amazonaws.com $VERSION_CODENAME main" \
-    > /etc/apt/sources.list.d/neuron.list \
+ && echo "deb https://apt.repos.neuron.amazonaws.com focal main" > /etc/apt/sources.list.d/neuron.list \
  && wget -qO - https://apt.repos.neuron.amazonaws.com/GPG-PUB-KEY-AMAZON-AWS-NEURON.PUB | apt-key add - \
  && apt-get update \
- && apt-get install -y --no-install-recommends \
-    aws-neuronx-tools=$NEURONX_TOOLS_VERSION \
-    aws-neuronx-collectives=$NEURONX_COLLECTIVES_LIB_VERSION \
-    aws-neuronx-runtime-lib=$NEURONX_RUNTIME_LIB_VERSION \
+ && apt-get install -y \
+      aws-neuronx-tools=${NEURONX_TOOLS_VERSION} \
+      aws-neuronx-collectives=${NEURONX_COLLECTIVES_LIB_VERSION} \
+      aws-neuronx-runtime-lib=${NEURONX_RUNTIME_LIB_VERSION} \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get clean
+
+###############################################################################
+# 3) Python 3.10 from source
+###############################################################################
+RUN wget -q https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz \
+ && tar -xzf Python-${PYTHON_VERSION}.tgz \
+ && cd Python-${PYTHON_VERSION} \
+ && ./configure --enable-shared --prefix=/usr/local \
+ && make -j $(nproc) && make install \
+ && cd .. && rm -rf Python-${PYTHON_VERSION}* \
+ && ln -s /usr/local/bin/pip3 /usr/bin/pip \
+ && ln -s /usr/local/bin/${PYTHON} /usr/local/bin/python \
+ && pip --no-cache-dir install --upgrade pip setuptools wheel
 
 ###############################################################################
 # 4) Install PyTorch Neuron, Transformers Neuron, etc. via pip
 ###############################################################################
-RUN pip install --no-cache-dir \
-    torch-neuronx==$NEURONX_FRAMEWORK_VERSION \
-    neuronx-cc==$NEURONX_CC_VERSION \
-    transformers-neuronx
+RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com \
+ && pip install --force-reinstall \
+      "torch-neuronx==${NEURONX_FRAMEWORK_VERSION}" \
+      "neuronx-cc==${NEURONX_CC_VERSION}" \
+      "transformers==4.36.2"
 
 ###############################################################################
 # 5) Application files and Python dependencies
 ###############################################################################
 WORKDIR /app
 COPY infer.py /app/
-
-# Optionally install extra dependencies if needed, e.g.:
-# RUN pip install --no-cache-dir ...
 
 # Default command
 CMD ["python", "/app/infer.py"]
