@@ -1,3 +1,5 @@
+//go:build e2e
+
 package training
 
 import (
@@ -32,20 +34,20 @@ var (
 	neuronBertTrainingManifest []byte
 
 	// Regex to match lines like:
-	// [Rank 0] local_samples=50.0, training_time=10.00s, local_throughput=5.00 samples/s, local_avg_epoch_time=...
+	// ...[Rank 0] local_samples=50.0, training_time=10.00s, local_throughput=5.00 samples/s, local_avg_epoch_time=...
 	rankThroughputRegex = regexp.MustCompile(
-		`^\[Rank\s+(\d+)\].+local_throughput\s*=\s*([\d\.]+)\s+samples/s`,
+		`\[Rank\s+(\d+)\].+local_throughput\s*=\s*([\d\.]+)\s+samples\/s`,
 	)
 
 	// Regex to match lines like:
-	// [Rank 0] ... local_avg_epoch_time=12.50s
+	// ...[Rank 0] ... local_avg_epoch_time=12.50s
 	rankEpochTimeRegex = regexp.MustCompile(
-		`^\[Rank\s+(\d+)\].+local_avg_epoch_time\s*=\s*([\d\.]+)s`,
+		`\[Rank\s+(\d+)\].+local_avg_epoch_time\s*=\s*([\d\.]+)s`,
 	)
 )
 
-// TestNeuronTraining runs the Neuron-based BERT training test
-func TestNeuronTraining(t *testing.T) {
+// TestBertTraining runs the Neuron-based BERT training test
+func TestBertTraining(t *testing.T) {
 	if *bertTrainingImage == "" {
 		t.Fatal("bertTrainingImage must be set to run the test")
 	}
@@ -130,6 +132,8 @@ func TestNeuronTraining(t *testing.T) {
 			} else {
 				log.Printf("Parsed throughput from %d ranks. Total=%.2f samples/s, Average=%.2f samples/s",
 					countThru, sumThru, avgThru)
+				// Same log line format as nvidia training for parsing.
+				log.Printf("Average Throughput: %.2f samples/second", avgThru)
 			}
 
 			// 2) Average Epoch Time Aggregation

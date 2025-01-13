@@ -69,7 +69,7 @@ spec:
                       - trn2.48xlarge
       containers:
         # Find all neuron-device-plugin images at https://gallery.ecr.aws/neuron/neuron-device-plugin
-      - image: public.ecr.aws/neuron/neuron-device-plugin:2.19.16.0
+      - image: public.ecr.aws/neuron/neuron-device-plugin:2.23.30.0
         imagePullPolicy: Always
         name: neuron-device-plugin
         env:
