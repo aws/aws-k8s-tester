@@ -103,17 +103,34 @@ def run_inference(model, tokenizer, batch_size, mode):
     print_info("Dummy data creation completed.")
 
     dataloader = DataLoader(dataset, batch_size=batch_size)
+    
+    # First compile the model for Neuron: 
+    # Since we run inference in batches, we must first
+    # split the dataset into the size of input expected in a
+    # single batch. This input signature would then be used
+    # to call the .trace() method and compile the Bert model to Neuron
+    _input_ids, _attention_masks, _output_ids = dataset.tensors
+    _split_input_ids = torch.split(_input_ids, batch_size)[0]
+    _split_attention_masks = torch.split(_attention_masks, batch_size)[0]
+
+    batch_input = (_split_input_ids, _split_attention_masks)
+    model_neuron = torch_neuronx.trace(model, batch_input)
+
     print_info(f"DataLoader created with {len(dataloader)} batches.")
 
+
+    """
     # The XLA device for Inf2 usage.
     device = torch.device("xla")
     print_info(f"Using device: {device}")
-
+    
     print_info("Moving model to XLA device...")
     model.to(device)
     model.eval()
     print_info("Model moved to device and set to eval mode.")
+    """
 
+    """
     def bert_inference_func(input_ids, attention_mask):
         # BERT forward pass with two inputs
         return model(input_ids=input_ids, attention_mask=attention_mask)
@@ -138,6 +155,7 @@ def run_inference(model, tokenizer, batch_size, mode):
     except Exception as e:
         print_error(f"Model tracing failed: {e}")
         raise
+    """
     print_info("Model tracing completed successfully.")
 
     total_time = 0.0
@@ -146,15 +164,11 @@ def run_inference(model, tokenizer, batch_size, mode):
     print_info(f"Starting Neuron inference loop with {total_batches} total batches...")
     with torch.no_grad():
         for batch_idx, batch in enumerate(dataloader):
-            inputs, masks, _ = batch
+            input_tuple = tuple(batch[:2])
             print_info(f"Processing batch {batch_idx}/{total_batches - 1}.")
-
-            inputs = inputs.long().to(device)
-            masks = masks.long().to(device)
-
             start_time = time.time()
             try:
-                _ = model_neuron(inputs, masks)
+                _ = model_neuron(*input_tuple)
             except Exception as e:
                 print_error(f"Inference failed on batch {batch_idx}: {e}")
                 raise
@@ -180,11 +194,12 @@ def run_inference(model, tokenizer, batch_size, mode):
 def main():
     """Main entry. Requires NEURON_RT_VISIBLE_CORES or fails."""
     print_info("Starting main()...")
+    """
     if "NEURON_RT_VISIBLE_CORES" not in os.environ:
         print_error("Neuron environment not detected (NEURON_RT_VISIBLE_CORES not set). Exiting.")
         sys.exit(1)
     print_info("NEURON_RT_VISIBLE_CORES is set.")
-
+    """
     mode = os.environ.get("INFERENCE_MODE", "throughput").lower()
     if mode not in ["throughput", "latency"]:
         print_warning(
@@ -198,8 +213,9 @@ def main():
 
     print_info("Loading tokenizer and model...")
     try:
-        tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-        model = BertForPreTraining.from_pretrained("bert-base-uncased")
+        model_name = "bert-base-uncased"
+        tokenizer = BertTokenizer.from_pretrained(model_name)
+        model = BertForPreTraining.from_pretrained(model_name, torchscript=True)
     except Exception as e:
         print_error(f"Failed to load model/tokenizer: {e}")
         sys.exit(1)
