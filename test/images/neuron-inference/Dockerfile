@@ -68,8 +68,9 @@ RUN apt-get update \
 RUN . /etc/os-release \
  && echo "deb https://apt.repos.neuron.amazonaws.com focal main" > /etc/apt/sources.list.d/neuron.list \
  && wget -qO - https://apt.repos.neuron.amazonaws.com/GPG-PUB-KEY-AMAZON-AWS-NEURON.PUB | apt-key add - \
- && apt-get update \
+ && apt-get update -y \
  && apt-get install -y \
+      aws-neuronx-dkms=2.* \
       aws-neuronx-tools=${NEURONX_TOOLS_VERSION} \
       aws-neuronx-collectives=${NEURONX_COLLECTIVES_LIB_VERSION} \
       aws-neuronx-runtime-lib=${NEURONX_RUNTIME_LIB_VERSION} \
@@ -106,3 +107,4 @@ COPY infer.py /app/
 
 # Default command
 CMD ["python", "/app/infer.py"]
+
