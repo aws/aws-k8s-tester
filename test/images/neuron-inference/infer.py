@@ -18,47 +18,61 @@ logging.basicConfig(
 )
 logger = logging.getLogger("BERTNeuronInference")
 
-
 def get_neuron_monitor_stats():
     """
     Runs neuron-monitor command and returns the first JSON output as a dictionary.
-
+    Also validates if the environment has Inferentia1/2 device and proper device count.
+    
     Returns:
         dict: Parsed JSON output containing neuron monitor statistics
-
+        
     Raises:
         RuntimeError: If neuron-monitor command is not found or fails to execute
+        RuntimeError: If environment doesn't have proper Neuron support
         json.JSONDecodeError: If the output cannot be parsed as valid JSON
     """
     try:
         # Run neuron-monitor with timeout to get first output
         process = subprocess.Popen(
-            ['neuron-monitor'],
+            ['neuron-monitor'], 
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
         )
-
+        
         # Wait for first line of output
         output = process.stdout.readline()
-
+        
         # Terminate the process since we only need first output
         process.terminate()
         process.wait()
-
+        
         if not output:
             raise RuntimeError("No output received from neuron-monitor")
-
+            
         # Parse JSON output
         stats = json.loads(output)
+        
+        # Check for Neuron hardware support
+        hardware_info = stats.get('neuron_hardware_info', {})
+        device_type = hardware_info.get('neuron_device_type', '').lower()
+        device_count = hardware_info.get('neuron_device_count', 0)
+        
+        if not (device_type in ['inferentia1', 'inferentia2']):
+            raise RuntimeError(f"Unsupported device type: {device_type}")
+            
+        if device_count <= 0:
+            raise RuntimeError(f"No Neuron devices found (device count: {device_count})")
+            
         return stats
-
+        
     except FileNotFoundError:
         raise RuntimeError("neuron-monitor command not found")
     except json.JSONDecodeError as e:
         raise RuntimeError(f"Failed to parse JSON output: {e}")
     except Exception as e:
         raise RuntimeError(f"Error running neuron-monitor: {e}")
+
 
 def print_info(msg: str):
     """Helper function to prefix all info messages uniformly."""
