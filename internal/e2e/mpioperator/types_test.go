@@ -20,6 +20,9 @@ status:
 `
 
 func Test_serialization(t *testing.T) {
+	// the internal sentinel version must be registered for the type for us to decode it
+	registerInternalVersion = true
+
 	scheme := runtime.NewScheme()
 	err := AddFacadesToScheme(scheme)
 	if err != nil {
