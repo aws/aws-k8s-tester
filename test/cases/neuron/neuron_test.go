@@ -9,8 +9,7 @@ import (
 	"testing"
 
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
-	"github.com/aws/aws-k8s-tester/internal/e2e/mpioperator"
-	"sigs.k8s.io/e2e-framework/klient/k8s"
+	"github.com/aws/aws-k8s-tester/internal/e2e/mpijobs"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -123,23 +122,16 @@ func TestNeuronNodes(t *testing.T) {
 			return ctx
 		}).
 		Assess("NCCOM test succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			rsrc := cfg.Client().Resources()
-			if err := mpioperator.AddFacadesToScheme(rsrc.GetScheme()); err != nil {
-				t.Fatal(err)
-			}
-			j := mpioperator.MPIJobFacade{
-				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccom-test", Namespace: "default"},
-			}
+			mpiJob := mpijobs.NewUnstructured("multi-node-nccom-test", "default")
+			ctx = context.WithValue(ctx, "mpiJob", mpiJob)
 			t.Log("Waiting for MPIJob to complete")
-			err := wait.For(conditions.New(rsrc).ResourceMatch(&j, mpiJobSucceeded),
+			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(mpiJob, mpijobs.MPIJobSucceeded),
 				wait.WithContext(ctx))
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), &mpioperator.MPIJobFacade{
-				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccom-test", Namespace: "default"},
-			})
+			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), mpiJob)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -157,14 +149,4 @@ func TestNeuronNodes(t *testing.T) {
 		Feature()
 
 	testenv.Test(t, singleNode, multiNode)
-}
-
-func mpiJobSucceeded(obj k8s.Object) bool {
-	j := obj.(*mpioperator.MPIJobFacade)
-	for _, c := range j.Status.Conditions {
-		if c.Type == "Succeeded" {
-			return c.Status == "True"
-		}
-	}
-	return false
 }

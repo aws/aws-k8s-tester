@@ -10,14 +10,13 @@ import (
 	"testing"
 
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
-	"github.com/aws/aws-k8s-tester/internal/e2e/mpioperator"
-	"sigs.k8s.io/e2e-framework/klient/k8s"
+	"github.com/aws/aws-k8s-tester/internal/e2e/mpijobs"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/utils/strings/slices"
 )
 
@@ -57,15 +56,10 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			return ctx
 		}).
 		Assess("MPIJob succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			rsrc := cfg.Client().Resources()
-			if err := mpioperator.AddFacadesToScheme(rsrc.GetScheme()); err != nil {
-				t.Fatal(err)
-			}
-			j := mpioperator.MPIJobFacade{
-				ObjectMeta: metav1.ObjectMeta{Name: "pytorch-training-single-node", Namespace: "default"},
-			}
+			mpiJob := mpijobs.NewUnstructured("pytorch-training-single-node", "default")
+			ctx = context.WithValue(ctx, "mpiJob", mpiJob)
 			t.Log("Waiting for single node job to complete")
-			err := wait.For(fwext.NewConditionExtension(rsrc).ResourceMatch(&j, mpiJobSucceeded),
+			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).ResourceMatch(mpiJob, mpijobs.MPIJobSucceeded),
 				wait.WithContext(ctx))
 			if err != nil {
 				t.Fatal(err)
@@ -74,9 +68,16 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), &mpioperator.MPIJobFacade{
-				ObjectMeta: metav1.ObjectMeta{Name: "pytorch-training-single-node", Namespace: "default"},
-			})
+			job := ctx.Value("mpiJob")
+			if job == nil {
+				// nothing to do
+				return ctx
+			}
+			u, ok := job.(*unstructured.Unstructured)
+			if !ok {
+				t.Fatalf("mpiJob in context is not unstructured: %v", job)
+			}
+			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), u)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -127,15 +128,9 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			return ctx
 		}).
 		Assess("MPIJob succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			rsrc := cfg.Client().Resources()
-			if err := mpioperator.AddFacadesToScheme(rsrc.GetScheme()); err != nil {
-				t.Fatal(err)
-			}
-			j := mpioperator.MPIJobFacade{
-				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccl-test", Namespace: "default"},
-			}
+			mpiJob := mpijobs.NewUnstructured("multi-node-nccl-test", "default")
 			t.Log("Waiting for multi node job to complete")
-			err := wait.For(conditions.New(rsrc).ResourceMatch(&j, mpiJobSucceeded),
+			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(mpiJob, mpijobs.MPIJobSucceeded),
 				wait.WithContext(ctx))
 			if err != nil {
 				t.Fatal(err)
@@ -143,9 +138,7 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			t.Log("Multi node job completed")
 
 			// Verify GPU Direct RDMA is used on P4/P5
-			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), &mpioperator.MPIJobFacade{
-				ObjectMeta: metav1.ObjectMeta{Name: "multi-node-nccl-test", Namespace: "default"},
-			})
+			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), mpiJob)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -169,14 +162,4 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 		Feature()
 
 	testenv.Test(t, singleNode, multiNode)
-}
-
-func mpiJobSucceeded(obj k8s.Object) bool {
-	j := obj.(*mpioperator.MPIJobFacade)
-	for _, c := range j.Status.Conditions {
-		if c.Type == "Succeeded" {
-			return c.Status == "True"
-		}
-	}
-	return false
 }
