@@ -2,6 +2,8 @@ import logging
 import os
 import sys
 import time
+import json
+import subprocess
 import random
 
 import torch
@@ -17,9 +19,50 @@ logging.basicConfig(
 logger = logging.getLogger("BERTNeuronInference")
 
 
+def get_neuron_monitor_stats():
+    """
+    Runs neuron-monitor command and returns the first JSON output as a dictionary.
+
+    Returns:
+        dict: Parsed JSON output containing neuron monitor statistics
+
+    Raises:
+        RuntimeError: If neuron-monitor command is not found or fails to execute
+        json.JSONDecodeError: If the output cannot be parsed as valid JSON
+    """
+    try:
+        # Run neuron-monitor with timeout to get first output
+        process = subprocess.Popen(
+            ['neuron-monitor'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        # Wait for first line of output
+        output = process.stdout.readline()
+
+        # Terminate the process since we only need first output
+        process.terminate()
+        process.wait()
+
+        if not output:
+            raise RuntimeError("No output received from neuron-monitor")
+
+        # Parse JSON output
+        stats = json.loads(output)
+        return stats
+
+    except FileNotFoundError:
+        raise RuntimeError("neuron-monitor command not found")
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"Failed to parse JSON output: {e}")
+    except Exception as e:
+        raise RuntimeError(f"Error running neuron-monitor: {e}")
+
 def print_info(msg: str):
     """Helper function to prefix all info messages uniformly."""
-    logger.info(f"[INFO] {msg}")
+    print(f"[INFO] {msg}")
 
 
 def print_warning(msg: str):
@@ -200,12 +243,13 @@ def run_inference(model, tokenizer, batch_size, mode):
 def main():
     """Main entry. Requires NEURON_RT_VISIBLE_CORES or fails."""
     print_info("Starting main()...")
-    """
-    if "NEURON_RT_VISIBLE_CORES" not in os.environ:
-        print_error("Neuron environment not detected (NEURON_RT_VISIBLE_CORES not set). Exiting.")
+    try:
+        stats = get_neuron_monitor_stats()
+        print_info(stats)
+    except RuntimeError as e:
+        print_error(f"Neuron environment not detected. Failed with error: {e}")
         sys.exit(1)
-    print_info("NEURON_RT_VISIBLE_CORES is set.")
-    """
+
     mode = os.environ.get("INFERENCE_MODE", "throughput").lower()
     if mode not in ["throughput", "latency"]:
         print_warning(
