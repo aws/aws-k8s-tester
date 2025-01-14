@@ -8,11 +8,11 @@ import (
 	"io"
 	"os"
 
-	"github.com/aws/aws-k8s-tester/internal/e2e/mpioperator"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/resource"
@@ -131,7 +131,7 @@ func GetJobLogs(restConfig *rest.Config, job k8s.Object) (string, error) {
 	}
 	var jobLabel string
 	switch job.(type) {
-	case *mpioperator.MPIJobFacade:
+	case *unstructured.Unstructured: // assume this is an MPIJob
 		jobLabel = fmt.Sprintf("job-name=%s-launcher", job.GetName())
 	case *batchv1.Job:
 		jobLabel = fmt.Sprintf("job-name=%s", job.GetName())
