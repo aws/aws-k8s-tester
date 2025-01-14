@@ -170,7 +170,7 @@ def run_inference(model, tokenizer, batch_size, mode):
     with torch.no_grad():
         for batch_idx, batch in enumerate(dataloader):
             batch_input_tensor, batch_attention_tensor, _ = batch
-            input_tuple = tuple(batch_input_tensor, batch_attention_tensor)
+            input_tuple = tuple([batch_input_tensor, batch_attention_tensor])
             print_info(f"Processing batch {batch_idx}/{total_batches - 1}.")
             start_time = time.time()
             try:
