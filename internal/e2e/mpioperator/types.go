@@ -9,10 +9,17 @@ import (
 var (
 	facadeSchemeBuilder = runtime.NewSchemeBuilder(addFacadeTypes)
 	AddFacadesToScheme  = facadeSchemeBuilder.AddToScheme
+
+	// for unit tests
+	registerInternalVersion = false
 )
 
 func addFacadeTypes(s *runtime.Scheme) error {
-	for _, version := range []string{"v2beta1", runtime.APIVersionInternal} {
+	versions := []string{"v2beta1"}
+	if registerInternalVersion {
+		versions = append(versions, runtime.APIVersionInternal)
+	}
+	for _, version := range versions {
 		s.AddKnownTypeWithName(schema.GroupVersionKind{
 			Group:   "kubeflow.org",
 			Version: version,
