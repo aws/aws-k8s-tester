@@ -70,7 +70,6 @@ RUN . /etc/os-release \
  && wget -qO - https://apt.repos.neuron.amazonaws.com/GPG-PUB-KEY-AMAZON-AWS-NEURON.PUB | apt-key add - \
  && apt-get update -y \
  && apt-get install -y \
-      aws-neuronx-dkms=2.* \
       aws-neuronx-tools=${NEURONX_TOOLS_VERSION} \
       aws-neuronx-collectives=${NEURONX_COLLECTIVES_LIB_VERSION} \
       aws-neuronx-runtime-lib=${NEURONX_RUNTIME_LIB_VERSION} \

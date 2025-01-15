@@ -58,9 +58,6 @@ def get_neuron_monitor_stats():
         device_type = hardware_info.get('neuron_device_type', '').lower()
         device_count = hardware_info.get('neuron_device_count', 0)
         
-        if not (device_type in ['inferentia1', 'inferentia2']):
-            raise RuntimeError(f"Unsupported device type: {device_type}")
-            
         if device_count <= 0:
             raise RuntimeError(f"No Neuron devices found (device count: {device_count})")
             
