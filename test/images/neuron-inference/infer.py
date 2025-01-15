@@ -317,10 +317,6 @@ def main():
 
     print_info("Loading tokenizer and model...")
     try:
-        # model_name = "bert-base-cased"
-        # tokenizer = BertTokenizer.from_pretrained(model_name)
-        # model = BertForPreTraining.from_pretrained(model_name, torchscript=True)
-        
         # The following model is BERT model trained on a downsteam classification task (a common BERT usecase)
         model_name = "bert-base-cased-finetuned-mrpc"
         tokenizer = AutoTokenizer.from_pretrained(model_name)

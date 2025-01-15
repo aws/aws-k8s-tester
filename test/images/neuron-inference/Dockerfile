@@ -103,7 +103,3 @@ RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com
 ###############################################################################
 WORKDIR /app
 COPY infer.py /app/
-
-# Default command
-CMD ["python", "/app/infer.py"]
-
