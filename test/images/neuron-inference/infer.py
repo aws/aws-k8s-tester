@@ -5,11 +5,13 @@ import time
 import json
 import subprocess
 import random
+import concurrent.futures
+import numpy as np
 
 import torch
 import torch_neuronx
 from torch.utils.data import DataLoader, TensorDataset
-from transformers import BertForPreTraining, BertTokenizer
+from transformers import BertForPreTraining, BertTokenizer, AutoTokenizer, AutoModelForSequenceClassification
 
 logging.basicConfig(
     level=logging.INFO,
@@ -56,12 +58,12 @@ def get_neuron_monitor_stats():
         # Check for Neuron hardware support
         hardware_info = stats.get('neuron_hardware_info', {})
         device_type = hardware_info.get('neuron_device_type', '').lower()
-        device_count = hardware_info.get('neuron_device_count', 0)
+        neuroncore_per_device_count = hardware_info.get('neuroncore_per_device_count', 0)
         
-        if device_count <= 0:
-            raise RuntimeError(f"No Neuron devices found (device count: {device_count})")
+        if neuroncore_per_device_count <= 0:
+            raise RuntimeError(f"No Neuron devices found (neuroncore_per_device_count: {neuroncore_per_device_count})")
             
-        return stats
+        return neuroncore_per_device_count
         
     except FileNotFoundError:
         raise RuntimeError("neuron-monitor command not found")
@@ -86,7 +88,7 @@ def print_error(msg: str):
     logger.error(f"[ERROR] {msg}")
 
 
-def create_dummy_data(tokenizer, batch_size, num_samples=100, max_length=128, seed=42):
+def create_dummy_data(tokenizer, batch_size, num_samples=100000, max_length=128, seed=42):
     """
     Creates a realistic Next Sentence Prediction (NSP) dataset for BERT model testing.
 
@@ -166,7 +168,7 @@ def create_dummy_data(tokenizer, batch_size, num_samples=100, max_length=128, se
     )
 
 
-def run_inference(model, tokenizer, batch_size, mode):
+def run_inference(model, tokenizer, batch_size, mode, n_models=2, n_threads=2):
     """
     Runs BERT model inference using Neuron runtime with dummy NSP (Next Sentence Prediction) data.
 
@@ -175,6 +177,8 @@ def run_inference(model, tokenizer, batch_size, mode):
         tokenizer (BertTokenizer): instance for processing input text
         batch_size (int): specifying batch size (8 for throughput mode, 1 for latency mode)
         mode (str): indicating inference mode ('throughput' or 'latency')
+        n_models (int): number of models to spawn
+        n_threads (int): number of threads for inference
 
     Returns:
         None, but prints performance metrics including:
@@ -209,54 +213,91 @@ def run_inference(model, tokenizer, batch_size, mode):
     _split_attention_masks = torch.split(_attention_masks, batch_size)[0]
     batch_input = (_split_input_ids, _split_attention_masks)
     try:
-        model_neuron = torch_neuronx.trace(model, batch_input)
+        # When n_models are spanwed, the default behaviour by Neuron is to allocate one model
+        # to one core. More details can be found here:
+        # https://awsdocs-neuron.readthedocs-hosted.com/en/latest/frameworks/torch/torch-neuronx/programming-guide/inference/core-placement.html#default-core-allocation-placement
+        models_neuron = [torch_neuronx.trace(model, batch_input) for _ in range(n_models)]
+        # model_neuron = torch_neuronx.trace(model, batch_input)
     except Exception as e:
         logger.exception(f"[ERROR] Failed to trace BERT model. Failed with error: {e}")
         raise e
 
-    print_info(f"DataLoader created with {len(dataloader)} batches.")
-    print_info("Model tracing completed successfully.")
+    latencies = []
+    rows_processed = 0
 
-    total_time = 0.0
-    total_batches = len(dataloader)
-
-    print_info(f"Starting Neuron inference loop with {total_batches} total batches...")
-    with torch.no_grad():
-        for batch_idx, batch in enumerate(dataloader):
+    # Thread task
+    def task(model_neuron, batches):
+        local_rows_processed = 0
+        print_info(f"Total batches in this thread: {len(batches)}")
+        for batch in batches:
             batch_input_tensor, batch_attention_tensor, _ = batch
             input_tuple = tuple([batch_input_tensor, batch_attention_tensor])
-            print_info(f"Processing batch {batch_idx}/{total_batches - 1}.")
-            start_time = time.time()
-            try:
+            start = time.time()
+            with torch.no_grad():
                 _ = model_neuron(*input_tuple)
-            except Exception as e:
-                print_error(f"Inference failed on batch {batch_idx}: {e}")
-                raise
-            batch_time = time.time() - start_time
-            total_time += batch_time
-            print_info(f"Batch {batch_idx} inference time: {batch_time:.4f} seconds.")
+            finish = time.time()
+            latencies.append((finish - start) * 1000)
+            local_rows_processed += len(batch_input_tensor)
+        print_info(f"Total rows in this thread: {local_rows_processed}")
+        return local_rows_processed
 
-    if total_time == 0.0:
-        print_error("Inference produced 0 total_time. No inference time recorded.")
-        raise RuntimeError("No inference time recorded (total_time == 0).")
+    all_batches = list(dataloader)
+    batches_per_thread = len(all_batches) // n_threads
+    thread_batches = [all_batches[i:i + batches_per_thread] for i in range(0, len(all_batches), batches_per_thread)]
+    
+    # If there are any remaining batches, add them to the last thread
+    if len(thread_batches) > n_threads:
+        thread_batches[-2].extend(thread_batches[-1])
+        thread_batches.pop()
 
-    avg_time_per_batch = total_time / total_batches
-    throughput = (total_batches * batch_size) / total_time
+    # Submit tasks
+    print_info(f"Starting Neuron inference with {n_threads} threads...")
+    begin = time.time()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=n_threads) as pool:
+        futures = []
+        for i in range(n_threads):
+            model_index = i % len(models_neuron)
+            futures.append(pool.submit(task, models_neuron[model_index], thread_batches[i]))
+        
+        # Wait for all tasks to complete and sum up the processed rows
+        for future in concurrent.futures.as_completed(futures):
+            rows_processed += future.result()
+    end = time.time()
 
-    print_info("Neuron inference loop completed.")
-    print_info(
-        f"[BERT_INFERENCE_NEURON_METRICS] mode={mode} "
-        f"avg_time_per_batch={avg_time_per_batch:.6f} "
-        f"throughput_samples_per_sec={throughput:.6f}"
-    )
+    # Compute metrics
+    boundaries = [50, 95, 99]
+    percentiles = {}
+
+    for boundary in boundaries:
+        name = f'latency_p{boundary}'
+        percentiles[name] = np.percentile(latencies, boundary)
+    
+    duration = end - begin
+    inferences = rows_processed
+    throughput = inferences / duration
+
+    # Print metrics
+    print_info("Neuron inference completed.")
+    print_info(f"Total rows processed: {rows_processed}")
+    print_info(f"[BERT_INFERENCE_NEURON_METRICS] mode={mode}")
+    print_info(f"[BERT_INFERENCE_NEURON_METRICS] duration={duration:.6f}")
+    print_info(f"[BERT_INFERENCE_NEURON_METRICS] throughput_samples_per_sec={throughput:.6f}")
+
+    # latency metrics
+    for name, value in percentiles.items():
+        print_info(f"[BERT_INFERENCE_NEURON_METRICS] {name}={value:.6f}")
+    
+    print_info(f"[BERT_INFERENCE_NEURON_METRICS] batch_size={batch_size}")
+    print_info(f"[BERT_INFERENCE_NEURON_METRICS] total_batches_processed={len(latencies)}")
+    print_info(f"[BERT_INFERENCE_NEURON_METRICS] total_inferences={inferences}")
 
 
 def main():
     """Main entry. Requires NEURON_RT_VISIBLE_CORES or fails."""
     print_info("Starting main()...")
     try:
-        stats = get_neuron_monitor_stats()
-        print_info(stats)
+        neuroncore_per_device_count = get_neuron_monitor_stats()
+        print_info(f"Spawing a total of {neuroncore_per_device_count} models")
     except RuntimeError as e:
         print_error(f"Neuron environment not detected. Failed with error: {e}")
         sys.exit(1)
@@ -274,15 +315,21 @@ def main():
 
     print_info("Loading tokenizer and model...")
     try:
-        model_name = "bert-base-uncased"
-        tokenizer = BertTokenizer.from_pretrained(model_name)
-        model = BertForPreTraining.from_pretrained(model_name, torchscript=True)
+        # model_name = "bert-base-cased"
+        # tokenizer = BertTokenizer.from_pretrained(model_name)
+        # model = BertForPreTraining.from_pretrained(model_name, torchscript=True)
+        
+        # The following model is BERT model trained on a downsteam classification task (a common BERT usecase)
+        model_name = "bert-base-cased-finetuned-mrpc"
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForSequenceClassification.from_pretrained(model_name, torchscript=True)
+
     except Exception as e:
         print_error(f"Failed to load model/tokenizer: {e}")
         sys.exit(1)
     print_info("Model and tokenizer loaded successfully.")
 
-    run_inference(model, tokenizer, batch_size, mode)
+    run_inference(model, tokenizer, batch_size, mode, n_models=neuroncore_per_device_count)
     print_info("main() completed all steps successfully.")
 
 
