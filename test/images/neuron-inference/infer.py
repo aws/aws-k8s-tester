@@ -7,6 +7,7 @@ import subprocess
 import random
 import concurrent.futures
 import numpy as np
+from copy import deepcopy
 
 import torch
 import torch_neuronx
@@ -88,7 +89,7 @@ def print_error(msg: str):
     logger.error(f"[ERROR] {msg}")
 
 
-def create_dummy_data(tokenizer, batch_size, num_samples=100000, max_length=128, seed=42):
+def create_dummy_data(tokenizer, batch_size, num_samples=10000, max_length=128, seed=42):
     """
     Creates a realistic Next Sentence Prediction (NSP) dataset for BERT model testing.
 
@@ -216,7 +217,8 @@ def run_inference(model, tokenizer, batch_size, mode, n_models=2, n_threads=2):
         # When n_models are spanwed, the default behaviour by Neuron is to allocate one model
         # to one core. More details can be found here:
         # https://awsdocs-neuron.readthedocs-hosted.com/en/latest/frameworks/torch/torch-neuronx/programming-guide/inference/core-placement.html#default-core-allocation-placement
-        models_neuron = [torch_neuronx.trace(model, batch_input) for _ in range(n_models)]
+        _model_neuron = torch_neuronx.trace(model, batch_input)
+        models_neuron = [deepcopy(_model_neuron) for _ in range(n_models-1)] + [_model_neuron]
         # model_neuron = torch_neuronx.trace(model, batch_input)
     except Exception as e:
         logger.exception(f"[ERROR] Failed to trace BERT model. Failed with error: {e}")
