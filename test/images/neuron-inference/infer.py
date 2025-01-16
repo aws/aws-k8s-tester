@@ -12,7 +12,7 @@ from copy import deepcopy
 import torch
 import torch_neuronx
 from torch.utils.data import DataLoader, TensorDataset
-from transformers import BertForPreTraining, BertTokenizer, AutoTokenizer, AutoModelForSequenceClassification
+from transformers import BertForPreTraining, BertTokenizer
 
 logging.basicConfig(
     level=logging.INFO,
@@ -76,7 +76,7 @@ def get_neuron_monitor_stats():
 
 def print_info(msg: str):
     """Helper function to prefix all info messages uniformly."""
-    print(f"[INFO] {msg}")
+    logger.info(f"[INFO] {msg}")
 
 
 def print_warning(msg: str):
@@ -185,6 +185,8 @@ def run_inference(model, tokenizer, batch_size, mode, n_models=2, n_threads=2):
         None, but prints performance metrics including:
         - Average time per batch
         - Throughput (samples per second)
+        - P50, P95, P99 latency 
+        - 
 
     Notes:
         - Performance metrics are logged with prefix [BERT_INFERENCE_NEURON_METRICS]
@@ -277,12 +279,23 @@ def run_inference(model, tokenizer, batch_size, mode, n_models=2, n_threads=2):
     duration = end - begin
     inferences = rows_processed
     throughput = inferences / duration
+    avg_time_per_batch = np.mean(latencies)
 
     # Print metrics
     print_info("Neuron inference completed.")
-    print_info(f"Total rows processed: {rows_processed}")
+
+    # Print metrics to support old logging format
+    print_info(
+        "[BERT_INFERENCE_NEURON_METRICS] "
+        f"mode={mode} "
+        f"avg_time_per_batch={avg_time_per_batch:.6f} "
+        f"throughput_samples_per_sec={throughput:.6f}"
+    )
+
+    # performance metrics
     print_info(f"[BERT_INFERENCE_NEURON_METRICS] mode={mode}")
     print_info(f"[BERT_INFERENCE_NEURON_METRICS] duration={duration:.6f}")
+    print_info(f"[BERT_INFERENCE_NEURON_METRICS] avg_time_per_batch={avg_time_per_batch:.6f}")
     print_info(f"[BERT_INFERENCE_NEURON_METRICS] throughput_samples_per_sec={throughput:.6f}")
 
     # latency metrics
@@ -295,7 +308,7 @@ def run_inference(model, tokenizer, batch_size, mode, n_models=2, n_threads=2):
 
 
 def main():
-    """Main entry. Requires NEURON_RT_VISIBLE_CORES or fails."""
+    """Main entry"""
     print_info("Starting main()...")
     try:
         neuroncore_per_device_count = get_neuron_monitor_stats()
@@ -317,10 +330,9 @@ def main():
 
     print_info("Loading tokenizer and model...")
     try:
-        # The following model is BERT model trained on a downsteam classification task (a common BERT usecase)
-        model_name = "bert-base-cased-finetuned-mrpc"
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModelForSequenceClassification.from_pretrained(model_name, torchscript=True)
+        model_name = "bert-base-cased"
+        tokenizer = BertTokenizer.from_pretrained(model_name)
+        model = BertForPreTraining.from_pretrained(model_name)
 
     except Exception as e:
         print_error(f"Failed to load model/tokenizer: {e}")
