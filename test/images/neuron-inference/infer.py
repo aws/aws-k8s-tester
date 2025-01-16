@@ -20,6 +20,7 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger("BERTNeuronInference")
+logger.setLevel(logging.INFO) 
 
 def get_neuron_monitor_stats():
     """
@@ -183,10 +184,13 @@ def run_inference(model, tokenizer, batch_size, mode, n_models=2, n_threads=2):
 
     Returns:
         None, but prints performance metrics including:
+        - Duration of the job
         - Average time per batch
         - Throughput (samples per second)
         - P50, P95, P99 latency 
-        - 
+        - Batch Size
+        - Total Batches Processed
+        - Total Inferences
 
     Notes:
         - Performance metrics are logged with prefix [BERT_INFERENCE_NEURON_METRICS]
@@ -330,7 +334,7 @@ def main():
 
     print_info("Loading tokenizer and model...")
     try:
-        model_name = "bert-base-cased"
+        model_name = "bert-base-uncased"
         tokenizer = BertTokenizer.from_pretrained(model_name)
         model = BertForPreTraining.from_pretrained(model_name)
 
