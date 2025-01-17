@@ -1,7 +1,7 @@
 ###############################################################################
 # 0) Base image, arguments, and environment
 ###############################################################################
-FROM ubuntu:22.04
+FROM public.ecr.aws/docker/library/ubuntu:22.04
 
 # Disable interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
@@ -10,10 +10,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 
 # Neuron SDK components version numbers
-ARG NEURONX_CC_VERSION=2.16.345.0
+ARG NEURONX_CC_VERSION=2.16.372.0
 ARG NEURONX_FRAMEWORK_VERSION=2.5.1.2.4.0
-ARG NEURONX_COLLECTIVES_LIB_VERSION=2.23.133.0-3e70920f2
-ARG NEURONX_RUNTIME_LIB_VERSION=2.23.110.0-9b5179492
+ARG NEURONX_COLLECTIVES_LIB_VERSION=2.23.135.0-3e70920f2
+ARG NEURONX_RUNTIME_LIB_VERSION=2.23.112.0-9b5179492
 ARG NEURONX_TOOLS_VERSION=2.20.204.0
 
 # Python
