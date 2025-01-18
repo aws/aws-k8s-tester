@@ -41,25 +41,22 @@ func TestNeuronInference(t *testing.T) {
 		"NeuronCorePerNode":  fmt.Sprintf("%d", neuronCorePerNode),
 	}
 
+	// Render the manifest
+	renderedManifest, err := fwext.RenderManifests(neuronBertInferenceManifest, renderVars)
+	if err != nil {
+		t.Fatalf("[ERROR] Failed to render Neuron inference manifest: %v", err)
+	}
+
 	feature := features.New("neuron-inference").
 		WithLabel("suite", "neuron").
 		WithLabel("hardware", "neuron").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			log.Println("[INFO] Rendering 'neuron-bert-inference.yaml' with dynamic vars...")
-			var err error
-			renderedManifest, err = fwext.RenderManifests(neuronBertInferenceManifest, renderVars)
+			log.Println("[INFO] Applying rendered Neuron inference manifest.")
+			err := fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedManifest)
 			if err != nil {
-				t.Fatalf("[ERROR] Failed to render inference manifest: %v", err)
+				t.Fatalf("[ERROR] Failed to apply Neuron inference manifest: %v", err)
 			}
-			log.Println("[INFO] Successfully rendered inference YAML.")
-
-			log.Println("[INFO] Applying neuron inference job manifest...")
-			if applyErr := fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedManifest); applyErr != nil {
-				t.Fatalf("[ERROR] Failed to apply inference job manifest: %v", applyErr)
-			}
-			log.Println("[INFO] Inference job manifest applied successfully.")
-
-			ctx = context.WithValue(ctx, "applyTime", time.Now())
+			log.Println("[INFO] Successfully applied Neuron inference manifest.")
 			return ctx
 		}).
 		Assess("BERT inference Job succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
