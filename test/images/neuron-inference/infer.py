@@ -208,7 +208,10 @@ def run_inference(model, tokenizer, batch_size, mode, n_models=2, n_threads=2):
 
     print_info("Dummy data creation completed.")
 
-    dataloader = DataLoader(dataset, batch_size=batch_size)
+    dataloader = DataLoader(
+        dataset, 
+        batch_size=batch_size
+    )
     
     # First compile the model for Neuron: 
     # Since we run inference in batches, we must first
@@ -220,12 +223,9 @@ def run_inference(model, tokenizer, batch_size, mode, n_models=2, n_threads=2):
     _split_attention_masks = torch.split(_attention_masks, batch_size)[0]
     batch_input = (_split_input_ids, _split_attention_masks)
     try:
-        # When n_models are spanwed, the default behaviour by Neuron is to allocate one model
-        # to one core. More details can be found here:
-        # https://awsdocs-neuron.readthedocs-hosted.com/en/latest/frameworks/torch/torch-neuronx/programming-guide/inference/core-placement.html#default-core-allocation-placement
-        _model_neuron = torch_neuronx.trace(model, batch_input)
-        models_neuron = [deepcopy(_model_neuron) for _ in range(n_models-1)] + [_model_neuron]
-        # model_neuron = torch_neuronx.trace(model, batch_input)
+        # Use multicore context for automatic core allocation
+        with torch_neuronx.experimental.multicore_context():
+            model_neuron = torch_neuronx.trace(model, batch_input)
     except Exception as e:
         logger.exception(f"[ERROR] Failed to trace BERT model. Failed with error: {e}")
         raise e
@@ -233,43 +233,20 @@ def run_inference(model, tokenizer, batch_size, mode, n_models=2, n_threads=2):
     latencies = []
     rows_processed = 0
 
-    # Thread task
-    def task(model_neuron, batches):
-        local_rows_processed = 0
-        print_info(f"Total batches in this thread: {len(batches)}")
-        for batch in batches:
-            batch_input_tensor, batch_attention_tensor, _ = batch
-            input_tuple = tuple([batch_input_tensor, batch_attention_tensor])
-            start = time.time()
-            with torch.no_grad():
-                _ = model_neuron(*input_tuple)
-            finish = time.time()
-            latencies.append((finish - start) * 1000)
-            local_rows_processed += len(batch_input_tensor)
-        print_info(f"Total rows in this thread: {local_rows_processed}")
-        return local_rows_processed
-
-    all_batches = list(dataloader)
-    batches_per_thread = len(all_batches) // n_threads
-    thread_batches = [all_batches[i:i + batches_per_thread] for i in range(0, len(all_batches), batches_per_thread)]
-    
-    # If there are any remaining batches, add them to the last thread
-    if len(thread_batches) > n_threads:
-        thread_batches[-2].extend(thread_batches[-1])
-        thread_batches.pop()
-
-    # Submit tasks
-    print_info(f"Starting Neuron inference with {n_threads} threads...")
+    print_info(f"Starting Neuron inference ...")
     begin = time.time()
-    with concurrent.futures.ThreadPoolExecutor(max_workers=n_threads) as pool:
-        futures = []
-        for i in range(n_threads):
-            model_index = i % len(models_neuron)
-            futures.append(pool.submit(task, models_neuron[model_index], thread_batches[i]))
-        
-        # Wait for all tasks to complete and sum up the processed rows
-        for future in concurrent.futures.as_completed(futures):
-            rows_processed += future.result()
+    
+    with torch.no_grad():
+        for batch in dataloader:
+            batch_input_tensor, batch_attention_tensor, _ = batch            
+            batch_input = (batch_input_tensor, batch_attention_tensor)
+            start = time.time()
+            _ = model_neuron(*batch_input)
+            finish = time.time()
+            
+            latencies.append((finish - start) * 1000)
+            rows_processed += len(batch_input_tensor)
+
     end = time.time()
 
     # Compute metrics
@@ -336,7 +313,7 @@ def main():
     try:
         model_name = "bert-base-uncased"
         tokenizer = BertTokenizer.from_pretrained(model_name)
-        model = BertForPreTraining.from_pretrained(model_name)
+        model = BertForPreTraining.from_pretrained(model_name, torchscript=True)
 
     except Exception as e:
         print_error(f"Failed to load model/tokenizer: {e}")
