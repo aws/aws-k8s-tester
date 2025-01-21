@@ -56,9 +56,9 @@ func TestBertTraining(t *testing.T) {
 	renderVars := map[string]string{
 		"BertTrainingImage": *bertTrainingImage,
 		"NodeType":          *nodeType,
-		"SlotsPerWorker":    fmt.Sprintf("%d", 1), // Hardcode to 1 for now
+		"SlotsPerWorker":    fmt.Sprintf("%d", neuronCorePerNode),
 		"WorkerReplicas":    fmt.Sprintf("%d", nodeCount),
-		"NP":                fmt.Sprintf("%d", nodeCount),
+		"NP":                fmt.Sprintf("%d", nodeCount*neuronCorePerNode),
 		"NeuronPerNode":     fmt.Sprintf("%d", neuronPerNode),
 		"NeuronCorePerNode": fmt.Sprintf("%d", neuronCorePerNode),
 		"EFARequested":      fmt.Sprintf("%d", efaPerNode),
@@ -108,7 +108,8 @@ func TestBertTraining(t *testing.T) {
 			log.Println("Waiting for 'neuron-training-launcher' Job to succeed...")
 			err = wait.For(
 				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
-				wait.WithTimeout(30*time.Minute),
+				// Bake in large margin b/c compile time. TODO: pre-compile and find best fit
+				wait.WithTimeout(60*time.Minute),
 			)
 			if err != nil {
 				t.Fatalf("Neuron training Job did not succeed: %v", err)

@@ -40,6 +40,8 @@ RUN apt-get update \
      wget \
      unzip \
      vim \
+     lcov \
+     pkg-config \
      zlib1g-dev \
      openssl \
      libssl-dev \
@@ -52,15 +54,11 @@ RUN apt-get update \
      libffi-dev \
      gnupg2 \
      gpg-agent \
-     openssh-server \
+     openssh-server \ 
+     openssh-client \
      sudo \
      && rm -rf /var/lib/apt/lists/* \
      && apt-get clean
-
-# Create a non-root 'ubuntu' user with password 'password'
-RUN useradd -ms /bin/bash ubuntu \
-     && echo 'ubuntu:password' | chpasswd \
-     && usermod -aG sudo ubuntu
 
 ###############################################################################
 # 2) Neuron SDK
@@ -96,7 +94,7 @@ RUN apt-get update \
      && apt-get clean
 
 ENV PATH="/opt/amazon/openmpi/bin:${PATH}"
-ENV LD_LIBRARY_PATH="/opt/amazon/openmpi/lib64:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="/opt/amazon/openmpi/lib64:/opt/amazon/openmpi/lib:${LD_LIBRARY_PATH}"
 
 ###############################################################################
 # 4) Python 3.10 from source
@@ -124,25 +122,13 @@ RUN pip config set global.extra-index-url https://pip.repos.neuron.amazonaws.com
 # 6) SSH and finalize
 ###############################################################################
 # Configure SSH (auto-accept new host keys)
-RUN sed -i -e 's/#   StrictHostKeyChecking ask/    StrictHostKeyChecking accept-new/g' /etc/ssh/ssh_config
+RUN mkdir -p /var/run/sshd && \
+     sed -i 's/[ #]\(.*StrictHostKeyChecking \).*/ \1no/g' /etc/ssh/ssh_config && \
+     echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config && \
+     sed -i 's/#\(StrictModes \).*/\1no/g' /etc/ssh/sshd_config
 
-# Give 'ubuntu' a known password so 'sudo -S' works:
-RUN echo 'ubuntu:password' | chpasswd
 
-# Switch to 'ubuntu' user (non-root).
-WORKDIR /home/ubuntu
-USER ubuntu
+ENV MASTER_PORT=12355
 
-# Create SSH keypair in /home/ubuntu/.ssh
-RUN mkdir -p /home/ubuntu/.ssh \
-     && ssh-keygen -t rsa -f /home/ubuntu/.ssh/id_rsa -N '' \
-     && echo password | sudo -S chmod 600 /home/ubuntu/.ssh/id_rsa \
-     && echo password | sudo -S chmod 600 /home/ubuntu/.ssh/id_rsa.pub \
-     && echo password | sudo -S cat /home/ubuntu/.ssh/id_rsa.pub >> /home/ubuntu/.ssh/authorized_keys
-
-# Copy training script (optional)
-COPY train.py /home/ubuntu/
-
-# Expose SSH port and run sshd
-EXPOSE 22
-CMD ["/usr/sbin/sshd","-D"]
+WORKDIR /app/
+COPY train.py /app/
