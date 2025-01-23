@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: neuron-inference
+spec:
+  backoffLimit: 4
+  template:
+    spec:
+      restartPolicy: OnFailure
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+      containers:
+        - name: neuron-inference
+          image: {{.BertInferenceImage}}
+          imagePullPolicy: Always
+          command: ["python", "/app/infer.py"]
+          env:
+            - name: INFERENCE_MODE
+              value: "{{.InferenceMode}}"
+          volumeMounts:
+            - mountPath: /dev/shm
+              name: dshm
+          resources:
+            requests:
+              aws.amazon.com/neuroncore: "{{.NeuronCorePerNode}}"
+            limits:
+              aws.amazon.com/neuroncore: "{{.NeuronCorePerNode}}"
+          nodeSelector:
+            node.kubernetes.io/instance-type: {{.NodeType}}

@@ -46,3 +46,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - run: docker build --file test/images/neuron-training/Dockerfile test/images/neuron-training
+  build-image-neuron-inference:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: docker build --file test/images/neuron-inference/Dockerfile test/images/neuron-inference
