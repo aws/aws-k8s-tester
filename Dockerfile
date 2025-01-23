@@ -9,7 +9,7 @@ RUN  wget -O go.tar.gz https://go.dev/dl/$(cat go-version.txt).${TARGETOS}-${TAR
     tar -C /usr/local -xzf go.tar.gz
 ENV GOPATH=/usr/local/go
 ENV PATH=$PATH:$GOPATH/bin
-ENV GOPROXY=direct
+ENV GOPROXY=https://proxy.golang.org,direct
 ARG KUBETEST2_VERSION=v0.0.0-20231113220322-d7fcb799ce84
 RUN go install sigs.k8s.io/kubetest2/...@${KUBETEST2_VERSION}
 
