@@ -5,6 +5,8 @@ FROM public.ecr.aws/docker/library/ubuntu:22.04
 ###############################################################################
 ARG DEBIAN_FRONTEND=noninteractive
 
+ENV MASTER_PORT=12355
+
 # Neuron SDK component versions (pin these precisely)
 ARG NEURONX_CC_VERSION=2.16.345.0
 ARG NEURONX_TOOLS_VERSION=2.20.204.0

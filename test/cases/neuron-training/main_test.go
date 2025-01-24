@@ -14,11 +14,9 @@ import (
 
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/wait"
-	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
@@ -28,8 +26,6 @@ var (
 	neuronDevicePluginRbacManifest []byte
 	//go:embed manifests/k8s-neuron-device-plugin.yml
 	neuronDevicePluginManifest []byte
-	//go:embed manifests/mpi-operator.yaml
-	mpiOperatorManifest []byte
 	//go:embed manifests/efa-device-plugin.yaml
 	efaDevicePluginManifest []byte
 )
@@ -44,35 +40,17 @@ func TestMain(m *testing.M) {
 	manifests := [][]byte{
 		neuronDevicePluginRbacManifest,
 		neuronDevicePluginManifest,
-		mpiOperatorManifest,
 		efaDevicePluginManifest,
 	}
 
 	testenv.Setup(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Applying Neuron device plugin RBAC, Neuron device plugin, MPI operator, and EFA device plugin manifests.")
+			log.Println("Applying Neuron device plugin RBAC, Neuron device plugin and EFA device plugin manifests.")
 			err := fwext.ApplyManifests(config.Client().RESTConfig(), manifests...)
 			if err != nil {
 				return ctx, fmt.Errorf("failed to apply manifests: %w", err)
 			}
-			log.Println("Successfully applied Neuron device plugin RBAC, Neuron device plugin, MPI operator, and EFA device plugin manifests.")
-			return ctx, nil
-		},
-		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Waiting for MPI Operator deployment to be available.")
-			deployment := appsv1.Deployment{
-				ObjectMeta: metav1.ObjectMeta{Name: "mpi-operator", Namespace: "mpi-operator"},
-			}
-			err := wait.For(
-				conditions.New(config.Client().Resources()).DeploymentConditionMatch(
-					&deployment, appsv1.DeploymentAvailable, v1.ConditionTrue,
-				),
-				wait.WithTimeout(time.Minute*5),
-			)
-			if err != nil {
-				return ctx, fmt.Errorf("MPI Operator deployment is not available: %w", err)
-			}
-			log.Println("MPI Operator deployment is available.")
+			log.Println("Successfully applied Neuron device plugin RBAC, Neuron device plugin and EFA device plugin manifests.")
 			return ctx, nil
 		},
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
@@ -110,13 +88,13 @@ func TestMain(m *testing.M) {
 
 	testenv.Finish(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Deleting Neuron device plugin, MPI operator, and EFA device plugin manifests.")
+			log.Println("Deleting Neuron device plugin and EFA device plugin manifests.")
 			slices.Reverse(manifests)
 			err := fwext.DeleteManifests(config.Client().RESTConfig(), manifests...)
 			if err != nil {
 				return ctx, fmt.Errorf("failed to delete manifests: %w", err)
 			}
-			log.Println("Successfully deleted Neuron device plugin, MPI operator, and EFA device plugin manifests.")
+			log.Println("Successfully deleted Neuron device plugin and EFA device plugin manifests.")
 			return ctx, nil
 		},
 	)
