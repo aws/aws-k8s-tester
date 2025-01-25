@@ -8,7 +8,7 @@ spec:
   completionMode: Indexed
   completions: {{.NodeCount}}
   parallelism: {{.NodeCount}}
-  backoffLimit: 0
+  backoffLimit: 3
   template:
     metadata:
       annotations:
@@ -21,18 +21,14 @@ spec:
         env:
         - name: MASTER_ADDR
           value: neuron-training-0.training
-        - name: MASTER_PORT
-          value: "{{.MasterPort}}"
         args:
         - sh
         - -c 
-        - | 
+        - |
           # Enable EFA https://awsdocs-neuron.readthedocs-hosted.com/en/latest/neuron-runtime/nrt-troubleshoot.html#fi-efa-fork-safe (AL2 legacy requirement)
-          export FI_EFA_FORK_SAFE=1 
-          torchrun --nproc_per_node {{.NeuronCorePerNode}}  --nnodes {{.NodeCount}} --node_rank $JOB_COMPLETION_INDEX --master_addr $MASTER_ADDR --master_port $MASTER_PORT train.py
-        ports:
-        - name: master
-          containerPort: {{.MasterPort}}
+          export FI_EFA_FORK_SAFE=1
+          export CCOM_SOCKET_IFNAME=eth0
+          torchrun --nproc_per_node {{.NeuronCorePerNode}}  --nnodes {{.NodeCount}} --node_rank $JOB_COMPLETION_INDEX --master_addr $MASTER_ADDR train.py
         volumeMounts:
         - name: dshm
           mountPath: /dev/shm 

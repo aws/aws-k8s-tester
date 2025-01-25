@@ -6,9 +6,5 @@ metadata:
     app: training
 spec:
   clusterIP: None
-  ports:
-  - name: master  # Port for torchrun master-worker node communication.
-    port: {{.MasterPort}}
-    targetPort: {{.MasterPort}}
   selector:
-    job-name: neuron-training  # Selector for pods associated with this service.
+    job-name: neuron-training
