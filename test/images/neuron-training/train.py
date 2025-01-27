@@ -8,16 +8,13 @@ import torch.distributed as dist
 # === torch_xla imports for device and parallel loader ===
 import torch_xla.core.xla_model as xm
 import torch_xla.runtime as xr
-import torch_xla.distributed.xla_multiprocessing as xmp
 import torch_xla.distributed.xla_backend
 import torch_xla.distributed.parallel_loader as pl
 
 from torch.utils.data import DataLoader, TensorDataset, DistributedSampler
 from transformers import BertForPreTraining, BertTokenizer
 
-LOCAL_RANK = int(os.environ.get("LOCAL_RANK", 0))
 RANK = int(os.environ.get("RANK", 0))
-LOCAL_WORLD_SIZE = int(os.environ.get("LOCAL_WORLD_SIZE", 1))
 WORLD_SIZE = int(os.environ.get("WORLD_SIZE", 1))
 
 def create_dummy_data(tokenizer, num_samples=100, max_length=128):
@@ -81,7 +78,6 @@ def complete_epoch(epoch, optimizer, parallel_loader, model):
         loss.backward()
 
         xm.optimizer_step(optimizer)
-        xm.mark_step()
 
         if step_idx % 10 == 0:
             print(f"[Rank {RANK}] - Epoch {epoch}, Step {step_idx}, Loss={loss.item():.4f}")
@@ -118,7 +114,7 @@ def main():
         shuffle=True,
         drop_last=False,
     )
-    train_loader = DataLoader(dataset, batch_size=64, sampler=sampler)
+    train_loader = DataLoader(dataset, batch_size=1024, sampler=sampler)
 
     # XLA parallel data loader
     parallel_loader = pl.MpDeviceLoader(train_loader, device)
@@ -154,6 +150,7 @@ def main():
         complete_epoch(epoch, optimizer, parallel_loader, model)
 
         epoch_time = time.time() - epoch_start_time
+        epoch_times.append(epoch_time)
 
         print(f"[Rank {RANK}] - Epoch {epoch} done in {epoch_time:.2f}s")
 
@@ -161,7 +158,7 @@ def main():
     total_time = time.time() - start_time
     print(f"[Rank {RANK}] - All epochs complete in {total_time:.2f}s")
 
-    # Each raml processes (dataset_size / WORLD_SIZE) * epochs samples
+    # Each rank processes (dataset_size / WORLD_SIZE) * epochs samples
     local_samples = (len(dataset) / WORLD_SIZE) * epochs
     local_throughput = local_samples / total_time
 

@@ -5,14 +5,12 @@ FROM public.ecr.aws/docker/library/ubuntu:22.04
 ###############################################################################
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV MASTER_PORT=12355
-
 # Neuron SDK component versions (pin these precisely)
-ARG NEURONX_CC_VERSION=2.16.345.0
+ARG NEURONX_CC_VERSION=2.16.372.0
 ARG NEURONX_TOOLS_VERSION=2.20.204.0
 ARG NEURONX_FRAMEWORK_VERSION=2.5.1.2.4.0
-ARG NEURONX_RUNTIME_LIB_VERSION=2.23.110.0-9b5179492
-ARG NEURONX_COLLECTIVES_LIB_VERSION=2.23.133.0-3e70920f2
+ARG NEURONX_RUNTIME_LIB_VERSION=2.23.112.0-9b5179492
+ARG NEURONX_COLLECTIVES_LIB_VERSION=2.23.135.0-3e70920f2
 
 # Python
 ARG PYTHON=python3.10
@@ -129,8 +127,6 @@ RUN mkdir -p /var/run/sshd && \
      echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config && \
      sed -i 's/#\(StrictModes \).*/\1no/g' /etc/ssh/sshd_config
 
-
-ENV MASTER_PORT=12355
 
 WORKDIR /app/
 COPY train.py /app/

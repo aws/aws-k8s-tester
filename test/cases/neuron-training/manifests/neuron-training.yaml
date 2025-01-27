@@ -28,7 +28,7 @@ spec:
           # Enable EFA https://awsdocs-neuron.readthedocs-hosted.com/en/latest/neuron-runtime/nrt-troubleshoot.html#fi-efa-fork-safe (AL2 legacy requirement)
           export FI_EFA_FORK_SAFE=1
           export CCOM_SOCKET_IFNAME=eth0
-          torchrun --nproc_per_node {{.NeuronCorePerNode}}  --nnodes {{.NodeCount}} --node_rank $JOB_COMPLETION_INDEX --master_addr $MASTER_ADDR train.py
+          torchrun --nproc_per_node {{.NeuronCorePerNode}} --nnodes {{.NodeCount}} --node_rank $JOB_COMPLETION_INDEX --master_addr $MASTER_ADDR train.py
         volumeMounts:
         - name: dshm
           mountPath: /dev/shm 
