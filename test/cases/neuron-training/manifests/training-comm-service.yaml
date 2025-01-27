@@ -7,4 +7,4 @@ metadata:
 spec:
   clusterIP: None
   selector:
-    job-name: neuron-training
+    job-name: bert-training

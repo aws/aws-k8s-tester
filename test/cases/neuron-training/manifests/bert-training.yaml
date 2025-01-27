@@ -2,8 +2,8 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   labels:
-    app: neuron-training
-  name: neuron-training
+    app: bert-training
+  name: bert-training
 spec:
   completionMode: Indexed
   completions: {{.NodeCount}}
@@ -12,11 +12,11 @@ spec:
     spec:
       restartPolicy: Never
       containers:
-      - image: {{.TrainingImage}}
-        name: neuron-training
+      - image: {{.bertTrainingImage}}
+        name: bert-training
         env:
         - name: MASTER_ADDR
-          value: neuron-training-0.training
+          value: bert-training-0.training
         args:
         - sh
         - -c 

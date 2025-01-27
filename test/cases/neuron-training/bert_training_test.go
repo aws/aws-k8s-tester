@@ -30,8 +30,8 @@ import (
 )
 
 var (
-	//go:embed manifests/neuron-training.yaml
-	neuronTrainingJobManifest []byte
+	//go:embed manifests/bert-training.yaml
+	bertTrainingJobManifest []byte
 
 	//go:embed manifests/training-comm-service.yaml
 	trainingPodCommServiceManifest []byte
@@ -57,7 +57,7 @@ func TestBertTraining(t *testing.T) {
 
 	// Render the templated manifest with dynamic variables
 	renderVars := map[string]string{
-		"TrainingImage":     *bertTrainingImage,
+		"bertTrainingImage": *bertTrainingImage,
 		"NodeType":          *nodeType,
 		"SlotsPerWorker":    fmt.Sprintf("%d", nodeCount),
 		"NodeCount":         fmt.Sprintf("%d", nodeCount),
@@ -67,7 +67,7 @@ func TestBertTraining(t *testing.T) {
 	}
 
 	// Render the manifest
-	renderedManifest, err := fwext.RenderManifests(neuronTrainingJobManifest, renderVars)
+	renderedManifest, err := fwext.RenderManifests(bertTrainingJobManifest, renderVars)
 	if err != nil {
 		t.Fatalf("failed to render neuron BERT training manifest: %v", err)
 	}
@@ -78,7 +78,7 @@ func TestBertTraining(t *testing.T) {
 	}
 
 	// Define a feature for the Neuron BERT training
-	neuronTraining := features.New("neuron-training").
+	neuronTraining := features.New("bert-training").
 		WithLabel("suite", "neuron").
 		WithLabel("hardware", "neuron").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -98,13 +98,13 @@ func TestBertTraining(t *testing.T) {
 		Assess("Neuron training Job succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			job := &batchv1.Job{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "neuron-training",
+					Name:      "bert-training",
 					Namespace: "default",
 				},
 			}
 
 			// Step 1: Wait for the Job resource to appear
-			log.Println("Waiting for the 'neuron-training' Job resource to be created...")
+			log.Println("Waiting for the 'bert-training' Job resource to be created...")
 			err := wait.For(
 				conditions.New(cfg.Client().Resources()).ResourceMatch(job, func(object k8s.Object) bool {
 					return true
@@ -112,12 +112,12 @@ func TestBertTraining(t *testing.T) {
 				wait.WithTimeout(time.Minute*5),
 			)
 			if err != nil {
-				t.Fatalf("Failed to detect creation of Job 'neuron-training': %v", err)
+				t.Fatalf("Failed to detect creation of Job 'bert-training': %v", err)
 			}
-			log.Println("Job 'neuron-training' is created in the cluster.")
+			log.Println("Job 'bert-training' is created in the cluster.")
 
 			// Step 2: Wait for the Job to succeed (i.e., complete)
-			log.Println("Waiting for 'neuron-training' Job to succeed...")
+			log.Println("Waiting for 'bert-training' Job to succeed...")
 			err = wait.For(
 				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 				// Bake in large margin b/c compile time. TODO: pre-compile and find best fit
@@ -126,12 +126,12 @@ func TestBertTraining(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Neuron training Job did not succeed: %v", err)
 			}
-			log.Println("Job 'neuron-training' succeeded!")
+			log.Println("Job 'bert-training' succeeded!")
 
 			// Gather logs from the training pods (launcher)
-			logsBuf, logErr := gatherJobLogs(ctx, cfg, "default", "neuron-training")
+			logsBuf, logErr := gatherJobLogs(ctx, cfg, "default", "bert-training")
 			if logErr != nil {
-				log.Printf("Warning: failed to retrieve neuron-training job logs: %v", logErr)
+				log.Printf("Warning: failed to retrieve bert-training job logs: %v", logErr)
 				return ctx
 			}
 
