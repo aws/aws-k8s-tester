@@ -94,7 +94,7 @@ RUN apt-get update \
      && apt-get clean
 
 ENV PATH="/opt/amazon/openmpi/bin:${PATH}"
-ENV LD_LIBRARY_PATH="/opt/amazon/openmpi/lib64:/opt/amazon/openmpi/lib:${LD_LIBRARY_PATH}"
+ENV LD_LIBRARY_PATH="/opt/amazon/openmpi/lib64:${LD_LIBRARY_PATH}"
 
 ###############################################################################
 # 4) Python 3.10 from source

@@ -114,7 +114,7 @@ def main():
         shuffle=True,
         drop_last=False,
     )
-    train_loader = DataLoader(dataset, batch_size=1024, sampler=sampler)
+    train_loader = DataLoader(dataset, batch_size=512, sampler=sampler)
 
     # XLA parallel data loader
     parallel_loader = pl.MpDeviceLoader(train_loader, device)

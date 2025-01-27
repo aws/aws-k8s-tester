@@ -59,7 +59,6 @@ func TestBertTraining(t *testing.T) {
 	renderVars := map[string]string{
 		"TrainingImage":     *bertTrainingImage,
 		"NodeType":          *nodeType,
-		"MasterPort":        *masterPort,
 		"SlotsPerWorker":    fmt.Sprintf("%d", nodeCount),
 		"NodeCount":         fmt.Sprintf("%d", nodeCount),
 		"NeuronPerNode":     fmt.Sprintf("%d", neuronPerNode),
