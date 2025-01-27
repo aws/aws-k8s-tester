@@ -57,7 +57,7 @@ func TestBertTraining(t *testing.T) {
 
 	// Render the templated manifest with dynamic variables
 	renderVars := map[string]string{
-		"bertTrainingImage": *bertTrainingImage,
+		"BertTrainingImage": *bertTrainingImage,
 		"NodeType":          *nodeType,
 		"SlotsPerWorker":    fmt.Sprintf("%d", nodeCount),
 		"NodeCount":         fmt.Sprintf("%d", nodeCount),

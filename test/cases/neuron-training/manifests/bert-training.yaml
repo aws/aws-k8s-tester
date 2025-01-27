@@ -12,7 +12,7 @@ spec:
     spec:
       restartPolicy: Never
       containers:
-      - image: {{.bertTrainingImage}}
+      - image: {{.BertTrainingImage}}
         name: bert-training
         env:
         - name: MASTER_ADDR
