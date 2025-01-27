@@ -17,7 +17,6 @@ var (
 	efaPerNode        int
 	neuronPerNode     int
 	neuronCorePerNode int
-	masterPort        *string
 )
 
 func init() {
@@ -25,5 +24,4 @@ func init() {
 	bertTrainingImage = flag.String("bertTrainingImage", "", "Docker image used for BERT training workload")
 	efaEnabled = flag.Bool("efaEnabled", false, "Enable Elastic Fabric Adapter (EFA)")
 	nodeType = flag.String("nodeType", "", "Instance type for cluster nodes (e.g., inf1.24xlarge)")
-	masterPort = flag.String("masterPort", "12355", "Port to use for inter-process communication")
 }

@@ -37,15 +37,15 @@ var (
 	trainingPodCommServiceManifest []byte
 
 	// Regex to match lines like:
-	// ...[Rank 0] local_samples=50.0, training_time=10.00s, local_throughput=5.00 samples/s, local_avg_epoch_time=...
+	// local_throughput=5.00 samples/s
 	rankThroughputRegex = regexp.MustCompile(
-		`\[Rank\s+(\d+)\].+local_throughput\s*=\s*([\d\.]+)\s+samples\/s`,
+		`local_throughput\s*=\s*([\d\.]+)\s+samples\/s`,
 	)
 
 	// Regex to match lines like:
-	// ...[Rank 0] ... local_avg_epoch_time=12.50s
+	// local_avg_epoch_time=12.50s
 	rankEpochTimeRegex = regexp.MustCompile(
-		`\[Rank\s+(\d+)\].+local_avg_epoch_time\s*=\s*([\d\.]+)s`,
+		`local_avg_epoch_time=([\d\.]+)s`,
 	)
 )
 
@@ -211,8 +211,8 @@ func aggregateThroughputFromLogs(logs string) (avg float64, sum float64, count i
 	for scanner.Scan() {
 		line := scanner.Text()
 		matches := rankThroughputRegex.FindStringSubmatch(line)
-		if len(matches) == 3 {
-			valStr := matches[2] // e.g. "5.00"
+		if len(matches) == 2 {
+			valStr := matches[1] // e.g. "5.00"
 			val, err := strconv.ParseFloat(valStr, 64)
 			if err == nil {
 				sum += val
@@ -236,8 +236,8 @@ func aggregateEpochTimeFromLogs(logs string) (avg float64, sum float64, count in
 	for scanner.Scan() {
 		line := scanner.Text()
 		matches := rankEpochTimeRegex.FindStringSubmatch(line)
-		if len(matches) == 3 {
-			valStr := matches[2] // e.g. "12.50"
+		if len(matches) == 2 {
+			valStr := matches[1] // e.g. "12.50"
 			val, err := strconv.ParseFloat(valStr, 64)
 			if err == nil {
 				sum += val
