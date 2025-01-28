@@ -4,7 +4,7 @@ go 1.23.2
 
 toolchain go1.23.4
 
-replace go.opencensus.io => github.com/census-instrumentation/opencensus-go v0.24.0
+replace go.opencensus.io v0.24.0 => github.com/census-instrumentation/opencensus-go v0.24.0
 
 require (
 	github.com/aws/aws-sdk-go v1.51.2
