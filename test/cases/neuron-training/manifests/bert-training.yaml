@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: bert-training
+  name: bert-training
+spec:
+  completionMode: Indexed
+  completions: {{.NodeCount}}
+  parallelism: {{.NodeCount}}
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - image: {{.BertTrainingImage}}
+        name: bert-training
+        env:
+        - name: MASTER_ADDR
+          value: bert-training-0.training
+        args:
+        - sh
+        - -c 
+        - |
+          # Enable EFA https://awsdocs-neuron.readthedocs-hosted.com/en/latest/neuron-runtime/nrt-troubleshoot.html#fi-efa-fork-safe (AL2 legacy requirement)
+          export FI_EFA_FORK_SAFE=1
+          export CCOM_SOCKET_IFNAME=eth0
+          export NCCL_DEBUG=ERROR
+          torchrun --nproc_per_node {{.NeuronCorePerNode}} --nnodes {{.NodeCount}} --node_rank $JOB_COMPLETION_INDEX --master_addr $MASTER_ADDR train.py
+        volumeMounts:
+        - name: dshm
+          mountPath: /dev/shm 
+        resources:
+          requests:
+            aws.amazon.com/neuron: {{.NeuronPerNode}}
+            aws.amazon.com/neuroncore: {{.NeuronCorePerNode}}
+            vpc.amazonaws.com/efa: {{.EFAPerNode}}
+          limits:
+            aws.amazon.com/neuron: {{.NeuronPerNode}}
+            aws.amazon.com/neuroncore: {{.NeuronCorePerNode}}
+            vpc.amazonaws.com/efa: {{.EFAPerNode}}
+      nodeSelector:
+        node.kubernetes.io/instance-type: {{.NodeType}}
+      subdomain: training
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory

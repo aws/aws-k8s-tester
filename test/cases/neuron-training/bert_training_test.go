@@ -3,7 +3,6 @@
 package training
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	_ "embed"
@@ -11,7 +10,6 @@ import (
 	"log"
 	"regexp"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -30,19 +28,22 @@ import (
 )
 
 var (
-	//go:embed manifests/neuron-bert-training.yaml
-	neuronBertTrainingManifest []byte
+	//go:embed manifests/bert-training.yaml
+	bertTrainingJobManifest []byte
+
+	//go:embed manifests/training-comm-service.yaml
+	trainingPodCommServiceManifest []byte
 
 	// Regex to match lines like:
-	// ...[Rank 0] local_samples=50.0, training_time=10.00s, local_throughput=5.00 samples/s, local_avg_epoch_time=...
+	// local_throughput=5.00 samples/s
 	rankThroughputRegex = regexp.MustCompile(
-		`\[Rank\s+(\d+)\].+local_throughput\s*=\s*([\d\.]+)\s+samples\/s`,
+		`local_throughput\s*=\s*([\d\.]+)\s+samples\/s`,
 	)
 
 	// Regex to match lines like:
-	// ...[Rank 0] ... local_avg_epoch_time=12.50s
+	// local_avg_epoch_time=12.50s
 	rankEpochTimeRegex = regexp.MustCompile(
-		`\[Rank\s+(\d+)\].+local_avg_epoch_time\s*=\s*([\d\.]+)s`,
+		`local_avg_epoch_time=([\d\.]+)s`,
 	)
 )
 
@@ -56,27 +57,36 @@ func TestBertTraining(t *testing.T) {
 	renderVars := map[string]string{
 		"BertTrainingImage": *bertTrainingImage,
 		"NodeType":          *nodeType,
-		"SlotsPerWorker":    fmt.Sprintf("%d", 1), // Hardcode to 1 for now
-		"WorkerReplicas":    fmt.Sprintf("%d", nodeCount),
-		"NP":                fmt.Sprintf("%d", nodeCount),
+		"SlotsPerWorker":    fmt.Sprintf("%d", nodeCount),
+		"NodeCount":         fmt.Sprintf("%d", nodeCount),
 		"NeuronPerNode":     fmt.Sprintf("%d", neuronPerNode),
 		"NeuronCorePerNode": fmt.Sprintf("%d", neuronCorePerNode),
-		"EFARequested":      fmt.Sprintf("%d", efaPerNode),
+		"EFAPerNode":        fmt.Sprintf("%d", efaPerNode),
 	}
 
 	// Render the manifest
-	renderedManifest, err := fwext.RenderManifests(neuronBertTrainingManifest, renderVars)
+	renderedManifest, err := fwext.RenderManifests(bertTrainingJobManifest, renderVars)
 	if err != nil {
 		t.Fatalf("failed to render neuron BERT training manifest: %v", err)
 	}
 
+	renderedCommServiceManifest, err := fwext.RenderManifests(trainingPodCommServiceManifest, renderVars)
+	if err != nil {
+		t.Fatalf("failed to render pod communication manifest: %v", err)
+	}
+
 	// Define a feature for the Neuron BERT training
-	neuronTraining := features.New("neuron-training").
+	neuronTraining := features.New("bert-training").
 		WithLabel("suite", "neuron").
 		WithLabel("hardware", "neuron").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			log.Println("Applying pod communication service manifest.")
+			err := fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedCommServiceManifest)
+			if err != nil {
+				t.Fatalf("failed to apply communication service manifest: %v", err)
+			}
 			log.Println("Applying rendered Neuron training manifest.")
-			err := fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedManifest)
+			err = fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedManifest)
 			if err != nil {
 				t.Fatalf("failed to apply Neuron training manifest: %v", err)
 			}
@@ -86,13 +96,13 @@ func TestBertTraining(t *testing.T) {
 		Assess("Neuron training Job succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			job := &batchv1.Job{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "neuron-training-launcher",
+					Name:      "bert-training",
 					Namespace: "default",
 				},
 			}
 
 			// Step 1: Wait for the Job resource to appear
-			log.Println("Waiting for the 'neuron-training-launcher' Job resource to be created...")
+			log.Println("Waiting for the 'bert-training' Job resource to be created...")
 			err := wait.For(
 				conditions.New(cfg.Client().Resources()).ResourceMatch(job, func(object k8s.Object) bool {
 					return true
@@ -100,25 +110,26 @@ func TestBertTraining(t *testing.T) {
 				wait.WithTimeout(time.Minute*5),
 			)
 			if err != nil {
-				t.Fatalf("Failed to detect creation of Job 'neuron-training-launcher': %v", err)
+				t.Fatalf("Failed to detect creation of Job 'bert-training': %v", err)
 			}
-			log.Println("Job 'neuron-training-launcher' is created in the cluster.")
+			log.Println("Job 'bert-training' is created in the cluster.")
 
 			// Step 2: Wait for the Job to succeed (i.e., complete)
-			log.Println("Waiting for 'neuron-training-launcher' Job to succeed...")
+			log.Println("Waiting for 'bert-training' Job to succeed...")
 			err = wait.For(
 				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
-				wait.WithTimeout(30*time.Minute),
+				// Bake in large margin b/c compile time. TODO: pre-compile and find best fit
+				wait.WithTimeout(60*time.Minute),
 			)
 			if err != nil {
 				t.Fatalf("Neuron training Job did not succeed: %v", err)
 			}
-			log.Println("Job 'neuron-training-launcher' succeeded!")
+			log.Println("Job 'bert-training' succeeded!")
 
 			// Gather logs from the training pods (launcher)
-			logsBuf, logErr := gatherJobLogs(ctx, cfg, "default", "neuron-training-launcher")
+			logsBuf, logErr := gatherJobLogs(ctx, cfg, "default", "bert-training")
 			if logErr != nil {
-				log.Printf("Warning: failed to retrieve neuron-training job logs: %v", logErr)
+				log.Printf("Warning: failed to retrieve bert-training job logs: %v", logErr)
 				return ctx
 			}
 
@@ -126,7 +137,7 @@ func TestBertTraining(t *testing.T) {
 			log.Println(logsBuf.String())
 
 			// 1) Throughput Aggregation
-			avgThru, sumThru, countThru := aggregateThroughputFromLogs(logsBuf.String())
+			avgThru, sumThru, countThru := aggregateMetricFromLogs(rankThroughputRegex, logsBuf.String())
 			if countThru == 0 {
 				log.Printf("No throughput lines found. Possibly missing in logs.")
 			} else {
@@ -137,7 +148,7 @@ func TestBertTraining(t *testing.T) {
 			}
 
 			// 2) Average Epoch Time Aggregation
-			avgEp, sumEp, countEp := aggregateEpochTimeFromLogs(logsBuf.String())
+			avgEp, sumEp, countEp := aggregateMetricFromLogs(rankEpochTimeRegex, logsBuf.String())
 			if countEp == 0 {
 				log.Printf("No epoch time lines found. Possibly missing in logs.")
 			} else {
@@ -188,48 +199,18 @@ func gatherJobLogs(ctx context.Context, cfg *envconf.Config, namespace, jobName 
 	return &out, nil
 }
 
-// aggregateThroughputFromLogs scans the log output for lines like:
+// aggregateMetricFromLogs scans the log output for lines based on a provided RegEx.
+// The RegEx is assumed to take a sufficiently unique form like <metric>=<value> to avoid
+// collisions, but also to simplify parsing.
 //
-//	[Rank 3] ... local_throughput=5.00 ...
-//
-// returning the average, sum, and count for rank throughput lines.
-func aggregateThroughputFromLogs(logs string) (avg float64, sum float64, count int) {
-	scanner := bufio.NewScanner(strings.NewReader(logs))
-	for scanner.Scan() {
-		line := scanner.Text()
-		matches := rankThroughputRegex.FindStringSubmatch(line)
-		if len(matches) == 3 {
-			valStr := matches[2] // e.g. "5.00"
-			val, err := strconv.ParseFloat(valStr, 64)
-			if err == nil {
-				sum += val
-				count++
-			}
-		}
-	}
-	if count > 0 {
-		avg = sum / float64(count)
-	}
-	return avg, sum, count
-}
-
-// aggregateEpochTimeFromLogs scans log output for lines like:
-//
-//	[Rank 0] ... local_avg_epoch_time=12.50s
-//
-// returning the average, sum, and count for rank epoch times.
-func aggregateEpochTimeFromLogs(logs string) (avg float64, sum float64, count int) {
-	scanner := bufio.NewScanner(strings.NewReader(logs))
-	for scanner.Scan() {
-		line := scanner.Text()
-		matches := rankEpochTimeRegex.FindStringSubmatch(line)
-		if len(matches) == 3 {
-			valStr := matches[2] // e.g. "12.50"
-			val, err := strconv.ParseFloat(valStr, 64)
-			if err == nil {
-				sum += val
-				count++
-			}
+// returns the average, sum, and count for all occurrences of the metric.
+func aggregateMetricFromLogs(metricRegex *regexp.Regexp, logs string) (avg float64, sum float64, count int) {
+	matches := metricRegex.FindAllStringSubmatch(logs, -1)
+	for _, match := range matches {
+		val, err := strconv.ParseFloat(match[1], 64)
+		if err == nil {
+			sum += val
+			count++
 		}
 	}
 	if count > 0 {

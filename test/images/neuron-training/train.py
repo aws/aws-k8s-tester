@@ -7,16 +7,15 @@ import torch.distributed as dist
 
 # === torch_xla imports for device and parallel loader ===
 import torch_xla.core.xla_model as xm
+import torch_xla.runtime as xr
 import torch_xla.distributed.xla_backend
 import torch_xla.distributed.parallel_loader as pl
 
 from torch.utils.data import DataLoader, TensorDataset, DistributedSampler
 from transformers import BertForPreTraining, BertTokenizer
 
-
-# Initialize XLA process group for MPI-based environment
-# (Expects OMPI / MPI environment variables or torchrun-style env.)
-dist.init_process_group("xla")
+RANK = int(os.environ.get("RANK", 0))
+WORLD_SIZE = int(os.environ.get("WORLD_SIZE", 1))
 
 def create_dummy_data(tokenizer, num_samples=100, max_length=128):
     """
@@ -63,7 +62,8 @@ def mask_tokens(inputs, tokenizer, mlm_probability):
 
     return inputs, labels
 
-def complete_epoch(rank, epoch, optimizer, parallel_loader, model):
+def complete_epoch(epoch, optimizer, parallel_loader, model):
+
     for step_idx, batch in enumerate(parallel_loader, start=1):
         optimizer.zero_grad()
         input_ids, attention_mask, mlm_labels, next_sentence_labels = batch
@@ -78,44 +78,43 @@ def complete_epoch(rank, epoch, optimizer, parallel_loader, model):
         loss.backward()
 
         xm.optimizer_step(optimizer)
-        xm.mark_step()
 
         if step_idx % 10 == 0:
-            print(f"[Rank {rank}] - Epoch {epoch}, Step {step_idx}, Loss={loss.item():.4f}")
+            print(f"[Rank {RANK}] - Epoch {epoch}, Step {step_idx}, Loss={loss.item():.4f}")
 
 def main():
-    # Retrieve rank/world_size from MPI environment or fallback to zero/one
-    rank = int(os.environ.get("OMPI_COMM_WORLD_RANK", "0"))
-    world_size = int(os.environ.get("OMPI_COMM_WORLD_SIZE", "1"))
+    dist.init_process_group(
+        "xla",
+        init_method="xla://"
+    )
 
-    print(f"Starting train.py with rank={rank}, world_size={world_size}")
+    # print info with xla runtime functions to sanity check run context correctly propagates to backend
+    print(f"Starting train.py with rank={xr.global_ordinal()}, world_size={xr.world_size()}")
 
     # Seed everything for reproducibility
     SEED = 42
     random.seed(SEED)
     torch.manual_seed(SEED)
 
-    # Acquire the XLA device for this rank
     device = xm.xla_device()
-    print(f"[Rank {rank}] using device: {device}")
 
     # Preload model + tokenizer
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
     model = BertForPreTraining.from_pretrained("bert-base-uncased")
-    print(f"[Rank {rank}]: Model & tokenizer loaded.")
+    print(f"[Rank {RANK}]: Model & tokenizer loaded.")
 
     # Create dummy dataset
     dataset = create_dummy_data(tokenizer, num_samples=1000, max_length=128)
 
-    # Shard dataset for each rank
+    # Shard dataset for each RANK
     sampler = DistributedSampler(
         dataset,
-        num_replicas=world_size,
-        rank=rank,
+        num_replicas=WORLD_SIZE,
+        rank=RANK,
         shuffle=True,
         drop_last=False,
     )
-    train_loader = DataLoader(dataset, batch_size=32, sampler=sampler)
+    train_loader = DataLoader(dataset, batch_size=512, sampler=sampler)
 
     # XLA parallel data loader
     parallel_loader = pl.MpDeviceLoader(train_loader, device)
@@ -130,33 +129,37 @@ def main():
 
     model.train()
 
-    print(f"[Rank {rank}] - Starting warmup")
+    # TODO: precompile the model. This warmup is arbitrary based on observed behavior
+    # neuronx-cc seems to recompile for the first 2 runs for some reason tbd
+    print(f"[Rank {RANK}] - Starting warmup (2 repetitions of epoch 0)")
     warmup_start = time.time()
-    complete_epoch(rank, 0, optimizer, parallel_loader, model)
+    complete_epoch(0, optimizer, parallel_loader, model)
+    complete_epoch(0, optimizer, parallel_loader, model)
     warump_time = time.time() - warmup_start
-    print(f"[Rank {rank}] - Finished warmup in {warump_time:.2f}s")
+    print(f"[Rank {RANK}] - Finished warmup in {warump_time:.2f}s")
 
-    print(f"[Rank {rank}] - Starting training for {epochs} epochs...")
+    print(f"[Rank {RANK}] - Starting training for {epochs} epochs...")
 
     start_time = time.time()
     epoch_times = []
 
     for epoch in range(1, epochs + 1):
         epoch_start_time = time.time()
-        print(f"[Rank {rank}] - Epoch {epoch}/{epochs}")
+        print(f"[Rank {RANK}] - Epoch {epoch}/{epochs}")
 
-        complete_epoch(rank, epoch, optimizer, parallel_loader, model)
+        complete_epoch(epoch, optimizer, parallel_loader, model)
 
         epoch_time = time.time() - epoch_start_time
         epoch_times.append(epoch_time)
-        print(f"[Rank {rank}] - Epoch {epoch} done in {epoch_time:.2f}s")
+
+        print(f"[Rank {RANK}] - Epoch {epoch} done in {epoch_time:.2f}s")
 
     # Total training time
     total_time = time.time() - start_time
-    print(f"[Rank {rank}] - All epochs complete in {total_time:.2f}s")
+    print(f"[Rank {RANK}] - All epochs complete in {total_time:.2f}s")
 
-    # Each rank processes (dataset_size / world_size) * epochs samples
-    local_samples = (len(dataset) / world_size) * epochs
+    # Each rank processes (dataset_size / WORLD_SIZE) * epochs samples
+    local_samples = (len(dataset) / WORLD_SIZE) * epochs
     local_throughput = local_samples / total_time
 
     # Average epoch time (local)
@@ -166,12 +169,11 @@ def main():
         avg_epoch_time = 0.0
 
     print(
-        f"[Rank {rank}] - local_samples={local_samples:.1f}, total_time={total_time:.2f}s, "
+        f"[Rank {RANK}] - local_samples={local_samples:.1f}, total_time={total_time:.2f}s, "
         f"local_throughput={local_throughput:.2f} samples/s, local_avg_epoch_time={avg_epoch_time:.2f}s"
     )
 
-    print(f"[Rank {rank}] training complete. Exiting main().")
-
+    print(f"[Rank {RANK}] training complete. Exiting main().")
 
 if __name__ == "__main__":
     main()
