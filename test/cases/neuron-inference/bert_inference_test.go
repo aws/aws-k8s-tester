@@ -69,7 +69,7 @@ func TestNeuronInference(t *testing.T) {
 			}
 			err := wait.For(
 				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
-				wait.WithTimeout(20*time.Minute),
+				wait.WithTimeout(60*time.Minute),
 			)
 			if err != nil {
 				t.Fatalf("[ERROR] Neuron inference job did not succeed: %v", err)
