@@ -10,13 +10,15 @@ RUN  wget -O go.tar.gz https://go.dev/dl/$(cat go-version.txt).${TARGETOS}-${TAR
 ENV GOPATH=/usr/local/go
 ENV PATH=$PATH:$GOPATH/bin
 ENV GOPROXY=direct
-ARG KUBETEST2_VERSION=v0.0.0-20231113220322-d7fcb799ce84
-RUN go install sigs.k8s.io/kubetest2/...@${KUBETEST2_VERSION}
 
 WORKDIR $GOPATH/src/github.com/aws/aws-k8s-tester
 COPY . .
 RUN go install ./...
 RUN go test -c -tags=e2e ./test/... -o $GOPATH/bin/
+
+RUN go install sigs.k8s.io/kubetest2 && \
+    go install sigs.k8s.io/kubetest2/kubetest2-tester-exec && \
+    go install sigs.k8s.io/kubetest2/kubetest2-tester-ginkgo
 
 FROM public.ecr.aws/amazonlinux/amazonlinux:2
 ARG TARGETOS
