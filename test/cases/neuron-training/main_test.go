@@ -122,8 +122,12 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 
 	// Check if all nodes have the same instance type
 	for i := 1; i < len(nodes.Items); i++ {
-		if nodes.Items[i].Labels["node.kubernetes.io/instance-type"] != nodes.Items[i-1].Labels["node.kubernetes.io/instance-type"] {
+		currentInstanceType := nodes.Items[i].Labels["node.kubernetes.io/instance-type"]
+		if currentInstanceType != nodes.Items[i-1].Labels["node.kubernetes.io/instance-type"] {
 			return ctx, fmt.Errorf("inconsistent node types detected, all nodes must have the same instance type")
+		} else if *nodeType == "" {
+			log.Printf("[INFO] nodeType was not set, discovered type %s", currentInstanceType)
+			*nodeType = currentInstanceType
 		}
 	}
 
