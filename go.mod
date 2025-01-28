@@ -4,6 +4,9 @@ go 1.23.2
 
 toolchain go1.23.4
 
+// project is abandoned and the vanity URL has cert issues
+replace go.opencensus.io v0.24.0 => github.com/census-instrumentation/opencensus-go v0.24.0
+
 require (
 	github.com/aws/aws-sdk-go v1.51.2
 	github.com/aws/aws-sdk-go-v2 v1.32.7
@@ -319,6 +322,7 @@ require (
 require (
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
+	github.com/go-resty/resty/v2 v2.11.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/moby/spdystream v0.4.0 // indirect
