@@ -88,6 +88,12 @@ def main():
         init_method="xla://"
     )
 
+    print(f"[RANK {RANK}] waiting for all processes to join")
+    # need to make sure all processes are initialized together. variance in compilation times
+    # and whatnot can cause later failures if processes on different nodes start first epoch
+    # earlier than others
+    dist.barrier()
+
     # print info with xla runtime functions to sanity check run context correctly propagates to backend
     print(f"Starting train.py with rank={xr.global_ordinal()}, world_size={xr.world_size()}")
 
