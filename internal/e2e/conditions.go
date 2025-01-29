@@ -2,9 +2,11 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
+	v1 "k8s.io/api/core/v1"
 	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
 
 	"sigs.k8s.io/e2e-framework/klient/k8s"
@@ -48,8 +50,14 @@ func (c *ConditionExtension) JobSucceeded(job k8s.Object) apimachinerywait.Condi
 		if err := c.resources.Get(ctx, job.GetName(), job.GetNamespace(), job); err != nil {
 			return false, err
 		}
-		status := job.(*batchv1.Job).Status
-		spec := job.(*batchv1.Job).Spec
+		batchJob := job.(*batchv1.Job)
+		status := batchJob.Status
+		spec := batchJob.Spec
+		for _, condition := range status.Conditions {
+			if condition.Type == batchv1.JobFailed && condition.Status == v1.ConditionTrue {
+				return false, fmt.Errorf("job failed")
+			}
+		}
 		if status.Succeeded != *spec.Completions {
 			return false, nil
 		}

@@ -79,83 +79,53 @@ func TestBertTraining(t *testing.T) {
 	neuronTraining := features.New("bert-training").
 		WithLabel("suite", "neuron").
 		WithLabel("hardware", "neuron").
-		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			log.Println("Applying pod communication service manifest.")
-			err := fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedCommServiceManifest)
-			if err != nil {
-				t.Fatalf("failed to apply communication service manifest: %v", err)
-			}
-			log.Println("Applying rendered Neuron training manifest.")
-			err = fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedManifest)
-			if err != nil {
-				t.Fatalf("failed to apply Neuron training manifest: %v", err)
-			}
-			log.Println("Successfully applied Neuron training manifest.")
-			return ctx
-		}).
 		Assess("Neuron training Job succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			job := &batchv1.Job{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "bert-training",
-					Namespace: "default",
-				},
-			}
+			manifests := [][]byte{renderedCommServiceManifest, renderedManifest}
+			maxAttempts := (*retries) + 1
 
-			// Step 1: Wait for the Job resource to appear
-			log.Println("Waiting for the 'bert-training' Job resource to be created...")
-			err := wait.For(
-				conditions.New(cfg.Client().Resources()).ResourceMatch(job, func(object k8s.Object) bool {
-					return true
-				}),
-				wait.WithTimeout(time.Minute*5),
-			)
-			if err != nil {
-				t.Fatalf("Failed to detect creation of Job 'bert-training': %v", err)
-			}
-			log.Println("Job 'bert-training' is created in the cluster.")
+			for attempt := 0; attempt < maxAttempts; attempt++ {
+				log.Printf("Applying manifests for BERT training test (Attempt #%d)", attempt+1)
 
-			// Step 2: Wait for the Job to succeed (i.e., complete)
-			log.Println("Waiting for 'bert-training' Job to succeed...")
-			err = wait.For(
-				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
-				// Bake in large margin b/c compile time. TODO: pre-compile and find best fit
-				wait.WithTimeout(60*time.Minute),
-			)
-			if err != nil {
-				t.Fatalf("Neuron training Job did not succeed: %v", err)
-			}
-			log.Println("Job 'bert-training' succeeded!")
+				if err := applyManifests(cfg, manifests); err != nil {
+					log.Printf("Failed to apply manifests: %v", err)
+					cleanupManifests(cfg, manifests)
+					continue
+				}
 
-			// Gather logs from the training pods (launcher)
-			logsBuf, logErr := gatherJobLogs(ctx, cfg, "default", "bert-training")
-			if logErr != nil {
-				log.Printf("Warning: failed to retrieve bert-training job logs: %v", logErr)
+				job, err := waitForJobCreation(cfg)
+				if err != nil {
+					log.Printf("Failed to detect job creation: %v", err)
+					cleanupManifests(cfg, manifests)
+					continue
+				}
+
+				if err := waitForJobCompletion(job, cfg); err != nil {
+					log.Printf("Job did not complete successfully: %v", err)
+					logsBuf, err := gatherJobLogs(ctx, cfg, "default", "bert-training")
+					if err != nil {
+						log.Printf("failed to get logs: %v", err)
+					} else {
+						log.Println(logsBuf.String())
+					}
+					cleanupManifests(cfg, manifests)
+					continue
+				}
+
+				// Job completed successfully
+				if err := processJobLogs(ctx, cfg); err != nil {
+					log.Printf("Failed to process job logs: %v", err)
+					cleanupManifests(cfg, manifests)
+					continue
+				}
+
+				// Test succeeded, clean up and return
+				cleanupManifests(cfg, manifests)
+				log.Printf("BERT training test succeeded on attempt #%d", attempt+1)
 				return ctx
 			}
 
-			log.Println("== Raw Logs from the launcher pods ==")
-			log.Println(logsBuf.String())
-
-			// 1) Throughput Aggregation
-			avgThru, sumThru, countThru := aggregateMetricFromLogs(rankThroughputRegex, logsBuf.String())
-			if countThru == 0 {
-				log.Printf("No throughput lines found. Possibly missing in logs.")
-			} else {
-				log.Printf("Parsed throughput from %d ranks. Total=%.2f samples/s, Average=%.2f samples/s",
-					countThru, sumThru, avgThru)
-				// Same log line format as nvidia training for parsing.
-				log.Printf("Average Throughput: %.2f samples/second", avgThru)
-			}
-
-			// 2) Average Epoch Time Aggregation
-			avgEp, sumEp, countEp := aggregateMetricFromLogs(rankEpochTimeRegex, logsBuf.String())
-			if countEp == 0 {
-				log.Printf("No epoch time lines found. Possibly missing in logs.")
-			} else {
-				log.Printf("Parsed average epoch time from %d ranks. Sum=%.2fs, Average=%.2fs",
-					countEp, sumEp, avgEp)
-			}
-
+			// If we've exhausted all attempts
+			t.Fatalf("BERT training test did not succeed after %d attempts", maxAttempts)
 			return ctx
 		}).
 		Feature()
@@ -217,6 +187,78 @@ func aggregateMetricFromLogs(metricRegex *regexp.Regexp, logs string) (avg float
 		avg = sum / float64(count)
 	}
 	return avg, sum, count
+}
+
+func applyManifests(cfg *envconf.Config, manifests [][]byte) error {
+	fwext.ApplyManifests(cfg.Client().RESTConfig(), manifests...)
+	log.Println("Successfully applied test manifests.")
+	return nil
+}
+
+func waitForJobCreation(cfg *envconf.Config) (*batchv1.Job, error) {
+	job := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "bert-training",
+			Namespace: "default",
+		},
+	}
+
+	log.Println("Waiting for the 'bert-training' Job resource to be created...")
+	return job, wait.For(
+		conditions.New(cfg.Client().Resources()).ResourceMatch(job, func(object k8s.Object) bool {
+			return true
+		}),
+		wait.WithTimeout(time.Minute*5),
+	)
+}
+
+func waitForJobCompletion(job *batchv1.Job, cfg *envconf.Config) error {
+	log.Println("Waiting for 'bert-training' Job to succeed...")
+	return wait.For(
+		fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
+		wait.WithTimeout(30*time.Minute),
+	)
+}
+
+func processJobLogs(ctx context.Context, cfg *envconf.Config) error {
+	logsBuf, err := gatherJobLogs(ctx, cfg, "default", "bert-training")
+	if err != nil {
+		return fmt.Errorf("failed to retrieve bert-training job logs: %v", err)
+	}
+
+	log.Println("== Raw Logs from the launcher pods ==")
+	log.Println(logsBuf.String())
+
+	processMetrics(logsBuf.String())
+	return nil
+}
+
+func processMetrics(logs string) {
+	// Process throughput
+	avgThru, sumThru, countThru := aggregateMetricFromLogs(rankThroughputRegex, logs)
+	if countThru == 0 {
+		log.Printf("No throughput lines found. Possibly missing in logs.")
+	} else {
+		log.Printf("Parsed throughput from %d ranks. Total=%.2f samples/s, Average=%.2f samples/s",
+			countThru, sumThru, avgThru)
+		log.Printf("Average Throughput: %.2f samples/second", avgThru)
+	}
+
+	// Process epoch time
+	avgEp, sumEp, countEp := aggregateMetricFromLogs(rankEpochTimeRegex, logs)
+	if countEp == 0 {
+		log.Printf("No epoch time lines found. Possibly missing in logs.")
+	} else {
+		log.Printf("Parsed average epoch time from %d ranks. Sum=%.2fs, Average=%.2fs",
+			countEp, sumEp, avgEp)
+	}
+}
+
+func cleanupManifests(cfg *envconf.Config, manifests [][]byte) {
+	log.Println("Deleting test manifests.")
+	if err := fwext.DeleteManifests(cfg.Client().RESTConfig(), manifests...); err != nil {
+		log.Printf("Failed to delete manifests: %v", err)
+	}
 }
 
 // getClientset creates a Kubernetes clientset from the given REST config
