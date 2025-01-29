@@ -2,9 +2,9 @@ package eksapi
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"text/template"
-	"fmt"
 
 	"k8s.io/klog"
 )

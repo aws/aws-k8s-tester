@@ -32,14 +32,20 @@ spec:
         - HPL_FCT_COMM_POLICY=1 
         - -x 
         - HPL_USE_NVSHMEM=0
+        # TODO: for arm it will be
+        # - hpl-aarch64.sh
         - hpl.sh 
         - --mem-affinity 
         - 0:0:0:0:1:1:1:1 
+        # --cpu-affinity needs to be tuned depending on the number of CPUs
+        # available on the instance type.
         - --cpu-affinity 
         - 0-13:14-27:28-41:42-55:56-69:70-83:84-97:98-111
         - --no-multinode 
         - --dat 
         - hpl-linux-x86_64/sample-dat/HPL-dgx-1N.dat
+        # TODO: the path differs for arm64
+        # - hpl-linux-aarch64-gpu/sample-dat/HPL-dgx-1N.dat
         volumeMounts:
         - mountPath: /dev/shm
           name: dshm

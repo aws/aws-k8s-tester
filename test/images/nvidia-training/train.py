@@ -110,8 +110,7 @@ def main():
     # Retrieve environment variables
     rank = int(os.getenv("OMPI_COMM_WORLD_RANK", "0"))
     world_size = int(os.getenv("OMPI_COMM_WORLD_SIZE", "1"))
-    num_gpus_per_node = int(os.getenv("NUM_GPUS_PER_NODE", "8"))
-    local_rank = rank % num_gpus_per_node
+    local_rank = int(os.getenv("OMPI_COMM_WORLD_LOCAL_RANK", "0"))
 
     print(f"Process started for rank {rank} with local rank {local_rank}")
 

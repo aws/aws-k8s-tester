@@ -75,13 +75,13 @@ func TestSingleNodeUnitTest(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "unit-test-job", Namespace: "default"},
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 			t.Log("Test log for unit-test-job:")
 			t.Log(log)
 			err = fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedJobUnitTestSingleNodeManifest)
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 			return ctx
 		}).
@@ -120,13 +120,13 @@ func TestSingleNodeUnitTest(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "hpc-benckmarks-job", Namespace: "default"},
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 			t.Log("Test log for hpc-benckmarks-job:")
 			t.Log(log)
 			err = fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedJobHpcBenchmarksSingleNodeManifest)
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 			return ctx
 		}).

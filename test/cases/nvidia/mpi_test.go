@@ -48,7 +48,15 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			t.Log("Applying single node manifest")
-			err := fwext.ApplyManifests(cfg.Client().RESTConfig(), mpiJobPytorchTrainingSingleNodeManifest)
+			renderedSingleNodeManifest, err := fwext.RenderManifests(mpiJobPytorchTrainingSingleNodeManifest, struct {
+				PytorchTestImage string
+			}{
+				PytorchTestImage: *pytorchImage,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedSingleNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
