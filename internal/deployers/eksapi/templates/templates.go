@@ -8,13 +8,14 @@ import (
 //go:embed infra.yaml
 var Infrastructure string
 
-//go:embed unmanaged-nodegroup-efa.yaml
-var UnmanagedNodegroupEFA string
-
 var (
 	//go:embed unmanaged-nodegroup.yaml.template
 	unmanagedNodegroupTemplate string
 	UnmanagedNodegroup         = template.Must(template.New("unmanagedNodegroup").Parse(unmanagedNodegroupTemplate))
+
+	//go:embed unmanaged-nodegroup-efa.yaml.template
+	unmanagedNodegroupEFATemplate string
+	UnmanagedNodegroupEFA         = template.Must(template.New("unmanagedNodegroupEFA").Parse(unmanagedNodegroupEFATemplate))
 )
 
 type UnmanagedNodegroupTemplateData struct {
