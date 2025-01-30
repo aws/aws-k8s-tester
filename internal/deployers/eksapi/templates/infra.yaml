@@ -42,6 +42,13 @@ Parameters:
   Subnet02AZ:
     Type: String
 
+  AutoMode:
+    Type: String
+    AllowedValues:
+      - "true"
+      - "false"
+    Default: "false"
+
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -60,6 +67,8 @@ Conditions:
       - Fn::Equals:
         - ""
         - !Ref AdditionalClusterRoleServicePrincipal
+
+  IsAutoMode: !Equals [!Ref AutoMode, "true"]
 
 Resources:
   #
@@ -415,26 +424,38 @@ Resources:
           - - "arn:"
             - !Ref "AWS::Partition"
             - ":iam::aws:policy/AmazonEKSClusterPolicy"
-        - !Join
-          - ""
-          - - "arn:"
-            - !Ref "AWS::Partition"
-            - ":iam::aws:policy/AmazonEKSBlockStoragePolicy"
-        - !Join
-          - ""
-          - - "arn:"
-            - !Ref "AWS::Partition"
-            - ":iam::aws:policy/AmazonEKSComputePolicy"
-        - !Join
-          - ""
-          - - "arn:"
-            - !Ref "AWS::Partition"
-            - ":iam::aws:policy/AmazonEKSLoadBalancingPolicy"
-        - !Join
-          - ""
-          - - "arn:"
-            - !Ref "AWS::Partition"
-            - ":iam::aws:policy/AmazonEKSNetworkingPolicy"
+        - !If
+          - IsAutoMode
+          - !Join
+            - ""
+            - - "arn:"
+              - !Ref "AWS::Partition"
+              - ":iam::aws:policy/AmazonEKSBlockStoragePolicy"
+          - !Ref "AWS::NoValue"
+        - !If
+          - IsAutoMode
+          - !Join
+            - ""
+            - - "arn:"
+              - !Ref "AWS::Partition"
+              - ":iam::aws:policy/AmazonEKSComputePolicy"
+          - !Ref "AWS::NoValue"
+        - !If
+          - IsAutoMode
+          - !Join
+            - ""
+            - - "arn:"
+              - !Ref "AWS::Partition"
+              - ":iam::aws:policy/AmazonEKSLoadBalancingPolicy"
+          - !Ref "AWS::NoValue"
+        - !If
+          - IsAutoMode
+          - !Join
+            - ""
+            - - "arn:"
+              - !Ref "AWS::Partition"
+              - ":iam::aws:policy/AmazonEKSNetworkingPolicy"
+          - !Ref "AWS::NoValue"
 
   NodeRole:
     Type: AWS::IAM::Role
