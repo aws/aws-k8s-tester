@@ -128,6 +128,10 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 				ParameterKey:   aws.String("Subnet02AZ"),
 				ParameterValue: aws.String(subnetAzs[1]),
 			},
+			{
+				ParameterKey:   aws.String("AutoMode"),
+				ParameterValue: aws.String(fmt.Sprintf("%t", opts.AutoMode)),
+			},
 		},
 	}
 	if opts.ClusterRoleServicePrincipal != "" {
