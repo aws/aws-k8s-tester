@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
+	fwext "github.com/aws/aws-k8s-tester/internal/e2e" // adjust if you store these helpers elsewhere
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 
+	// For embedding the DaemonSet manifest
 	_ "embed"
 )
 
@@ -33,29 +34,29 @@ func TestContainerdConfig(t *testing.T) {
 		WithLabel("suite", "nvidia").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			log.Println("[Setup] Applying containerd-check DaemonSet manifest.")
-			err := fwext.ApplyManifests(cfg.Client().RESTConfig(), containerdCheckDS)
-			if err != nil {
-				t.Fatalf("failed to apply containerd-check DS: %v", err)
+			if err := fwext.ApplyManifests(cfg.Client().RESTConfig(), containerdCheckDS); err != nil {
+				t.Fatalf("Failed to apply containerd-check DS: %v", err)
 			}
 			return ctx
 		}).
 		Assess("DaemonSet becomes ready", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ds := &appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "containerd-check",
-					Namespace: "default",
-				},
-			}
+			dsName := "containerd-check"
+			dsNS := "default"
 
 			log.Println("[Assess] Waiting up to 1 minute for containerd-check DS to become Ready...")
+			ds := &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      dsName,
+					Namespace: dsNS,
+				},
+			}
 			err := wait.For(
 				fwext.NewConditionExtension(cfg.Client().Resources()).DaemonSetReady(ds),
 				wait.WithTimeout(1*time.Minute),
 			)
 			if err != nil {
 				t.Logf("[Assess] containerd-check DS did not become Ready: %v", err)
-				// Attempt to retrieve DS pod logs for debugging
-				printDaemonSetPodLogs(ctx, cfg, "default", "app=containerd-check", t)
+				printDaemonSetPodLogs(ctx, cfg, dsNS, "app=containerd-check", t)
 				t.Fatalf("containerd-check DS not Ready within 1 minute")
 			}
 
@@ -63,12 +64,10 @@ func TestContainerdConfig(t *testing.T) {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			t.Log("[Teardown] Dumping DS logs before removal.")
-			printDaemonSetPodLogs(ctx, cfg, "default", "app=containerd-check", t)
-
-			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), containerdCheckDS)
-			if err != nil {
-				t.Fatalf("failed to delete containerd-check DS: %v", err)
+			// Remove DaemonSet without re-fetching logs to avoid duplicated “FAIL” lines.
+			t.Log("[Teardown] Removing containerd-check DS (no additional logs).")
+			if err := fwext.DeleteManifests(cfg.Client().RESTConfig(), containerdCheckDS); err != nil {
+				t.Fatalf("Failed to delete containerd-check DS: %v", err)
 			}
 			t.Log("[Teardown] containerd-check DS removed successfully.")
 			return ctx
@@ -78,19 +77,19 @@ func TestContainerdConfig(t *testing.T) {
 	testenv.Test(t, feat)
 }
 
+// printDaemonSetPodLogs retrieves logs from each DS pod once (when DS readiness fails).
 func printDaemonSetPodLogs(ctx context.Context, cfg *envconf.Config, namespace, labelSelector string, t *testing.T) {
 	clientset, err := getClientset(cfg.Client().RESTConfig())
 	if err != nil {
-		t.Logf("failed to create clientset: %v", err)
+		t.Logf("failed to create typed clientset: %v", err)
 		return
 	}
 
-	// List pods by label
 	pods, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
-		t.Logf("failed to list pods for label %q: %v", labelSelector, err)
+		t.Logf("failed to list pods: %v", err)
 		return
 	}
 	if len(pods.Items) == 0 {
@@ -98,13 +97,12 @@ func printDaemonSetPodLogs(ctx context.Context, cfg *envconf.Config, namespace, 
 		return
 	}
 
-	// Fetch logs from each container in each pod
 	for _, p := range pods.Items {
 		t.Logf("Pod %s status: %s", p.Name, p.Status.Phase)
 		for _, c := range p.Spec.Containers {
 			logs, logErr := readPodLogs(ctx, clientset, p.Namespace, p.Name, c.Name)
 			if logErr != nil {
-				t.Logf("Failed to get logs from %s/%s: %v", p.Name, c.Name, logErr)
+				t.Logf("Failed reading logs from %s/%s: %v", p.Name, c.Name, logErr)
 			} else {
 				t.Logf("=== Logs from %s/%s ===\n%s", p.Name, c.Name, logs)
 			}
@@ -112,37 +110,39 @@ func printDaemonSetPodLogs(ctx context.Context, cfg *envconf.Config, namespace, 
 	}
 }
 
+// readPodLogs streams logs from a specific container in a pod.
 func readPodLogs(ctx context.Context, clientset *kubernetes.Clientset, namespace, podName, containerName string) (string, error) {
 	req := clientset.CoreV1().Pods(namespace).GetLogs(podName, &v1.PodLogOptions{
 		Container: containerName,
 	})
 	stream, err := req.Stream(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to open log stream: %w", err)
+		return "", fmt.Errorf("failed to open log stream for %s/%s: %w", podName, containerName, err)
 	}
 	defer stream.Close()
 
+	var out string
 	buf := make([]byte, 4096)
-	var logs string
 	for {
 		n, rerr := stream.Read(buf)
 		if n > 0 {
-			logs += string(buf[:n])
+			out += string(buf[:n])
+		}
+		if rerr == io.EOF {
+			break
 		}
 		if rerr != nil {
-			if rerr == io.EOF {
-				break
-			}
-			return logs, fmt.Errorf("error reading logs: %w", rerr)
+			return out, fmt.Errorf("error reading logs: %w", rerr)
 		}
 	}
-	return logs, nil
+	return out, nil
 }
 
+// getClientset builds a typed Kubernetes client.
 func getClientset(restConfig *rest.Config) (*kubernetes.Clientset, error) {
-	clientset, err := kubernetes.NewForConfig(restConfig)
+	cs, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create kubernetes clientset: %w", err)
+		return nil, fmt.Errorf("failed to create clientset: %w", err)
 	}
-	return clientset, nil
+	return cs, nil
 }
