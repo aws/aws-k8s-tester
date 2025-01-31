@@ -24,82 +24,35 @@ spec:
                   fieldPath: status.podIP
             command:
             - /bin/sh
+            args:
             - -c
-            - |
-                echo password | sudo -S service ssh start
-
-                # Read the IPs from the hosts.txt file
-                WORKER_0_IP=$(sed -n '1p' /mnt/data/hosts.txt | tr -d '\r' | tr -d '\n' )
-                WORKER_1_IP=$(sed -n '2p' /mnt/data/hosts.txt | tr -d '\r' | tr -d '\n' )
+            - | 
+                WORKER_0_IP=$(getent hosts multi-node-nccom-test-worker-0.multi-node-nccom-test | awk '{print $1}')
+                WORKER_IPS=$WORKER_0_IP
+                for i in $(seq 1 $(({{.WorkerNodeCount}} - 1))); do
+                  WORKER_IPS="$WORKER_IPS $(getent hosts multi-node-nccom-test-worker-$i.multi-node-nccom-test | awk '{print $1}')"
+                done
 
                 export CCOM_SOCKET_IFNAME=eth0
                 export NEURON_RT_ROOT_COMM_ID=$WORKER_0_IP:63182
+                export OMPI_ALLOW_RUN_AS_ROOT=1
+                export OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
-                # Run the nccom-test command with the extracted IPs
-                NEURON_CORE_PER_NODE={{.NeuronCorePerNode}}
-                WORKER_NODE_COUNT={{.WorkerNodeCount}}
-                nccom-test -r $((NEURON_CORE_PER_NODE*WORKER_NODE_COUNT)) -N {{.WorkerNodeCount}} -b "8" -e "2G" -f "2" -n "5" -w "5" -d "fp32" allr --hosts $WORKER_0_IP $WORKER_1_IP --data-collector-host $POD_IP --data-collector-port 60006 --debug
-            ports:
-            - containerPort: 63182
-            - containerPort: 60006
-            - containerPort: 22
-            securityContext:
-              privileged: false
-            volumeMounts:
-              - name: shared-data
-                mountPath: /mnt/data
-          initContainers:
-          - name: init-worker-ips
-            image: {{.NeuronTestImage}}
-            command:
-            - /bin/sh
-            - -c
-            - |
-
-              WORKER_PODS=""
-              for i in $(seq 0 $(({{.WorkerNodeCount}} - 1))); do
-                WORKER_PODS="$WORKER_PODS multi-node-nccom-test-worker-$i"
-              done
-              WORKER_PODS=$(echo "$WORKER_PODS" | sed 's/ *$//')
-              
-              WORKER_IPS=""
-              # Collect worker pod IPs
-              for pod in $WORKER_PODS; do
-                IP=$(getent hosts $pod.multi-node-nccom-test.default.svc.cluster.local | awk '{print $1}')
-                if [ -z "$IP" ]; then
-                  echo "Error: Could not resolve IP for $pod" && exit 1
-                fi
-                WORKER_IPS="$WORKER_IPS$IP\n"
-              done
-
-              # Write the worker pod IPs to the shared volume
-              echo "$WORKER_IPS" > /mnt/data/hosts.txt
-            volumeMounts:
-              - name: shared-data
-                mountPath: /mnt/data
-          volumes:
-            - name: shared-data
-              emptyDir: {}
+                nccom-test -r $(({{.NeuronCorePerNode}}*{{.WorkerNodeCount}})) -N {{.WorkerNodeCount}} -b "8" -e "2G" -f "2" -n "5" -w "5" -d "fp32" allr --hosts $WORKER_IPS --data-collector-host $POD_IP --data-collector-port 60006 --debug
     Worker:
       replicas: {{.WorkerNodeCount}}
       template:
         spec:
           containers:
           - image: {{.NeuronTestImage}}
-            ports:
-            - containerPort: 63182
-            - containerPort: 60006
-            - containerPort: 22
             name: nccom-test-worker
-            command: ["/bin/sh", "-c"]
-            args: ["echo password | sudo -S service ssh start; while true; do sleep 30; done"]
             imagePullPolicy: Always
-            securityContext:
-              privileged: false
             resources:
               limits:
                 aws.amazon.com/neuron: {{.NeuronPerNode}}
+                aws.amazon.com/neuroncore: {{.NeuronCorePerNode}}
                 vpc.amazonaws.com/efa: {{.EfaInterfacePerNode}}
               requests:
                 aws.amazon.com/neuron: {{.NeuronPerNode}}
+                aws.amazon.com/neuroncore: {{.NeuronCorePerNode}}
                 vpc.amazonaws.com/efa: {{.EfaInterfacePerNode}}
