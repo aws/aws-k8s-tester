@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: containerd-check
+  namespace: default
+  labels:
+    app: containerd-check
+spec:
+  selector:
+    matchLabels:
+      app: containerd-check
+  template:
+    metadata:
+      labels:
+        app: containerd-check
+    spec:
+      containers:
+      - name: grep-containerd
+        image: public.ecr.aws/docker/library/busybox:latest
+        command:
+        - sh
+        - -c
+        - |
+          rc=0
+
+          # Check for ECR
+          grep -Eq '\.ecr\.' /host-etc/containerd/config.toml || {
+            echo "FAIL: no .ecr. reference in sandbox_image"
+            rc=1
+          }
+
+          # Check for NVIDIA runtime
+          grep -q 'nvidia-container-runtime' /host-etc/containerd/config.toml || {
+            echo "FAIL: no nvidia-container-runtime found"
+            rc=1
+          }
+
+          # Check for systemd cgroup
+          ( grep -q 'systemd_cgroup = true' /host-etc/containerd/config.toml \
+            || grep -q 'SystemdCgroup = true' /host-etc/containerd/config.toml ) || {
+            echo "FAIL: no systemd cgroup setting"
+            rc=1
+          }
+
+          # If rc != 0, print debug info and exit
+          if [ "$rc" -ne 0 ]; then
+            echo "=== config.toml contents ==="
+            cat /host-etc/containerd/config.toml
+            exit 1
+          fi
+
+          echo "containerd config check PASSED."
+
+          # Keep container running; let Kubelet mark it Ready
+          tail -f /dev/null
+
+        volumeMounts:
+        - name: containerd-config
+          mountPath: /host-etc/containerd
+          readOnly: true
+      volumes:
+      - name: containerd-config
+        hostPath:
+          path: /etc/containerd
