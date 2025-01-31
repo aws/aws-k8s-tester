@@ -16,39 +16,55 @@ spec:
     spec:
       containers:
       - name: grep-containerd
-        image: public.ecr.aws/docker/library/busybox:latest
+        image: public.ecr.aws/amazonlinux/amazonlinux:latest
         command:
         - sh
         - -c
         - |
-          rc=0
+          # 1. Ensure the script fails on any command or pipeline error
+          set -e
+          set -o pipefail
+
           echo "=== content read by the container ==="
           cat /host-etc/containerd/config.toml
 
-          grep -Eq '\.ecr\.' /host-etc/containerd/config.toml || {
-            echo "FAIL: no .ecr. reference in sandbox_image"
-            rc=1
-          }
+          # 2. Attempt to extract 'sandbox_image' from the config
+          #    If grep returns nothing, pipefail triggers an error
+          #    OR you can explicitly check if the variable is empty
+          source <(grep sandbox_image /host-etc/containerd/config.toml | tr -d ' "')
 
-          grep -q 'nvidia-container-runtime' /host-etc/containerd/config.toml || {
+          # 3. If sandbox_image is missing, fail explicitly
+          if [ -z "$sandbox_image" ]; then
+            echo "FAIL: no sandbox_image line found"
+            echo "=== debug ==="
+            exit 1
+          fi
+
+          # 4. Check that $sandbox_image references .ecr.
+          if [[ "$sandbox_image" != *".ecr."* ]]; then
+            echo "FAIL: no .ecr. reference in $sandbox_image"
+            echo "=== debug ==="
+            exit 1
+          fi
+
+          # 5. Check for 'nvidia-container-runtime'
+          if ! grep -q "nvidia-container-runtime" /host-etc/containerd/config.toml; then
             echo "FAIL: no nvidia-container-runtime found"
-            rc=1
-          }
+            echo "=== debug ==="
+            exit 1
+          fi
 
-          ( grep -q 'systemd_cgroup = true' /host-etc/containerd/config.toml \
-            || grep -q 'SystemdCgroup = true' /host-etc/containerd/config.toml ) || {
+          # 6. Check for 'systemd_cgroup = true' or 'SystemdCgroup = true'
+          if ! ( grep -q 'systemd_cgroup = true' /host-etc/containerd/config.toml || \
+                 grep -q 'SystemdCgroup = true' /host-etc/containerd/config.toml ); then
             echo "FAIL: no systemd cgroup setting"
-            rc=1
-          }
-
-          if [ "$rc" -ne 0 ]; then
             echo "=== debug ==="
             exit 1
           fi
 
           echo "containerd config check PASSED."
-          tail -f /dev/null   # Keep the pod running so DS can be marked Ready
-
+          # Keep container running so DS can be marked Ready
+          tail -f /dev/null
         volumeMounts:
         - name: containerd-config
           mountPath: /host-etc/containerd
