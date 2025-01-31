@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	fwext "github.com/aws/aws-k8s-tester/internal/e2e" // adjust if you store these helpers elsewhere
+	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
@@ -22,7 +22,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 
-	// For embedding the DaemonSet manifest
 	_ "embed"
 )
 
