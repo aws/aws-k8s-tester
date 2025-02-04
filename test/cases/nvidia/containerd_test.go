@@ -50,7 +50,7 @@ func TestContainerdConfig(t *testing.T) {
 			)
 			if err != nil {
 				t.Logf("[Assess] containerd-check DS did not become Ready: %v", err)
-				e2e.PrintDaemonSetPodLogs(ctx, cfg.Client().RESTConfig(), dsNS, "app=containerd-check", t)
+				e2e.PrintDaemonSetPodLogs(t, ctx, cfg.Client().RESTConfig(), dsNS, "app=containerd-check")
 				t.Fatalf("containerd-check DS not Ready within 1 minute")
 			}
 
