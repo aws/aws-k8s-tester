@@ -21,7 +21,7 @@ func PrintDaemonSetPodLogs(
 	namespace string,
 	labelSelector string,
 ) {
-	clientset, err := getClientset(restConfig)
+	clientset, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
 		t.Logf("failed to create typed clientset: %v", err)
 		return
@@ -67,28 +67,9 @@ func readPodLogs(
 	}
 	defer stream.Close()
 
-	var out string
-	buf := make([]byte, 4096)
-	for {
-		n, readErr := stream.Read(buf)
-		if n > 0 {
-			out += string(buf[:n])
-		}
-		if readErr == io.EOF {
-			break
-		}
-		if readErr != nil {
-			return out, fmt.Errorf("error reading logs: %w", readErr)
-		}
-	}
-	return out, nil
-}
-
-// getClientset returns a typed Kubernetes clientset from the given rest.Config.
-func getClientset(restConfig *rest.Config) (*kubernetes.Clientset, error) {
-	cs, err := kubernetes.NewForConfig(restConfig)
+	data, err := io.ReadAll(stream)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create clientset: %w", err)
+		return "", fmt.Errorf("error reading logs: %w", err)
 	}
-	return cs, nil
+	return string(data), nil
 }
