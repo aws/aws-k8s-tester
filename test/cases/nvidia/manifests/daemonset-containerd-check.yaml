@@ -15,7 +15,7 @@ spec:
         app: containerd-check
     spec:
       containers:
-      - name: grep-containerd
+      - name: containerd-check
         image: public.ecr.aws/amazonlinux/amazonlinux:latest
         command:
         - sh
