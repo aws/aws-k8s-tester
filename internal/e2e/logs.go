@@ -15,11 +15,11 @@ import (
 // PrintDaemonSetPodLogs retrieves logs from each container in each pod of a DaemonSet.
 // namespace & labelSelector identify the DaemonSet's pods (e.g. "default", "app=containerd-check").
 func PrintDaemonSetPodLogs(
+	t *testing.T,
 	ctx context.Context,
 	restConfig *rest.Config,
 	namespace string,
 	labelSelector string,
-	t *testing.T,
 ) {
 	clientset, err := getClientset(restConfig)
 	if err != nil {
