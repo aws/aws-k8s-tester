@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"log"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -77,10 +78,12 @@ func (c *ConditionExtension) ResourceCapacityNonZero(resourceLabel string) apima
         for _, node := range nodeList.Items {
             resource, ok := node.Status.Capacity[v1.ResourceName(resourceLabel)]
             if !ok {
-                return false, fmt.Errorf("Node %s does not have %s capacity defined", node.Name, resourceLabel)
+                log.Printf("Node %s does not have %s capacity defined", node.Name, resourceLabel)
+                return false, nil
             }
             if resource.Value() <= 0 {
-                return false, fmt.Errorf("Node %s has zero %s capacity", node.Name, resourceLabel)
+                log.Printf("Node %s has zero %s capacity", node.Name, resourceLabel)
+                return false, nil
             }
         }
         return true, nil
