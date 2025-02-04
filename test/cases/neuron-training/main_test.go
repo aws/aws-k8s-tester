@@ -1,5 +1,4 @@
 //go:build e2e
-
 package training
 
 import (
@@ -81,6 +80,19 @@ func TestMain(m *testing.M) {
 				return ctx, fmt.Errorf("EFA Device Plugin daemonset is not ready: %w", err)
 			}
 			log.Println("EFA Device Plugin daemonset is ready.")
+			return ctx, nil
+		},
+		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
+			log.Println("Waiting for Neuron devices to be available on nodes!")
+			err := wait.For(
+				fwext.NewConditionExtension(config.Client().Resources()).NeuronDevicesPresent(),
+				wait.WithTimeout(time.Second*60),
+				wait.WithInterval(time.Second*5),
+			)
+			if err != nil {
+				return ctx, fmt.Errorf("timeout waiting for Neuron devices to be available: %w", err)
+			}
+			log.Println("Neuron devices are now available on nodes")
 			return ctx, nil
 		},
 		checkNodeTypes,
