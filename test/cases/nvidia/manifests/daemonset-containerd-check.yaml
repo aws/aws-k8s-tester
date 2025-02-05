@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: containerd-check
+  namespace: default
+  labels:
+    app: containerd-check
+spec:
+  selector:
+    matchLabels:
+      app: containerd-check
+  template:
+    metadata:
+      labels:
+        app: containerd-check
+    spec:
+      containers:
+      - name: containerd-check
+        image: public.ecr.aws/amazonlinux/amazonlinux:latest
+        command:
+        - sh
+        - -c
+        - |
+          # 1. Ensure the script fails on any command or pipeline error
+          set -e
+          set -o pipefail
+
+          echo "=== content read by the container ==="
+          cat /host-etc/containerd/config.toml
+
+          # 2. Attempt to extract 'sandbox_image' from the config
+          #    If grep returns nothing, pipefail triggers an error
+          #    OR you can explicitly check if the variable is empty
+          source <(grep sandbox_image /host-etc/containerd/config.toml | tr -d ' "')
+
+          # 3. If sandbox_image is missing, fail explicitly
+          if [ -z "$sandbox_image" ]; then
+            echo "FAIL: no sandbox_image line found"
+            echo "=== debug ==="
+            exit 1
+          fi
+
+          # 4. Check that $sandbox_image references .ecr.
+          if [[ "$sandbox_image" != *".ecr."* ]]; then
+            echo "FAIL: no .ecr. reference in $sandbox_image"
+            echo "=== debug ==="
+            exit 1
+          fi
+
+          # 5. Check for 'nvidia-container-runtime'
+          if ! grep -q "nvidia-container-runtime" /host-etc/containerd/config.toml; then
+            echo "FAIL: no nvidia-container-runtime found"
+            echo "=== debug ==="
+            exit 1
+          fi
+
+          # 6. Check for 'systemd_cgroup = true' or 'SystemdCgroup = true'
+          if ! ( grep -q 'systemd_cgroup = true' /host-etc/containerd/config.toml || \
+                 grep -q 'SystemdCgroup = true' /host-etc/containerd/config.toml ); then
+            echo "FAIL: no systemd cgroup setting"
+            echo "=== debug ==="
+            exit 1
+          fi
+
+          echo "containerd config check PASSED."
+          # Keep container running so DS can be marked Ready
+          tail -f /dev/null
+        volumeMounts:
+        - name: containerd-config
+          mountPath: /host-etc/containerd
+          readOnly: true
+      volumes:
+      - name: containerd-config
+        hostPath:
+          path: /etc/containerd
