@@ -17,6 +17,7 @@ var (
 	efaPerNode        int
 	neuronPerNode     int
 	neuronCorePerNode int
+	retries           *int
 )
 
 func init() {
@@ -24,4 +25,5 @@ func init() {
 	bertTrainingImage = flag.String("bertTrainingImage", "", "Docker image used for BERT training workload")
 	efaEnabled = flag.Bool("efaEnabled", false, "Enable Elastic Fabric Adapter (EFA)")
 	nodeType = flag.String("nodeType", "", "Instance type for cluster nodes (e.g., inf1.24xlarge)")
+	retries = flag.Int("retries", 2, "Number of retries to attempt before marking the test as failed.")
 }

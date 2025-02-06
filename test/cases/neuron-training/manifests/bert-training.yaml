@@ -8,6 +8,7 @@ spec:
   completionMode: Indexed
   completions: {{.NodeCount}}
   parallelism: {{.NodeCount}}
+  backoffLimit: 0
   template:
     spec:
       restartPolicy: Never

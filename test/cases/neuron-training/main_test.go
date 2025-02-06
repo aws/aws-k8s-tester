@@ -1,5 +1,4 @@
 //go:build e2e
-
 package training
 
 import (
@@ -83,6 +82,7 @@ func TestMain(m *testing.M) {
 			log.Println("EFA Device Plugin daemonset is ready.")
 			return ctx, nil
 		},
+		checkNonZeroResourceCapacity,
 		checkNodeTypes,
 	)
 
@@ -183,4 +183,47 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 	log.Printf("[INFO] Total EFA Count: %d, EFA Per Node: %d", totalEfaCount, efaPerNode)
 
 	return ctx, nil
+}
+
+func checkNonZeroResourceCapacity(ctx context.Context, config *envconf.Config) (context.Context, error) {
+    log.Println("[INFO] Starting resource capacity checks")
+    
+    // Check Neuron devices
+    log.Println("Checking Neuron device capacity on nodes")
+    err := wait.For(
+        fwext.NewConditionExtension(config.Client().Resources()).AllNodesHaveNonZeroResourceCapacity("aws.amazon.com/neuron"),
+        wait.WithTimeout(time.Second*60),
+        wait.WithInterval(time.Second*5),
+    )
+    if err != nil {
+        return ctx, fmt.Errorf("failed to verify Neuron device capacity on nodes: %w", err)
+    }
+    log.Println("Neuron devices check passed - all nodes have non-zero capacity")
+
+    // Check Neuron cores
+    log.Println("Checking Neuron core capacity on nodes")
+    err = wait.For(
+        fwext.NewConditionExtension(config.Client().Resources()).AllNodesHaveNonZeroResourceCapacity("aws.amazon.com/neuroncore"),
+        wait.WithTimeout(time.Second*60),
+        wait.WithInterval(time.Second*5),
+    )
+    if err != nil {
+        return ctx, fmt.Errorf("failed to verify Neuron core capacity on nodes: %w", err)
+    }
+    log.Println("Neuron cores check passed - all nodes have non-zero capacity")
+
+    // Check EFA devices
+    log.Println("Checking EFA device capacity on nodes")
+    err = wait.For(
+        fwext.NewConditionExtension(config.Client().Resources()).AllNodesHaveNonZeroResourceCapacity("vpc.amazonaws.com/efa"),
+        wait.WithTimeout(time.Second*60),
+        wait.WithInterval(time.Second*5),
+    )
+    if err != nil {
+        return ctx, fmt.Errorf("failed to verify EFA device capacity on nodes: %w", err)
+    }
+    log.Println("EFA devices check passed - all nodes have non-zero capacity")
+
+    log.Println("[INFO] All resource capacity checks completed successfully")
+    return ctx, nil
 }
