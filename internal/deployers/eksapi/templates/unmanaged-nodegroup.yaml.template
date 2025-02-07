@@ -124,6 +124,8 @@ Resources:
           Arn: !GetAtt NodeInstanceProfile.Arn
         ImageId: !Ref AMIId
         InstanceType: "{{index .InstanceTypes 0}}"
+        MetadataOptions: 
+          HttpTokens: required
         BlockDeviceMappings:
           - DeviceName: !Ref VolumeMountPath
             Ebs:
