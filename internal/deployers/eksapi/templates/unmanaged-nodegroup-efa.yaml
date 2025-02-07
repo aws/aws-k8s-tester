@@ -172,6 +172,8 @@ Resources:
           Arn: !GetAtt NodeInstanceProfile.Arn
         ImageId: !Ref AMIId
         InstanceType: !Ref InstanceType
+        MetadataOptions: 
+          HttpTokens: required
         NetworkInterfaces:
           Fn::If:
             - IsP5Node
