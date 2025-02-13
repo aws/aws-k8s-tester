@@ -145,6 +145,9 @@ func (m *nodeManager) resolveInstanceTypes(opts *deployerOptions) (err error) {
 	if err != nil {
 		return err
 	}
+	if len(validInstanceTypes) == 0 {
+		return fmt.Errorf("none of the instance types %v were valid", instanceTypes)
+	}
 	opts.InstanceTypes = validInstanceTypes
 	klog.Infof("using instance types: %v", opts.InstanceTypes)
 	return nil
