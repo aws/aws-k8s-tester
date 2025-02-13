@@ -105,8 +105,10 @@ func (m *ClusterManager) waitForClusterActive(clusterName string) (*Cluster, err
 	out, err := eks.NewClusterActiveWaiter(m.clients.EKS()).WaitForOutput(context.TODO(), &eks.DescribeClusterInput{
 		Name: aws.String(clusterName),
 	}, clusterCreationTimeout)
-	// log whether there was an error or not
-	klog.Infof("cluster details: %+v", out.Cluster)
+	// log when possible, whether there was an error or not
+	if out != nil {
+		klog.Infof("cluster details: %+v", out.Cluster)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed waiting for cluster be active: %v", err)
 	}
