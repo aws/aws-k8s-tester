@@ -69,6 +69,16 @@ type nodeManager struct {
 	resourceID string
 }
 
+type networkInterface struct {
+	Description         string
+	NetworkCardIndex    int
+	DeviceIndex         int
+	InterfaceType       string
+	Groups              []string
+	SubnetId            string
+	DeleteOnTermination bool
+}
+
 func NewNodeManager(clients *awsClients, resourceID string) *nodeManager {
 	return &nodeManager{
 		clients:    clients,
@@ -466,9 +476,23 @@ func (m *nodeManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure, clu
 	if opts.UserDataFormat == "bottlerocket" {
 		volumeMountPath = "/dev/xvdb"
 	}
+	instanceType := opts.InstanceTypes[0]
+	networkInterfaces, err := m.getEfaNetworkInterfaces(instanceType, []string{cluster.securityGroupId}, subnetId)
+	if err != nil {
+		return fmt.Errorf("error getting efa interfaces: %v", err)
+	}
+	templateBuf := bytes.Buffer{}
+	err = templates.UnmanagedNodegroupEFA.Execute(&templateBuf, struct {
+		NetworkInterfaces []networkInterface
+	}{
+		NetworkInterfaces: networkInterfaces,
+	})
+	if err != nil {
+		return err
+	}
 	input := cloudformation.CreateStackInput{
 		StackName:    aws.String(stackName),
-		TemplateBody: aws.String(templates.UnmanagedNodegroupEFA),
+		TemplateBody: aws.String(templateBuf.String()),
 		Capabilities: []cloudformationtypes.Capability{cloudformationtypes.CapabilityCapabilityIam},
 		Parameters: []cloudformationtypes.Parameter{
 			{
@@ -517,7 +541,7 @@ func (m *nodeManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure, clu
 			},
 			{
 				ParameterKey:   aws.String("InstanceType"),
-				ParameterValue: aws.String(opts.InstanceTypes[0]),
+				ParameterValue: aws.String(instanceType),
 			},
 			{
 				ParameterKey:   aws.String("CapacityReservationId"),
@@ -745,4 +769,42 @@ func (m *nodeManager) getValidInstanceTypes(desiredInstanceTypes []string) ([]st
 		}
 	}
 	return validInstanceTypes, nil
+}
+
+func (m *nodeManager) getEfaNetworkInterfaces(instanceType string, securityGroups []string, subnetId string) ([]networkInterface, error) {
+	ec2InstanceType := ec2types.InstanceType(instanceType)
+	describeInstanceTypeOutput, err := m.clients.EC2().DescribeInstanceTypes(context.TODO(), &ec2.DescribeInstanceTypesInput{
+		InstanceTypes: []ec2types.InstanceType{ec2InstanceType},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to describe instance type %s to get network interface support: %v", instanceType, err)
+	}
+	networkInfo := describeInstanceTypeOutput.InstanceTypes[0].NetworkInfo
+	if !aws.ToBool(networkInfo.EfaSupported) {
+		// fail early for better transparency
+		return nil, fmt.Errorf("cannot generate efa interfaces for instance type %s because it does not support efa", instanceType)
+	}
+
+	// 1 EFA interface is supported per network card
+	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/efa.html#efa-limits
+	numEfaInterfaces := int(aws.ToInt32(networkInfo.MaximumNetworkCards))
+	var networkInterfaces []networkInterface
+	for i := range numEfaInterfaces {
+		deviceIndex := 1
+		if i == 0 {
+			// First network card should use device 0
+			// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-efa.html#efa-launch
+			deviceIndex = 0
+		}
+		networkInterfaces = append(networkInterfaces, networkInterface{
+			Description:         "EFA-enabled network interface",
+			DeviceIndex:         deviceIndex,
+			NetworkCardIndex:    i,
+			InterfaceType:       "efa",
+			SubnetId:            subnetId,
+			Groups:              securityGroups,
+			DeleteOnTermination: true,
+		})
+	}
+	return networkInterfaces, nil
 }

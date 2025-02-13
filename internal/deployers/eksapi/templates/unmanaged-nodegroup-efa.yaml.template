@@ -1,0 +1,227 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'kubetest2-eksapi unmanaged nodegroup with EFA support'
+
+Parameters:
+  ResourceId:
+    Description: Unique identifier for this kubetest2-eksapi execution.
+    Type: String
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+
+  AMIId:
+    Type: String
+    Description: Specify AMI id for the node instances.
+
+  NodeDiskSize:
+    Type: Number
+    Description: Node disk size in gigabytes.
+    Default: 100
+
+  NodeCount:
+    Type: Number
+
+  ClusterName:
+    Type: String
+
+  NodeRoleName:
+    Description: The IAM role name of worker nodes.
+    Type: String
+
+  UserData:
+    Type: String
+
+  VolumeMountPath:
+    Type: String
+
+  CapacityReservationId:
+    Type: String
+    Description: Capacity reservation id for the unmanaged nodegroup
+
+  UserDataIsMIMEPart:
+    Description: "User data should be embedded as a part of a multi-part MIME document"
+    Default: true
+    Type: String
+    AllowedValues: [true, false]
+
+  InstanceType:
+    Type: String
+    Description: Efa supports only one instance type in the cluster. eg. p3dn.24xlarge, p4d.24xlarge or p5.48xlarge
+
+Conditions:
+  IsCapacityReservationIdSet: !Not [!Equals [!Ref CapacityReservationId, ""]]
+  IsUserDataMIMEPart: !Equals [true, !Ref UserDataIsMIMEPart]
+
+Resources:
+  EFASecurityGroupIngress:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      Description: Allow node to communicate with each other
+      FromPort: 0
+      ToPort: 65535
+      GroupId: !Ref SecurityGroup
+      IpProtocol: "-1"
+      SourceSecurityGroupId: !Ref SecurityGroup
+
+  EFASecurityGroupIngressControlPlane:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      Description: Allow pods to communicate with the cluster API Server
+      FromPort: 443
+      ToPort: 443
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      SourceSecurityGroupId: !Ref SecurityGroup
+
+  EFASecurityGroupFromControlPlaneIngress:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      Description: Allow worker Kubelets and pods to receive communication from the cluster control plane
+      FromPort: 1025
+      ToPort: 65535
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+      SourceSecurityGroupId: !Ref SecurityGroup
+
+  EFASecurityGroupEgress:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      Description: Allow the efa worker nodes outbound communication
+      DestinationSecurityGroupId: !Ref SecurityGroup
+      FromPort: 0
+      ToPort: 65536
+      GroupId: !Ref SecurityGroup
+      IpProtocol: "-1"
+  
+  EFASecurityGroupEgressAllIpv4:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      Description: Allow the efa worker nodes outbound communication
+      FromPort: 0
+      ToPort: 65536
+      CidrIp: "0.0.0.0/0"
+      GroupId: !Ref SecurityGroup
+      IpProtocol: "-1"
+
+  EFASecurityGroupEgressAllIpv6:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      Description: Allow the efa worker nodes outbound communication
+      FromPort: 0
+      ToPort: 65536
+      CidrIpv6: "::/0"
+      GroupId: !Ref SecurityGroup
+      IpProtocol: "-1"
+
+  EFASecurityGroupEgressControlPlane:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      Description: Allow the cluster control plane to communicate with worker Kubelet and pods
+      DestinationSecurityGroupId: !Ref SecurityGroup
+      FromPort: 1025
+      ToPort: 65535
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+
+  ControlPlaneEgressToEFASecurityGroupOn443:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      Description: Allow the cluster control plane to communicate with pods running extension API servers on port 443
+      DestinationSecurityGroupId: !Ref SecurityGroup
+      FromPort: 443
+      ToPort: 443
+      GroupId: !Ref SecurityGroup
+      IpProtocol: tcp
+
+  NodeInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref NodeRoleName
+
+  NodeLaunchTemplate:
+    Type: "AWS::EC2::LaunchTemplate"
+    Properties:
+      LaunchTemplateName: !Ref ResourceId
+      LaunchTemplateData:
+        BlockDeviceMappings:
+          - DeviceName: !Ref VolumeMountPath
+            Ebs:
+              DeleteOnTermination: true
+              VolumeSize: !Ref NodeDiskSize
+              VolumeType: gp2
+        CapacityReservationSpecification:
+          Fn::If:
+            - IsCapacityReservationIdSet
+            - CapacityReservationTarget:
+                CapacityReservationId: !Ref CapacityReservationId
+            - !Ref AWS::NoValue
+        IamInstanceProfile:
+          Arn: !GetAtt NodeInstanceProfile.Arn
+        ImageId: !Ref AMIId
+        InstanceType: !Ref InstanceType
+        MetadataOptions: 
+          HttpTokens: required
+        NetworkInterfaces: 
+        {{range $networkInterface := .NetworkInterfaces}}
+          - Description: "{{$networkInterface.Description}}"
+            NetworkCardIndex: {{$networkInterface.NetworkCardIndex}}
+            DeviceIndex: {{$networkInterface.DeviceIndex}}
+            InterfaceType: {{$networkInterface.InterfaceType}}
+            Groups: {{$networkInterface.Groups}}
+            SubnetId: {{$networkInterface.SubnetId}}
+            DeleteOnTermination: {{$networkInterface.DeleteOnTermination}}
+        {{- end}}
+        UserData:
+          Fn::Base64:
+            Fn::If:
+              - IsUserDataMIMEPart
+              - Fn::Sub: |
+                  Content-Type: multipart/mixed; boundary="BOUNDARY"
+                  MIME-Version: 1.0
+
+                  --BOUNDARY
+                  ${UserData}
+
+                  --BOUNDARY
+                  Content-Type: text/x-shellscript; charset="us-ascii"
+                  MIME-Version: 1.0
+
+                  #!/usr/bin/env bash
+                  /opt/aws/bin/cfn-signal \
+                    --stack  ${AWS::StackName} \
+                    --resource NodeGroup \
+                    --region ${AWS::Region}
+
+                  --BOUNDARY--
+              - Fn::Sub: |
+                  ${UserData}
+
+  NodeGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Ref ResourceId
+      MixedInstancesPolicy:
+        LaunchTemplate:
+          LaunchTemplateSpecification:
+            LaunchTemplateId: !Ref NodeLaunchTemplate
+            Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
+      DesiredCapacity: !Ref NodeCount
+      MinSize: !Ref NodeCount
+      MaxSize: !Ref NodeCount
+      VPCZoneIdentifier: !Ref SubnetIds
+      Tags:
+        - Key: Name
+          Value: !Sub "${ClusterName}-Node"
+          PropagateAtLaunch: true
+        - Key: !Sub "kubernetes.io/cluster/${ClusterName}"
+          Value: owned
+          PropagateAtLaunch: true
