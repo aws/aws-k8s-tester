@@ -114,7 +114,7 @@ func (j *janitor) sweepWorker(wg *sync.WaitGroup, stackQueue <-chan cloudformati
 		clusterManager := NewClusterManager(clients, resourceID)
 		nodeManager := NewNodeManager(clients, resourceID)
 		klog.Infof("deleting resources (%v old): %s", resourceAge, resourceID)
-		if err := deleteResources(infraManager, clusterManager, nodeManager /* TODO: pass a k8sClient */, nil, nil); err != nil {
+		if err := deleteResources(infraManager, clusterManager, nodeManager, nil /* k8sClient */, nil /* deployerOptions */); err != nil {
 			errChan <- fmt.Errorf("failed to delete resources: %s: %v", resourceID, err)
 		}
 	}

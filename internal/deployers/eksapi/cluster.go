@@ -13,11 +13,6 @@ import (
 	"k8s.io/klog/v2"
 )
 
-const (
-	clusterCreationTimeout = time.Minute * 15
-	clusterDeletionTimeout = time.Minute * 15
-)
-
 type ClusterManager struct {
 	clients    *awsClients
 	resourceID string
@@ -93,18 +88,18 @@ func (m *ClusterManager) getOrCreateCluster(infra *Infrastructure, opts *deploye
 	} else {
 		klog.Infof("reusing existing static cluster %s", opts.StaticClusterName)
 	}
-	cluster, waitErr := m.waitForClusterActive(targetClusterName)
+	cluster, waitErr := m.waitForClusterActive(targetClusterName, opts.ClusterCreationTimeout)
 	if waitErr != nil {
 		return nil, fmt.Errorf("failed to wait for cluster to become active: %v", waitErr)
 	}
 	return cluster, nil
 }
 
-func (m *ClusterManager) waitForClusterActive(clusterName string) (*Cluster, error) {
+func (m *ClusterManager) waitForClusterActive(clusterName string, timeout time.Duration) (*Cluster, error) {
 	klog.Infof("waiting for cluster to be active: %s", clusterName)
 	out, err := eks.NewClusterActiveWaiter(m.clients.EKS()).WaitForOutput(context.TODO(), &eks.DescribeClusterInput{
 		Name: aws.String(clusterName),
-	}, clusterCreationTimeout)
+	}, timeout)
 	// log when possible, whether there was an error or not
 	if out != nil {
 		klog.Infof("cluster details: %+v", out.Cluster)
@@ -167,8 +162,7 @@ func (m *ClusterManager) deleteCluster() error {
 	err = eks.NewClusterDeletedWaiter(m.clients.EKS()).
 		Wait(context.TODO(), &eks.DescribeClusterInput{
 			Name: aws.String(m.resourceID),
-		},
-			clusterDeletionTimeout)
+		}, time.Minute*15) // TODO: make this configurable? it's more complicated than the creation timeout, since this func may be called by the janitor
 	if err != nil {
 		return fmt.Errorf("failed to wait for cluster to be deleted: %v", err)
 	}
