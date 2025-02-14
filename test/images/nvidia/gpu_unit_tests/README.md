@@ -42,7 +42,6 @@ Create PR with the new `tests/test_sysinfo.sh.data/xxx`
   - test_01_device_query
   - test_02_vector_add
   - test_03_bandwidth
-  - test_04_bus_grind
-  - test_05_dcgm_diagnostics
+  - test_04_dcgm_diagnostics
 
 

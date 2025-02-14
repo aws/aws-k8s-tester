@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"slices"
 	"testing"
 	"time"
@@ -37,7 +38,10 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatalf("failed to initialize test environment: %v", err)
 	}
-	testenv = env.NewWithConfig(cfg)
+
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+	testenv = env.NewWithConfig(cfg).WithContext(ctx)
 
 	manifests := [][]byte{
 		nvidiaDevicePluginManifest,
@@ -147,15 +151,10 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		return ctx, fmt.Errorf("no nodes found in the cluster")
 	}
 
-	singleNodeType := true
 	for i := 1; i < len(nodes.Items); i++ {
 		if nodes.Items[i].Labels["node.kubernetes.io/instance-type"] != nodes.Items[i-1].Labels["node.kubernetes.io/instance-type"] {
-			singleNodeType = false
-			break
+			return ctx, fmt.Errorf("node types are not the same, all node types must be the same in the cluster")
 		}
-	}
-	if !singleNodeType {
-		return ctx, fmt.Errorf("node types are not the same, all node types must be the same in the cluster")
 	}
 
 	if *nodeType != "" {

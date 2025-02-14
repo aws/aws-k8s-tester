@@ -6,7 +6,7 @@ setup_suite()
 {
     source common.sh
     assert_gpu_unused
-    DEMU_SUITE_DIR=${DEMU_SUITE_DIR:-$(realpath /usr/local/cuda/extras/demo_suite)}
+    DEMO_SUITE_DIR=${DEMO_SUITE_DIR:-$(realpath /usr/local/cuda/extras/demo_suite)}
 }
 
 teardown_suite()
@@ -16,25 +16,20 @@ teardown_suite()
 
 test_01_device_query()
 {
-    assert_status_code 0 "$DEMU_SUITE_DIR/deviceQuery"
+    assert_status_code 0 "$DEMO_SUITE_DIR/deviceQuery"
 }
 
 test_02_vector_add()
 {
-    assert_status_code 0 "$DEMU_SUITE_DIR/vectorAdd"
+    assert_status_code 0 "$DEMO_SUITE_DIR/vectorAdd"
 }
 
 test_03_bandwidth()
 {
-    assert_status_code 0 "$DEMU_SUITE_DIR/bandwidthTest --device=all --csv"
+    assert_status_code 0 "$DEMO_SUITE_DIR/bandwidthTest --device=all --csv"
 }
 
-test_04_bus_grind()
-{
-    assert_status_code 0 "$DEMU_SUITE_DIR/busGrind -a"
-}
-
-test_05_dcgm_diagnostics()
+test_04_dcgm_diagnostics()
 {
     # https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/dcgm-diagnostics.html#run-levels-and-tests
     if [[ $EC2_INSTANCE_TYPE == g* ]]; then

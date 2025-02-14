@@ -16,6 +16,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
+ARG PYTORCH_BRANCH=v2.5.0
+ARG PYTORCH_BUILD_ENV="MAX_JOBS=8 BUILD_TEST=0"
+
 ###############################################################################
 # 1) System packages
 ###############################################################################
@@ -75,3 +78,20 @@ WORKDIR /app
 COPY infer.py /app/
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
+
+###############################################################################
+# 4) Install Pytorch from Source
+###############################################################################
+# envs needed to make the path of NVCC known to the compilation
+ENV CUDA_HOME=/usr/local/cuda
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64
+ENV PATH=$PATH:$CUDA_HOME/bin
+# this list could be minimized based on the supported GPUs
+ENV TORCH_CUDA_ARCH_LIST="7.5 8.0 8.6 8.7 8.9 9.0"
+
+RUN pip3 install typing-extensions sympy
+RUN git clone \
+      --recursive https://github.com/pytorch/pytorch.git \
+      --branch $PYTORCH_BRANCH \
+ && cd pytorch && eval "$PYTORCH_BUILD_ENV python3 setup.py install" && cd .. \
+ && rm -rf pytorch

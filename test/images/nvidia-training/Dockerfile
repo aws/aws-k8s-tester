@@ -7,12 +7,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Set default values for MASTER_ADDR, MASTER_PORT, and NUM_GPUS_PER_NODE
 ENV MASTER_ADDR=127.0.0.1
 ENV MASTER_PORT=12355
-ENV NUM_GPUS_PER_NODE=8
 
 # Python dependency version numbers
 ARG PYTHON=python3.10
 ARG PYTHON_VERSION=3.10.12
-ARG PIP=pip3
+
+ARG PYTORCH_BRANCH=v2.3.0
+ARG PYTORCH_BUILD_ENV="MAX_JOBS=8 BUILD_TEST=0"
 
 RUN apt-get update \
  && apt-get upgrade -y \
@@ -58,9 +59,22 @@ RUN wget -q https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VER
  && cd .. && rm -rf ../Python-$PYTHON_VERSION* \
  && ln -s /usr/local/bin/pip3 /usr/bin/pip \
  && ln -s /usr/local/bin/$PYTHON /usr/local/bin/python \
- && ${PIP} --no-cache-dir install --upgrade \
+ && pip --no-cache-dir install --upgrade \
     pip \
     setuptools
+
+# Install Pytorch from Source
+ENV CUDA_HOME=/usr/local/cuda
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64
+ENV PATH=$PATH:$CUDA_HOME/bin
+ENV TORCH_CUDA_ARCH_LIST="7.5 8.0 8.6 8.7 8.9 9.0"
+
+RUN pip install typing-extensions sympy pyyaml
+RUN git clone \
+      --recursive https://github.com/pytorch/pytorch.git \
+      --branch $PYTORCH_BRANCH \
+ && cd pytorch && eval "$PYTORCH_BUILD_ENV python3 setup.py install" && cd .. \
+ && rm -rf pytorch
 
 # Set the working directory in the container
 WORKDIR /app
@@ -74,7 +88,7 @@ RUN python -m pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 ARG EFA_INSTALLER_VERSION=latest
-ARG AWS_OFI_NCCL_VERSION=1.9.1
+ARG AWS_OFI_NCCL_VERSION=1.13.2
 ARG NCCL_TESTS_VERSION=master
 
 RUN apt-get update -y && \
@@ -94,7 +108,7 @@ RUN mkdir -p /var/run/sshd && \
     sed -i 's/#\(StrictModes \).*/\1no/g' /etc/ssh/sshd_config
 
 # Set environment variables for OpenMPI, CUDA, EFA, and NCCL
-ENV LD_LIBRARY_PATH /opt/amazon/openmpi/lib64:/opt/amazon/openmpi/lib:/opt/amazon/efa/lib64:/opt/aws-ofi-nccl/install/lib:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64:/usr/local/lib/:/usr/lib64:/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH /opt/amazon/openmpi/lib64:/opt/amazon/openmpi/lib:/opt/amazon/efa/lib64:/opt/aws-ofi-nccl/install/lib:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64:/usr/local/lib/:/usr/lib64:/usr/lib/x86_64-linux-gnu/:/usr/lib/aarch64-linux-gnu/:$LD_LIBRARY_PATH
 ENV PATH /usr/local/cuda/bin:/opt/amazon/openmpi/bin:/opt/amazon/efa/bin:/usr/sbin:/usr/bin:/usr/local/bin:$PATH
 
 # Install EFA
@@ -107,7 +121,7 @@ RUN cd $HOME \
 
 # Install NCCL (version specified)
 RUN apt-key del 7fa2af80 && \
-    curl -L -O https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-keyring_1.0-1_all.deb && \
+    curl -L -O https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/$(uname -m | sed 's/aarch64/sbsa/')/cuda-keyring_1.0-1_all.deb && \
     dpkg -i cuda-keyring_1.0-1_all.deb && \
     sudo apt install libnccl2=2.18.5-1+cuda12.2 libnccl-dev=2.18.5-1+cuda12.2
 
