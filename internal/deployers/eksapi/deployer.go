@@ -55,16 +55,17 @@ type deployer struct {
 }
 
 type deployerOptions struct {
-	Addons                      []string `flag:"addons" desc:"Managed addons (name:version pairs) to create in the cluster. Use 'latest' for the most recent version, or 'default' for the default version."`
-	AMI                         string   `flag:"ami" desc:"AMI for unmanaged nodes"`
-	AMIType                     string   `flag:"ami-type" desc:"AMI type for managed nodes"`
-	AutoMode                    bool     `flag:"auto-mode" desc:"Enable EKS Auto Mode"`
-	CapacityReservation         bool     `flag:"capacity-reservation" desc:"Use capacity reservation for the unmanaged nodegroup"`
-	ClusterRoleServicePrincipal string   `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
-	EFA                         bool     `flag:"efa" desc:"Create EFA interfaces on the node of an unmanaged nodegroup. Requires --unmanaged-nodes."`
-	EKSEndpointURL              string   `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
-	EmitMetrics                 bool     `flag:"emit-metrics" desc:"Record and emit metrics to CloudWatch"`
-	ExpectedAMI                 string   `flag:"expected-ami" desc:"Expected AMI of nodes. Up will fail if the actual nodes are not utilizing the expected AMI. Defaults to --ami if defined."`
+	Addons                      []string      `flag:"addons" desc:"Managed addons (name:version pairs) to create in the cluster. Use 'latest' for the most recent version, or 'default' for the default version."`
+	AMI                         string        `flag:"ami" desc:"AMI for unmanaged nodes"`
+	AMIType                     string        `flag:"ami-type" desc:"AMI type for managed nodes"`
+	AutoMode                    bool          `flag:"auto-mode" desc:"Enable EKS Auto Mode"`
+	CapacityReservation         bool          `flag:"capacity-reservation" desc:"Use capacity reservation for the unmanaged nodegroup"`
+	ClusterCreationTimeout      time.Duration `flag:"cluster-creation-timeout" desc:"Time to wait for cluster to be created and become active."`
+	ClusterRoleServicePrincipal string        `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
+	EFA                         bool          `flag:"efa" desc:"Create EFA interfaces on the node of an unmanaged nodegroup. Requires --unmanaged-nodes."`
+	EKSEndpointURL              string        `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
+	EmitMetrics                 bool          `flag:"emit-metrics" desc:"Record and emit metrics to CloudWatch"`
+	ExpectedAMI                 string        `flag:"expected-ami" desc:"Expected AMI of nodes. Up will fail if the actual nodes are not utilizing the expected AMI. Defaults to --ami if defined."`
 	// TODO: remove this once it's no longer used in downstream jobs
 	GenerateSSHKey      bool          `flag:"generate-ssh-key" desc:"Generate an SSH key to use for tests. The generated key should not be used in production, as it will not have a passphrase."`
 	InstanceTypes       []string      `flag:"instance-types" desc:"Node instance types. Cannot be used with --instance-type-archs"`
@@ -250,6 +251,9 @@ func (d *deployer) verifyUpFlags() error {
 		d.IPFamily = string(ekstypes.IpFamilyIpv4)
 		klog.Infof("Using default IP family: %s", d.IPFamily)
 	}
+	if d.ClusterCreationTimeout == 0 {
+		d.ClusterCreationTimeout = time.Minute * 15
+	}
 	if d.NodeCreationTimeout == 0 {
 		d.NodeCreationTimeout = time.Minute * 20
 	}
@@ -324,7 +328,7 @@ func (d *deployer) Down() error {
 	return deleteResources(d.infraManager, d.clusterManager, d.nodeManager, d.k8sClient, &d.deployerOptions)
 }
 
-func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *nodeManager /* nillable */, k8sClient *k8sClient, opts *deployerOptions) error {
+func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *nodeManager, k8sClient *k8sClient /* nillable */, opts *deployerOptions /* nillable */) error {
 	if err := nm.deleteNodes(k8sClient, opts); err != nil {
 		return err
 	}
