@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"slices"
 	"testing"
-	"time"
 
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -31,6 +31,7 @@ var (
 	installDevicePlugin    *bool
 	efaEnabled             *bool
 	nvidiaTestImage        *string
+	pytorchImage           *string
 	skipUnitTestSubcommand *string
 	nodeCount              int
 	gpuPerNode             int
@@ -99,14 +100,10 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		return ctx, err
 	}
 
-	singleNodeType := true
 	for i := 1; i < len(nodes.Items)-1; i++ {
 		if nodes.Items[i].Labels["node.kubernetes.io/instance-type"] != nodes.Items[i-1].Labels["node.kubernetes.io/instance-type"] {
-			singleNodeType = false
+			return ctx, fmt.Errorf("Node types are not the same, all node types must be the same in the cluster")
 		}
-	}
-	if !singleNodeType {
-		return ctx, fmt.Errorf("Node types are not the same, all node types must be the same in the cluster")
 	}
 
 	if *nodeType != "" {
@@ -135,6 +132,7 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 func TestMain(m *testing.M) {
 	nodeType = flag.String("nodeType", "", "node type for the tests")
 	nvidiaTestImage = flag.String("nvidiaTestImage", "", "nccl test image for nccl tests")
+	pytorchImage = flag.String("pytorchImage", "763104351884.dkr.ecr.us-west-2.amazonaws.com/pytorch-training:2.1.0-gpu-py310-cu121-ubuntu20.04-ec2", "pytorch cuda image for single node tests")
 	efaEnabled = flag.Bool("efaEnabled", false, "enable efa tests")
 	installDevicePlugin = flag.Bool("installDevicePlugin", true, "install nvidia device plugin")
 	skipUnitTestSubcommand = flag.String("skipUnitTestSubcommand", "", "optional command to skip specified unit test, `-s test1|test2|...`")
@@ -143,7 +141,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("failed to initialize test environment: %v", err)
 	}
 	testenv = env.NewWithConfig(cfg)
-	ctx, cancel := context.WithTimeout(context.Background(), 55*time.Minute)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 	testenv = testenv.WithContext(ctx)
 

@@ -17,8 +17,12 @@ spec:
         - /bin/bash
         - ./gpu_unit_tests/unit_test
         env:
-            - name: SKIP_TESTS_SUBCOMMAND
-              value: {{.SkipTestSubcommand}}
+          - name: SKIP_TESTS_SUBCOMMAND
+            value: {{.SkipTestSubcommand}}
+          # because we started building these from source, this is just a
+          # regular binary.
+          - name: DEMO_SUITE_DIR
+            value: /usr/bin
         imagePullPolicy: Always
         resources:
           limits:

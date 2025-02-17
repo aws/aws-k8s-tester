@@ -41,15 +41,24 @@ RUN apt install -y \
   cmake \
   apt-utils \
   libhwloc-dev \
-  cuda-demo-suite-$CUDA_MAJOR_VERSION-$CUDA_MINOR_VERSION \
+  freeglut3-dev \
+  libglu1-mesa-dev \
   datacenter-gpu-manager
+
+RUN git clone https://github.com/NVIDIA/cuda-samples.git && \
+    cd cuda-samples && cd Samples && \
+    cd 0_Introduction/vectorAdd && make && cp vectorAdd /usr/bin && cd - && \
+    cd 1_Utilities/deviceQuery && make && cp deviceQuery /usr/bin && cd - && \
+    cd 1_Utilities/bandwidthTest && make && cp bandwidthTest /usr/bin && cd - && \
+    cd ../../ && \
+    rm -rf cuda-samples
 
 RUN mkdir -p /var/run/sshd \
   && sed -i 's/[ #]\(.*StrictHostKeyChecking \).*/ \1no/g' /etc/ssh/ssh_config \
   && echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config \
   && sed -i 's/#\(StrictModes \).*/\1no/g' /etc/ssh/sshd_config
-
-ENV LD_LIBRARY_PATH /opt/amazon/openmpi/lib:/opt/amazon/efa/lib:/opt/aws-ofi-nccl/install/lib:/usr/local/cuda/lib:/usr/local/lib/:/usr/lib64:/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
+ 
+ENV LD_LIBRARY_PATH /opt/amazon/openmpi/lib:/opt/amazon/efa/lib:/opt/aws-ofi-nccl/install/lib:/usr/local/cuda/lib:/usr/local/lib/:/usr/lib64:/usr/lib/x86_64-linux-gnu/:/usr/lib/aarch64-linux-gnu/:$LD_LIBRARY_PATH
 ENV PATH /usr/local/cuda/bin:/opt/amazon/openmpi/bin:/opt/amazon/efa/bin:/usr/sbin:/usr/bin:/usr/local/bin:$PATH
 
 # Install EFA
@@ -68,7 +77,7 @@ RUN apt update \
     libnccl-dev=2.22.3-1+cuda12.5
 
 # Install AWS-OFI-NCCL plugin
-ARG AWS_OFI_NCCL_VERSION=1.12.1-aws
+ARG AWS_OFI_NCCL_VERSION=1.13.2-aws
 RUN cd tmp \
   && curl -sL https://github.com/aws/aws-ofi-nccl/releases/download/v$AWS_OFI_NCCL_VERSION/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION.tar.gz | tar xvz \
   && cd aws-ofi-nccl-$AWS_OFI_NCCL_VERSION \
@@ -95,7 +104,7 @@ RUN cd /tmp \
 
 # Set a default command for debugging or modify as per requirements
 ENV NCCL_PROTO simple
-ENV LD_PRELOAD /usr/lib/x86_64-linux-gnu/libnccl.so:$LD_PRELOAD
+ENV LD_PRELOAD /usr/lib/x86_64-linux-gnu/libnccl.so:/usr/lib/aarch64-linux-gnu/libnccl.so:$LD_PRELOAD
 
 COPY test/images/nvidia/gpu_unit_tests ./gpu_unit_tests
 RUN chmod +x ./gpu_unit_tests/unit_test
