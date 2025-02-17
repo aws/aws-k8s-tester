@@ -191,7 +191,6 @@ func TestMain(m *testing.M) {
 			return ctx, nil
 		},
 		deployMPIOperator,
-		checkNodeTypes,
 	}
 
 	if *installDevicePlugin {
@@ -203,6 +202,7 @@ func TestMain(m *testing.M) {
 		setUpFunctions = append(setUpFunctions, deployEFAPlugin)
 	}
 
+	setUpFunctions = append(setUpFunctions, checkNodeTypes)
 	testenv.Setup(setUpFunctions...)
 
 	testenv.Finish(
