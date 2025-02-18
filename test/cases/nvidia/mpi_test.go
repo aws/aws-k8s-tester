@@ -43,12 +43,15 @@ type ncclTestManifestTplVars struct {
 }
 
 func TestMPIJobPytorchTraining(t *testing.T) {
+	var renderedSingleNodeManifest []byte
+
 	singleNode := features.New("single-node").
 		WithLabel("suite", "nvidia").
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			t.Log("Applying single node manifest")
-			renderedSingleNodeManifest, err := fwext.RenderManifests(mpiJobPytorchTrainingSingleNodeManifest, struct {
+			var err error
+			renderedSingleNodeManifest, err = fwext.RenderManifests(mpiJobPytorchTrainingSingleNodeManifest, struct {
 				PytorchTestImage string
 			}{
 				PytorchTestImage: *pytorchImage,
@@ -91,7 +94,7 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 			}
 			t.Log("Test log for pytorch-training-single-node:")
 			t.Log(log)
-			err = fwext.DeleteManifests(cfg.Client().RESTConfig(), mpiJobPytorchTrainingSingleNodeManifest)
+			err = fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedSingleNodeManifest)
 			if err != nil {
 				t.Fatal(err)
 			}
