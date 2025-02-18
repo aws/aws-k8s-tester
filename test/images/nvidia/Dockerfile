@@ -45,7 +45,7 @@ RUN apt install -y \
   libglu1-mesa-dev \
   datacenter-gpu-manager
 
-RUN git clone https://github.com/NVIDIA/cuda-samples.git && \
+RUN git clone https://github.com/NVIDIA/cuda-samples.git --branch v12.5 && \
     cd cuda-samples && cd Samples && \
     cd 0_Introduction/vectorAdd && make && cp vectorAdd /usr/bin && cd - && \
     cd 1_Utilities/deviceQuery && make && cp deviceQuery /usr/bin && cd - && \
