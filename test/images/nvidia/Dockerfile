@@ -104,7 +104,8 @@ RUN cd /tmp \
 
 # Set a default command for debugging or modify as per requirements
 ENV NCCL_PROTO simple
-ENV LD_PRELOAD /usr/lib/x86_64-linux-gnu/libnccl.so:/usr/lib/aarch64-linux-gnu/libnccl.so:$LD_PRELOAD
+# see https://linux.die.net/man/8/ld.so for usage. replaces LD_PRELOAD env.
+RUN echo "/usr/lib/$(uname -m)-linux-gnu/libnccl.so" >> /etc/ld.so.preload
 
 COPY test/images/nvidia/gpu_unit_tests ./gpu_unit_tests
 RUN chmod +x ./gpu_unit_tests/unit_test
