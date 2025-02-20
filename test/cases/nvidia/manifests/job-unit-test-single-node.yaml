@@ -23,6 +23,8 @@ spec:
           # regular binary.
           - name: DEMO_SUITE_DIR
             value: /usr/bin
+          - name: EC2_INSTANCE_TYPE
+            value: {{.NodeType}}
         imagePullPolicy: Always
         resources:
           limits:

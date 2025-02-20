@@ -30,6 +30,7 @@ type unitTestManifestTplVars struct {
 	NvidiaTestImage    string
 	SkipTestSubcommand string
 	GpuPerNode         int
+	NodeType           string
 }
 
 type hpcTestManifestTplVars struct {
@@ -49,6 +50,7 @@ func TestSingleNodeUnitTest(t *testing.T) {
 				NvidiaTestImage:    *nvidiaTestImage,
 				SkipTestSubcommand: *skipUnitTestSubcommand,
 				GpuPerNode:         gpuPerNode,
+				NodeType:           *nodeType,
 			})
 			if err != nil {
 				t.Fatal(err)
