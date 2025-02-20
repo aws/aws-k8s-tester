@@ -84,6 +84,10 @@ spec:
       replicas: {{.WorkerNodeCount}}
       template:
         spec:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 2000
+            fsGroup: 3000
           containers:
           - image: {{.NeuronTestImage}}
             ports:
