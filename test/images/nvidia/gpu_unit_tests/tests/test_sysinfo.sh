@@ -4,7 +4,7 @@ setup_suite()
 {
     source common.sh
 
-    EC2_INSTANCE_TYPE=$(get_instance_type)
+    EC2_INSTANCE_TYPE=${EC2_INSTANCE_TYPE:-$(get_instance_type)}
     data=test_sysinfo.sh.data/$EC2_INSTANCE_TYPE
     ACTUAL_RESULTS=`mktemp -t -d test_sysinfo.sh.actual-data.XXX`
     assert_not_equals "" "$ACTUAL_RESULTS"
