@@ -72,15 +72,10 @@ func deployNvidiaDevicePlugin(ctx context.Context, config *envconf.Config) (cont
 }
 
 func deployEFAPlugin(ctx context.Context, config *envconf.Config) (context.Context, error) {
-	err := fwext.ApplyManifests(config.Client().RESTConfig(), efaDevicePluginManifest)
-	if err != nil {
-		return ctx, err
-	}
-
 	ds := appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{Name: "aws-efa-k8s-device-plugin-daemonset", Namespace: "kube-system"},
 	}
-	err = wait.For(fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&ds),
+	err := wait.For(fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&ds),
 		wait.WithContext(ctx))
 	if err != nil {
 		return ctx, fmt.Errorf("failed to deploy efa-device-plugin: %v", err)
@@ -158,7 +153,6 @@ func TestMain(m *testing.M) {
 			return ctx, nil
 		},
 		deployMPIOperator,
-		checkNodeTypes,
 	}
 
 	if *installDevicePlugin {
@@ -167,9 +161,11 @@ func TestMain(m *testing.M) {
 	}
 
 	if *efaEnabled {
+		manifests = append(manifests, efaDevicePluginManifest)
 		setUpFunctions = append(setUpFunctions, deployEFAPlugin)
 	}
 
+	setUpFunctions = append(setUpFunctions, checkNodeTypes)
 	testenv.Setup(setUpFunctions...)
 
 	testenv.Finish(
