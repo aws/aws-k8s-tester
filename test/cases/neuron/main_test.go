@@ -114,30 +114,31 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		log.Printf("No node type specified. Using the node type %s in the node groups.", *nodeType)
 	}
 	for _, node := range nodes.Items {
-		if node.Labels["node.kubernetes.io/instance-type"] == *nodeType {
-			neuron, err := e2e.GetNonZeroResourceCapacity(&node, "aws.amazon.com/neuron")
-			if err != nil {
-				return nil, err
-			}
-			totalNeuronCount += neuron
-
-			// Check for NeuronCore capacity
-			neuronCore, err := e2e.GetNonZeroResourceCapacity(&node, "aws.amazon.com/neuroncore")
-			if err != nil {
-				return nil, err
-			}
-			totalNeuronCoreCount += neuronCore
-
-			// Check for EFA capacity
-			if *efaEnabled {
-				efa, err := e2e.GetNonZeroResourceCapacity(&node, "vpc.amazonaws.com/efa")
-				if err != nil {
-					return nil, err
-				}
-				totalEfaCount += efa
-			}
-			nodeCount += 1
+		if node.Labels["node.kubernetes.io/instance-type"] != *nodeType {
+			continue
 		}
+		neuron, err := e2e.GetNonZeroResourceCapacity(&node, "aws.amazon.com/neuron")
+		if err != nil {
+			return nil, err
+		}
+		totalNeuronCount += neuron
+
+		// Check for NeuronCore capacity
+		neuronCore, err := e2e.GetNonZeroResourceCapacity(&node, "aws.amazon.com/neuroncore")
+		if err != nil {
+			return nil, err
+		}
+		totalNeuronCoreCount += neuronCore
+
+		// Check for EFA capacity
+		if *efaEnabled {
+			efa, err := e2e.GetNonZeroResourceCapacity(&node, "vpc.amazonaws.com/efa")
+			if err != nil {
+				return nil, err
+			}
+			totalEfaCount += efa
+		}
+		nodeCount += 1
 	}
 
 	// Update global capacities
