@@ -1,4 +1,3 @@
-# This is a golang template to work around limitations of CloudFormation built-ins, which are used whenever possible.
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'kubetest2-eksapi unmanaged nodegroup'
@@ -33,7 +32,7 @@ Parameters:
     Type: String
 
   NodeRoleName:
-    Description: The IAM role name  of worker nodes.
+    Description: The IAM role name of worker nodes.
     Type: String
 
   UserData:
@@ -42,60 +41,120 @@ Parameters:
   VolumeMountPath:
     Type: String
 
+  CapacityReservationId:
+    Type: String
+    Description: Capacity reservation id for the unmanaged nodegroup
+
   UserDataIsMIMEPart:
     Description: "User data should be embedded as a part of a multi-part MIME document"
     Default: true
     Type: String
     AllowedValues: [true, false]
 
+  EFAEnabled:
+    Description: "Instance should be configured for EFA"
+    Default: false
+    Type: String
+    AllowedValues: [true, false]
+
+  InstanceType:
+    Type: String
+    Description: Instance type to use in the nodegroup.
+
 Conditions:
-  IsUserDataMIMEPart:
-    !Equals [true, !Ref UserDataIsMIMEPart]
+  IsCapacityReservationIdSet: !Not [!Equals [!Ref CapacityReservationId, ""]]
+  IsUserDataMIMEPart: !Equals [true, !Ref UserDataIsMIMEPart]
+  IsEFAEnabled: !Equals [true, !Ref EFAEnabled]
 
 Resources:
+  EFASecurityGroupIngress:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      Description: Allow node to communicate with each other
+      FromPort: 0
+      ToPort: 65535
+      GroupId: !Ref SecurityGroup
+      IpProtocol: "-1"
+      SourceSecurityGroupId: !Ref SecurityGroup
+
+  EFASecurityGroupEgress:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      Description: Allow the efa worker nodes outbound communication
+      DestinationSecurityGroupId: !Ref SecurityGroup
+      FromPort: 0
+      ToPort: 65536
+      GroupId: !Ref SecurityGroup
+      IpProtocol: "-1"
+  
+  EFASecurityGroupEgressAllIpv4:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      Description: Allow the efa worker nodes outbound communication
+      FromPort: 0
+      ToPort: 65536
+      CidrIp: "0.0.0.0/0"
+      GroupId: !Ref SecurityGroup
+      IpProtocol: "-1"
+
+  EFASecurityGroupEgressAllIpv6:
+    Type: "AWS::EC2::SecurityGroupEgress"
+    Properties:
+      Description: Allow the efa worker nodes outbound communication
+      FromPort: 0
+      ToPort: 65536
+      CidrIpv6: "::/0"
+      GroupId: !Ref SecurityGroup
+      IpProtocol: "-1"
+
   NodeInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: "/"
       Roles:
-      - !Ref NodeRoleName
-
-  NodeGroup:
-    Type: AWS::AutoScaling::AutoScalingGroup
-    UpdatePolicy:
-      AutoScalingRollingUpdate:
-        WaitOnResourceSignals: true
-        PauseTime: PT15M
-    Properties:
-      AutoScalingGroupName: !Ref ResourceId
-      DesiredCapacity: !Ref NodeCount
-      MinSize: !Ref NodeCount
-      MaxSize: !Ref NodeCount
-      MixedInstancesPolicy:
-        LaunchTemplate:
-          LaunchTemplateSpecification:
-            LaunchTemplateId: !Ref NodeLaunchTemplate
-            # LaunchTemplateName: String
-            Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
-          Overrides:
-            {{- range .InstanceTypes}}
-            - InstanceType: "{{.}}"
-            {{- end}}
-      VPCZoneIdentifier:
-        !Ref SubnetIds
-      Tags:
-        # necessary for kubelet's legacy, in-tree cloud provider
-        - Key: !Sub kubernetes.io/cluster/${ClusterName}
-          Value: owned
-          PropagateAtLaunch: true
+        - !Ref NodeRoleName
 
   NodeLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
       LaunchTemplateName: !Ref ResourceId
       LaunchTemplateData:
+        BlockDeviceMappings:
+          - DeviceName: !Ref VolumeMountPath
+            Ebs:
+              DeleteOnTermination: true
+              VolumeSize: !Ref NodeDiskSize
+              VolumeType: gp2
+        CapacityReservationSpecification:
+          Fn::If:
+            - IsCapacityReservationIdSet
+            - CapacityReservationTarget:
+                CapacityReservationId: !Ref CapacityReservationId
+            - !Ref AWS::NoValue
+        IamInstanceProfile:
+          Arn: !GetAtt NodeInstanceProfile.Arn
+        ImageId: !Ref AMIId
+        InstanceType: !Ref InstanceType
+        MetadataOptions: 
+          HttpTokens: required
+        NetworkInterfaces:
+            Fn::If:
+            - IsEFAEnabled
+            - {{range $networkInterface := .NetworkInterfaces}}
+                - Description: "{{$networkInterface.Description}}"
+                  NetworkCardIndex: {{$networkInterface.NetworkCardIndex}}
+                  DeviceIndex: {{$networkInterface.DeviceIndex}}
+                  InterfaceType: {{$networkInterface.InterfaceType}}
+                  Groups: {{$networkInterface.Groups}}
+                  SubnetId: {{$networkInterface.SubnetId}}
+                  DeleteOnTermination: {{$networkInterface.DeleteOnTermination}}
+                {{- end}}
+            - !Ref AWS::NoValue
         SecurityGroupIds:
-          - !Ref SecurityGroup
+            Fn::If:
+            - IsEFAEnabled
+            - !Ref AWS::NoValue
+            - - !Ref SecurityGroup
         UserData:
           Fn::Base64:
             Fn::If:
@@ -120,15 +179,32 @@ Resources:
                   --BOUNDARY--
               - Fn::Sub: |
                   ${UserData}
-        IamInstanceProfile:
-          Arn: !GetAtt NodeInstanceProfile.Arn
-        ImageId: !Ref AMIId
-        InstanceType: "{{index .InstanceTypes 0}}"
-        MetadataOptions: 
-          HttpTokens: required
-        BlockDeviceMappings:
-          - DeviceName: !Ref VolumeMountPath
-            Ebs:
-              VolumeSize: !Ref NodeDiskSize
-              VolumeType: gp2
-              DeleteOnTermination: true
+
+  NodeGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        WaitOnResourceSignals: true
+        PauseTime: PT15M
+    Properties:
+      AutoScalingGroupName: !Ref ResourceId
+      MixedInstancesPolicy:
+        LaunchTemplate:
+          LaunchTemplateSpecification:
+            LaunchTemplateId: !Ref NodeLaunchTemplate
+            Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
+          Overrides:
+              {{- range .InstanceTypes}}
+                - InstanceType: "{{.}}"
+              {{- end}}
+      DesiredCapacity: !Ref NodeCount
+      MinSize: !Ref NodeCount
+      MaxSize: !Ref NodeCount
+      VPCZoneIdentifier: !Ref SubnetIds
+      Tags:
+        - Key: Name
+          Value: !Sub "${ClusterName}-Node"
+          PropagateAtLaunch: true
+        - Key: !Sub "kubernetes.io/cluster/${ClusterName}"
+          Value: owned
+          PropagateAtLaunch: true
