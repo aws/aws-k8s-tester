@@ -7,6 +7,7 @@ import (
 	_ "embed"
 	"fmt"
 	"testing"
+	"time"
 
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
 	"github.com/aws/aws-k8s-tester/internal/e2e/mpijobs"
@@ -70,7 +71,9 @@ func TestNeuronNodes(t *testing.T) {
 			}
 			t.Log("Waiting for single node job to complete")
 			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
-				wait.WithContext(ctx))
+				wait.WithContext(ctx),
+				wait.WithTimeout(time.Minute*20),
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -126,7 +129,9 @@ func TestNeuronNodes(t *testing.T) {
 			ctx = context.WithValue(ctx, "mpiJob", mpiJob)
 			t.Log("Waiting for MPIJob to complete")
 			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(mpiJob, mpijobs.MPIJobSucceeded),
-				wait.WithContext(ctx))
+				wait.WithContext(ctx),
+				wait.WithTimeout(time.Minute*30),
+			)
 			if err != nil {
 				t.Fatal(err)
 			}

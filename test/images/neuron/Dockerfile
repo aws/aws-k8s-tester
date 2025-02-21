@@ -1,11 +1,11 @@
 FROM public.ecr.aws/docker/library/ubuntu:22.04
 
 # Neuron SDK components version numbers
-ARG NEURONX_DISTRIBUTED_VERSION=0.10.0
-ARG NEURONX_CC_VERSION=2.16.345.0
+ARG NEURONX_DISTRIBUTED_VERSION=0.10.1
+ARG NEURONX_CC_VERSION=2.16.372.0
 ARG NEURONX_FRAMEWORK_VERSION=2.5.1.2.4.0
-ARG NEURONX_COLLECTIVES_LIB_VERSION=2.23.133.0-3e70920f2
-ARG NEURONX_RUNTIME_LIB_VERSION=2.23.110.0-9b5179492
+ARG NEURONX_COLLECTIVES_LIB_VERSION=2.23.135.0-3e70920f2
+ARG NEURONX_RUNTIME_LIB_VERSION=2.23.112.0-9b5179492
 ARG NEURONX_TOOLS_VERSION=2.20.204.0
 
 ARG PYTHON=python3.10
@@ -69,7 +69,7 @@ RUN echo 'ubuntu:password' | chpasswd
 RUN usermod -aG sudo ubuntu
 
 RUN apt update
-RUN apt install -y openssh-server wget gnupg2 sudo
+RUN apt install -y openssh-server openssh-client wget gnupg2 sudo
 
 # Install Neuron packages
 RUN . /etc/os-release
@@ -186,16 +186,11 @@ RUN HOME_DIR=/root \
 
 RUN curl -o /license.txt  https://aws-dlc-licenses.s3.amazonaws.com/pytorch-2.1/license.txt
 
-# Allow ssh to work without password/prompt so mpirun does not get stuck
-RUN sed -i -e 's/#   StrictHostKeyChecking ask/    StrictHostKeyChecking accept-new/g' /etc/ssh/ssh_config
+RUN mkdir -p /var/run/sshd && \
+    sed -i 's/[ #]\(.*StrictHostKeyChecking \).*/ \1no/g' /etc/ssh/ssh_config && \
+    echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config && \
+    sed -i 's/#\(StrictModes \).*/\1no/g' /etc/ssh/sshd_config
 
 WORKDIR /home/ubuntu
-
-USER ubuntu
-RUN mkdir /home/ubuntu/.ssh
-RUN ssh-keygen -t rsa -f /home/ubuntu/.ssh/id_rsa -N ''
-RUN echo password | sudo -S chmod 600 /home/ubuntu/.ssh/id_rsa
-RUN echo password | sudo -S chmod 600 /home/ubuntu/.ssh/id_rsa.pub
-RUN echo password | sudo -S cat /home/ubuntu/.ssh/id_rsa.pub >> /home/ubuntu/.ssh/authorized_keys
 
 COPY test/images/neuron/tests ./tests
