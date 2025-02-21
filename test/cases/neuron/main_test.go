@@ -146,7 +146,7 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		neuronCorePerNode = totalNeuronCoreCount / nodeCount
 		efaPerNode = totalEfaCount / nodeCount
 	} else {
-		return nil, fmt.Errorf("no nodes of type \"%s\"found", *nodeType)
+		return nil, fmt.Errorf("no nodes of type %q found", *nodeType)
 	}
 
 	log.Printf("[INFO] Total Nodes: %d", nodeCount)
