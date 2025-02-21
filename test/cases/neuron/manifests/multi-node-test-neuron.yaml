@@ -23,12 +23,12 @@ spec:
                 fieldRef:
                   fieldPath: status.podIP
             command:
-            - /bin/sh
+            - /bin/bash
             args:
             - -c
-            - | 
+            - |
                 WORKER_IPS=()
-                for i in $(seq 1 $(({{.WorkerNodeCount}} - 1))); do
+                for i in $(seq 0 $(({{.WorkerNodeCount}} - 1))); do
                   WORKER_IP=$(getent hosts multi-node-nccom-test-worker-$i.multi-node-nccom-test | awk '{print $1}')
                   WORKER_IPS+=("$WORKER_IP")
                 done

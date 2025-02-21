@@ -108,7 +108,7 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		return ctx, fmt.Errorf("no nodes found in the cluster")
 	}
 
-	var nodeCount, totalEfaCount, totalNeuronCoreCount, totalNeuronCount int
+	var totalEfaCount, totalNeuronCoreCount, totalNeuronCount int
 	if *nodeType == "" {
 		nodeType = aws.String(nodes.Items[0].Labels["node.kubernetes.io/instance-type"])
 		log.Printf("No node type specified. Using the node type %s in the node groups.", *nodeType)
