@@ -154,11 +154,6 @@ func (m *nodeManager) resolveInstanceTypes(opts *deployerOptions) (err error) {
 	if len(validInstanceTypes) == 0 {
 		return fmt.Errorf("none of the instance types %v were valid", instanceTypes)
 	}
-	if opts.EFA {
-		// EFA instances require their own launch template, so only one can be used
-		klog.Info("using just the first instance type because EFA was requested")
-		validInstanceTypes = []string{validInstanceTypes[0]}
-	}
 	opts.InstanceTypes = validInstanceTypes
 	klog.Infof("using instance types: %v", opts.InstanceTypes)
 	return nil
@@ -381,6 +376,7 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 	var networkInterfaces []networkInterface
 	instanceTypes := opts.InstanceTypes
 	if opts.EFA {
+		// EFA case assumes there is one instance type set, there's some pre-validation for that.
 		networkInterfaces, err = m.getEfaNetworkInterfaces(instanceTypes[0], []string{cluster.securityGroupId}, subnetId)
 		if err != nil {
 			return fmt.Errorf("error getting efa interfaces: %v", err)
@@ -449,10 +445,6 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 			{
 				ParameterKey:   aws.String("AMIId"),
 				ParameterValue: aws.String(opts.AMI),
-			},
-			{
-				ParameterKey:   aws.String("InstanceType"),
-				ParameterValue: aws.String(instanceTypes[0]),
 			},
 			{
 				ParameterKey:   aws.String("CapacityReservationId"),

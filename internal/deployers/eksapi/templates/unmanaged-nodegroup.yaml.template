@@ -57,10 +57,6 @@ Parameters:
     Type: String
     AllowedValues: [true, false]
 
-  InstanceType:
-    Type: String
-    Description: Instance type to use in the nodegroup.
-
 Conditions:
   IsCapacityReservationIdSet: !Not [!Equals [!Ref CapacityReservationId, ""]]
   IsUserDataMIMEPart: !Equals [true, !Ref UserDataIsMIMEPart]
@@ -134,7 +130,7 @@ Resources:
         IamInstanceProfile:
           Arn: !GetAtt NodeInstanceProfile.Arn
         ImageId: !Ref AMIId
-        InstanceType: !Ref InstanceType
+        InstanceType: "{{index .InstanceTypes 0}}"
         MetadataOptions: 
           HttpTokens: required
         NetworkInterfaces:
