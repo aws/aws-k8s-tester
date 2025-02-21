@@ -144,12 +144,12 @@ Resources:
                   Groups: {{$networkInterface.Groups}}
                   SubnetId: {{$networkInterface.SubnetId}}
                   DeleteOnTermination: {{$networkInterface.DeleteOnTermination}}
-                {{- end}}
+              {{- end}}
             - - Description: "Standard network interface"
                 NetworkCardIndex: 0
-                DeviceIndex: 0
-                InterfaceType: 0
-                Groups: !Ref SecurityGroup
+                DeviceIndex: 0 
+                InterfaceType: interface
+                Groups: [!Ref SecurityGroup]
                 DeleteOnTermination: true
         UserData:
           Fn::Base64:

@@ -294,7 +294,7 @@ func (d *deployer) verifyUpFlags() error {
 			return fmt.Errorf("--ami should not be provided without --unmanaged-nodes")
 		}
 		if d.EFA {
-			return fmt.Errorf("--efa should not be provided with --unmanaged-nodes")
+			return fmt.Errorf("--efa should not be provided without --unmanaged-nodes")
 		}
 		if d.AMIType == "" {
 			d.AMIType = "AL2023_x86_64_STANDARD"
