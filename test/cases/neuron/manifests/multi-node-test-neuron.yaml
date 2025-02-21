@@ -27,18 +27,18 @@ spec:
             args:
             - -c
             - | 
-                WORKER_0_IP=$(getent hosts multi-node-nccom-test-worker-0.multi-node-nccom-test | awk '{print $1}')
-                WORKER_IPS=$WORKER_0_IP
+                WORKER_IPS=()
                 for i in $(seq 1 $(({{.WorkerNodeCount}} - 1))); do
-                  WORKER_IPS="$WORKER_IPS $(getent hosts multi-node-nccom-test-worker-$i.multi-node-nccom-test | awk '{print $1}')"
+                  WORKER_IP=$(getent hosts multi-node-nccom-test-worker-$i.multi-node-nccom-test | awk '{print $1}')
+                  WORKER_IPS+=("$WORKER_IP")
                 done
 
                 export CCOM_SOCKET_IFNAME=eth0
-                export NEURON_RT_ROOT_COMM_ID=$WORKER_0_IP:63182
+                export NEURON_RT_ROOT_COMM_ID=${WORKER_IPS[0]}:63182
                 export OMPI_ALLOW_RUN_AS_ROOT=1
                 export OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
-                nccom-test -r $(({{.NeuronCorePerNode}}*{{.WorkerNodeCount}})) -N {{.WorkerNodeCount}} -b "8" -e "2G" -f "2" -n "5" -w "5" -d "fp32" allr --hosts $WORKER_IPS --data-collector-host $POD_IP --data-collector-port 60006 --debug
+                nccom-test -r $(({{.NeuronCorePerNode}}*{{.WorkerNodeCount}})) -N {{.WorkerNodeCount}} -b "8" -e "2G" -f "2" -n "5" -w "5" -d "fp32" allr --hosts ${WORKER_IPS[*]} --data-collector-host $POD_IP --data-collector-port 60006 --debug
     Worker:
       replicas: {{.WorkerNodeCount}}
       template:
