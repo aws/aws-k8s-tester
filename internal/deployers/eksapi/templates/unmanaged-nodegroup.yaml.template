@@ -145,12 +145,12 @@ Resources:
                   SubnetId: {{$networkInterface.SubnetId}}
                   DeleteOnTermination: {{$networkInterface.DeleteOnTermination}}
                 {{- end}}
-            - !Ref AWS::NoValue
-        SecurityGroupIds:
-            Fn::If:
-            - IsEFAEnabled
-            - !Ref AWS::NoValue
-            - - !Ref SecurityGroup
+            - - Description: "Standard network interface"
+                NetworkCardIndex: 0
+                DeviceIndex: 0
+                InterfaceType: 0
+                Groups: !Ref SecurityGroup
+                DeleteOnTermination: true
         UserData:
           Fn::Base64:
             Fn::If:
@@ -201,7 +201,6 @@ Resources:
         - Key: Name
           Value: !Sub "${ClusterName}-Node"
           PropagateAtLaunch: true
-        # necessary for kubelet's legacy, in-tree cloud provider
         - Key: !Sub "kubernetes.io/cluster/${ClusterName}"
           Value: owned
           PropagateAtLaunch: true
