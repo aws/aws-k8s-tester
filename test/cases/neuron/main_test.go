@@ -115,14 +115,14 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 	}
 	for _, node := range nodes.Items {
 		if node.Labels["node.kubernetes.io/instance-type"] == *nodeType {
-			neuron, err := e2e.GetNonZeroResourceCapacityOrError(node, "aws.amazon.com/neuron")
+			neuron, err := e2e.GetNonZeroResourceCapacity(&node, "aws.amazon.com/neuron")
 			if err != nil {
 				return nil, err
 			}
 			totalNeuronCount += neuron
 
 			// Check for NeuronCore capacity
-			neuronCore, err := e2e.GetNonZeroResourceCapacityOrError(node, "aws.amazon.com/neuroncore")
+			neuronCore, err := e2e.GetNonZeroResourceCapacity(&node, "aws.amazon.com/neuroncore")
 			if err != nil {
 				return nil, err
 			}
@@ -130,7 +130,7 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 
 			// Check for EFA capacity
 			if *efaEnabled {
-				efa, err := e2e.GetNonZeroResourceCapacityOrError(node, "vpc.amazonaws.com/efa")
+				efa, err := e2e.GetNonZeroResourceCapacity(&node, "vpc.amazonaws.com/efa")
 				if err != nil {
 					return nil, err
 				}
