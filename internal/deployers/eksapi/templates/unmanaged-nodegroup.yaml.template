@@ -51,16 +51,9 @@ Parameters:
     Type: String
     AllowedValues: [true, false]
 
-  EFAEnabled:
-    Description: "Instance should be configured for EFA"
-    Default: false
-    Type: String
-    AllowedValues: [true, false]
-
 Conditions:
   IsCapacityReservationIdSet: !Not [!Equals [!Ref CapacityReservationId, ""]]
   IsUserDataMIMEPart: !Equals [true, !Ref UserDataIsMIMEPart]
-  IsEFAEnabled: !Equals [true, !Ref EFAEnabled]
 
 Resources:
   EFASecurityGroupIngress:
@@ -194,6 +187,7 @@ Resources:
         - Key: Name
           Value: !Sub "${ClusterName}-Node"
           PropagateAtLaunch: true
+        # necessary for kubelet's legacy, in-tree cloud provider
         - Key: !Sub "kubernetes.io/cluster/${ClusterName}"
           Value: owned
           PropagateAtLaunch: true

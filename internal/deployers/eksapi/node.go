@@ -431,10 +431,6 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 				ParameterValue: aws.String(strconv.Itoa(opts.Nodes)),
 			},
 			{
-				ParameterKey:   aws.String("EFAEnabled"),
-				ParameterValue: aws.String(strconv.FormatBool(opts.EFA)),
-			},
-			{
 				ParameterKey:   aws.String("SecurityGroup"),
 				ParameterValue: aws.String(cluster.securityGroupId),
 			},
@@ -674,7 +670,7 @@ func (m *nodeManager) getNetworkInterfaces(EFAEnabled bool, instanceTypes []stri
 	if !EFAEnabled {
 		return []networkInterface{
 			{
-				Description:         "Standard",
+				Description:         "Standard network interface",
 				DeviceIndex:         0,
 				NetworkCardIndex:    0,
 				InterfaceType:       "interface",
