@@ -355,28 +355,45 @@ func (m *nodeManager) createManagedNodegroup(infra *Infrastructure, cluster *Clu
 }
 
 func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
+	subnets := infra.subnets()
 	stackName := m.getUnmanagedNodegroupStackName()
 	klog.Infof("creating unmanaged nodegroup stack...")
 	userData, userDataIsMimePart, err := generateUserData(opts.UserDataFormat, cluster)
 	if err != nil {
 		return err
 	}
-	var subnetId, capacityReservationId string
+	var privateSubnetId, capacityReservationId string
 	if opts.CapacityReservation {
-		subnetId, capacityReservationId, err = m.getSubnetWithCapacity(infra, opts)
+		privateSubnetId, capacityReservationId, err = m.getSubnetWithCapacity(infra, opts)
 		if err != nil {
 			return err
 		}
 	} else {
-		subnetId = infra.subnetsPrivate[0]
+		privateSubnetId = infra.subnetsPrivate[0]
 	}
 	volumeMountPath := "/dev/xvda"
 	if opts.UserDataFormat == "bottlerocket" {
 		volumeMountPath = "/dev/xvdb"
 	}
-	networkInterfaces, err := m.getNetworkInterfaces(opts.EFA, opts.InstanceTypes, []string{cluster.securityGroupId}, subnetId)
-	if err != nil {
-		return fmt.Errorf("error getting efa interfaces: %v", err)
+	var networkInterfaces []networkInterface
+	if opts.EFA {
+		networkInterfaces, err = m.getEFANetworkInterfaces(opts, []string{cluster.securityGroupId}, privateSubnetId)
+		if err != nil {
+			return fmt.Errorf("error getting efa interfaces: %v", err)
+		}
+		// EFA traffic cannot cross AZs
+		subnets = []string{privateSubnetId}
+	} else {
+		networkInterfaces = []networkInterface{
+			{
+				Description:         "Standard network interface",
+				DeviceIndex:         0,
+				NetworkCardIndex:    0,
+				InterfaceType:       "interface",
+				Groups:              []string{cluster.securityGroupId},
+				DeleteOnTermination: true,
+			},
+		}
 	}
 	templateBuf := bytes.Buffer{}
 	err = templates.UnmanagedNodegroup.Execute(&templateBuf, struct {
@@ -404,7 +421,7 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 			},
 			{
 				ParameterKey:   aws.String("SubnetIds"),
-				ParameterValue: aws.String(strings.Join(infra.subnets(), ",")),
+				ParameterValue: aws.String(strings.Join(subnets, ",")),
 			},
 			{
 				ParameterKey:   aws.String("UserData"),
@@ -666,21 +683,9 @@ func (m *nodeManager) getValidInstanceTypes(desiredInstanceTypes []string) ([]st
 	return validInstanceTypes, nil
 }
 
-func (m *nodeManager) getNetworkInterfaces(EFAEnabled bool, instanceTypes []string, securityGroups []string, subnetId string) ([]networkInterface, error) {
-	if !EFAEnabled {
-		return []networkInterface{
-			{
-				Description:         "Standard network interface",
-				DeviceIndex:         0,
-				NetworkCardIndex:    0,
-				InterfaceType:       "interface",
-				Groups:              securityGroups,
-				DeleteOnTermination: true,
-			},
-		}, nil
-	}
+func (m *nodeManager) getEFANetworkInterfaces(opts *deployerOptions, securityGroups []string, subnetId string) ([]networkInterface, error) {
 	// EFA option assumes a single instance type
-	instanceType := instanceTypes[0]
+	instanceType := opts.InstanceTypes[0]
 	ec2InstanceType := ec2types.InstanceType(instanceType)
 	describeInstanceTypeOutput, err := m.clients.EC2().DescribeInstanceTypes(context.TODO(), &ec2.DescribeInstanceTypesInput{
 		InstanceTypes: []ec2types.InstanceType{ec2InstanceType},
