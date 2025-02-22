@@ -374,14 +374,9 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 	if opts.UserDataFormat == "bottlerocket" {
 		volumeMountPath = "/dev/xvdb"
 	}
-	var networkInterfaces []networkInterface
-	instanceTypes := opts.InstanceTypes
-	if opts.EFA {
-		// EFA case assumes there is one instance type set, there's some pre-validation for that.
-		networkInterfaces, err = m.getEfaNetworkInterfaces(instanceTypes[0], []string{cluster.securityGroupId}, subnetId)
-		if err != nil {
-			return fmt.Errorf("error getting efa interfaces: %v", err)
-		}
+	networkInterfaces, err := m.getNetworkInterfaces(opts.EFA, opts.InstanceTypes, []string{cluster.securityGroupId}, subnetId)
+	if err != nil {
+		return fmt.Errorf("error getting efa interfaces: %v", err)
 	}
 	templateBuf := bytes.Buffer{}
 	err = templates.UnmanagedNodegroup.Execute(&templateBuf, struct {
@@ -389,7 +384,7 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 		InstanceTypes     []string
 	}{
 		NetworkInterfaces: networkInterfaces,
-		InstanceTypes:     instanceTypes,
+		InstanceTypes:     opts.InstanceTypes,
 	})
 	if err != nil {
 		return err
@@ -675,7 +670,21 @@ func (m *nodeManager) getValidInstanceTypes(desiredInstanceTypes []string) ([]st
 	return validInstanceTypes, nil
 }
 
-func (m *nodeManager) getEfaNetworkInterfaces(instanceType string, securityGroups []string, subnetId string) ([]networkInterface, error) {
+func (m *nodeManager) getNetworkInterfaces(EFAEnabled bool, instanceTypes []string, securityGroups []string, subnetId string) ([]networkInterface, error) {
+	if !EFAEnabled {
+		return []networkInterface{
+			{
+				Description:         "Standard",
+				DeviceIndex:         0,
+				NetworkCardIndex:    0,
+				InterfaceType:       "interface",
+				Groups:              securityGroups,
+				DeleteOnTermination: true,
+			},
+		}, nil
+	}
+	// EFA option assumes a single instance type
+	instanceType := instanceTypes[0]
 	ec2InstanceType := ec2types.InstanceType(instanceType)
 	describeInstanceTypeOutput, err := m.clients.EC2().DescribeInstanceTypes(context.TODO(), &ec2.DescribeInstanceTypesInput{
 		InstanceTypes: []ec2types.InstanceType{ec2InstanceType},
