@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -355,7 +356,7 @@ func (m *nodeManager) createManagedNodegroup(infra *Infrastructure, cluster *Clu
 
 func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
 	stackName := m.getUnmanagedNodegroupStackName()
-	klog.Infof("creating unmanaged nodegroup...")
+	klog.Infof("creating unmanaged nodegroup stack...")
 	userData, userDataIsMimePart, err := generateUserData(opts.UserDataFormat, cluster)
 	if err != nil {
 		return err
@@ -408,7 +409,7 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 			},
 			{
 				ParameterKey:   aws.String("SubnetIds"),
-				ParameterValue: aws.String(subnetId), // this is load bearing! EFA requires a private subnet
+				ParameterValue: aws.String(strings.Join(infra.subnets(), ",")),
 			},
 			{
 				ParameterKey:   aws.String("UserData"),
@@ -456,17 +457,17 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 	if err != nil {
 		return err
 	}
-	klog.Infof("waiting for unmanaged nodegroup with EFA to be created: %s", *out.StackId)
+	klog.Infof("waiting for unmanaged nodegroup stack to be created: %s", *out.StackId)
 	err = cloudformation.NewStackCreateCompleteWaiter(m.clients.CFN()).
 		Wait(context.TODO(),
 			&cloudformation.DescribeStacksInput{
 				StackName: out.StackId,
 			},
-			infraStackCreationTimeout)
+			opts.NodeCreationTimeout)
 	if err != nil {
 		return fmt.Errorf("failed to wait for unmanaged nodegroup stack creation: %w", err)
 	}
-	klog.Infof("created unmanaged nodegroup with EFA stack: %s", *out.StackId)
+	klog.Infof("created unmanaged nodegroup stack: %s", *out.StackId)
 	if opts.ExpectedAMI != "" {
 		if ok, err := m.verifyASGAMI(m.resourceID, opts.ExpectedAMI); err != nil {
 			return err
