@@ -134,23 +134,16 @@ Resources:
         MetadataOptions: 
           HttpTokens: required
         NetworkInterfaces:
-            Fn::If:
-            - IsEFAEnabled
-            - {{range $networkInterface := .NetworkInterfaces}}
-                - Description: "{{$networkInterface.Description}}"
-                  NetworkCardIndex: {{$networkInterface.NetworkCardIndex}}
-                  DeviceIndex: {{$networkInterface.DeviceIndex}}
-                  InterfaceType: {{$networkInterface.InterfaceType}}
-                  Groups: {{$networkInterface.Groups}}
-                  SubnetId: {{$networkInterface.SubnetId}}
-                  DeleteOnTermination: {{$networkInterface.DeleteOnTermination}}
-              {{- end}}
-            - - Description: "Standard network interface"
-                NetworkCardIndex: 0
-                DeviceIndex: 0 
-                InterfaceType: interface
-                Groups: [!Ref SecurityGroup]
-                DeleteOnTermination: true
+          {{- range .NetworkInterfaces}}
+            - Description: "{{.Description}}"
+              NetworkCardIndex: {{.NetworkCardIndex}}
+              DeviceIndex: {{.DeviceIndex}}
+              InterfaceType: {{.InterfaceType}}
+              Groups: {{.Groups}}{{ if .SubnetId }}
+              SubnetId: {{.SubnetId}}{{ end }}
+              DeleteOnTermination: {{.DeleteOnTermination}}
+          {{- end}}
+
         UserData:
           Fn::Base64:
             Fn::If:
