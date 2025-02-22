@@ -97,9 +97,6 @@ func (m *nodeManager) createNodes(infra *Infrastructure, cluster *Cluster, opts 
 		_, err := m.createPlaceholderDeployment(opts, k8sClient)
 		return err
 	} else if opts.UnmanagedNodes {
-		if opts.EFA {
-			return m.createUnmanagedNodegroupWithEFA(infra, cluster, opts)
-		}
 		return m.createUnmanagedNodegroup(infra, cluster, opts)
 	} else {
 		return m.createManagedNodegroup(infra, cluster, opts)
@@ -358,134 +355,53 @@ func (m *nodeManager) createManagedNodegroup(infra *Infrastructure, cluster *Clu
 }
 
 func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
+	subnets := infra.subnets()
 	stackName := m.getUnmanagedNodegroupStackName()
 	klog.Infof("creating unmanaged nodegroup stack...")
 	userData, userDataIsMimePart, err := generateUserData(opts.UserDataFormat, cluster)
 	if err != nil {
 		return err
 	}
-	templateBuf := bytes.Buffer{}
-	err = templates.UnmanagedNodegroup.Execute(&templateBuf, struct {
-		InstanceTypes     []string
-		KubernetesVersion string
-	}{
-		InstanceTypes:     opts.InstanceTypes,
-		KubernetesVersion: opts.KubernetesVersion,
-	})
-	if err != nil {
-		return err
-	}
-	volumeMountPath := "/dev/xvda"
-	if opts.UserDataFormat == "bottlerocket" {
-		volumeMountPath = "/dev/xvdb"
-	}
-	input := cloudformation.CreateStackInput{
-		StackName:    aws.String(stackName),
-		TemplateBody: aws.String(templateBuf.String()),
-		Capabilities: []cloudformationtypes.Capability{cloudformationtypes.CapabilityCapabilityIam},
-		Parameters: []cloudformationtypes.Parameter{
-			{
-				ParameterKey:   aws.String("ResourceId"),
-				ParameterValue: aws.String(m.resourceID),
-			},
-			{
-				ParameterKey:   aws.String("VpcId"),
-				ParameterValue: aws.String(infra.vpc),
-			},
-			{
-				ParameterKey:   aws.String("SubnetIds"),
-				ParameterValue: aws.String(strings.Join(infra.subnets(), ",")),
-			},
-			{
-				ParameterKey:   aws.String("UserData"),
-				ParameterValue: aws.String(userData),
-			},
-			{
-				ParameterKey:   aws.String("UserDataIsMIMEPart"),
-				ParameterValue: aws.String(strconv.FormatBool(userDataIsMimePart)),
-			},
-			{
-				ParameterKey:   aws.String("ClusterName"),
-				ParameterValue: aws.String(cluster.name),
-			},
-			{
-				ParameterKey:   aws.String("NodeRoleName"),
-				ParameterValue: aws.String(infra.nodeRoleName),
-			},
-			{
-				ParameterKey:   aws.String("NodeCount"),
-				ParameterValue: aws.String(strconv.Itoa(opts.Nodes)),
-			},
-			{
-				ParameterKey:   aws.String("SecurityGroup"),
-				ParameterValue: aws.String(cluster.securityGroupId),
-			},
-			{
-				ParameterKey:   aws.String("AMIId"),
-				ParameterValue: aws.String(opts.AMI),
-			},
-			{
-				ParameterKey:   aws.String("VolumeMountPath"),
-				ParameterValue: aws.String(volumeMountPath),
-			},
-		},
-	}
-	out, err := m.clients.CFN().CreateStack(context.TODO(), &input)
-	if err != nil {
-		return err
-	}
-	klog.Infof("waiting for unmanaged nodegroup to be created: %s", *out.StackId)
-	err = cloudformation.NewStackCreateCompleteWaiter(m.clients.CFN()).
-		Wait(context.TODO(),
-			&cloudformation.DescribeStacksInput{
-				StackName: out.StackId,
-			},
-			opts.NodeCreationTimeout)
-	if err != nil {
-		return fmt.Errorf("failed to wait for unmanaged nodegroup stack creation: %w", err)
-	}
-	klog.Infof("created unmanaged nodegroup stack: %s", *out.StackId)
-	if opts.ExpectedAMI != "" {
-		if ok, err := m.verifyASGAMI(m.resourceID, opts.ExpectedAMI); err != nil {
-			return err
-		} else if !ok {
-			return fmt.Errorf("ASG %s is not using expected AMI: %s", m.resourceID, opts.ExpectedAMI)
-		}
-	}
-	return nil
-}
-
-func (m *nodeManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
-	stackName := m.getUnmanagedNodegroupStackName()
-	klog.Infof("creating unmanaged nodegroup with EFA stack...")
-	userData, userDataIsMimePart, err := generateUserData(opts.UserDataFormat, cluster)
-	if err != nil {
-		return err
-	}
-	var subnetId, capacityReservationId string
+	var privateSubnetId, capacityReservationId string
 	if opts.CapacityReservation {
-		subnetId, capacityReservationId, err = m.getSubnetWithCapacity(infra, opts)
+		privateSubnetId, capacityReservationId, err = m.getSubnetWithCapacity(infra, opts)
 		if err != nil {
 			return err
 		}
 	} else {
-		subnetId = infra.subnetsPrivate[0]
+		privateSubnetId = infra.subnetsPrivate[0]
 	}
-
 	volumeMountPath := "/dev/xvda"
 	if opts.UserDataFormat == "bottlerocket" {
 		volumeMountPath = "/dev/xvdb"
 	}
-	instanceType := opts.InstanceTypes[0]
-	networkInterfaces, err := m.getEfaNetworkInterfaces(instanceType, []string{cluster.securityGroupId}, subnetId)
-	if err != nil {
-		return fmt.Errorf("error getting efa interfaces: %v", err)
+	var networkInterfaces []networkInterface
+	if opts.EFA {
+		networkInterfaces, err = m.getEFANetworkInterfaces(opts, []string{cluster.securityGroupId}, privateSubnetId)
+		if err != nil {
+			return fmt.Errorf("error getting efa interfaces: %v", err)
+		}
+		// EFA traffic cannot cross AZs
+		subnets = []string{privateSubnetId}
+	} else {
+		networkInterfaces = []networkInterface{
+			{
+				Description:         "Standard network interface",
+				DeviceIndex:         0,
+				NetworkCardIndex:    0,
+				InterfaceType:       "interface",
+				Groups:              []string{cluster.securityGroupId},
+				DeleteOnTermination: true,
+			},
+		}
 	}
 	templateBuf := bytes.Buffer{}
-	err = templates.UnmanagedNodegroupEFA.Execute(&templateBuf, struct {
+	err = templates.UnmanagedNodegroup.Execute(&templateBuf, struct {
 		NetworkInterfaces []networkInterface
+		InstanceTypes     []string
 	}{
 		NetworkInterfaces: networkInterfaces,
+		InstanceTypes:     opts.InstanceTypes,
 	})
 	if err != nil {
 		return err
@@ -505,7 +421,7 @@ func (m *nodeManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure, clu
 			},
 			{
 				ParameterKey:   aws.String("SubnetIds"),
-				ParameterValue: aws.String(subnetId), // this is load bearing! EFA requires a private subnet
+				ParameterValue: aws.String(strings.Join(subnets, ",")),
 			},
 			{
 				ParameterKey:   aws.String("UserData"),
@@ -538,10 +454,6 @@ func (m *nodeManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure, clu
 			{
 				ParameterKey:   aws.String("AMIId"),
 				ParameterValue: aws.String(opts.AMI),
-			},
-			{
-				ParameterKey:   aws.String("InstanceType"),
-				ParameterValue: aws.String(instanceType),
 			},
 			{
 				ParameterKey:   aws.String("CapacityReservationId"),
@@ -553,17 +465,17 @@ func (m *nodeManager) createUnmanagedNodegroupWithEFA(infra *Infrastructure, clu
 	if err != nil {
 		return err
 	}
-	klog.Infof("waiting for unmanaged nodegroup with EFA to be created: %s", *out.StackId)
+	klog.Infof("waiting for unmanaged nodegroup stack to be created: %s", *out.StackId)
 	err = cloudformation.NewStackCreateCompleteWaiter(m.clients.CFN()).
 		Wait(context.TODO(),
 			&cloudformation.DescribeStacksInput{
 				StackName: out.StackId,
 			},
-			infraStackCreationTimeout)
+			opts.NodeCreationTimeout)
 	if err != nil {
 		return fmt.Errorf("failed to wait for unmanaged nodegroup stack creation: %w", err)
 	}
-	klog.Infof("created unmanaged nodegroup with EFA stack: %s", *out.StackId)
+	klog.Infof("created unmanaged nodegroup stack: %s", *out.StackId)
 	if opts.ExpectedAMI != "" {
 		if ok, err := m.verifyASGAMI(m.resourceID, opts.ExpectedAMI); err != nil {
 			return err
@@ -771,7 +683,9 @@ func (m *nodeManager) getValidInstanceTypes(desiredInstanceTypes []string) ([]st
 	return validInstanceTypes, nil
 }
 
-func (m *nodeManager) getEfaNetworkInterfaces(instanceType string, securityGroups []string, subnetId string) ([]networkInterface, error) {
+func (m *nodeManager) getEFANetworkInterfaces(opts *deployerOptions, securityGroups []string, subnetId string) ([]networkInterface, error) {
+	// EFA option assumes a single instance type
+	instanceType := opts.InstanceTypes[0]
 	ec2InstanceType := ec2types.InstanceType(instanceType)
 	describeInstanceTypeOutput, err := m.clients.EC2().DescribeInstanceTypes(context.TODO(), &ec2.DescribeInstanceTypesInput{
 		InstanceTypes: []ec2types.InstanceType{ec2InstanceType},
