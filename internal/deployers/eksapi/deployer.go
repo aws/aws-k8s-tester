@@ -293,9 +293,6 @@ func (d *deployer) verifyUpFlags() error {
 		if d.AMI != "" {
 			return fmt.Errorf("--ami should not be provided without --unmanaged-nodes")
 		}
-		if d.EFA {
-			return fmt.Errorf("--efa should not be provided without --unmanaged-nodes")
-		}
 		if d.AMIType == "" {
 			d.AMIType = "AL2023_x86_64_STANDARD"
 			klog.Infof("Using default AMI type: %s", d.AMIType)
