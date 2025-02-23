@@ -127,16 +127,15 @@ Resources:
         MetadataOptions: 
           HttpTokens: required
         NetworkInterfaces:
-          {{- range .NetworkInterfaces}}
-            - Description: "{{.Description}}"
-              NetworkCardIndex: {{.NetworkCardIndex}}
-              DeviceIndex: {{.DeviceIndex}}
-              InterfaceType: {{.InterfaceType}}
-              Groups: {{.Groups}}{{ if .SubnetId }}
-              SubnetId: {{.SubnetId}}{{ end }}
-              DeleteOnTermination: {{.DeleteOnTermination}}
-          {{- end}}
-
+        {{- range .NetworkInterfaces}}
+          - {{ if .NetworkCardIndex }}NetworkCardIndex: {{.NetworkCardIndex}}{{end}}{{ if .DeviceIndex }}
+            DeviceIndex: {{ .DeviceIndex }}{{ end }}{{ if .InterfaceType }}
+            InterfaceType: {{ .InterfaceType }}{{ end }}{{ if .Groups }}
+            Groups: {{ .Groups }}{{ end }}{{ if .SubnetId }}
+            SubnetId: {{ .SubnetId }}{{ end }}{{ if .DeleteOnTermination }}
+            DeleteOnTermination: {{ .DeleteOnTermination }}{{ end }}{{ if .Description }}
+            Description: {{ .Description}}{{ end -}}
+        {{- end}}
         UserData:
           Fn::Base64:
             Fn::If:

@@ -70,13 +70,13 @@ type nodeManager struct {
 }
 
 type networkInterface struct {
-	Description         string
-	NetworkCardIndex    int
-	DeviceIndex         int
-	InterfaceType       string
+	Description         *string
+	NetworkCardIndex    *int
+	DeviceIndex         *int
+	InterfaceType       *string
 	Groups              []string
-	SubnetId            string
-	DeleteOnTermination bool
+	SubnetId            *string
+	DeleteOnTermination *bool
 }
 
 func NewNodeManager(clients *awsClients, resourceID string) *nodeManager {
@@ -355,45 +355,38 @@ func (m *nodeManager) createManagedNodegroup(infra *Infrastructure, cluster *Clu
 }
 
 func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
-	subnets := infra.subnets()
+	var availabilityZoneFilter []string
+	var capacityReservationId string
 	stackName := m.getUnmanagedNodegroupStackName()
-	klog.Infof("creating unmanaged nodegroup stack...")
+	klog.Infof("creating unmanaged nodegroup stack %s...", stackName)
 	userData, userDataIsMimePart, err := generateUserData(opts.UserDataFormat, cluster)
 	if err != nil {
 		return err
 	}
-	var privateSubnetId, capacityReservationId string
 	if opts.CapacityReservation {
-		privateSubnetId, capacityReservationId, err = m.getSubnetWithCapacity(infra, opts)
+		capacityReservation, err := m.getCapacityReservation(opts)
 		if err != nil {
 			return err
 		}
+		capacityReservationId = aws.ToString(capacityReservation.CapacityReservationId)
+		availabilityZoneFilter = []string{aws.ToString(capacityReservation.AvailabilityZone)}
 	} else {
-		privateSubnetId = infra.subnetsPrivate[0]
+		availabilityZoneFilter, err = m.getValidAvailabilityZonesFilter(opts, infra)
+		if err != nil {
+			return err
+		}
+	}
+	targetSubnets, err := m.getValidSubnets(opts, infra, availabilityZoneFilter)
+	if err != nil {
+		return err
+	}
+	networkInterfaces, err := m.getNetworkInterfaces(opts, []string{cluster.securityGroupId}, targetSubnets)
+	if err != nil {
+		return err
 	}
 	volumeMountPath := "/dev/xvda"
 	if opts.UserDataFormat == "bottlerocket" {
 		volumeMountPath = "/dev/xvdb"
-	}
-	var networkInterfaces []networkInterface
-	if opts.EFA {
-		networkInterfaces, err = m.getEFANetworkInterfaces(opts, []string{cluster.securityGroupId}, privateSubnetId)
-		if err != nil {
-			return fmt.Errorf("error getting efa interfaces: %v", err)
-		}
-		// EFA traffic cannot cross AZs
-		subnets = []string{privateSubnetId}
-	} else {
-		networkInterfaces = []networkInterface{
-			{
-				Description:         "Standard network interface",
-				DeviceIndex:         0,
-				NetworkCardIndex:    0,
-				InterfaceType:       "interface",
-				Groups:              []string{cluster.securityGroupId},
-				DeleteOnTermination: true,
-			},
-		}
 	}
 	templateBuf := bytes.Buffer{}
 	err = templates.UnmanagedNodegroup.Execute(&templateBuf, struct {
@@ -421,7 +414,7 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 			},
 			{
 				ParameterKey:   aws.String("SubnetIds"),
-				ParameterValue: aws.String(strings.Join(subnets, ",")),
+				ParameterValue: aws.String(strings.Join(targetSubnets, ",")),
 			},
 			{
 				ParameterKey:   aws.String("UserData"),
@@ -465,7 +458,7 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 	if err != nil {
 		return err
 	}
-	klog.Infof("waiting for unmanaged nodegroup stack to be created: %s", *out.StackId)
+	klog.Infof("waiting for unmanaged nodegroup stack to be created: %s", aws.ToString(out.StackId))
 	err = cloudformation.NewStackCreateCompleteWaiter(m.clients.CFN()).
 		Wait(context.TODO(),
 			&cloudformation.DescribeStacksInput{
@@ -610,8 +603,7 @@ func (m *nodeManager) verifyASGAMI(asgName string, amiId string) (bool, error) {
 	return true, nil
 }
 
-func (m *nodeManager) getSubnetWithCapacity(infra *Infrastructure, opts *deployerOptions) (string, string, error) {
-	var capacityReservationId string
+func (m *nodeManager) getCapacityReservation(opts *deployerOptions) (*ec2types.CapacityReservation, error) {
 	capacityReservations, err := m.clients.EC2().DescribeCapacityReservations(context.TODO(), &ec2.DescribeCapacityReservationsInput{
 		Filters: []ec2types.Filter{
 			{
@@ -625,41 +617,85 @@ func (m *nodeManager) getSubnetWithCapacity(infra *Infrastructure, opts *deploye
 		},
 	})
 	if err != nil {
-		return "", "", fmt.Errorf("failed to describe capacity reservation")
+		return nil, fmt.Errorf("failed to describe capacity reservation: %v", err)
 	}
-	var az string
+	var capacityReservation *ec2types.CapacityReservation
 	for _, cr := range capacityReservations.CapacityReservations {
-		if *cr.AvailableInstanceCount >= int32(opts.Nodes) {
-			capacityReservationId = *cr.CapacityReservationId
-			az = *cr.AvailabilityZone
+		if aws.ToInt32(cr.AvailableInstanceCount) >= int32(opts.Nodes) {
+			capacityReservation = &cr
 			break
 		}
 	}
-	if capacityReservationId == "" {
-		return "", "", fmt.Errorf("no capacity reservation found for instance type %s with %d nodes count", opts.InstanceTypes[0], opts.Nodes)
+	if capacityReservation == nil {
+		return nil, fmt.Errorf("no capacity reservation found for instance type %s with %d nodes count", opts.InstanceTypes[0], opts.Nodes)
 	}
-	klog.Infof("Using capacity reservation: %s", capacityReservationId)
-	subnet, err := m.clients.EC2().DescribeSubnets(context.TODO(), &ec2.DescribeSubnetsInput{
-		Filters: []ec2types.Filter{
-			{
-				Name:   aws.String("availability-zone"),
-				Values: []string{az},
-			},
-			{
-				Name:   aws.String("subnet-id"),
-				Values: infra.subnetsPrivate,
-			},
+	klog.Infof("Using capacity reservation: %s", aws.ToString(capacityReservation.CapacityReservationId))
+	return capacityReservation, nil
+}
+
+func (m *nodeManager) getValidAvailabilityZonesFilter(opts *deployerOptions, infra *Infrastructure) ([]string, error) {
+	if !opts.EFA {
+		// no filter needed, leaves scheduling to EC2 provisioner
+		return []string{}, nil
+	}
+	describeFilters := []ec2types.Filter{
+		{
+			Name:   aws.String("instance-type"),
+			Values: opts.InstanceTypes,
 		},
+		{
+			Name:   aws.String("location"),
+			Values: infra.availabilityZones,
+		},
+	}
+	describeResponse, err := m.clients.EC2().DescribeInstanceTypeOfferings(context.TODO(), &ec2.DescribeInstanceTypeOfferingsInput{
+		Filters:      describeFilters,
+		LocationType: ec2types.LocationTypeAvailabilityZone,
 	})
 	if err != nil {
-		return "", "", fmt.Errorf("failed to describe subnet")
+		return nil, fmt.Errorf("failed to describe instance type offerings: %v", err)
 	}
-	if subnet == nil || len(subnet.Subnets) == 0 {
-		return "", "", fmt.Errorf("no subnet found for availability zone %s", az)
+	if describeResponse == nil || len(describeResponse.InstanceTypeOfferings) == 0 {
+		return nil, fmt.Errorf("no instance type offerings in current region with filters %v", describeFilters)
 	}
-	subnetId := *subnet.Subnets[0].SubnetId
-	klog.Infof("Using subnet: %s", subnetId)
-	return subnetId, capacityReservationId, nil
+	// EFA traffic cannot cross an AZ https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/efa.html#efa-limits
+	targetAZ := aws.ToString(describeResponse.InstanceTypeOfferings[0].Location)
+	klog.Infof("Found availability zone %q with offering for instance types %v", targetAZ, opts.InstanceTypes)
+	return []string{targetAZ}, nil
+}
+
+func (m *nodeManager) getValidSubnets(opts *deployerOptions, infra *Infrastructure, availabilityZoneFilter []string) ([]string, error) {
+	var describeFilters []ec2types.Filter
+	var targetSubnets []string
+	if opts.EFA {
+		// EFA requires private subnets
+		targetSubnets = infra.subnetsPrivate
+	} else {
+		targetSubnets = infra.subnets()
+	}
+	if len(availabilityZoneFilter) > 0 {
+		describeFilters = append(describeFilters, ec2types.Filter{
+			Name:   aws.String("availability-zone"),
+			Values: availabilityZoneFilter,
+		},
+		)
+	}
+	describeResponse, err := m.clients.EC2().DescribeSubnets(context.TODO(), &ec2.DescribeSubnetsInput{
+		Filters:   describeFilters,
+		SubnetIds: targetSubnets,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to describe subnets %v: %v", targetSubnets, err)
+	}
+	if describeResponse == nil || len(describeResponse.Subnets) == 0 {
+		return nil, fmt.Errorf("no subnet in %v satisfied filters: %+v", targetSubnets, describeFilters)
+	}
+	var subnetIds []string
+	for _, subnet := range describeResponse.Subnets {
+		subnetIds = append(subnetIds, *subnet.SubnetId)
+	}
+	klog.Infof("Using subnets: %v", subnetIds)
+	return subnetIds, nil
 }
 
 func (m *nodeManager) getValidInstanceTypes(desiredInstanceTypes []string) ([]string, error) {
@@ -683,7 +719,15 @@ func (m *nodeManager) getValidInstanceTypes(desiredInstanceTypes []string) ([]st
 	return validInstanceTypes, nil
 }
 
-func (m *nodeManager) getEFANetworkInterfaces(opts *deployerOptions, securityGroups []string, subnetId string) ([]networkInterface, error) {
+func (m *nodeManager) getNetworkInterfaces(opts *deployerOptions, securityGroups []string, subnetIDs []string) ([]networkInterface, error) {
+	if !opts.EFA {
+		// create only the default primary network interface if not using EFA
+		netiface, err := getNetworkInterface(opts, 0, subnetIDs, securityGroups)
+		if err != nil {
+			return nil, err
+		}
+		return []networkInterface{netiface}, nil
+	}
 	// EFA option assumes a single instance type
 	instanceType := opts.InstanceTypes[0]
 	ec2InstanceType := ec2types.InstanceType(instanceType)
@@ -703,22 +747,45 @@ func (m *nodeManager) getEFANetworkInterfaces(opts *deployerOptions, securityGro
 	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/efa.html#efa-limits
 	numEfaInterfaces := int(aws.ToInt32(networkInfo.MaximumNetworkCards))
 	var networkInterfaces []networkInterface
-	for i := range numEfaInterfaces {
-		deviceIndex := 1
-		if i == 0 {
-			// First network card should use device 0
-			// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-efa.html#efa-launch
-			deviceIndex = 0
+	for cardIndex := range numEfaInterfaces {
+		efaInterface, err := getNetworkInterface(opts, cardIndex, subnetIDs, securityGroups)
+		if err != nil {
+			return nil, err
 		}
-		networkInterfaces = append(networkInterfaces, networkInterface{
-			Description:         "EFA-enabled network interface",
-			DeviceIndex:         deviceIndex,
-			NetworkCardIndex:    i,
-			InterfaceType:       "efa",
-			SubnetId:            subnetId,
-			Groups:              securityGroups,
-			DeleteOnTermination: true,
-		})
+		networkInterfaces = append(networkInterfaces, efaInterface)
 	}
 	return networkInterfaces, nil
+}
+
+func getNetworkInterface(opts *deployerOptions, networkCardIndex int, subnetIds []string, securityGroups []string) (networkInterface, error) {
+	// simplification that works with currently supported network interfaces based on
+	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-eni.html#network-cards
+	// and
+	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-efa.html#efa-launch
+	deviceIndex := 0
+	if networkCardIndex > 0 {
+		deviceIndex = 1
+	}
+	var description, interfaceType, subnetID *string
+	if opts.EFA {
+		if len(subnetIds) == 0 {
+			return networkInterface{}, fmt.Errorf("EFA interfaces require a subnet but none were provided")
+		}
+		subnetID = &subnetIds[0]
+		interfaceType = aws.String("efa")
+		description = aws.String("EFA-enabled network interface")
+	} else {
+		// no need to assign a subnet here, more restrictive than it is helpful
+		interfaceType = aws.String("interface")
+		description = aws.String("Standard network interface")
+	}
+	return networkInterface{
+		Description:         description,
+		DeviceIndex:         &deviceIndex,
+		NetworkCardIndex:    &networkCardIndex,
+		InterfaceType:       interfaceType,
+		SubnetId:            subnetID,
+		Groups:              securityGroups,
+		DeleteOnTermination: aws.Bool(true),
+	}, nil
 }
