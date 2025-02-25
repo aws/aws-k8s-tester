@@ -126,9 +126,10 @@ Resources:
         InstanceType: "{{index .InstanceTypes 0}}"
         MetadataOptions: 
           HttpTokens: required
+        {{ if .NetworkInterfaces -}}
         NetworkInterfaces:
         {{- range .NetworkInterfaces}}
-          - {{ if .NetworkCardIndex }}NetworkCardIndex: {{.NetworkCardIndex}}{{end}}{{ if .DeviceIndex }}
+          - NetworkCardIndex: {{ .NetworkCardIndex }}{{ if .DeviceIndex }} {{/* network card index cannot be empty */}}
             DeviceIndex: {{ .DeviceIndex }}{{ end }}{{ if .InterfaceType }}
             InterfaceType: {{ .InterfaceType }}{{ end }}{{ if .Groups }}
             Groups: {{ .Groups }}{{ end }}{{ if .SubnetId }}
@@ -136,6 +137,7 @@ Resources:
             DeleteOnTermination: {{ .DeleteOnTermination }}{{ end }}{{ if .Description }}
             Description: {{ .Description}}{{ end -}}
         {{- end}}
+        {{ end -}}
         UserData:
           Fn::Base64:
             Fn::If:
