@@ -1,12 +1,12 @@
 package eksapi
 
 import (
+	"bytes"
 	"context"
 	_ "embed"
 	"errors"
 	"fmt"
 	"path"
-	"slices"
 	"strings"
 	"time"
 
@@ -89,46 +89,37 @@ func (i *Infrastructure) subnets() []string {
 func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions) (*Infrastructure, error) {
 	// TODO: create a subnet in every AZ
 	// get two AZs for the subnets
-	azs, err := m.clients.EC2().DescribeAvailabilityZones(context.TODO(), &ec2.DescribeAvailabilityZonesInput{})
+	describeAZsOuptut, err := m.clients.EC2().DescribeAvailabilityZones(context.TODO(), &ec2.DescribeAvailabilityZonesInput{})
 	if err != nil {
 		return nil, err
 	}
-	var subnetAzs []string
-	if opts.CapacityReservation {
-		subnetAzs, err = m.getAZsWithCapacity(opts)
-		if err != nil {
-			return nil, err
-		}
-		for _, az := range azs.AvailabilityZones {
-			if len(subnetAzs) == 2 {
-				break
-			}
-			if !slices.Contains(subnetAzs, *az.ZoneName) {
-				subnetAzs = append(subnetAzs, *az.ZoneName)
-			}
-		}
-	} else {
-		for i := 0; i < 2; i++ {
-			subnetAzs = append(subnetAzs, *azs.AvailabilityZones[i].ZoneName)
-		}
+	if describeAZsOuptut == nil || len(describeAZsOuptut.AvailabilityZones) == 0 {
+		return nil, fmt.Errorf("no availability zones returned from describe call")
 	}
-	klog.Infof("creating infrastructure stack with AZs: %v", subnetAzs)
+	ec2AvailabilityZones := describeAZsOuptut.AvailabilityZones
+	numAZs := len(describeAZsOuptut.AvailabilityZones)
+	var availabilityZones []string
+	for i := 0; i < numAZs; i++ {
+		availabilityZones = append(availabilityZones, aws.ToString(ec2AvailabilityZones[i].ZoneName))
+	}
+	vpcConfig, err := getVpcConfig(availabilityZones)
+	if err != nil {
+		return nil, err
+	}
+	templateBuf := bytes.Buffer{}
+	err = templates.Infrastructure.Execute(&templateBuf, vpcConfig)
+	if err != nil {
+		return nil, err
+	}
+	klog.Infof("creating infrastructure stack with AZs: %v", availabilityZones)
 	input := cloudformation.CreateStackInput{
 		StackName:    aws.String(m.resourceID),
-		TemplateBody: aws.String(templates.Infrastructure),
+		TemplateBody: aws.String(templateBuf.String()),
 		Capabilities: []cloudformationtypes.Capability{cloudformationtypes.CapabilityCapabilityIam},
 		Parameters: []cloudformationtypes.Parameter{
 			{
 				ParameterKey:   aws.String("ResourceId"),
 				ParameterValue: aws.String(m.resourceID),
-			},
-			{
-				ParameterKey:   aws.String("Subnet01AZ"),
-				ParameterValue: aws.String(subnetAzs[0]),
-			},
-			{
-				ParameterKey:   aws.String("Subnet02AZ"),
-				ParameterValue: aws.String(subnetAzs[1]),
 			},
 			{
 				ParameterKey:   aws.String("AutoMode"),
@@ -167,7 +158,7 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 	}
 	klog.Infof("getting infrastructure stack resources: %s", *out.StackId)
 	infra, err := m.getInfrastructureStackResources()
-	infra.availabilityZones = subnetAzs
+	infra.availabilityZones = availabilityZones
 	if err != nil {
 		return nil, fmt.Errorf("failed to get infrastructure stack resources: %w", err)
 	}
@@ -374,30 +365,4 @@ func (m *InfrastructureManager) getVPCCNINetworkInterfaceIds(vpcId string) ([]st
 		}
 	}
 	return enis, nil
-}
-
-func (m *InfrastructureManager) getAZsWithCapacity(opts *deployerOptions) ([]string, error) {
-	var subnetAzs []string
-	capacityReservations, err := m.clients.EC2().DescribeCapacityReservations(context.TODO(), &ec2.DescribeCapacityReservationsInput{
-		Filters: []ec2types.Filter{
-			{
-				Name:   aws.String("instance-type"),
-				Values: opts.InstanceTypes,
-			},
-			{
-				Name:   aws.String("state"),
-				Values: []string{"active"},
-			},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	for _, cr := range capacityReservations.CapacityReservations {
-		if *cr.AvailableInstanceCount >= int32(opts.Nodes) {
-			subnetAzs = append(subnetAzs, *cr.AvailabilityZone)
-			break
-		}
-	}
-	return subnetAzs, nil
 }
