@@ -73,12 +73,13 @@ func NewInfrastructureManager(clients *awsClients, resourceID string, metrics me
 }
 
 type Infrastructure struct {
-	vpc            string
-	subnetsPublic  []string
-	subnetsPrivate []string
-	clusterRoleARN string
-	nodeRoleARN    string
-	nodeRoleName   string
+	availabilityZones []string
+	vpc               string
+	subnetsPublic     []string
+	subnetsPrivate    []string
+	clusterRoleARN    string
+	nodeRoleARN       string
+	nodeRoleName      string
 }
 
 func (i *Infrastructure) subnets() []string {
@@ -86,6 +87,7 @@ func (i *Infrastructure) subnets() []string {
 }
 
 func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions) (*Infrastructure, error) {
+	// TODO: create a subnet in every AZ
 	// get two AZs for the subnets
 	azs, err := m.clients.EC2().DescribeAvailabilityZones(context.TODO(), &ec2.DescribeAvailabilityZonesInput{})
 	if err != nil {
@@ -165,6 +167,7 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 	}
 	klog.Infof("getting infrastructure stack resources: %s", *out.StackId)
 	infra, err := m.getInfrastructureStackResources()
+	infra.availabilityZones = subnetAzs
 	if err != nil {
 		return nil, fmt.Errorf("failed to get infrastructure stack resources: %w", err)
 	}
