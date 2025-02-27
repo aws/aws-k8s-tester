@@ -5,13 +5,21 @@ import (
 	"text/template"
 )
 
-//go:embed infra.yaml
-var Infrastructure string
-
 var (
 	//go:embed unmanaged-nodegroup.yaml.template
 	unmanagedNodegroupTemplate string
 	UnmanagedNodegroup         = template.Must(template.New("unmanagedNodegroup").Parse(unmanagedNodegroupTemplate))
+
+	// for addition in a template
+	funcMap = template.FuncMap{
+		"add": func(val1 int, val2 int) int {
+			return val1 + val2
+		},
+	}
+
+	//go:embed infra.yaml.template
+	infrastructureTemplate string
+	Infrastructure         = template.Must(template.New("infrastructure").Funcs(funcMap).Parse(infrastructureTemplate))
 )
 
 type UnmanagedNodegroupTemplateData struct {
