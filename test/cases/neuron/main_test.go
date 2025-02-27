@@ -13,7 +13,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/aws-k8s-tester/internal/e2e"
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -90,6 +92,8 @@ func deployEFAPlugin(ctx context.Context, config *envconf.Config) (context.Conte
 }
 
 func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Context, error) {
+	time.Sleep(time.Minute) // give node info time to populate
+
 	clientset, err := kubernetes.NewForConfig(config.Client().RESTConfig())
 	if err != nil {
 		return ctx, fmt.Errorf("failed to create Kubernetes client: %w", err)
@@ -104,45 +108,37 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		return ctx, fmt.Errorf("no nodes found in the cluster")
 	}
 
-	// Check if all nodes have the same instance type
-	for i := 1; i < len(nodes.Items); i++ {
-		if nodes.Items[i].Labels["node.kubernetes.io/instance-type"] != nodes.Items[i-1].Labels["node.kubernetes.io/instance-type"] {
-			return ctx, fmt.Errorf("inconsistent node types detected, all nodes must have the same instance type")
-		}
+	var totalEfaCount, totalNeuronCoreCount, totalNeuronCount int
+	if *nodeType == "" {
+		nodeType = aws.String(nodes.Items[0].Labels["node.kubernetes.io/instance-type"])
+		log.Printf("No node type specified. Using the node type %s in the node groups.", *nodeType)
 	}
-
-	// Calculate capacities for all nodes
-	totalNeuronCount := 0
-	totalNeuronCoreCount := 0
-	totalEfaCount := 0
-	nodeCount = len(nodes.Items) // Store global node count
-
 	for _, node := range nodes.Items {
-		log.Printf("[INFO] Processing node %s", node.Name)
-
-		// Check for Neuron capacity
-		neuron, ok := node.Status.Capacity["aws.amazon.com/neuron"]
-		if ok {
-			totalNeuronCount += int(neuron.Value())
-		} else {
-			log.Printf("[WARN] Node %s does not have 'aws.amazon.com/neuron' capacity", node.Name)
+		if node.Labels["node.kubernetes.io/instance-type"] != *nodeType {
+			continue
 		}
+		neuron, err := e2e.GetNonZeroResourceCapacity(&node, "aws.amazon.com/neuron")
+		if err != nil {
+			return nil, err
+		}
+		totalNeuronCount += neuron
 
 		// Check for NeuronCore capacity
-		neuronCore, ok := node.Status.Capacity["aws.amazon.com/neuroncore"]
-		if ok {
-			totalNeuronCoreCount += int(neuronCore.Value())
-		} else {
-			log.Printf("[WARN] Node %s does not have 'aws.amazon.com/neuroncore' capacity", node.Name)
+		neuronCore, err := e2e.GetNonZeroResourceCapacity(&node, "aws.amazon.com/neuroncore")
+		if err != nil {
+			return nil, err
 		}
+		totalNeuronCoreCount += neuronCore
 
 		// Check for EFA capacity
-		efa, ok := node.Status.Capacity["vpc.amazonaws.com/efa"]
-		if ok {
-			totalEfaCount += int(efa.Value())
-		} else {
-			log.Printf("[WARN] Node %s does not have 'vpc.amazonaws.com/efa' capacity", node.Name)
+		if *efaEnabled {
+			efa, err := e2e.GetNonZeroResourceCapacity(&node, "vpc.amazonaws.com/efa")
+			if err != nil {
+				return nil, err
+			}
+			totalEfaCount += efa
 		}
+		nodeCount += 1
 	}
 
 	// Update global capacities
@@ -151,10 +147,7 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		neuronCorePerNode = totalNeuronCoreCount / nodeCount
 		efaPerNode = totalEfaCount / nodeCount
 	} else {
-		log.Printf("[WARN] No nodes found, setting capacities to 0")
-		neuronPerNode = 0
-		neuronCorePerNode = 0
-		efaPerNode = 0
+		return nil, fmt.Errorf("no nodes of type %q found", *nodeType)
 	}
 
 	log.Printf("[INFO] Total Nodes: %d", nodeCount)
@@ -191,7 +184,6 @@ func TestMain(m *testing.M) {
 			return ctx, nil
 		},
 		deployMPIOperator,
-		checkNodeTypes,
 	}
 
 	if *installDevicePlugin {
@@ -203,6 +195,7 @@ func TestMain(m *testing.M) {
 		setUpFunctions = append(setUpFunctions, deployEFAPlugin)
 	}
 
+	setUpFunctions = append(setUpFunctions, checkNodeTypes)
 	testenv.Setup(setUpFunctions...)
 
 	testenv.Finish(
