@@ -67,15 +67,18 @@ func TestNeuronInference(t *testing.T) {
 			job := &batchv1.Job{
 				ObjectMeta: metav1.ObjectMeta{Name: "neuron-inference", Namespace: "default"},
 			}
-			err := wait.For(
+			if err := wait.For(
 				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 				wait.WithTimeout(60*time.Minute),
-			)
-			if err != nil {
+			); err != nil {
+				log.Println("[ERROR] Neuron inference job failed. Gathering logs...")
+				if err := printJobLogs(ctx, cfg, "default", "neuron-inference"); err != nil {
+					t.Logf("[WARNING] Failed to retrieve neuron-inference job logs: %v", err)
+				}
 				t.Fatalf("[ERROR] Neuron inference job did not succeed: %v", err)
 			}
-			log.Println("[INFO] Neuron inference job succeeded. Gathering logs...")
 
+			log.Println("[INFO] Neuron inference job succeeded. Gathering logs...")
 			applyTime := ctx.Value("applyTime")
 			if applyTime != nil {
 				if start, ok := applyTime.(time.Time); ok {
