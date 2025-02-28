@@ -76,8 +76,8 @@ func TestBertInference(t *testing.T) {
 				wait.WithTimeout(20*time.Minute),
 			); err != nil {
 				log.Println("[ERROR] BERT inference job failed. Gathering logs...")
-				if err := printJobLogs(ctx, cfg, "default", "neuron-inference"); err != nil {
-					t.Logf("[WARNING] Failed to retrieve neuron-inference job logs: %v", err)
+				if err := printJobLogs(ctx, cfg, "default", "bert-inference"); err != nil {
+					t.Logf("[WARNING] Failed to retrieve bert-inference job logs: %v", err)
 				}
 				t.Fatalf("[ERROR] BERT inference job did not succeed: %v", err)
 			}
