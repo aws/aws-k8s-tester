@@ -71,15 +71,18 @@ func TestBertInference(t *testing.T) {
 			job := &batchv1.Job{
 				ObjectMeta: metav1.ObjectMeta{Name: "bert-inference", Namespace: "default"},
 			}
-			err := wait.For(
+			if err := wait.For(
 				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 				wait.WithTimeout(20*time.Minute),
-			)
-			if err != nil {
+			); err != nil {
+				log.Println("[ERROR] BERT inference job failed. Gathering logs...")
+				if err := printJobLogs(ctx, cfg, "default", "neuron-inference"); err != nil {
+					t.Logf("[WARNING] Failed to retrieve neuron-inference job logs: %v", err)
+				}
 				t.Fatalf("[ERROR] BERT inference job did not succeed: %v", err)
 			}
-			log.Println("[INFO] BERT inference job succeeded. Gathering logs...")
 
+			log.Println("[INFO] BERT inference job succeeded. Gathering logs...")
 			// Compute duration from manifest apply to job success
 			startVal := ctx.Value("applyTime")
 			if startVal != nil {

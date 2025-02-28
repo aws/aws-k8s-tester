@@ -68,15 +68,19 @@ func TestBertTraining(t *testing.T) {
 			job := &batchv1.Job{
 				ObjectMeta: metav1.ObjectMeta{Name: "bert-training-launcher", Namespace: "default"},
 			}
-			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
+			if err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 				wait.WithTimeout(time.Minute*20),
 				wait.WithContext(ctx),
-			)
-			if err != nil {
-				t.Error(err)
+			); err != nil {
+				t.Logf("[ERROR] BERT training job failed. Gathering logs...")
+				if err = printJobLogs(ctx, cfg, "default", "bert-training-launcher"); err != nil {
+					t.Logf("Warning: failed to retrieve bert-training job logs: %v", err)
+				}
+				t.Fatalf("[ERROR] BERT training job did not succeed: %v", err)
 			}
+			t.Logf("[INFO] BERT training job succeeded. Gathering logs...")
 
-			err = printJobLogs(ctx, cfg, "default", "bert-training-launcher")
+			err := printJobLogs(ctx, cfg, "default", "bert-training-launcher")
 			if err != nil {
 				t.Logf("Warning: failed to retrieve bert-training job logs: %v", err)
 			}
