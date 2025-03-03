@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"testing"
-	"time"
 
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -17,7 +16,6 @@ import (
 
 var (
 	testenv env.Environment
-	_       = time.Now()
 )
 
 func TestMain(m *testing.M) {
