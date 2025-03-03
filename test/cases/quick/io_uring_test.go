@@ -3,16 +3,21 @@
 package quick
 
 import (
+	"bytes"
 	"context"
 	"log"
 	"testing"
 	"time"
 
-	"github.com/aws/aws-k8s-tester/internal/e2e"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/remotecommand"
+
+	"github.com/aws/aws-k8s-tester/internal/e2e"
 
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -20,28 +25,56 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
+func execInPod(config *rest.Config, namespace, podName, containerName string, command []string) (string, string, error) {
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return "", "", err
+	}
+
+	req := clientset.CoreV1().RESTClient().Post().
+		Resource("pods").
+		Name(podName).
+		Namespace(namespace).
+		SubResource("exec")
+
+	req.VersionedParams(&corev1.PodExecOptions{
+		Container: containerName,
+		Command:   command,
+		Stdin:     false,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       false,
+	}, scheme.ParameterCodec)
+
+	exec, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
+	if err != nil {
+		return "", "", err
+	}
+
+	var stdout, stderr bytes.Buffer
+	err = exec.Stream(remotecommand.StreamOptions{
+		Stdout: &stdout,
+		Stderr: &stderr,
+	})
+
+	return stdout.String(), stderr.String(), err
+}
+
 func TestNpmInstallWithCPULimits(t *testing.T) {
 	feat := features.New("npm-install-cpu-limits").
 		WithLabel("suite", "quick").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			log.Println("[Setup] Verifying ARM64 nodes...")
+			log.Println("[Setup] Verifying cluster nodes...")
 			var nodeList corev1.NodeList
 			if err := cfg.Client().Resources().List(ctx, &nodeList); err != nil {
 				t.Fatalf("Failed to list nodes: %v", err)
 			}
 
-			hasArm64Node := false
+			// Log node information
 			for _, node := range nodeList.Items {
 				arch := node.Labels["kubernetes.io/arch"]
-				t.Logf("Node: %s, Architecture: %s", node.Name, arch)
-				if arch == "arm64" {
-					hasArm64Node = true
-					break
-				}
-			}
-
-			if !hasArm64Node {
-				t.Fatal("No ARM64 nodes found in cluster")
+				kernelVersion := node.Status.NodeInfo.KernelVersion
+				t.Logf("Node: %s, Architecture: %s, Kernel: %s", node.Name, arch, kernelVersion)
 			}
 			return ctx
 		}).
@@ -58,25 +91,11 @@ func TestNpmInstallWithCPULimits(t *testing.T) {
 					},
 				},
 				Spec: corev1.PodSpec{
-					NodeSelector: map[string]string{
-						"kubernetes.io/arch": "arm64",
-					},
 					Containers: []corev1.Container{
 						{
 							Name:    "test-container",
 							Image:   "ubuntu:noble-20241015",
-							Command: []string{"/bin/sh", "-c"},
-							Args: []string{`
-								set -x
-								echo "[Test] Starting npm installation test..."
-								mkdir asd && 
-								cd asd && 
-								apt-get update && 
-								apt-get install -y npm nodejs && 
-								echo "[Test] Starting npm install express..."
-								npm install express --loglevel verbose || exit 1
-								echo "[Test] npm install completed successfully"
-							`},
+							Command: []string{"sleep", "100000000000000"},
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("500m"),
@@ -97,18 +116,35 @@ func TestNpmInstallWithCPULimits(t *testing.T) {
 				t.Fatalf("[Assess] Failed to create pod: %v", err)
 			}
 
-			log.Printf("[Assess] Waiting up to 5 minutes for pod %s to complete...", podName)
+			// Wait for pod to be running
+			log.Printf("[Assess] Waiting for pod %s to be running...", podName)
 			err := wait.For(
 				e2e.NewConditionExtension(cfg.Client().Resources()).ResourceMatch(pod, func(object k8s.Object) bool {
 					pod := object.(*corev1.Pod)
-					return pod.Status.Phase == corev1.PodSucceeded
+					return pod.Status.Phase == corev1.PodRunning
 				}),
-				wait.WithTimeout(5*time.Minute),
+				wait.WithTimeout(2*time.Minute),
 			)
 			if err != nil {
-				t.Logf("[Assess] Pod did not complete successfully: %v", err)
-				e2e.PrintDaemonSetPodLogs(t, ctx, cfg.Client().RESTConfig(), podNS, "app=npm-install-test")
-				t.Fatal("Pod did not complete within 5 minutes - possible io_uring hang detected")
+				t.Fatalf("[Assess] Pod did not start running: %v", err)
+			}
+
+			// Execute commands in the pod
+			execCmd := []string{
+				"bash", "-c",
+				`mkdir asd && 
+				cd asd && 
+				apt-get update && 
+				apt-get install -y npm nodejs && 
+				npm install karma@~6.4.0 --loglevel verbose`,
+			}
+
+			log.Printf("[Assess] Executing npm install in pod...")
+			stdout, stderr, err := execInPod(cfg.Client().RESTConfig(), podNS, podName, "test-container", execCmd)
+			if err != nil {
+				t.Logf("stdout: %s", stdout)
+				t.Logf("stderr: %s", stderr)
+				t.Fatal("npm install failed or hung")
 			}
 
 			log.Printf("[Assess] Pod %s completed successfully", podName)
