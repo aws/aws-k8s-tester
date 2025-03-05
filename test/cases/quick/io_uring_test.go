@@ -37,7 +37,7 @@ func TestNpmInstallWithCPULimits(t *testing.T) {
 			}
 			return ctx
 		}).
-		Assess("Pod can successfully run npm install with CPU limits", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+		Assess("Pod can successfully run npm install", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			podName := "npm-install-test"
 			podNS := "default"
 
@@ -66,16 +66,6 @@ func TestNpmInstallWithCPULimits(t *testing.T) {
 								npm install webpack --loglevel verbose || exit 1
 								echo "[Test] npm install completed successfully"
 							`},
-							// Resources: corev1.ResourceRequirements{
-							// 	Limits: corev1.ResourceList{
-							// 		corev1.ResourceCPU:    resource.MustParse("500m"),
-							// 		corev1.ResourceMemory: resource.MustParse("1Gi"),
-							// 	},
-							// 	Requests: corev1.ResourceList{
-							// 		corev1.ResourceCPU:    resource.MustParse("500m"),
-							// 		corev1.ResourceMemory: resource.MustParse("1Gi"),
-							// 	},
-							// },
 						},
 					},
 					RestartPolicy: corev1.RestartPolicyNever,
