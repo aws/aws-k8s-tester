@@ -20,7 +20,7 @@ import (
 )
 
 func TestNpmInstallWithCPULimits(t *testing.T) {
-	feat := features.New("npm-install-cpu-limits").
+	feat := features.New("npm-install").
 		WithLabel("suite", "quick").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			log.Println("[Setup] Verifying cluster nodes...")
