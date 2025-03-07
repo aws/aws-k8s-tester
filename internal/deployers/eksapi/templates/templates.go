@@ -14,7 +14,18 @@ var (
 	UnmanagedNodegroup         = template.Must(template.New("unmanagedNodegroup").Parse(unmanagedNodegroupTemplate))
 )
 
+type NetworkInterface struct {
+	Description         *string
+	NetworkCardIndex    *int
+	DeviceIndex         *int
+	InterfaceType       *string
+	Groups              []string
+	SubnetId            *string
+	DeleteOnTermination *bool
+}
+
 type UnmanagedNodegroupTemplateData struct {
+	NetworkInterfaces  []NetworkInterface
 	KubernetesVersion string
 	InstanceTypes     []string
 }
