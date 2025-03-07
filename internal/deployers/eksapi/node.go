@@ -69,16 +69,6 @@ type nodeManager struct {
 	resourceID string
 }
 
-type networkInterface struct {
-	Description         *string
-	NetworkCardIndex    *int
-	DeviceIndex         *int
-	InterfaceType       *string
-	Groups              []string
-	SubnetId            *string
-	DeleteOnTermination *bool
-}
-
 func NewNodeManager(clients *awsClients, resourceID string) *nodeManager {
 	return &nodeManager{
 		clients:    clients,
@@ -390,7 +380,7 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 	}
 	templateBuf := bytes.Buffer{}
 	err = templates.UnmanagedNodegroup.Execute(&templateBuf, struct {
-		NetworkInterfaces []networkInterface
+		NetworkInterfaces []templates.NetworkInterface
 		InstanceTypes     []string
 	}{
 		NetworkInterfaces: networkInterfaces,
@@ -719,14 +709,14 @@ func (m *nodeManager) getValidInstanceTypes(desiredInstanceTypes []string) ([]st
 	return validInstanceTypes, nil
 }
 
-func (m *nodeManager) getNetworkInterfaces(opts *deployerOptions, securityGroups []string, subnetIDs []string) ([]networkInterface, error) {
+func (m *nodeManager) getNetworkInterfaces(opts *deployerOptions, securityGroups []string, subnetIDs []string) ([]templates.NetworkInterface, error) {
 	if !opts.EFA {
 		// create only the default primary network interface if not using EFA
 		netiface, err := getNetworkInterface(opts, 0, subnetIDs, securityGroups)
 		if err != nil {
 			return nil, err
 		}
-		return []networkInterface{netiface}, nil
+		return []templates.NetworkInterface{netiface}, nil
 	}
 	// EFA option assumes a single instance type
 	instanceType := opts.InstanceTypes[0]
@@ -746,7 +736,7 @@ func (m *nodeManager) getNetworkInterfaces(opts *deployerOptions, securityGroups
 	// 1 EFA interface is supported per network card
 	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/efa.html#efa-limits
 	numEfaInterfaces := int(aws.ToInt32(networkInfo.MaximumNetworkCards))
-	var networkInterfaces []networkInterface
+	var networkInterfaces []templates.NetworkInterface
 	for cardIndex := range numEfaInterfaces {
 		efaInterface, err := getNetworkInterface(opts, cardIndex, subnetIDs, securityGroups)
 		if err != nil {
@@ -757,7 +747,7 @@ func (m *nodeManager) getNetworkInterfaces(opts *deployerOptions, securityGroups
 	return networkInterfaces, nil
 }
 
-func getNetworkInterface(opts *deployerOptions, networkCardIndex int, subnetIds []string, securityGroups []string) (networkInterface, error) {
+func getNetworkInterface(opts *deployerOptions, networkCardIndex int, subnetIds []string, securityGroups []string) (templates.NetworkInterface, error) {
 	// simplification that works with currently supported network interfaces based on
 	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-eni.html#network-cards
 	// and
@@ -769,7 +759,7 @@ func getNetworkInterface(opts *deployerOptions, networkCardIndex int, subnetIds 
 	var description, interfaceType, subnetID *string
 	if opts.EFA {
 		if len(subnetIds) == 0 {
-			return networkInterface{}, fmt.Errorf("EFA interfaces require a subnet but none were provided")
+			return templates.NetworkInterface{}, fmt.Errorf("EFA interfaces require a subnet but none were provided")
 		}
 		subnetID = &subnetIds[0]
 		interfaceType = aws.String("efa")
@@ -779,7 +769,7 @@ func getNetworkInterface(opts *deployerOptions, networkCardIndex int, subnetIds 
 		interfaceType = aws.String("interface")
 		description = aws.String("Standard network interface")
 	}
-	return networkInterface{
+	return templates.NetworkInterface{
 		Description:         description,
 		DeviceIndex:         &deviceIndex,
 		NetworkCardIndex:    &networkCardIndex,
