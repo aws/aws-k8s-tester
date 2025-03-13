@@ -40,11 +40,15 @@ spec:
             exit 1
           fi
 
-          # 4. Check that $sandbox_image references .ecr.
-          if [[ "$sandbox_image" != *".ecr."* ]]; then
-            echo "FAIL: no .ecr. reference in $sandbox_image"
-            echo "=== debug ==="
-            exit 1
+          # 4. Check that $sandbox_image references .ecr. or is provided on the instance
+          if [[ "$sandbox_image" == "localhost"* ]]; then
+            echo "INFO: skipping .ecr. check for localhost sandbox image"
+          else
+            if [[ "$sandbox_image" != *".ecr."* ]]; then
+              echo "FAIL: no .ecr. reference in $sandbox_image"
+              echo "=== debug ==="
+              exit 1
+            fi
           fi
 
           # 5. Check for 'nvidia-container-runtime'
