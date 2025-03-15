@@ -3,31 +3,6 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: "kubetest2-eksapi infrastructure"
 
 Parameters:
-  VpcBlock:
-    Type: String
-    Default: 192.168.0.0/16
-    Description: The CIDR range for the VPC. This should be a valid private (RFC 1918) CIDR range.
-
-  PublicSubnet01Block:
-    Type: String
-    Default: 192.168.0.0/18
-    Description: CidrBlock for public subnet 01 within the VPC
-
-  PublicSubnet02Block:
-    Type: String
-    Default: 192.168.64.0/18
-    Description: CidrBlock for public subnet 02 within the VPC
-
-  PrivateSubnet01Block:
-    Type: String
-    Default: 192.168.128.0/18
-    Description: CidrBlock for private subnet 01 within the VPC
-
-  PrivateSubnet02Block:
-    Type: String
-    Default: 192.168.192.0/18
-    Description: CidrBlock for private subnet 02 within the VPC
-
   AdditionalClusterRoleServicePrincipal:
     Type: String
     Default: ""
@@ -36,30 +11,12 @@ Parameters:
   ResourceId:
     Type: String
 
-  Subnet01AZ:
-    Type: String
-
-  Subnet02AZ:
-    Type: String
-
   AutoMode:
     Type: String
     AllowedValues:
       - "true"
       - "false"
     Default: "false"
-
-Metadata:
-  AWS::CloudFormation::Interface:
-    ParameterGroups:
-      - Label:
-          default: "Worker Network Configuration"
-        Parameters:
-          - VpcBlock
-          - PublicSubnet01Block
-          - PublicSubnet02Block
-          - PrivateSubnet01Block
-          - PrivateSubnet02Block
 
 Conditions:
   HasAdditionalClusterRoleServicePrincipal:
@@ -77,7 +34,7 @@ Resources:
   VPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !Ref VpcBlock
+      CidrBlock: {{ .VPCCIDRBlock }}
       EnableDnsHostnames: true
       EnableDnsSupport: true
       Tags:
@@ -91,9 +48,6 @@ Resources:
       VpcId:
         Ref: VPC
 
-  #
-  # Internet gateways (ipv4, and egress for ipv6)
-  #
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
@@ -114,70 +68,66 @@ Resources:
       VpcId:
         Ref: VPC
 
-  #
-  # Nat gateways
-  #
-  NATGateway01:
-    Type: AWS::EC2::NatGateway
-    DependsOn:
-      - NatGatewayEIP1
-      - SubnetPublic01
-      - VPCGatewayAttachment
+{{ range $index, $cidr := .PublicCIDRs }}
+  SubnetPublic{{ $index }}:
+    Type: AWS::EC2::Subnet
+    Metadata:
+      Comment: Subnet {{ $index }}
+    DependsOn: IPv6CidrBlock
     Properties:
-      AllocationId:
-        Fn::GetAtt:
-          - NatGatewayEIP1
-          - AllocationId
-      SubnetId:
-        Ref: SubnetPublic01
+      AvailabilityZone: "{{index $.AvailabilityZones $index}}"
+      CidrBlock: {{ $cidr }}
+      Ipv6CidrBlock:
+        !Select [{{ $index }}, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], {{ $.NumSubnets }}, {{ $.Ipv6CidrBits }}]]
+      AssignIpv6AddressOnCreation: true
+      MapPublicIpOnLaunch: true
       Tags:
+        - Key: kubernetes.io/role/elb
+          Value: "1"
         - Key: Name
           Value:
-            Fn::Sub: "${AWS::StackName}/NATGateway01"
-  NATGateway02:
-    Type: AWS::EC2::NatGateway
-    DependsOn:
-      - NatGatewayEIP2
-      - SubnetPublic02
-      - VPCGatewayAttachment
-    Properties:
-      AllocationId:
-        Fn::GetAtt:
-          - NatGatewayEIP2
-          - AllocationId
-      SubnetId:
-        Ref: SubnetPublic02
-      Tags:
-        - Key: Name
-          Value:
-            Fn::Sub: "${AWS::StackName}/NATGateway02"
-  #
-  # Nat Gateway IPs
-  #
-  NatGatewayEIP1:
-    Type: AWS::EC2::EIP
-    DependsOn:
-      - VPCGatewayAttachment
-    Properties:
-      Domain: vpc
-      Tags:
-        - Key: Name
-          Value:
-            Fn::Sub: "${AWS::StackName}/NatGatewayEIP1"
-  NatGatewayEIP2:
-    Type: AWS::EC2::EIP
-    DependsOn:
-      - VPCGatewayAttachment
-    Properties:
-      Domain: vpc
-      Tags:
-        - Key: Name
-          Value:
-            Fn::Sub: "${AWS::StackName}/NatGatewayEIP2"
+            Fn::Sub: "${AWS::StackName}/SubnetPublic{{ $index }}"
+      VpcId:
+        Ref: VPC
 
-  #
-  # Routing - public subnets
-  #
+  NatGatewayEIP{{ $index }}:
+    Type: AWS::EC2::EIP
+    DependsOn:
+      - VPCGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/NatGatewayEIP{{ $index }}"
+
+  NATGateway{{ $index }}:
+    Type: AWS::EC2::NatGateway
+    DependsOn:
+      - NatGatewayEIP{{ $index }}
+      - SubnetPublic{{ $index }}
+      - VPCGatewayAttachment
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - NatGatewayEIP{{ $index }}
+          - AllocationId
+      SubnetId:
+        Ref: SubnetPublic{{ $index }}
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/NATGateway{{ $index }}"
+
+  RouteTableAssociationPublic{{ $index }}:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: SubnetPublic{{ $index }}
+{{ end }}
+
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -210,11 +160,25 @@ Resources:
       RouteTableId:
         Ref: PublicRouteTable
 
-  #
-  # Routing - private subnets
-  # Route tables
-  #
-  PrivateRouteTable01:
+{{ range $index, $cidr := .PrivateCIDRs }}
+  SubnetPrivate{{ $index }}:
+    Type: AWS::EC2::Subnet
+    DependsOn: IPv6CidrBlock
+    Properties:
+      AvailabilityZone: "{{index $.AvailabilityZones $index}}"
+      CidrBlock: "{{ $cidr }}"
+      Ipv6CidrBlock:
+        !Select [{{$indexPadding := len $.PublicCIDRs}}{{ add $indexPadding $index }}, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], {{ $.NumSubnets }}, {{ $.Ipv6CidrBits }}]]
+      AssignIpv6AddressOnCreation: true
+      Tags:
+        - Key: kubernetes.io/role/internal-elb
+          Value: "1"
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}/SubnetPrivate{{ $index }}"
+      VpcId:
+        Ref: VPC
+  PrivateRouteTable{{ $index }}:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId:
@@ -222,184 +186,37 @@ Resources:
       Tags:
         - Key: Name
           Value:
-            Fn::Sub: "${AWS::StackName}/PrivateRouteTable01"
-  PrivateRouteTable02:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId:
-        Ref: VPC
-      Tags:
-        - Key: Name
-          Value:
-            Fn::Sub: "${AWS::StackName}/PrivateRouteTable02"
-  #
-  # Nat IPv4 Private Routes
-  #
-  PrivateSubnetDefaultRoute01:
+            Fn::Sub: "${AWS::StackName}/PrivateRouteTable{{ $index }}"
+  
+  PrivateSubnetDefaultRoute{{ $index }}:
     Type: AWS::EC2::Route
     DependsOn:
       - VPCGatewayAttachment
-      - NATGateway01
+      - NATGateway{{ $index }}
     Properties:
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId:
-        Ref: NATGateway01
+        Ref: NATGateway{{ $index }}
       RouteTableId:
-        Ref: PrivateRouteTable01
-  PrivateSubnetDefaultRoute02:
-    Type: AWS::EC2::Route
-    DependsOn:
-      - VPCGatewayAttachment
-      - NATGateway02
-    Properties:
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId:
-        Ref: NATGateway02
-      RouteTableId:
-        Ref: PrivateRouteTable02
+        Ref: PrivateRouteTable{{ $index }}
 
-  #
-  # EOIG IPv6 Private Routes
-  #
-  PrivateSubnetDefaultIpv6Route01:
+  PrivateSubnetDefaultIpv6Route{{ $index }}:
     Type: AWS::EC2::Route
     Properties:
       DestinationIpv6CidrBlock: ::/0
       EgressOnlyInternetGatewayId:
         Ref: EgressOnlyInternetGateway
       RouteTableId:
-        Ref: PrivateRouteTable01
-  PrivateSubnetDefaultIpv6Route02:
-    Type: AWS::EC2::Route
-    Properties:
-      DestinationIpv6CidrBlock: ::/0
-      EgressOnlyInternetGatewayId:
-        Ref: EgressOnlyInternetGateway
-      RouteTableId:
-        Ref: PrivateRouteTable02
+        Ref: PrivateRouteTable{{ $index }}
 
-  #
-  # Public subnets
-  SubnetPublic01:
-    Type: AWS::EC2::Subnet
-    Metadata:
-      Comment: Subnet 01
-    DependsOn: IPv6CidrBlock
-    Properties:
-      AvailabilityZone:
-        Ref: Subnet01AZ
-      CidrBlock:
-        Ref: PublicSubnet01Block
-      Ipv6CidrBlock:
-        !Select [0, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 8, 64]]
-      AssignIpv6AddressOnCreation: true
-      MapPublicIpOnLaunch: true
-      Tags:
-        - Key: kubernetes.io/role/elb
-          Value: "1"
-        - Key: Name
-          Value:
-            Fn::Sub: "${AWS::StackName}/SubnetPublic01"
-      VpcId:
-        Ref: VPC
-  SubnetPublic02:
-    Type: AWS::EC2::Subnet
-    DependsOn: IPv6CidrBlock
-    Properties:
-      AvailabilityZone:
-        Ref: Subnet02AZ
-      CidrBlock:
-        Ref: PublicSubnet02Block
-      Ipv6CidrBlock:
-        !Select [1, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 8, 64]]
-      AssignIpv6AddressOnCreation: true
-      MapPublicIpOnLaunch: true
-      Tags:
-        - Key: kubernetes.io/role/elb
-          Value: "1"
-        - Key: Name
-          Value:
-            Fn::Sub: "${AWS::StackName}/SubnetPublic02"
-      VpcId:
-        Ref: VPC
-
-  #
-  # Public route table associations
-  #
-  RouteTableAssociationPublic01:
+  RouteTableAssociationPrivate{{ $index }}:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId:
-        Ref: PublicRouteTable
+        Ref: PrivateRouteTable{{ $index }}
       SubnetId:
-        Ref: SubnetPublic01
-  RouteTableAssociationPublic02:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId:
-        Ref: PublicRouteTable
-      SubnetId:
-        Ref: SubnetPublic02
-
-  #
-  # Private subnets
-  #
-  SubnetPrivate01:
-    Type: AWS::EC2::Subnet
-    DependsOn: IPv6CidrBlock
-    Properties:
-      AvailabilityZone:
-        Ref: Subnet01AZ
-      CidrBlock:
-        Ref: PrivateSubnet01Block
-      Ipv6CidrBlock:
-        !Select [2, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 8, 64]]
-      AssignIpv6AddressOnCreation: true
-      Tags:
-        - Key: kubernetes.io/role/internal-elb
-          Value: "1"
-        - Key: Name
-          Value:
-            Fn::Sub: "${AWS::StackName}/SubnetPrivate01"
-      VpcId:
-        Ref: VPC
-  SubnetPrivate02:
-    Type: AWS::EC2::Subnet
-    DependsOn: IPv6CidrBlock
-    Properties:
-      AvailabilityZone:
-        Ref: Subnet02AZ
-      CidrBlock:
-        Ref: PrivateSubnet02Block
-      Ipv6CidrBlock:
-        !Select [3, !Cidr [!Select [0, !GetAtt VPC.Ipv6CidrBlocks], 8, 64]]
-      AssignIpv6AddressOnCreation: true
-      Tags:
-        - Key: kubernetes.io/role/internal-elb
-          Value: "1"
-        - Key: Name
-          Value:
-            Fn::Sub: "${AWS::StackName}/SubnetPrivate02"
-      VpcId:
-        Ref: VPC
-
-  #
-  # Private route table associations
-  #
-  RouteTableAssociationPrivate01:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId:
-        Ref: PrivateRouteTable01
-      SubnetId:
-        Ref: SubnetPrivate01
-  RouteTableAssociationPrivate02:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId:
-        Ref: PrivateRouteTable02
-      SubnetId:
-        Ref: SubnetPrivate02
+        Ref: SubnetPrivate{{ $index }}
+{{ end }}
 
   ClusterRole:
     Type: AWS::IAM::Role
@@ -532,8 +349,7 @@ Outputs:
     Value:
       Fn::Join:
         - ","
-        - - Ref: SubnetPrivate01
-          - Ref: SubnetPrivate02
+        - [{{ range $index, $cidr := .PrivateCIDRs -}}{{if $index}}, {{end}}Ref: SubnetPrivate{{ $index }}{{ end }}]
     Export:
       Name:
         Fn::Sub: "${AWS::StackName}::SubnetsPrivate"
@@ -542,8 +358,7 @@ Outputs:
     Value:
       Fn::Join:
         - ","
-        - - Ref: SubnetPublic01
-          - Ref: SubnetPublic02
+        - [{{ range $index, $cidr := .PublicCIDRs -}}{{if $index}}, {{end}}Ref: SubnetPublic{{ $index }}{{ end }}]
     Export:
       Name:
         Fn::Sub: "${AWS::StackName}::SubnetsPublic"
