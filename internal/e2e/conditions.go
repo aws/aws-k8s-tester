@@ -66,23 +66,23 @@ func (c *ConditionExtension) JobSucceeded(job k8s.Object) apimachinerywait.Condi
 }
 
 func (c *ConditionExtension) AllNodesHaveNonZeroResourceCapacity(resourceLabel string) apimachinerywait.ConditionWithContextFunc {
-    return func(ctx context.Context) (done bool, err error) {
-        nodeList := &v1.NodeList{}
-        if err := c.resources.List(ctx, nodeList); err != nil {
-            return false, fmt.Errorf("failed to list nodes: %w", err)
-        }
-        if len(nodeList.Items) == 0 {
-            return false, fmt.Errorf("no nodes found in the cluster")
-        }
-        for _, node := range nodeList.Items {
-            resource, ok := node.Status.Capacity[v1.ResourceName(resourceLabel)]
-            if !ok {
-                return false, nil
-            }
-            if resource.Value() <= 0 {
-                return false, nil
-            }
-        }
-        return true, nil
-    }
+	return func(ctx context.Context) (done bool, err error) {
+		nodeList := &v1.NodeList{}
+		if err := c.resources.List(ctx, nodeList); err != nil {
+			return false, fmt.Errorf("failed to list nodes: %w", err)
+		}
+		if len(nodeList.Items) == 0 {
+			return false, fmt.Errorf("no nodes found in the cluster")
+		}
+		for _, node := range nodeList.Items {
+			resource, ok := node.Status.Capacity[v1.ResourceName(resourceLabel)]
+			if !ok {
+				return false, nil
+			}
+			if resource.Value() <= 0 {
+				return false, nil
+			}
+		}
+		return true, nil
+	}
 }
