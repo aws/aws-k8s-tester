@@ -24,6 +24,8 @@ type deployer struct {
 	awsConfig      aws.Config
 	eksClient      *eks.Client
 	KubeconfigPath string `flag:"kubeconfig" desc:"Path to kubeconfig"`
+	// ClusterName is the effective cluster name (from flag or RunID)
+	clusterName string
 }
 
 // NewDeployer implements deployer.New for EKS using eksctl
@@ -64,6 +66,16 @@ func bindFlags(d *deployer) *pflag.FlagSet {
 	klog.InitFlags(nil)
 	flags.AddGoFlagSet(flag.CommandLine)
 	return flags
+}
+
+// initClusterName sets the effective cluster name from flag or RunID
+func (d *deployer) initClusterName() {
+	if d.UpOptions.ClusterName != "" {
+		d.clusterName = d.UpOptions.ClusterName
+	} else {
+		d.clusterName = d.commonOptions.RunID()
+		klog.V(2).Infof("Using RunID for cluster name: %s", d.clusterName)
+	}
 }
 
 // assert that deployer implements types.DeployerWithKubeconfig
