@@ -16,29 +16,92 @@ metadata:
   {{- if .KubernetesVersion}}
   version: "{{.KubernetesVersion}}"
   {{- end}}
-managedNodeGroups:
-  - name: managed
+{{- if .WithOIDC}}
+iam:
+  withOIDC: true
+{{- end}}
+
+{{- if .UseUnmanagedNodegroup}}
+nodeGroups:
+  - name: {{if .NodegroupName}}"{{.NodegroupName}}"{{else}}"ng-1"{{end}}
     {{- if .AMI}}
     ami: "{{.AMI}}"
     {{- end}}
+    {{- if .AMIFamily}}
+    amiFamily: {{.AMIFamily}}
+    {{- else}}
     amiFamily: AmazonLinux2
-    {{- if .InstanceTypes}}
-    instanceTypes:
-      {{- range $instanceType := .InstanceTypes}}
-      - "{{$instanceType}}"
-      {{- end}}
     {{- end}}
-	{{- if gt .Nodes 0}}
+    {{- if .InstanceTypes}}
+    instanceType: "{{index .InstanceTypes 0}}"
+    {{- end}}
+    {{- if gt .Nodes 0}}
     minSize: {{.Nodes}}
     maxSize: {{.Nodes}}
     desiredCapacity: {{.Nodes}}
-	{{- end}}
-	{{- if .AMI}}
+    {{- end}}
+    {{- if .VolumeSize}}
+    volumeSize: {{.VolumeSize}}
+    {{- end}}
+    {{- if .PrivateNetworking}}
+    privateNetworking: true
+    {{- end}}
+    {{- if .AvailabilityZones}}
+    availabilityZones:
+    {{- range $az := .AvailabilityZones}}
+    - "{{$az}}"
+    {{- end}}
+    {{- end}}
+    {{- if and .AMI (eq .AMIFamily "AmazonLinux2")}}
     overrideBootstrapCommand: |
       #!/bin/bash
       source /var/lib/cloud/scripts/eksctl/bootstrap.helper.sh
       /etc/eks/bootstrap.sh {{.ClusterName}} --kubelet-extra-args "--node-labels=${NODE_LABELS}"
-	{{- end}}
+    {{- end}}
+{{- else}}
+managedNodeGroups:
+  - name: {{if .NodegroupName}}"{{.NodegroupName}}"{{else}}"managed"{{end}}
+    {{- if .AMI}}
+    ami: "{{.AMI}}"
+    {{- end}}
+    {{- if .AMIFamily}}
+    amiFamily: {{.AMIFamily}}
+    {{- else}}
+    amiFamily: AmazonLinux2
+    {{- end}}
+    {{- if .InstanceTypes}}
+    instanceTypes:
+    {{- range $instanceType := .InstanceTypes}}
+    - "{{$instanceType}}"
+    {{- end}}
+    {{- end}}
+    {{- if gt .Nodes 0}}
+    minSize: {{.Nodes}}
+    maxSize: {{.Nodes}}
+    desiredCapacity: {{.Nodes}}
+    {{- end}}
+    {{- if .VolumeSize}}
+    volumeSize: {{.VolumeSize}}
+    {{- end}}
+    {{- if .PrivateNetworking}}
+    privateNetworking: true
+    {{- end}}
+    {{- if .EFAEnabled}}
+    efaEnabled: true
+    {{- end}}
+    {{- if .AvailabilityZones}}
+    availabilityZones:
+    {{- range $az := .AvailabilityZones}}
+    - "{{$az}}"
+    {{- end}}
+    {{- end}}
+    {{- if and .AMI (eq .AMIFamily "AmazonLinux2")}}
+    overrideBootstrapCommand: |
+      #!/bin/bash
+      source /var/lib/cloud/scripts/eksctl/bootstrap.helper.sh
+      /etc/eks/bootstrap.sh {{.ClusterName}} --kubelet-extra-args "--node-labels=${NODE_LABELS}"
+    {{- end}}
+{{- end}}
 `
 
 type clusterConfigTemplateParams struct {
@@ -48,11 +111,14 @@ type clusterConfigTemplateParams struct {
 }
 
 func (d *deployer) RenderClusterConfig() ([]byte, error) {
+	d.initClusterName()
+
 	templateParams := clusterConfigTemplateParams{
 		UpOptions:   *d.UpOptions,
-		ClusterName: d.commonOptions.RunID(),
+		ClusterName: d.clusterName,
 		Region:      d.awsConfig.Region,
 	}
+
 	log.Printf("rendering cluster config template with params: %+v", templateParams)
 	t, err := template.New("configYAML").Parse(configYAMLTemplate)
 	if err != nil {
