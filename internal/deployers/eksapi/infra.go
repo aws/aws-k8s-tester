@@ -108,9 +108,14 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 			}
 		}
 	} else {
-		for i := 0; i < 2; i++ {
-			subnetAzs = append(subnetAzs, *azs.AvailabilityZones[i].ZoneName)
+		azs, err := m.getAZsWithInstanceTypes(opts)
+		if err != nil {
+			return nil, err
 		}
+		if len(azs) < 2 {
+			return nil, fmt.Errorf("need at least 2 AZ's that support all specified instance types (%v), got: %v", opts.InstanceTypes, azs)
+		}
+		subnetAzs = azs[0:2]
 	}
 	klog.Infof("creating infrastructure stack with AZs: %v", subnetAzs)
 	input := cloudformation.CreateStackInput{
@@ -374,6 +379,35 @@ func (m *InfrastructureManager) getVPCCNINetworkInterfaceIds(vpcId string) ([]st
 		}
 	}
 	return enis, nil
+}
+
+// getAZsWithInstanceTypes returns the availability zones which support all of the requested instance types
+func (m *InfrastructureManager) getAZsWithInstanceTypes(opts *deployerOptions) ([]string, error) {
+	offerings, err := m.clients.EC2().DescribeInstanceTypeOfferings(context.TODO(), &ec2.DescribeInstanceTypeOfferingsInput{
+		LocationType: ec2types.LocationTypeAvailabilityZone,
+		Filters: []ec2types.Filter{
+			{
+				Name:   aws.String("instance-type"),
+				Values: opts.InstanceTypes,
+			},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to describe instance type offerings: %v", err)
+	}
+	counts := make(map[string]int)
+	for _, offering := range offerings.InstanceTypeOfferings {
+		az := aws.ToString(offering.Location)
+		count := counts[az]
+		counts[az] = count + 1
+	}
+	var azs []string
+	for az, count := range counts {
+		if count == len(opts.InstanceTypes) {
+			azs = append(azs, az)
+		}
+	}
+	return azs, nil
 }
 
 func (m *InfrastructureManager) getAZsWithCapacity(opts *deployerOptions) ([]string, error) {
