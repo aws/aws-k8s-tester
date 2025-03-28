@@ -5,8 +5,10 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"math"
 	"path"
 	"slices"
+	"sort"
 	"strings"
 	"time"
 
@@ -38,6 +40,9 @@ const (
 	// the IPAM controller will add this tag to the ENI's that it creates
 	ipamControllerENITagKey = "eks:kubernetes-cni-node-name"
 )
+
+// this value is not currently configurable, the infra stack is hardcoded to create 2
+const numInfraAZs = 2
 
 // eksEndpointURLTag is the key for an optional tag on the infrastructure CloudFormation stack,
 // which indicates which EKS environment is associated with the stack's resources.
@@ -99,26 +104,30 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 		if err != nil {
 			return nil, err
 		}
-		for _, az := range azs.AvailabilityZones {
-			if len(subnetAzs) == 2 {
-				break
-			}
-			if !slices.Contains(subnetAzs, *az.ZoneName) {
-				subnetAzs = append(subnetAzs, *az.ZoneName)
-			}
-		}
 	} else if len(opts.InstanceTypes) > 0 {
-		azs, err := m.getAZsWithInstanceTypes(opts)
+		azs, err := m.getRankedAZsForInstanceTypes(opts)
 		if err != nil {
 			return nil, err
 		}
-		if len(azs) < 2 {
-			return nil, fmt.Errorf("need at least 2 AZ's that support all specified instance types (%v), got: %v", opts.InstanceTypes, azs)
+		if len(azs) == 0 {
+			return nil, fmt.Errorf("no AZs support any of the provided instance types (%v)", opts.InstanceTypes)
 		}
-		subnetAzs = azs[0:2]
+		subnetAzs = azs[0:int(math.Min(float64(len(azs)), numInfraAZs))]
 	} else {
-		for i := range 2 {
+		for i := range numInfraAZs {
 			subnetAzs = append(subnetAzs, aws.ToString(azs.AvailabilityZones[i].ZoneName))
+		}
+	}
+	// make sure we always have the number of AZs used in the infra stack. can end up here if using
+	// a single capacity reservation or the provided instance types are offered in fewer AZs
+	for _, az := range azs.AvailabilityZones {
+		if len(subnetAzs) == numInfraAZs {
+			break
+		}
+		if !slices.Contains(subnetAzs, *az.ZoneName) {
+			az := *az.ZoneName
+			klog.Infof("padding infra stack with AZ: %v", az)
+			subnetAzs = append(subnetAzs, az)
 		}
 	}
 	klog.Infof("creating infrastructure stack with AZs: %v", subnetAzs)
@@ -385,8 +394,9 @@ func (m *InfrastructureManager) getVPCCNINetworkInterfaceIds(vpcId string) ([]st
 	return enis, nil
 }
 
-// getAZsWithInstanceTypes returns the availability zones which support all of the requested instance types
-func (m *InfrastructureManager) getAZsWithInstanceTypes(opts *deployerOptions) ([]string, error) {
+// getAZsWithInstanceTypes returns the availability zones ordered decreasingly by the number of
+// requested instance types they support
+func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptions) ([]string, error) {
 	offerings, err := m.clients.EC2().DescribeInstanceTypeOfferings(context.TODO(), &ec2.DescribeInstanceTypeOfferingsInput{
 		LocationType: ec2types.LocationTypeAvailabilityZone,
 		Filters: []ec2types.Filter{
@@ -406,11 +416,12 @@ func (m *InfrastructureManager) getAZsWithInstanceTypes(opts *deployerOptions) (
 		counts[az] = count + 1
 	}
 	var azs []string
-	for az, count := range counts {
-		if count == len(opts.InstanceTypes) {
-			azs = append(azs, az)
-		}
+	for az := range counts {
+		azs = append(azs, az)
 	}
+	sort.Slice(azs, func(i, j int) bool {
+		return counts[azs[i]] > counts[azs[j]]
+	})
 	return azs, nil
 }
 
