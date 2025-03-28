@@ -42,7 +42,7 @@ const (
 )
 
 // this value is not currently configurable, the infra stack is hardcoded to create 2
-const numAZs = 2
+const numInfraAZs = 2
 
 // eksEndpointURLTag is the key for an optional tag on the infrastructure CloudFormation stack,
 // which indicates which EKS environment is associated with the stack's resources.
@@ -112,20 +112,22 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 		if len(azs) == 0 {
 			return nil, fmt.Errorf("no AZs support any of the provided instance types (%v)", opts.InstanceTypes)
 		}
-		subnetAzs = azs[0:int(math.Min(float64(len(azs)), numAZs))]
+		subnetAzs = azs[0:int(math.Min(float64(len(azs)), numInfraAZs))]
 	} else {
-		for i := range numAZs {
+		for i := range numInfraAZs {
 			subnetAzs = append(subnetAzs, aws.ToString(azs.AvailabilityZones[i].ZoneName))
 		}
 	}
-	// make sure we always have 2 AZs b/c the infra stack always tries to create 2
-	// can end up here if using a single capacity reservation or instance type(s) only offered in one AZ
+	// make sure we always have the number of AZs used in the infra stack. can end up here if using
+	// a single capacity reservation or the provided instance types are offered in fewer AZs
 	for _, az := range azs.AvailabilityZones {
-		if len(subnetAzs) == numAZs {
+		if len(subnetAzs) == numInfraAZs {
 			break
 		}
 		if !slices.Contains(subnetAzs, *az.ZoneName) {
-			subnetAzs = append(subnetAzs, *az.ZoneName)
+			az := *az.ZoneName
+			klog.Infof("padding infra stack with AZ: %v", az)
+			subnetAzs = append(subnetAzs, az)
 		}
 	}
 	klog.Infof("creating infrastructure stack with AZs: %v", subnetAzs)
