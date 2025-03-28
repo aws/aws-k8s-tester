@@ -107,7 +107,7 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 				subnetAzs = append(subnetAzs, *az.ZoneName)
 			}
 		}
-	} else {
+	} else if len(opts.InstanceTypes) > 0 {
 		azs, err := m.getAZsWithInstanceTypes(opts)
 		if err != nil {
 			return nil, err
@@ -116,6 +116,10 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 			return nil, fmt.Errorf("need at least 2 AZ's that support all specified instance types (%v), got: %v", opts.InstanceTypes, azs)
 		}
 		subnetAzs = azs[0:2]
+	} else {
+		for i := range 2 {
+			subnetAzs = append(subnetAzs, aws.ToString(azs.AvailabilityZones[i].ZoneName))
+		}
 	}
 	klog.Infof("creating infrastructure stack with AZs: %v", subnetAzs)
 	input := cloudformation.CreateStackInput{
