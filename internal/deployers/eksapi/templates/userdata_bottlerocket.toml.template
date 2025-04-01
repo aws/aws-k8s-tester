@@ -2,6 +2,7 @@
 "cluster-name" = "{{.Name}}"
 "api-server" = "{{.APIServerEndpoint}}"
 "cluster-certificate" = "{{.CertificateAuthority}}"
+device-ownership-from-security-context = true
 
 [settings.host-containers.admin]
 "enabled" = true
