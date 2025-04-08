@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/autoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	cloudformationtypes "github.com/aws/aws-sdk-go-v2/service/cloudformation/types"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
@@ -334,11 +333,11 @@ func (m *nodeManager) createManagedNodegroup(infra *Infrastructure, cluster *Clu
 		if err != nil {
 			return err
 		}
-		asgName := out.Nodegroup.Resources.AutoScalingGroups[0].Name
-		if ok, err := m.verifyASGAMI(*asgName, opts.ExpectedAMI); err != nil {
+		launchTemplateName := out.Nodegroup.LaunchTemplate.Name
+		if ok, err := m.verifyAMI(*launchTemplateName, opts.ExpectedAMI); err != nil {
 			return err
 		} else if !ok {
-			return fmt.Errorf("ASG %s is not using expected AMI: %s", *asgName, opts.ExpectedAMI)
+			return fmt.Errorf("Launch template %s is not using expected AMI: %s", *launchTemplateName, opts.ExpectedAMI)
 		}
 	}
 	return nil
@@ -370,9 +369,12 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 	if err != nil {
 		return err
 	}
-	networkInterfaces, err := m.getNetworkInterfaces(opts, []string{cluster.securityGroupId}, targetSubnets)
-	if err != nil {
-		return err
+	var networkInterfaces []templates.NetworkInterface
+	if opts.EFA {
+		networkInterfaces, err = m.getNetworkInterfaces(opts, []string{cluster.securityGroupId}, targetSubnets)
+		if err != nil {
+			return err
+		}
 	}
 	volumeMountPath := "/dev/xvda"
 	if opts.UserDataFormat == "bottlerocket" {
@@ -382,9 +384,15 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 	err = templates.UnmanagedNodegroup.Execute(&templateBuf, struct {
 		NetworkInterfaces []templates.NetworkInterface
 		InstanceTypes     []string
+		EC2AdditionalInfo string
+		NoASG             bool
+		NodeCount         int
 	}{
 		NetworkInterfaces: networkInterfaces,
 		InstanceTypes:     opts.InstanceTypes,
+		EC2AdditionalInfo: opts.EC2AdditionalInfo,
+		NoASG:             opts.NoASG,
+		NodeCount:         opts.Nodes,
 	})
 	if err != nil {
 		return err
@@ -427,10 +435,6 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 				ParameterValue: aws.String(infra.nodeRoleName),
 			},
 			{
-				ParameterKey:   aws.String("NodeCount"),
-				ParameterValue: aws.String(strconv.Itoa(opts.Nodes)),
-			},
-			{
 				ParameterKey:   aws.String("SecurityGroup"),
 				ParameterValue: aws.String(cluster.securityGroupId),
 			},
@@ -460,7 +464,7 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 	}
 	klog.Infof("created unmanaged nodegroup stack: %s", *out.StackId)
 	if opts.ExpectedAMI != "" {
-		if ok, err := m.verifyASGAMI(m.resourceID, opts.ExpectedAMI); err != nil {
+		if ok, err := m.verifyAMI(m.resourceID, opts.ExpectedAMI); err != nil {
 			return err
 		} else if !ok {
 			return fmt.Errorf("ASG %s is not using expected AMI: %s", m.resourceID, opts.ExpectedAMI)
@@ -556,40 +560,25 @@ func (m *nodeManager) getUnmanagedNodegroupStackName() string {
 	return fmt.Sprintf("%s-unmanaged-nodegroup", m.resourceID)
 }
 
-func (m *nodeManager) verifyASGAMI(asgName string, amiId string) (bool, error) {
-	klog.Infof("verifying AMI is %s for ASG: %s", amiId, asgName)
-	asgOut, err := m.clients.ASG().DescribeAutoScalingGroups(context.TODO(), &autoscaling.DescribeAutoScalingGroupsInput{
-		AutoScalingGroupNames: []string{asgName},
+func (m *nodeManager) verifyAMI(launchTemplateName string, amiId string) (bool, error) {
+	klog.Infof("verifying AMI is %s for launch template: %s", amiId, launchTemplateName)
+	ec2Out, err := m.clients.EC2().DescribeLaunchTemplateVersions(context.TODO(), &ec2.DescribeLaunchTemplateVersionsInput{
+		LaunchTemplateName: aws.String(launchTemplateName),
+		// $Latest and $Default are recognized keywords for version
+		Versions: []string{"$Latest"},
 	})
 	if err != nil {
 		return false, nil
 	}
-	if len(asgOut.AutoScalingGroups) != 1 {
-		return false, fmt.Errorf("autoscaling group not found: %s", asgName)
+	if len(ec2Out.LaunchTemplateVersions) == 0 {
+		return false, fmt.Errorf("launch template not found: %s", launchTemplateName)
 	}
-	var instanceIds []string
-	for _, instance := range asgOut.AutoScalingGroups[0].Instances {
-		instanceIds = append(instanceIds, *instance.InstanceId)
+	launchTemplate := ec2Out.LaunchTemplateVersions[0]
+	launchTemplateAMI := aws.ToString(launchTemplate.LaunchTemplateData.ImageId)
+	if launchTemplateAMI != amiId {
+		return false, fmt.Errorf("launch template %s version %d using wrong AMI: %s", launchTemplateName, aws.ToInt64(launchTemplate.VersionNumber), amiId)
 	}
-	klog.Infof("verifying AMI for instances: %v", instanceIds)
-	ec2Out, err := m.clients.EC2().DescribeInstances(context.TODO(), &ec2.DescribeInstancesInput{
-		InstanceIds: instanceIds,
-	})
-	if err != nil {
-		return false, err
-	}
-	var errs []error
-	for _, reservation := range ec2Out.Reservations {
-		for _, instance := range reservation.Instances {
-			if *instance.ImageId != amiId {
-				errs = append(errs, fmt.Errorf("instance %s using wrong AMI: %s", *instance.InstanceId, *instance.ImageId))
-			}
-		}
-	}
-	if len(errs) > 0 {
-		return false, errors.Join(errs...)
-	}
-	klog.Infof("ASG instances are using expected AMI: %s", amiId)
+	klog.Infof("Launch template %s version %d is using expected AMI: %s", launchTemplateName, aws.ToInt64(launchTemplate.VersionNumber), amiId)
 	return true, nil
 }
 

@@ -3,6 +3,8 @@ package templates
 import (
 	_ "embed"
 	"text/template"
+
+	sprig "github.com/Masterminds/sprig/v3"
 )
 
 //go:embed infra.yaml
@@ -11,7 +13,7 @@ var Infrastructure string
 var (
 	//go:embed unmanaged-nodegroup.yaml.template
 	unmanagedNodegroupTemplate string
-	UnmanagedNodegroup         = template.Must(template.New("unmanagedNodegroup").Parse(unmanagedNodegroupTemplate))
+	UnmanagedNodegroup         = template.Must(template.New("unmanagedNodegroup").Funcs(sprig.FuncMap()).Parse(unmanagedNodegroupTemplate))
 )
 
 type NetworkInterface struct {
