@@ -59,9 +59,11 @@ type deployerOptions struct {
 	AMI                         string        `flag:"ami" desc:"AMI for unmanaged nodes"`
 	AMIType                     string        `flag:"ami-type" desc:"AMI type for managed nodes"`
 	AutoMode                    bool          `flag:"auto-mode" desc:"Enable EKS Auto Mode"`
+	AvailabilityZones           []string      `flag:"availability-zones" desc:"Availability zones to include in infrastructure stack. Must be in the provided region."`
 	CapacityReservation         bool          `flag:"capacity-reservation" desc:"Use capacity reservation for the unmanaged nodegroup"`
 	ClusterCreationTimeout      time.Duration `flag:"cluster-creation-timeout" desc:"Time to wait for cluster to be created and become active."`
 	ClusterRoleServicePrincipal string        `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
+	EC2AdditionalInfo           string        `flag:"ec2-additional-info" desc:"Reserved."`
 	EFA                         bool          `flag:"efa" desc:"Create EFA interfaces on the node of an unmanaged nodegroup. One instance type must be passed if set. Requires --unmanaged-nodes and --instance-types."`
 	EKSEndpointURL              string        `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
 	EmitMetrics                 bool          `flag:"emit-metrics" desc:"Record and emit metrics to CloudWatch"`
@@ -74,6 +76,7 @@ type deployerOptions struct {
 	KubeconfigPath      string        `flag:"kubeconfig" desc:"Path to kubeconfig"`
 	KubernetesVersion   string        `flag:"kubernetes-version" desc:"cluster Kubernetes version"`
 	LogBucket           string        `flag:"log-bucket" desc:"S3 bucket for storing logs for each run. If empty, logs will not be stored."`
+	NoASG               bool          `flag:"no-asg" desc:"Create individual instances without an autoscaling group. Currently only supports a single instance type."`
 	NodeCreationTimeout time.Duration `flag:"node-creation-timeout" desc:"Time to wait for nodes to be created/launched. This should consider instance availability."`
 	NodeReadyTimeout    time.Duration `flag:"node-ready-timeout" desc:"Time to wait for all nodes to become ready"`
 	Nodes               int           `flag:"nodes" desc:"number of nodes to launch in cluster"`

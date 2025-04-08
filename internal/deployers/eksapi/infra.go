@@ -113,10 +113,8 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 			return nil, fmt.Errorf("no AZs support any of the provided instance types (%v)", opts.InstanceTypes)
 		}
 		subnetAzs = azs[0:int(math.Min(float64(len(azs)), numInfraAZs))]
-	} else {
-		for i := range numInfraAZs {
-			subnetAzs = append(subnetAzs, aws.ToString(azs.AvailabilityZones[i].ZoneName))
-		}
+	} else if len(opts.AvailabilityZones) > 0 {
+		subnetAzs = opts.AvailabilityZones[0:int(math.Min(float64(len(opts.AvailabilityZones)), numInfraAZs))]
 	}
 	// make sure we always have the number of AZs used in the infra stack. can end up here if using
 	// a single capacity reservation or the provided instance types are offered in fewer AZs
@@ -397,14 +395,21 @@ func (m *InfrastructureManager) getVPCCNINetworkInterfaceIds(vpcId string) ([]st
 // getAZsWithInstanceTypes returns the availability zones ordered decreasingly by the number of
 // requested instance types they support
 func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptions) ([]string, error) {
+	instanceTypeOferringFilter := []ec2types.Filter{
+		{
+			Name:   aws.String("instance-type"),
+			Values: opts.InstanceTypes,
+		},
+	}
+	if len(opts.AvailabilityZones) > 0 {
+		instanceTypeOferringFilter = append(instanceTypeOferringFilter, ec2types.Filter{
+			Name:   aws.String("location"),
+			Values: opts.AvailabilityZones,
+		})
+	}
 	offerings, err := m.clients.EC2().DescribeInstanceTypeOfferings(context.TODO(), &ec2.DescribeInstanceTypeOfferingsInput{
 		LocationType: ec2types.LocationTypeAvailabilityZone,
-		Filters: []ec2types.Filter{
-			{
-				Name:   aws.String("instance-type"),
-				Values: opts.InstanceTypes,
-			},
-		},
+		Filters:      instanceTypeOferringFilter,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to describe instance type offerings: %v", err)
@@ -427,17 +432,24 @@ func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptio
 
 func (m *InfrastructureManager) getAZsWithCapacity(opts *deployerOptions) ([]string, error) {
 	var subnetAzs []string
-	capacityReservations, err := m.clients.EC2().DescribeCapacityReservations(context.TODO(), &ec2.DescribeCapacityReservationsInput{
-		Filters: []ec2types.Filter{
-			{
-				Name:   aws.String("instance-type"),
-				Values: opts.InstanceTypes,
-			},
-			{
-				Name:   aws.String("state"),
-				Values: []string{"active"},
-			},
+	capacityReservationFilter := []ec2types.Filter{
+		{
+			Name:   aws.String("instance-type"),
+			Values: opts.InstanceTypes,
 		},
+		{
+			Name:   aws.String("state"),
+			Values: []string{"active"},
+		},
+	}
+	if len(opts.AvailabilityZones) > 0 {
+		capacityReservationFilter = append(capacityReservationFilter, ec2types.Filter{
+			Name:   aws.String("availability-zone"),
+			Values: opts.AvailabilityZones,
+		})
+	}
+	capacityReservations, err := m.clients.EC2().DescribeCapacityReservations(context.TODO(), &ec2.DescribeCapacityReservationsInput{
+		Filters: capacityReservationFilter,
 	})
 	if err != nil {
 		return nil, err
