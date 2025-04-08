@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/autoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	ssmtypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
@@ -70,13 +71,32 @@ func (m *logManager) gatherLogsUsingScript(k8sClient *k8sClient, opts *deployerO
 	if err != nil {
 		return err
 	}
-	if len(nodes.Items) == 0 {
+	var instanceIds []string
+	if len(nodes.Items) > 0 {
+		instanceIds, err = getNodeInstanceIDs(nodes.Items)
+		if err != nil {
+			return err
+		}
+	} else {
+		// if we're using unmanaged nodes, we can track down the instances in the ASG even if they didn't join the cluster
+		if opts.UnmanagedNodes {
+			out, err := m.clients.ASG().DescribeAutoScalingGroups(context.TODO(), &autoscaling.DescribeAutoScalingGroupsInput{
+				AutoScalingGroupNames: []string{m.resourceID},
+			})
+			if err != nil {
+				klog.Warningf("failed to describe unmanaged nodegroup ASG: %v", err)
+				return nil
+			}
+			for _, asg := range out.AutoScalingGroups {
+				for _, instance := range asg.Instances {
+					instanceIds = append(instanceIds, aws.ToString(instance.InstanceId))
+				}
+			}
+		}
+	}
+	if len(instanceIds) == 0 {
 		klog.Warning("no nodes to gather logs from!")
 		return nil
-	}
-	instanceIds, err := getNodeInstanceIDs(nodes.Items)
-	if err != nil {
-		return err
 	}
 	doc, err := m.clients.SSM().CreateDocument(context.TODO(), &ssm.CreateDocumentInput{
 		Content:        aws.String(logCollectorScriptSsmDocumentContent),
