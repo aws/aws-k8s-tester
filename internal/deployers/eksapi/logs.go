@@ -10,6 +10,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/autoscaling"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	ssmtypes "github.com/aws/aws-sdk-go-v2/service/ssm/types"
@@ -80,16 +82,39 @@ func (m *logManager) gatherLogsUsingScript(k8sClient *k8sClient, opts *deployerO
 	} else {
 		// if we're using unmanaged nodes, we can track down the instances in the ASG even if they didn't join the cluster
 		if opts.UnmanagedNodes {
-			out, err := m.clients.ASG().DescribeAutoScalingGroups(context.TODO(), &autoscaling.DescribeAutoScalingGroupsInput{
-				AutoScalingGroupNames: []string{m.resourceID},
-			})
-			if err != nil {
-				klog.Warningf("failed to describe unmanaged nodegroup ASG: %v", err)
-				return nil
-			}
-			for _, asg := range out.AutoScalingGroups {
-				for _, instance := range asg.Instances {
-					instanceIds = append(instanceIds, aws.ToString(instance.InstanceId))
+			if opts.NoASG {
+				paginator := ec2.NewDescribeInstancesPaginator(m.clients.EC2(), &ec2.DescribeInstancesInput{
+					Filters: []ec2types.Filter{
+						{
+							Name:   aws.String("tag:Name"),
+							Values: []string{fmt.Sprintf("%s-Node", m.resourceID)},
+						},
+					},
+				})
+				for paginator.HasMorePages() {
+					out, err := paginator.NextPage(context.TODO())
+					if err != nil {
+						klog.Warningf("failed to describe unmanaged nodes: %v", err)
+						return nil
+					}
+					for _, reservation := range out.Reservations {
+						for _, instance := range reservation.Instances {
+							instanceIds = append(instanceIds, *instance.InstanceId)
+						}
+					}
+				}
+			} else {
+				out, err := m.clients.ASG().DescribeAutoScalingGroups(context.TODO(), &autoscaling.DescribeAutoScalingGroupsInput{
+					AutoScalingGroupNames: []string{m.resourceID},
+				})
+				if err != nil {
+					klog.Warningf("failed to describe unmanaged nodegroup ASG: %v", err)
+					return nil
+				}
+				for _, asg := range out.AutoScalingGroups {
+					for _, instance := range asg.Instances {
+						instanceIds = append(instanceIds, aws.ToString(instance.InstanceId))
+					}
 				}
 			}
 		}
