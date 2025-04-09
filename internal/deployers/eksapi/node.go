@@ -369,11 +369,9 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 		return err
 	}
 	var networkInterfaces []templates.NetworkInterface
-	if opts.EFA {
-		networkInterfaces, err = m.getNetworkInterfaces(opts, []string{cluster.securityGroupId}, targetSubnets)
-		if err != nil {
-			return err
-		}
+	networkInterfaces, err = m.getNetworkInterfaces(opts, []string{cluster.securityGroupId}, targetSubnets)
+	if err != nil {
+		return err
 	}
 	volumeMountPath := "/dev/xvda"
 	if opts.UserDataFormat == "bottlerocket" {
@@ -750,6 +748,13 @@ func getNetworkInterface(opts *deployerOptions, networkCardIndex int, subnetIds 
 		interfaceType = aws.String("interface")
 		description = aws.String("Standard network interface")
 	}
+
+	if opts.NoASG && subnetID == nil {
+		// Must specify a subnet when not using an ASG so that the instance
+		// is launched in the correct VPC
+		subnetID = &subnetIds[0]
+	}
+
 	return templates.NetworkInterface{
 		Description:         description,
 		DeviceIndex:         &deviceIndex,
