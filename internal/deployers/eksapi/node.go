@@ -558,8 +558,7 @@ func (m *nodeManager) verifyAMI(launchTemplateName string, amiId string) (bool, 
 	klog.Infof("verifying AMI is %s for launch template: %s", amiId, launchTemplateName)
 	ec2Out, err := m.clients.EC2().DescribeLaunchTemplateVersions(context.TODO(), &ec2.DescribeLaunchTemplateVersionsInput{
 		LaunchTemplateName: aws.String(launchTemplateName),
-		// $Latest and $Default are recognized keywords for version
-		Versions: []string{"$Latest"},
+		Versions:           []string{"$Latest"},
 	})
 	if err != nil {
 		return false, nil

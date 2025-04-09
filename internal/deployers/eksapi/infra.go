@@ -395,21 +395,21 @@ func (m *InfrastructureManager) getVPCCNINetworkInterfaceIds(vpcId string) ([]st
 // getAZsWithInstanceTypes returns the availability zones ordered decreasingly by the number of
 // requested instance types they support
 func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptions) ([]string, error) {
-	instanceTypeOferringFilter := []ec2types.Filter{
+	instanceTypeOfferingsFilter := []ec2types.Filter{
 		{
 			Name:   aws.String("instance-type"),
 			Values: opts.InstanceTypes,
 		},
 	}
 	if len(opts.AvailabilityZones) > 0 {
-		instanceTypeOferringFilter = append(instanceTypeOferringFilter, ec2types.Filter{
+		instanceTypeOfferingsFilter = append(instanceTypeOfferingsFilter, ec2types.Filter{
 			Name:   aws.String("location"),
 			Values: opts.AvailabilityZones,
 		})
 	}
 	offerings, err := m.clients.EC2().DescribeInstanceTypeOfferings(context.TODO(), &ec2.DescribeInstanceTypeOfferingsInput{
 		LocationType: ec2types.LocationTypeAvailabilityZone,
-		Filters:      instanceTypeOferringFilter,
+		Filters:      instanceTypeOfferingsFilter,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to describe instance type offerings: %v", err)
