@@ -79,13 +79,16 @@ func (m *logManager) gatherLogsUsingScript(k8sClient *k8sClient, opts *deployerO
 			return err
 		}
 	} else {
+		klog.Warning("no nodes found in cluster!")
 		// if we're using unmanaged nodes, we can track down the instances even if they didn't join the cluster
 		if opts.UnmanagedNodes {
+			expectedTag := fmt.Sprintf("%s-Node", m.resourceID)
+			klog.Infof("fetching instances using tag %s...", expectedTag)
 			paginator := ec2.NewDescribeInstancesPaginator(m.clients.EC2(), &ec2.DescribeInstancesInput{
 				Filters: []ec2types.Filter{
 					{
 						Name:   aws.String("tag:Name"),
-						Values: []string{fmt.Sprintf("%s-Node", m.resourceID)},
+						Values: []string{expectedTag},
 					},
 				},
 			})

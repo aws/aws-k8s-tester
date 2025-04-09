@@ -165,7 +165,7 @@ Resources:
   Node{{$e}}:
     Type: AWS::EC2::Instance
     Properties: 
-      AdditionalInfo: "{{ $.EC2AdditionalInfo }}"
+      AdditionalInfo: {{ $.EC2AdditionalInfo }}
       LaunchTemplate:
         LaunchTemplateId: !Ref NodeLaunchTemplate
         Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber

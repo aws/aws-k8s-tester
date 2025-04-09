@@ -344,7 +344,6 @@ func (m *nodeManager) createManagedNodegroup(infra *Infrastructure, cluster *Clu
 }
 
 func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
-	var availabilityZoneFilter []string
 	var capacityReservationId string
 	stackName := m.getUnmanagedNodegroupStackName()
 	klog.Infof("creating unmanaged nodegroup stack %s...", stackName)
@@ -352,29 +351,26 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 	if err != nil {
 		return err
 	}
+	availabilityZoneFilter, err := m.getValidAvailabilityZonesFilter(opts, infra)
+	if err != nil {
+		return err
+	}
 	if opts.CapacityReservation {
-		capacityReservation, err := m.getCapacityReservation(opts)
+		capacityReservation, err := m.getCapacityReservation(opts, availabilityZoneFilter)
 		if err != nil {
 			return err
 		}
 		capacityReservationId = aws.ToString(capacityReservation.CapacityReservationId)
 		availabilityZoneFilter = []string{aws.ToString(capacityReservation.AvailabilityZone)}
-	} else {
-		availabilityZoneFilter, err = m.getValidAvailabilityZonesFilter(opts, infra)
-		if err != nil {
-			return err
-		}
 	}
 	targetSubnets, err := m.getValidSubnets(opts, infra, availabilityZoneFilter)
 	if err != nil {
 		return err
 	}
 	var networkInterfaces []templates.NetworkInterface
-	if opts.EFA {
-		networkInterfaces, err = m.getNetworkInterfaces(opts, []string{cluster.securityGroupId}, targetSubnets)
-		if err != nil {
-			return err
-		}
+	networkInterfaces, err = m.getNetworkInterfaces(opts, []string{cluster.securityGroupId}, targetSubnets)
+	if err != nil {
+		return err
 	}
 	volumeMountPath := "/dev/xvda"
 	if opts.UserDataFormat == "bottlerocket" {
@@ -575,7 +571,7 @@ func (m *nodeManager) verifyAMI(launchTemplateName string, amiId string) (bool, 
 	return true, nil
 }
 
-func (m *nodeManager) getCapacityReservation(opts *deployerOptions) (*ec2types.CapacityReservation, error) {
+func (m *nodeManager) getCapacityReservation(opts *deployerOptions, availabilityZones []string) (*ec2types.CapacityReservation, error) {
 	capacityReservations, err := m.clients.EC2().DescribeCapacityReservations(context.TODO(), &ec2.DescribeCapacityReservationsInput{
 		Filters: []ec2types.Filter{
 			{
@@ -585,6 +581,10 @@ func (m *nodeManager) getCapacityReservation(opts *deployerOptions) (*ec2types.C
 			{
 				Name:   aws.String("state"),
 				Values: []string{"active"},
+			},
+			{
+				Name:   aws.String("availability-zone"),
+				Values: availabilityZones,
 			},
 		},
 	})
@@ -610,25 +610,31 @@ func (m *nodeManager) getValidAvailabilityZonesFilter(opts *deployerOptions, inf
 		// no filter needed, leaves scheduling to EC2 provisioner
 		return []string{}, nil
 	}
-	describeFilters := []ec2types.Filter{
-		{
-			Name:   aws.String("instance-type"),
-			Values: opts.InstanceTypes,
-		},
-		{
-			Name:   aws.String("location"),
-			Values: infra.availabilityZones,
-		},
+
+	var possibleAZs []string
+	if len(opts.AvailabilityZones) != 0 {
+		possibleAZs = opts.AvailabilityZones
+	} else {
+		possibleAZs = infra.availabilityZones
 	}
 	describeResponse, err := m.clients.EC2().DescribeInstanceTypeOfferings(context.TODO(), &ec2.DescribeInstanceTypeOfferingsInput{
-		Filters:      describeFilters,
+		Filters: []ec2types.Filter{
+			{
+				Name:   aws.String("instance-type"),
+				Values: opts.InstanceTypes,
+			},
+			{
+				Name:   aws.String("location"),
+				Values: possibleAZs,
+			},
+		},
 		LocationType: ec2types.LocationTypeAvailabilityZone,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to describe instance type offerings: %v", err)
 	}
 	if describeResponse == nil || len(describeResponse.InstanceTypeOfferings) == 0 {
-		return nil, fmt.Errorf("no instance type offerings in current region with filters %v", describeFilters)
+		return nil, fmt.Errorf("no instance type offerings in current region for instance types %v and AZs %v", opts.InstanceTypes, possibleAZs)
 	}
 	// EFA traffic cannot cross an AZ https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/efa.html#efa-limits
 	targetAZ := aws.ToString(describeResponse.InstanceTypeOfferings[0].Location)
@@ -637,7 +643,6 @@ func (m *nodeManager) getValidAvailabilityZonesFilter(opts *deployerOptions, inf
 }
 
 func (m *nodeManager) getValidSubnets(opts *deployerOptions, infra *Infrastructure, availabilityZoneFilter []string) ([]string, error) {
-	var describeFilters []ec2types.Filter
 	var targetSubnets []string
 	if opts.EFA {
 		// EFA requires private subnets
@@ -645,22 +650,20 @@ func (m *nodeManager) getValidSubnets(opts *deployerOptions, infra *Infrastructu
 	} else {
 		targetSubnets = infra.subnets()
 	}
-	if len(availabilityZoneFilter) > 0 {
-		describeFilters = append(describeFilters, ec2types.Filter{
-			Name:   aws.String("availability-zone"),
-			Values: availabilityZoneFilter,
-		},
-		)
-	}
 	describeResponse, err := m.clients.EC2().DescribeSubnets(context.TODO(), &ec2.DescribeSubnetsInput{
-		Filters:   describeFilters,
+		Filters: []ec2types.Filter{
+			{
+				Name:   aws.String("availability-zone"),
+				Values: availabilityZoneFilter,
+			},
+		},
 		SubnetIds: targetSubnets,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to describe subnets %v: %v", targetSubnets, err)
 	}
 	if describeResponse == nil || len(describeResponse.Subnets) == 0 {
-		return nil, fmt.Errorf("no subnet in %v satisfied filters: %+v", targetSubnets, describeFilters)
+		return nil, fmt.Errorf("no subnet in %v in met availability zones requirement %v", targetSubnets, availabilityZoneFilter)
 	}
 	var subnetIds []string
 	for _, subnet := range describeResponse.Subnets {
@@ -751,6 +754,13 @@ func getNetworkInterface(opts *deployerOptions, networkCardIndex int, subnetIds 
 		interfaceType = aws.String("interface")
 		description = aws.String("Standard network interface")
 	}
+
+	if opts.NoASG && subnetID == nil {
+		// Must specify a subnet when not using an ASG so that the instance
+		// is launched in the correct VPC
+		subnetID = &subnetIds[0]
+	}
+
 	return templates.NetworkInterface{
 		Description:         description,
 		DeviceIndex:         &deviceIndex,
