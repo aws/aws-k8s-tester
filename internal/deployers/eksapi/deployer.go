@@ -292,7 +292,7 @@ func (d *deployer) verifyUpFlags() error {
 		if d.EFA && len(d.InstanceTypes) != 1 {
 			return fmt.Errorf("--efa requires a single instance type")
 		}
-		if !d.NoASG && len(d.EC2AdditionalInfo) != 0 {
+		if d.EC2AdditionalInfo != "" && !d.NoASG {
 			return fmt.Errorf("--ec2-additional-info cannot be provided without --no-asg")
 		}
 	} else {
