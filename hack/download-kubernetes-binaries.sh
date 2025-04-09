@@ -35,13 +35,15 @@ function download_binaries() {
   for BUNDLE in ${BUNDLES[@]}; do
     echo >&2 "Downloading bundle: ${BUNDLE}"
     local TARBALL="${BUNDLE}.tar.gz"
-    wget --quiet --output-document=${TARBALL} $basePath/${KUBERNETES_VERSION}/${BUNDLE}-${OS}-${ARCH}.tar.gz
+    if ! wget --quiet --output-document=${TARBALL} $basePath/${KUBERNETES_VERSION}/${BUNDLE}-${OS}-${ARCH}.tar.gz; then
+      return 1
+    fi
     tar xzf ${TARBALL}
     rm ${TARBALL}
   done
 }
 
-if ! download_binaries https://storage.googleapis.com/kubernetes-release/release || true; then
+if ! download_binaries https://storage.googleapis.com/kubernetes-release/release; then
   echo >&2 "binary download failed from release bucket, falling back to ci dev release"
   download_binaries https://storage.googleapis.com/k8s-release-dev/ci
 fi
