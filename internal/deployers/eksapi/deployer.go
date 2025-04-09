@@ -292,6 +292,9 @@ func (d *deployer) verifyUpFlags() error {
 		if d.EFA && len(d.InstanceTypes) != 1 {
 			return fmt.Errorf("--efa requires a single instance type")
 		}
+		if !d.NoASG && len(d.EC2AdditionalInfo) != 0 {
+			return fmt.Errorf("--ec2-additional-info cannot be provided without --no-asg")
+		}
 	} else {
 		if d.AMI != "" {
 			return fmt.Errorf("--ami should not be provided without --unmanaged-nodes")
@@ -299,6 +302,9 @@ func (d *deployer) verifyUpFlags() error {
 		if d.AMIType == "" {
 			d.AMIType = "AL2023_x86_64_STANDARD"
 			klog.Infof("Using default AMI type: %s", d.AMIType)
+		}
+		if d.NoASG {
+			return fmt.Errorf("--no-asg should not be provided without --unmanaged-nodes")
 		}
 	}
 	return nil
