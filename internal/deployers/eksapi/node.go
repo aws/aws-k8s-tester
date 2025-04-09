@@ -381,13 +381,7 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 		volumeMountPath = "/dev/xvdb"
 	}
 	templateBuf := bytes.Buffer{}
-	err = templates.UnmanagedNodegroup.Execute(&templateBuf, struct {
-		NetworkInterfaces []templates.NetworkInterface
-		InstanceTypes     []string
-		EC2AdditionalInfo string
-		NoASG             bool
-		NodeCount         int
-	}{
+	err = templates.UnmanagedNodegroup.Execute(&templateBuf, templates.UnmanagedNodegroupTemplateData{
 		NetworkInterfaces: networkInterfaces,
 		InstanceTypes:     opts.InstanceTypes,
 		EC2AdditionalInfo: opts.EC2AdditionalInfo,
