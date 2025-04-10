@@ -66,7 +66,7 @@ var logCollectorScriptSsmDocumentContent string
 const logCollectorSsmDocumentTimeout = 5 * time.Minute
 
 func (m *logManager) gatherLogsUsingScript(k8sClient *k8sClient, opts *deployerOptions, phase deployerPhase) error {
-	klog.Info("gathering logs from nodes...")
+	klog.Info("gathering logs using script...")
 	nodes, err := k8sClient.clientset.CoreV1().Nodes().List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		return err
@@ -78,8 +78,10 @@ func (m *logManager) gatherLogsUsingScript(k8sClient *k8sClient, opts *deployerO
 			return err
 		}
 	} else {
+		klog.Warning("no nodes found in cluster!")
 		// if we're using unmanaged nodes, we can track down the instances in the ASG even if they didn't join the cluster
 		if opts.UnmanagedNodes {
+			klog.Info("fetching instances from unmanaged nodegroup...")
 			out, err := m.clients.ASG().DescribeAutoScalingGroups(context.TODO(), &autoscaling.DescribeAutoScalingGroupsInput{
 				AutoScalingGroupNames: []string{m.resourceID},
 			})
@@ -87,9 +89,13 @@ func (m *logManager) gatherLogsUsingScript(k8sClient *k8sClient, opts *deployerO
 				klog.Warningf("failed to describe unmanaged nodegroup ASG: %v", err)
 				return nil
 			}
-			for _, asg := range out.AutoScalingGroups {
-				for _, instance := range asg.Instances {
-					instanceIds = append(instanceIds, aws.ToString(instance.InstanceId))
+			if len(out.AutoScalingGroups) != 1 {
+				klog.Warningf("autoscaling group not found: %s", m.resourceID)
+			} else {
+				for _, asg := range out.AutoScalingGroups {
+					for _, instance := range asg.Instances {
+						instanceIds = append(instanceIds, aws.ToString(instance.InstanceId))
+					}
 				}
 			}
 		}
@@ -144,7 +150,7 @@ func (m *logManager) gatherLogsUsingScript(k8sClient *k8sClient, opts *deployerO
 const logCollectorNodeDiagnosticTimeout = 5 * time.Minute
 
 func (m *logManager) gatherLogsUsingNodeDiagnostic(k8sClient *k8sClient, opts *deployerOptions, phase deployerPhase) error {
-	klog.Info("gathering logs from nodes...")
+	klog.Info("gathering logs using NodeDiagnostic...")
 	nodes, err := k8sClient.clientset.CoreV1().Nodes().List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		return err
