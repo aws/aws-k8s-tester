@@ -39,6 +39,7 @@ var (
 		"m6i.xlarge",
 		"m6i.large",
 		"m5.large",
+		"t3.large",
 	}
 
 	defaultInstanceTypes_arm64 = []string{
