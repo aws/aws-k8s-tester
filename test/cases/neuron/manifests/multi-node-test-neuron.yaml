@@ -35,17 +35,20 @@ spec:
 
                 export CCOM_SOCKET_IFNAME=eth0
                 export NEURON_RT_ROOT_COMM_ID=${WORKER_IPS[0]}:63182
-                export OMPI_ALLOW_RUN_AS_ROOT=1
-                export OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
-
                 nccom-test -r $(({{.NeuronCorePerNode}}*{{.WorkerNodeCount}})) -N {{.WorkerNodeCount}} -b "8" -e "2G" -f "2" -n "5" -w "5" -d "fp32" allr --hosts ${WORKER_IPS[*]} --data-collector-host $POD_IP --data-collector-port 60006 --debug
     Worker:
       replicas: {{.WorkerNodeCount}}
       template:
         spec:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 2000
+            fsGroup: 3000
           containers:
           - image: {{.NeuronTestImage}}
             name: nccom-test-worker
+            command: ["/bin/bash"]
+            args: ["-c", "echo password | sudo -S /usr/sbin/sshd -D"]
             imagePullPolicy: Always
             resources:
               limits:
