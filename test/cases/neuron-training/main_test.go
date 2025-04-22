@@ -1,4 +1,5 @@
 //go:build e2e
+
 package training
 
 import (
@@ -12,21 +13,13 @@ import (
 	"time"
 
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
+	"github.com/aws/aws-k8s-tester/test/manifests"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-)
-
-var (
-	//go:embed manifests/k8s-neuron-device-plugin-rbac.yml
-	neuronDevicePluginRbacManifest []byte
-	//go:embed manifests/k8s-neuron-device-plugin.yml
-	neuronDevicePluginManifest []byte
-	//go:embed manifests/efa-device-plugin.yaml
-	efaDevicePluginManifest []byte
 )
 
 func TestMain(m *testing.M) {
@@ -37,9 +30,9 @@ func TestMain(m *testing.M) {
 	testenv = env.NewWithConfig(cfg)
 
 	manifests := [][]byte{
-		neuronDevicePluginRbacManifest,
-		neuronDevicePluginManifest,
-		efaDevicePluginManifest,
+		manifests.NeuronDevicePluginRbacManifest,
+		manifests.NeuronDevicePluginManifest,
+		manifests.EfaDevicePluginManifest,
 	}
 
 	testenv.Setup(
@@ -186,44 +179,44 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 }
 
 func checkNonZeroResourceCapacity(ctx context.Context, config *envconf.Config) (context.Context, error) {
-    log.Println("[INFO] Starting resource capacity checks")
-    
-    // Check Neuron devices
-    log.Println("Checking Neuron device capacity on nodes")
-    err := wait.For(
-        fwext.NewConditionExtension(config.Client().Resources()).AllNodesHaveNonZeroResourceCapacity("aws.amazon.com/neuron"),
-        wait.WithTimeout(time.Second*60),
-        wait.WithInterval(time.Second*5),
-    )
-    if err != nil {
-        return ctx, fmt.Errorf("failed to verify Neuron device capacity on nodes: %w", err)
-    }
-    log.Println("Neuron devices check passed - all nodes have non-zero capacity")
+	log.Println("[INFO] Starting resource capacity checks")
 
-    // Check Neuron cores
-    log.Println("Checking Neuron core capacity on nodes")
-    err = wait.For(
-        fwext.NewConditionExtension(config.Client().Resources()).AllNodesHaveNonZeroResourceCapacity("aws.amazon.com/neuroncore"),
-        wait.WithTimeout(time.Second*60),
-        wait.WithInterval(time.Second*5),
-    )
-    if err != nil {
-        return ctx, fmt.Errorf("failed to verify Neuron core capacity on nodes: %w", err)
-    }
-    log.Println("Neuron cores check passed - all nodes have non-zero capacity")
+	// Check Neuron devices
+	log.Println("Checking Neuron device capacity on nodes")
+	err := wait.For(
+		fwext.NewConditionExtension(config.Client().Resources()).AllNodesHaveNonZeroResourceCapacity("aws.amazon.com/neuron"),
+		wait.WithTimeout(time.Second*60),
+		wait.WithInterval(time.Second*5),
+	)
+	if err != nil {
+		return ctx, fmt.Errorf("failed to verify Neuron device capacity on nodes: %w", err)
+	}
+	log.Println("Neuron devices check passed - all nodes have non-zero capacity")
 
-    // Check EFA devices
-    log.Println("Checking EFA device capacity on nodes")
-    err = wait.For(
-        fwext.NewConditionExtension(config.Client().Resources()).AllNodesHaveNonZeroResourceCapacity("vpc.amazonaws.com/efa"),
-        wait.WithTimeout(time.Second*60),
-        wait.WithInterval(time.Second*5),
-    )
-    if err != nil {
-        return ctx, fmt.Errorf("failed to verify EFA device capacity on nodes: %w", err)
-    }
-    log.Println("EFA devices check passed - all nodes have non-zero capacity")
+	// Check Neuron cores
+	log.Println("Checking Neuron core capacity on nodes")
+	err = wait.For(
+		fwext.NewConditionExtension(config.Client().Resources()).AllNodesHaveNonZeroResourceCapacity("aws.amazon.com/neuroncore"),
+		wait.WithTimeout(time.Second*60),
+		wait.WithInterval(time.Second*5),
+	)
+	if err != nil {
+		return ctx, fmt.Errorf("failed to verify Neuron core capacity on nodes: %w", err)
+	}
+	log.Println("Neuron cores check passed - all nodes have non-zero capacity")
 
-    log.Println("[INFO] All resource capacity checks completed successfully")
-    return ctx, nil
+	// Check EFA devices
+	log.Println("Checking EFA device capacity on nodes")
+	err = wait.For(
+		fwext.NewConditionExtension(config.Client().Resources()).AllNodesHaveNonZeroResourceCapacity("vpc.amazonaws.com/efa"),
+		wait.WithTimeout(time.Second*60),
+		wait.WithInterval(time.Second*5),
+	)
+	if err != nil {
+		return ctx, fmt.Errorf("failed to verify EFA device capacity on nodes: %w", err)
+	}
+	log.Println("EFA devices check passed - all nodes have non-zero capacity")
+
+	log.Println("[INFO] All resource capacity checks completed successfully")
+	return ctx, nil
 }

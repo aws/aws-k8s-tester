@@ -14,6 +14,7 @@ import (
 	"time"
 
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
+	"github.com/aws/aws-k8s-tester/test/manifests"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -21,9 +22,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
-
-//go:embed manifests/nvidia-device-plugin.yaml
-var nvidiaDevicePluginManifest []byte
 
 var (
 	testenv            env.Environment
@@ -43,7 +41,9 @@ func TestMain(m *testing.M) {
 	}
 	testenv = env.NewWithConfig(cfg)
 
-	devicePluginManifests := [][]byte{nvidiaDevicePluginManifest}
+	devicePluginManifests := [][]byte{
+		manifests.NvidiaDevicePluginManifest,
+	}
 
 	testenv.Setup(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {

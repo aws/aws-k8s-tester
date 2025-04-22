@@ -34,23 +34,6 @@ spec:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
-              # Uncomment following matchExpressions if using k8s 1.16 or lower
-              #- matchExpressions:
-              #    - key: "beta.kubernetes.io/instance-type"
-              #      operator: In
-              #      values:
-              #        - inf1.xlarge
-              #        - inf1.2xlarge
-              #        - inf1.6xlarge
-              #        - inf1.24xlarge
-              #        - inf2.xlarge
-              #        - inf2.8xlarge
-              #        - inf2.24xlarge
-              #        - inf2.48xlarge
-              #        - trn1.2xlarge
-              #        - trn1.32xlarge
-              #        - trn1n.32xlarge
-              #        - trn2.48xlarge
               - matchExpressions:
                   - key: "node.kubernetes.io/instance-type"
                     operator: In
@@ -69,7 +52,7 @@ spec:
                       - trn2.48xlarge
       containers:
         # Find all neuron-device-plugin images at https://gallery.ecr.aws/neuron/neuron-device-plugin
-      - image: public.ecr.aws/neuron/neuron-device-plugin:2.23.30.0
+      - image: public.ecr.aws/neuron/neuron-device-plugin:2.23.45.0
         imagePullPolicy: Always
         name: neuron-device-plugin
         env:

@@ -1,5 +1,5 @@
 # Use the NVIDIA CUDA runtime as a parent image
-FROM nvidia/cuda:12.5.0-devel-ubuntu22.04
+FROM nvidia/cuda:12.8.0-devel-ubuntu22.04
 
 # Set environment variable to disable interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
@@ -12,7 +12,7 @@ ENV MASTER_PORT=12355
 ARG PYTHON=python3.10
 ARG PYTHON_VERSION=3.10.12
 
-ARG PYTORCH_BRANCH=v2.3.0
+ARG PYTORCH_BRANCH=v2.6.0
 ARG PYTORCH_BUILD_ENV="MAX_JOBS=8 BUILD_TEST=0"
 
 RUN apt-get update \
@@ -67,7 +67,7 @@ RUN wget -q https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VER
 ENV CUDA_HOME=/usr/local/cuda
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64
 ENV PATH=$PATH:$CUDA_HOME/bin
-ENV TORCH_CUDA_ARCH_LIST="7.5 8.0 8.6 8.7 8.9 9.0"
+ENV TORCH_CUDA_ARCH_LIST="7.5 8.0 8.6 8.7 8.9 9.0 10.0"
 
 RUN pip install typing-extensions sympy pyyaml
 RUN git clone \

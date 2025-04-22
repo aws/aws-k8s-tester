@@ -15,6 +15,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/internal/e2e"
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
+	"github.com/aws/aws-k8s-tester/test/manifests"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -36,17 +37,6 @@ var (
 	efaPerNode          int
 	neuronTestImage     *string
 	installDevicePlugin *bool
-)
-
-var (
-	//go:embed manifests/k8s-neuron-device-plugin-rbac.yml
-	neuronDevicePluginRbacManifest []byte
-	//go:embed manifests/k8s-neuron-device-plugin.yml
-	neuronDevicePluginManifest []byte
-	//go:embed manifests/mpi-operator.yaml
-	mpiOperatorManifest []byte
-	//go:embed manifests/efa-device-plugin.yaml
-	efaDevicePluginManifest []byte
 )
 
 func deployNeuronDevicePlugin(ctx context.Context, config *envconf.Config) (context.Context, error) {
@@ -74,7 +64,7 @@ func deployMPIOperator(ctx context.Context, config *envconf.Config) (context.Con
 }
 
 func deployEFAPlugin(ctx context.Context, config *envconf.Config) (context.Context, error) {
-	err := fwext.ApplyManifests(config.Client().RESTConfig(), efaDevicePluginManifest)
+	err := fwext.ApplyManifests(config.Client().RESTConfig(), manifests.EfaDevicePluginManifest)
 	if err != nil {
 		return ctx, err
 	}
@@ -172,12 +162,12 @@ func TestMain(m *testing.M) {
 	defer cancel()
 	testenv = testenv.WithContext(ctx)
 
-	manifests := [][]byte{
-		mpiOperatorManifest,
+	deploymentManifests := [][]byte{
+		manifests.MpiOperatorManifest,
 	}
 	setUpFunctions := []env.Func{
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			err := fwext.ApplyManifests(config.Client().RESTConfig(), manifests...)
+			err := fwext.ApplyManifests(config.Client().RESTConfig(), deploymentManifests...)
 			if err != nil {
 				return ctx, err
 			}
@@ -187,7 +177,7 @@ func TestMain(m *testing.M) {
 	}
 
 	if *installDevicePlugin {
-		manifests = append(manifests, neuronDevicePluginManifest, neuronDevicePluginRbacManifest)
+		deploymentManifests = append(deploymentManifests, manifests.NeuronDevicePluginManifest, manifests.NeuronDevicePluginRbacManifest)
 		setUpFunctions = append(setUpFunctions, deployNeuronDevicePlugin)
 	}
 
@@ -200,12 +190,12 @@ func TestMain(m *testing.M) {
 
 	testenv.Finish(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), efaDevicePluginManifest)
+			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), manifests.EfaDevicePluginManifest)
 			if err != nil {
 				return ctx, err
 			}
-			slices.Reverse(manifests)
-			err = fwext.DeleteManifests(config.Client().RESTConfig(), manifests...)
+			slices.Reverse(deploymentManifests)
+			err = fwext.DeleteManifests(config.Client().RESTConfig(), deploymentManifests...)
 			if err != nil {
 				return ctx, err
 			}
