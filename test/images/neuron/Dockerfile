@@ -63,11 +63,6 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# new user to avoid mpirun --allow-run-as-root
-RUN useradd -ms /bin/bash ubuntu
-RUN echo 'ubuntu:password' | chpasswd
-RUN usermod -aG sudo ubuntu
-
 RUN apt update
 RUN apt install -y openssh-server openssh-client wget gnupg2 sudo
 
@@ -161,7 +156,6 @@ RUN cd $HOME \
     && ./efa_installer.sh -y -g -d --skip-kmod --skip-limit-conf --no-verify \
     && cd $HOME
 
-
 # Clean up after apt update
 RUN rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/tmp* \
@@ -172,7 +166,6 @@ RUN rm -rf /var/lib/apt/lists/* \
 # is already installed install it with nodeps
 RUN pip3 install --no-cache-dir --no-deps -U \
     torchvision==0.16.*
-
 
 RUN HOME_DIR=/root \
     && curl -o ${HOME_DIR}/oss_compliance.zip https://aws-dlinfra-utilities.s3.amazonaws.com/oss_compliance.zip \
@@ -189,8 +182,19 @@ RUN curl -o /license.txt  https://aws-dlc-licenses.s3.amazonaws.com/pytorch-2.1/
 RUN mkdir -p /var/run/sshd && \
     sed -i 's/[ #]\(.*StrictHostKeyChecking \).*/ \1no/g' /etc/ssh/ssh_config && \
     echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config && \
-    sed -i 's/#\(StrictModes \).*/\1no/g' /etc/ssh/sshd_config
+    sed -i 's/#\(StrictModes \).*/\1no/g' /etc/ssh/sshd_config && \
+    sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
+
+RUN useradd -ms /bin/bash ubuntu
+RUN echo 'ubuntu:password' | chpasswd
+RUN usermod -aG sudo ubuntu
 
 WORKDIR /home/ubuntu
+USER ubuntu
+
+RUN mkdir -p /home/ubuntu/.ssh && \ 
+    ssh-keygen -t rsa -f /home/ubuntu/.ssh/id_rsa -N '' && \
+    cp /home/ubuntu/.ssh/id_rsa.pub /home/ubuntu/.ssh/authorized_keys
 
 COPY test/images/neuron/tests ./tests

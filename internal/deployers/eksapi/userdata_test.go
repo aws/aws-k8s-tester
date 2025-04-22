@@ -39,6 +39,7 @@ const bottlerocketUserData = `[settings.kubernetes]
 "cluster-name" = "cluster"
 "api-server" = "https://example.com"
 "cluster-certificate" = "certificateAuthority"
+device-ownership-from-security-context = true
 
 [settings.host-containers.admin]
 "enabled" = true
