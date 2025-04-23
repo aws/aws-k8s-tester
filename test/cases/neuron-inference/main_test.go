@@ -14,19 +14,13 @@ import (
 	"time"
 
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
+	"github.com/aws/aws-k8s-tester/test/manifests"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-)
-
-var (
-	//go:embed manifests/k8s-neuron-device-plugin-rbac.yml
-	neuronDevicePluginRbacManifest []byte
-	//go:embed manifests/k8s-neuron-device-plugin.yml
-	neuronDevicePluginManifest []byte
 )
 
 func TestMain(m *testing.M) {
@@ -39,16 +33,16 @@ func TestMain(m *testing.M) {
 	}
 	testenv = env.NewWithConfig(cfg)
 
-	manifests := [][]byte{
-		neuronDevicePluginRbacManifest,
-		neuronDevicePluginManifest,
+	deploymentManifests := [][]byte{
+		manifests.NeuronDevicePluginRbacManifest,
+		manifests.NeuronDevicePluginManifest,
 	}
 
 	// Setup steps: apply the device plugin, wait for DS readiness, discover capacity
 	testenv.Setup(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 			log.Println("Applying Neuron device plugin RBAC and Neuron device plugin manifests.")
-			err := fwext.ApplyManifests(config.Client().RESTConfig(), manifests...)
+			err := fwext.ApplyManifests(config.Client().RESTConfig(), deploymentManifests...)
 			if err != nil {
 				return ctx, fmt.Errorf("failed to apply manifests: %w", err)
 			}
@@ -77,8 +71,8 @@ func TestMain(m *testing.M) {
 	testenv.Finish(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 			log.Println("[INFO] Cleaning up Neuron device plugin.")
-			slices.Reverse(manifests)
-			if err := fwext.DeleteManifests(config.Client().RESTConfig(), manifests...); err != nil {
+			slices.Reverse(deploymentManifests)
+			if err := fwext.DeleteManifests(config.Client().RESTConfig(), deploymentManifests...); err != nil {
 				return ctx, fmt.Errorf("failed to delete neuron device plugin: %w", err)
 			}
 			log.Println("[INFO] Neuron device plugin cleanup complete.")

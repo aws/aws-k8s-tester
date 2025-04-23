@@ -25,7 +25,7 @@ type NetworkInterface struct {
 }
 
 type UnmanagedNodegroupTemplateData struct {
-	NetworkInterfaces  []NetworkInterface
+	NetworkInterfaces []NetworkInterface
 	KubernetesVersion string
 	InstanceTypes     []string
 }

@@ -42,7 +42,7 @@ func PrintDaemonSetPodLogs(
 	for _, pod := range pods.Items {
 		t.Logf("Pod %s status: %s", pod.Name, pod.Status.Phase)
 		for _, container := range pod.Spec.Containers {
-			logs, logErr := readPodLogs(ctx, clientset, pod.Namespace, pod.Name, container.Name)
+			logs, logErr := ReadPodLogs(ctx, restConfig, pod.Namespace, pod.Name, container.Name)
 			if logErr != nil {
 				t.Logf("Failed reading logs from %s/%s: %v", pod.Name, container.Name, logErr)
 			} else {
@@ -52,12 +52,16 @@ func PrintDaemonSetPodLogs(
 	}
 }
 
-// readPodLogs streams logs for a specific container in a pod.
-func readPodLogs(
+// ReadPodLogs streams logs for a specific container in a pod.
+func ReadPodLogs(
 	ctx context.Context,
-	clientset *kubernetes.Clientset,
+	restConfig *rest.Config,
 	namespace, podName, containerName string,
 ) (string, error) {
+	clientset, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		return "", fmt.Errorf("failed to create typed clientset: %w", err)
+	}
 	req := clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{
 		Container: containerName,
 	})
