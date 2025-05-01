@@ -50,9 +50,10 @@ spec:
                       - trn1.32xlarge
                       - trn1n.32xlarge
                       - trn2.48xlarge
+                      - trn2u.48xlarge
       containers:
         # Find all neuron-device-plugin images at https://gallery.ecr.aws/neuron/neuron-device-plugin
-      - image: public.ecr.aws/neuron/neuron-device-plugin:2.23.45.0
+      - image: public.ecr.aws/neuron/neuron-device-plugin:2.24.23.0
         imagePullPolicy: Always
         name: neuron-device-plugin
         env:

@@ -18,7 +18,7 @@ spec:
             medium: Memory
       containers:
       - name: hpc-benchmarks
-        image: "nvcr.io/nvidia/hpc-benchmarks:24.06"
+        image: "nvcr.io/nvidia/hpc-benchmarks:25.04"
         command:
         - mpirun
         - --allow-run-as-root
