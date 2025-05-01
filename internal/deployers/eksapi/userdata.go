@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-k8s-tester/internal/deployers/eksapi/templates"
 )
 
-func generateUserData(format string, cluster *Cluster) (string, bool, error) {
+func generateUserData(format string, cluster *Cluster, opts *deployerOptions) (string, bool, error) {
 	userDataIsMimePart := true
 	var t *template.Template
 	switch format {
@@ -23,12 +23,20 @@ func generateUserData(format string, cluster *Cluster) (string, bool, error) {
 	default:
 		return "", false, fmt.Errorf("uknown user data format: '%s'", format)
 	}
-	buf := bytes.Buffer{}
+
+	kubeletFeatureGates := map[string]bool{}
+	// DRA is in beta for 1.33, and so needs to be explicitly enabled.
+	if opts.KubernetesVersion == "1.33" {
+		kubeletFeatureGates["DynamicResourceAllocation"] = true
+	}
+
+	var buf bytes.Buffer
 	if err := t.Execute(&buf, templates.UserDataTemplateData{
 		APIServerEndpoint:    cluster.endpoint,
 		CertificateAuthority: cluster.certificateAuthorityData,
 		CIDR:                 cluster.cidr,
 		Name:                 cluster.name,
+		KubeletFeatureGates:  kubeletFeatureGates,
 	}); err != nil {
 		return "", false, err
 	}

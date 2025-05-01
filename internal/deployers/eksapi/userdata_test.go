@@ -69,7 +69,7 @@ func Test_generateUserData(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.format, func(t *testing.T) {
-			actual, isMimePart, err := generateUserData(c.format, &cluster)
+			actual, isMimePart, err := generateUserData(c.format, &cluster, &deployerOptions{})
 			if err != nil {
 				t.Log(err)
 				t.Error(err)
