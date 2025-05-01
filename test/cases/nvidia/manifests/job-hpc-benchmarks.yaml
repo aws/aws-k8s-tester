@@ -5,7 +5,7 @@ metadata:
   labels:
     app: hpc-benckmarks-job
 spec:
-  completions: 20
+  completions: 1
   parallelism: 1
   template:
     metadata:
