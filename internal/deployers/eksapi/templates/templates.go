@@ -66,6 +66,7 @@ type UserDataTemplateData struct {
 	CertificateAuthority string
 	CIDR                 string
 	APIServerEndpoint    string
+	KubeletFeatureGates  map[string]bool
 }
 
 var (

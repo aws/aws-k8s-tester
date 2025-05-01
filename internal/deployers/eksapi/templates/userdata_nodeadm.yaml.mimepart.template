@@ -10,3 +10,11 @@ spec:
     apiServerEndpoint: {{.APIServerEndpoint}}
     certificateAuthority: {{.CertificateAuthority}}
     cidr: {{.CIDR}}
+{{- if .KubeletFeatureGates}}
+  kubelet:
+    config:
+      featureGates:
+        {{- range $gate, $value := .KubeletFeatureGates }}
+        {{$gate}}: {{$value}}
+        {{- end }}
+{{- end }}
