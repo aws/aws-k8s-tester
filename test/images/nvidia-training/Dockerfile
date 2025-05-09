@@ -101,12 +101,10 @@ ENV PATH /usr/local/cuda/bin:/opt/amazon/openmpi/bin:/opt/amazon/efa/bin:/usr/sb
 
 # Install EFA
 ARG EFA_INSTALLER_VERSION=latest
-RUN tempdir=$(mktemp -d) && pushd $tempdir \
- && curl -O https://efa-installer.amazonaws.com/aws-efa-installer-${EFA_INSTALLER_VERSION}.tar.gz \
- && tar -xf aws-efa-installer-${EFA_INSTALLER_VERSION}.tar.gz \
- && cd aws-efa-installer \
+RUN curl -sL https://efa-installer.amazonaws.com/aws-efa-installer-$EFA_INSTALLER_VERSION.tar.gz | tar xvz -C /tmp \
+ && cd /tmp/aws-efa-installer \
  && ./efa_installer.sh -y -g -d --skip-kmod --skip-limit-conf --no-verify \
- && popd && rm -rf $tempdir
+ && cd && rm -rf /tmp/aws-efa-installer
 
 # Install NCCL
 ARG LIBNCCL_VERSION=2.26.2-1
