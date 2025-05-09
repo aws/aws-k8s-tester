@@ -7,6 +7,11 @@ This project will use rolling releases going forward; we recommend fetching the 
 go install github.com/aws/aws-k8s-tester/...@HEAD
 ```
 
+You'll need the standard `kubetest` tools as well:
+```
+go install sigs.k8s.io/kubetest2/...@latest
+```
+
 ## `kubetest2` deployers and testers for EKS
 
 
