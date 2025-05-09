@@ -4,8 +4,7 @@
 
 This project will use rolling releases going forward; we recommend fetching the latest commit:
 ```
-go install sigs.k8s.io/kubetest2/...@v0.0.0-20231113220322-d7fcb799ce84
-go install github.com/aws/aws-k8s-tester/...@HEAD
+go install sigs.k8s.io/kubetest2 && go install github.com/aws/aws-k8s-tester/...@HEAD
 ```
 
 ## `kubetest2` deployers and testers for EKS
@@ -27,7 +26,8 @@ This deployer is a thin wrapper around `eksctl`.
 
 The simplest usage is:
 ```
-kubetest2-eksctl \
+kubetest2 \
+  eksctl \
   --kubernetes-version=X.XX \
   --up \
   --down \
@@ -50,7 +50,8 @@ This deployer calls the EKS API directly, instead of using CloudFormation for EK
 
 The simplest usage is:
 ```
-kubetest2-eksapi \
+kubetest2 \
+  eksapi \
   --kubernetes-version=X.XX \
   --up \
   --down \
@@ -78,7 +79,8 @@ Tester argument groups are separated by `--`, with the first group being passed 
 The first positional argument of each subsequent group should be the name of a tester.
 
 ```
-kubetest2-noop \
+kubetest2 \
+  noop \
   --test=multi \
   -- \
   --fail-fast=true \
