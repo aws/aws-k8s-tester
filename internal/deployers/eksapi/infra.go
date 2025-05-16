@@ -347,6 +347,14 @@ func (m *InfrastructureManager) deleteLeakedENIs() error {
 	if err := ec2.NewNetworkInterfaceAvailableWaiter(m.clients.EC2()).Wait(context.TODO(), &ec2.DescribeNetworkInterfacesInput{
 		NetworkInterfaceIds: enis,
 	}, networkInterfaceDetachmentTimeout); err != nil {
+		refreshedENIs, err2 := m.getVPCCNINetworkInterfaceIds(infra.vpc)
+		if err2 != nil {
+			return fmt.Errorf("waiter failed, and re-checking ENIs also failed: %w", err2)
+		}
+		if len(refreshedENIs) == 0 {
+			klog.Infof("ENIs were deleted during waiter timeout, skipping delete.")
+			return nil
+		}
 		return fmt.Errorf("failed to wait for ENI(s) to become available: %v", err)
 	}
 	for _, eni := range enis {
