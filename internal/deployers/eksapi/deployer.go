@@ -79,6 +79,7 @@ type deployerOptions struct {
 	Nodes               int           `flag:"nodes" desc:"number of nodes to launch in cluster"`
 	NodeNameStrategy    string        `flag:"node-name-strategy" desc:"Specifies the naming strategy for node. Allowed values: ['SessionName', 'EC2PrivateDNSName'], default to EC2PrivateDNSName"`
 	Region              string        `flag:"region" desc:"AWS region for EKS cluster"`
+	SkipNodeReadinessChecks bool 	  `flag:"skip-node-readiness-checks" desc:"Skip performing readiness checks on created nodes"`
 	StaticClusterName   string        `flag:"static-cluster-name" desc:"Optional when re-use existing cluster and node group by querying the kubeconfig and run test"`
 	TuneVPCCNI          bool          `flag:"tune-vpc-cni" desc:"Apply tuning parameters to the VPC CNI DaemonSet"`
 	UnmanagedNodes      bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup. Requires --ami"`
@@ -215,17 +216,19 @@ func (d *deployer) Up() error {
 	if err := d.nodeManager.createNodes(d.infra, d.cluster, &d.deployerOptions, d.k8sClient); err != nil {
 		return err
 	}
-	if err := d.k8sClient.waitForReadyNodes(d.Nodes, d.NodeReadyTimeout); err != nil {
-		return err
-	}
-	if d.EmitMetrics {
-		if err := d.k8sClient.emitNodeMetrics(d.metrics, d.awsClients.EC2()); err != nil {
+	if !d.SkipNodeReadinessChecks {
+		if err := d.k8sClient.waitForReadyNodes(d.Nodes, d.NodeReadyTimeout); err != nil {
 			return err
 		}
-	}
-	if err := d.logManager.gatherLogsFromNodes(d.k8sClient, &d.deployerOptions, deployerPhaseUp); err != nil {
-		klog.Warningf("failed to gather logs from nodes: %v", err)
-		// don't return err, this isn't critical
+		if d.EmitMetrics {
+			if err := d.k8sClient.emitNodeMetrics(d.metrics, d.awsClients.EC2()); err != nil {
+				return err
+			}
+		}
+		if err := d.logManager.gatherLogsFromNodes(d.k8sClient, &d.deployerOptions, deployerPhaseUp); err != nil {
+			klog.Warningf("failed to gather logs from nodes: %v", err)
+			// don't return err, this isn't critical
+		}
 	}
 	return nil
 }
