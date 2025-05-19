@@ -98,10 +98,10 @@ func discoverNeuronCoreCapacity(ctx context.Context, config *envconf.Config) (co
 	if err != nil {
 		return ctx, fmt.Errorf("failed to verify Neuron device capacity on nodes: %w", err)
 	}
-	log.Println("Neuron devices check passed - all nodes have non-zero capacity")
+	log.Println("[INFO] Neuron devices check passed - all nodes have non-zero capacity")
 
 	// Check Neuron cores
-	log.Println("Checking Neuron core capacity on nodes")
+	log.Println("[INFO] Checking Neuron core capacity on nodes")
 	err = wait.For(
 		fwext.NewConditionExtension(config.Client().Resources()).AllNodesHaveNonZeroResourceCapacity("aws.amazon.com/neuroncore"),
 		wait.WithTimeout(time.Second*60),
@@ -110,7 +110,7 @@ func discoverNeuronCoreCapacity(ctx context.Context, config *envconf.Config) (co
 	if err != nil {
 		return ctx, fmt.Errorf("failed to verify Neuron core capacity on nodes: %w", err)
 	}
-	log.Println("Neuron cores check passed - all nodes have non-zero capacity")
+	log.Println("[INFO] Neuron cores check passed - all nodes have non-zero capacity")
 
 	log.Println("[INFO] Neuron capacity discovery complete.")
 	return ctx, nil
