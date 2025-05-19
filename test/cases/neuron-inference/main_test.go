@@ -89,7 +89,7 @@ func discoverNeuronCoreCapacity(ctx context.Context, config *envconf.Config) (co
 	log.Println("[INFO] Discovering cluster's Neuron capacity...")
 
 	// Check Neuron devices
-	log.Println("Checking Neuron device capacity on nodes")
+	log.Println("[INFO] Checking Neuron device capacity on nodes")
 	err := wait.For(
 		fwext.NewConditionExtension(config.Client().Resources()).AllNodesHaveNonZeroResourceCapacity("aws.amazon.com/neuron"),
 		wait.WithTimeout(time.Second*60),
