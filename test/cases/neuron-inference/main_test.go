@@ -17,7 +17,6 @@ import (
 	"github.com/aws/aws-k8s-tester/test/manifests"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -89,50 +88,29 @@ func TestMain(m *testing.M) {
 func discoverNeuronCoreCapacity(ctx context.Context, config *envconf.Config) (context.Context, error) {
 	log.Println("[INFO] Discovering cluster's Neuron capacity...")
 
-	cs, err := kubernetes.NewForConfig(config.Client().RESTConfig())
+	// Check Neuron devices
+	log.Println("[INFO] Checking Neuron device capacity on nodes")
+	err := wait.For(
+		fwext.NewConditionExtension(config.Client().Resources()).AllNodesHaveNonZeroResourceCapacity("aws.amazon.com/neuron"),
+		wait.WithTimeout(time.Second*60),
+		wait.WithInterval(time.Second*5),
+	)
 	if err != nil {
-		return ctx, fmt.Errorf("failed to create kubernetes client: %w", err)
+		return ctx, fmt.Errorf("failed to verify Neuron device capacity on nodes: %w", err)
 	}
+	log.Println("[INFO] Neuron devices check passed - all nodes have non-zero capacity")
 
-	nodes, err := cs.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	// Check Neuron cores
+	log.Println("[INFO] Checking Neuron core capacity on nodes")
+	err = wait.For(
+		fwext.NewConditionExtension(config.Client().Resources()).AllNodesHaveNonZeroResourceCapacity("aws.amazon.com/neuroncore"),
+		wait.WithTimeout(time.Second*60),
+		wait.WithInterval(time.Second*5),
+	)
 	if err != nil {
-		return ctx, fmt.Errorf("failed to list nodes: %w", err)
+		return ctx, fmt.Errorf("failed to verify Neuron core capacity on nodes: %w", err)
 	}
-	if len(nodes.Items) == 0 {
-		return ctx, fmt.Errorf("no nodes found in the cluster")
-	}
-
-	var totalNeuron, totalNeuronCore int
-	for _, node := range nodes.Items {
-		instanceType := node.Labels["node.kubernetes.io/instance-type"]
-		neuronCap, hasNeuron := node.Status.Capacity["aws.amazon.com/neuron"]
-		neuronCoreCap, hasNeuronCore := node.Status.Capacity["aws.amazon.com/neuroncore"]
-
-		if hasNeuron {
-			totalNeuron += int(neuronCap.Value())
-		} else {
-			log.Printf("[WARN] Node %s (type=%s) lacks 'aws.amazon.com/neuron'.", node.Name, instanceType)
-		}
-
-		if hasNeuronCore {
-			totalNeuronCore += int(neuronCoreCap.Value())
-		} else {
-			log.Printf("[WARN] Node %s (type=%s) lacks 'aws.amazon.com/neuroncore'.", node.Name, instanceType)
-		}
-	}
-
-	nodeCount := len(nodes.Items)
-	if nodeCount > 0 {
-		neuronPerNode = totalNeuron / nodeCount
-		neuronCorePerNode = totalNeuronCore / nodeCount
-	}
-
-	log.Printf("[INFO] Discovered neuronPerNode=%d, neuronCorePerNode=%d (across %d node(s))",
-		neuronPerNode, neuronCorePerNode, nodeCount)
-
-	if neuronCorePerNode <= 0 {
-		return ctx, fmt.Errorf("discovered %d neuronCorePerNode => no Neuron capacity found", neuronCorePerNode)
-	}
+	log.Println("[INFO] Neuron cores check passed - all nodes have non-zero capacity")
 
 	log.Println("[INFO] Neuron capacity discovery complete.")
 	return ctx, nil
