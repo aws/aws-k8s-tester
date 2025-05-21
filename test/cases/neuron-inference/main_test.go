@@ -17,6 +17,7 @@ import (
 	"github.com/aws/aws-k8s-tester/test/manifests"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -118,7 +119,12 @@ func discoverNeuronCoreCapacity(ctx context.Context, config *envconf.Config) (co
 }
 
 func getNodeCapacity(ctx context.Context, config *envconf.Config) (context.Context, error) {
-	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	cs, err := kubernetes.NewForConfig(config.Client().RESTConfig())
+	if err != nil {
+		return ctx, fmt.Errorf("failed to create kubernetes client: %w", err)
+	}
+
+	nodes, err := cs.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return ctx, fmt.Errorf("failed to list nodes: %w", err)
 	}
