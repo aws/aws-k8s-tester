@@ -1,2 +1,2 @@
-transformers==4.33
+transformers==4.50.0
 numpy==1.26
