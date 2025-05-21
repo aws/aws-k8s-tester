@@ -64,6 +64,7 @@ func TestMain(m *testing.M) {
 			return ctx, nil
 		},
 		discoverNeuronCoreCapacity,
+		getNodeCapacity
 	)
 
 	// Finish steps: remove device plugin if desired
@@ -113,5 +114,38 @@ func discoverNeuronCoreCapacity(ctx context.Context, config *envconf.Config) (co
 	log.Println("[INFO] Neuron cores check passed - all nodes have non-zero capacity")
 
 	log.Println("[INFO] Neuron capacity discovery complete.")
+	return ctx, nil
+}
+
+func getNodeCapacity(ctx context.Context, config *envconf.Config) (context.Context, error) {
+	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return ctx, fmt.Errorf("failed to list nodes: %w", err)
+	}
+	if len(nodes.Items) == 0 {
+		return ctx, fmt.Errorf("no nodes found in the cluster")
+	}
+	var totalNeuron, totalNeuronCore int
+	for _, node := range nodes.Items {
+		instanceType := node.Labels["node.kubernetes.io/instance-type"]
+		neuronCap, hasNeuron := node.Status.Capacity["aws.amazon.com/neuron"]
+		neuronCoreCap, hasNeuronCore := node.Status.Capacity["aws.amazon.com/neuroncore"]
+		if hasNeuron {
+			totalNeuron += int(neuronCap.Value())
+		} else {
+			log.Printf("[WARN] Node %s (type=%s) lacks 'aws.amazon.com/neuron'.", node.Name, instanceType)
+		}
+		if hasNeuronCore {
+			totalNeuronCore += int(neuronCoreCap.Value())
+		} else {
+			log.Printf("[WARN] Node %s (type=%s) lacks 'aws.amazon.com/neuroncore'.", node.Name, instanceType)
+		}
+	}
+	nodeCount := len(nodes.Items)
+	if nodeCount > 0 {
+		neuronPerNode = totalNeuron / nodeCount
+		neuronCorePerNode = totalNeuronCore / nodeCount
+	}
+	log.Printf("[INFO] Discovered neuronPerNode=%d, neuronCorePerNode=%d (across %d node(s))", neuronPerNode, neuronCorePerNode, nodeCount)
 	return ctx, nil
 }
