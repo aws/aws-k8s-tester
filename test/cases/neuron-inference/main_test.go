@@ -131,26 +131,34 @@ func getNodeCapacity(ctx context.Context, config *envconf.Config) (context.Conte
 	if len(nodes.Items) == 0 {
 		return ctx, fmt.Errorf("no nodes found in the cluster")
 	}
-	var totalNeuron, totalNeuronCore int
+	var totalNeuron, totalNeuronCore, nodeCount int
+	// if nodeType not set, use the instance type discovered
+	if *nodeType == "" {
+		*nodeType = nodes.Items[0].Labels["node.kubernetes.io/instance-type"]
+	}
 	for _, node := range nodes.Items {
 		instanceType := node.Labels["node.kubernetes.io/instance-type"]
 		neuronCap, hasNeuron := node.Status.Capacity["aws.amazon.com/neuron"]
 		neuronCoreCap, hasNeuronCore := node.Status.Capacity["aws.amazon.com/neuroncore"]
-		if hasNeuron {
-			totalNeuron += int(neuronCap.Value())
-		} else {
-			log.Printf("[WARN] Node %s (type=%s) lacks 'aws.amazon.com/neuron'.", node.Name, instanceType)
-		}
-		if hasNeuronCore {
-			totalNeuronCore += int(neuronCoreCap.Value())
-		} else {
-			log.Printf("[WARN] Node %s (type=%s) lacks 'aws.amazon.com/neuroncore'.", node.Name, instanceType)
+		if instanceType == *nodeType {
+			nodeCount++
+			if hasNeuron {
+				totalNeuron += int(neuronCap.Value())
+			} else {
+				log.Printf("[WARN] Node %s (type=%s) lacks 'aws.amazon.com/neuron'.", node.Name, instanceType)
+			}
+			if hasNeuronCore {
+				totalNeuronCore += int(neuronCoreCap.Value())
+			} else {
+				log.Printf("[WARN] Node %s (type=%s) lacks 'aws.amazon.com/neuroncore'.", node.Name, instanceType)
+			}
 		}
 	}
-	nodeCount := len(nodes.Items)
 	if nodeCount > 0 {
 		neuronPerNode = totalNeuron / nodeCount
 		neuronCorePerNode = totalNeuronCore / nodeCount
+	} else {
+		return ctx, fmt.Errorf("no nodes with %s node type found in the cluster", *nodeType)
 	}
 	log.Printf("[INFO] Discovered neuronPerNode=%d, neuronCorePerNode=%d (across %d node(s))", neuronPerNode, neuronCorePerNode, nodeCount)
 	return ctx, nil
