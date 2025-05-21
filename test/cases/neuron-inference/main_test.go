@@ -64,7 +64,7 @@ func TestMain(m *testing.M) {
 			return ctx, nil
 		},
 		discoverNeuronCoreCapacity,
-		getNodeCapacity
+		getNodeCapacity,
 	)
 
 	// Finish steps: remove device plugin if desired
