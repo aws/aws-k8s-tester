@@ -22,6 +22,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - run: docker build --build-arg=KUBERNETES_MINOR_VERSION=latest --file Dockerfile .
+  build-image-efa:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: docker build --file test/images/efa/Dockerfile .
   build-image-neuronx:
     runs-on: ubuntu-latest
     steps:
