@@ -144,6 +144,7 @@ spec:
                     - p5.48xlarge
                     - p5e.48xlarge
                     - p5en.48xlarge
+                    - p6-b200.48xlarge
                     - trn1.32xlarge
                     - trn1n.32xlarge
                     - trn2.48xlarge
@@ -160,7 +161,7 @@ spec:
                     - hpc7g.16xlarge
       hostNetwork: true
       containers:
-        - image: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/aws-efa-k8s-device-plugin:v0.5.4
+        - image: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/aws-efa-k8s-device-plugin:v0.5.6
           name: aws-efa-k8s-device-plugin
           securityContext:
             allowPrivilegeEscalation: false
