@@ -23,6 +23,21 @@ func NewEC2Client() *ec2Client {
 	}
 }
 
+func (c *ec2Client) DescribeInstanceTopology(instanceIDs []string) ([]ec2types.InstanceTopology, error) {
+	var instanceTopologies []ec2types.InstanceTopology
+	paginator := ec2.NewDescribeInstanceTopologyPaginator(c.client, &ec2.DescribeInstanceTopologyInput{
+		InstanceIds: instanceIDs,
+	})
+	for paginator.HasMorePages() {
+		instanceTopologyOuput, err := paginator.NextPage(context.TODO())
+		if err != nil {
+			return []ec2types.InstanceTopology{}, err
+		}
+		instanceTopologies = append(instanceTopologies, instanceTopologyOuput.Instances...)
+	}
+	return instanceTopologies, nil
+}
+
 func (c *ec2Client) DescribeInstanceType(instanceType string) (ec2types.InstanceTypeInfo, error) {
 	describeResponse, err := c.client.DescribeInstanceTypes(context.TODO(), &ec2.DescribeInstanceTypesInput{
 		InstanceTypes: []ec2types.InstanceType{ec2types.InstanceType(instanceType)},
