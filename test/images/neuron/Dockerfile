@@ -2,12 +2,12 @@ FROM public.ecr.aws/docker/library/ubuntu:22.04
 
 # Neuron SDK components version numbers
 # https://github.com/aws-neuron/deep-learning-containers/blob/main/docker/pytorch/training/2.5.1/Dockerfile.neuronx
-ARG NEURONX_DISTRIBUTED_VERSION=0.11.0
-ARG NEURONX_CC_VERSION=2.17.194.0
-ARG NEURONX_FRAMEWORK_VERSION=2.5.1.2.6.0
-ARG NEURONX_COLLECTIVES_LIB_VERSION=2.24.59.0-838c7fc8b
-ARG NEURONX_RUNTIME_LIB_VERSION=2.24.53.0-f239092cc
-ARG NEURONX_TOOLS_VERSION=2.22.61.0
+ARG NEURONX_DISTRIBUTED_VERSION=0.12.12111+cdd84048
+ARG NEURONX_CC_VERSION=2.18.121.0
+ARG NEURONX_FRAMEWORK_VERSION=2.6.0.2.7.5413+113e6810
+ARG NEURONX_COLLECTIVES_LIB_VERSION=2.25.65.0-9858ac9a1
+ARG NEURONX_RUNTIME_LIB_VERSION=2.25.57.0-166c7a468
+ARG NEURONX_TOOLS_VERSION=2.23.9.0
 
 ARG PYTHON=python3.10
 ARG PYTHON_VERSION=3.10.12
@@ -123,6 +123,7 @@ RUN ${PIP} install --no-cache-dir -U \
     "cryptography" \
     psutil==5.6.7 \
     dataset \
+    tenacity \
     transformers==4.36.2 \
     Pillow
 
