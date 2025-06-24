@@ -417,12 +417,35 @@ func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptio
 	if err != nil {
 		return nil, fmt.Errorf("failed to describe instance type offerings: %v", err)
 	}
+	
+	// Get all regular AZs excluding Local Zones
+	azDetails, err := m.clients.EC2().DescribeAvailabilityZones(context.TODO(), &ec2.DescribeAvailabilityZonesInput{
+		Filters: []ec2types.Filter{
+			{
+				Name:   aws.String("zone-type"),
+				Values: []string{"availability-zone"},
+			},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to describe availability zones: %v", err)
+	}
+	
+	// map of regular AZ names
+	regularAZNames := make(map[string]bool)
+	for _, az := range azDetails.AvailabilityZones {
+		regularAZNames[aws.ToString(az.ZoneName)] = true
+	}
+	
+	// Count offerings only in regular AZs
 	counts := make(map[string]int)
 	for _, offering := range offerings.InstanceTypeOfferings {
 		az := aws.ToString(offering.Location)
-		count := counts[az]
-		counts[az] = count + 1
+		if regularAZNames[az] {
+			counts[az]++
+		}
 	}
+	
 	var azs []string
 	for az := range counts {
 		azs = append(azs, az)
