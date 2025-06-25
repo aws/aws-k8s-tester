@@ -39,6 +39,7 @@ func TestMain(m *testing.M) {
 		manifests.NvidiaDevicePluginManifest,
 		manifests.MpiOperatorManifest,
 		manifests.EfaDevicePluginManifest,
+		manifests.DCGMExporterManifest,
 	}
 
 	testenv.Setup(
@@ -103,6 +104,23 @@ func TestMain(m *testing.M) {
 				return ctx, fmt.Errorf("EFA Device Plugin daemonset is not ready: %w", err)
 			}
 			log.Println("EFA Device Plugin daemonset is ready.")
+			return ctx, nil
+		},
+
+		// Wait for DCGM Exporter DaemonSet
+		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
+			log.Println("Waiting for DCGM Exporter daemonset to be ready.")
+			daemonset := appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{Name: "dcgm-exporter", Namespace: "default"},
+			}
+			err := wait.For(
+				fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&daemonset),
+				wait.WithTimeout(time.Minute*5),
+			)
+			if err != nil {
+				return ctx, fmt.Errorf("DCGM Exporter daemonset is not ready: %w", err)
+			}
+			log.Println("DCGM Exporter daemonset is ready.")
 			return ctx, nil
 		},
 

@@ -17,4 +17,8 @@ var (
 	NeuronDevicePluginRbacManifest []byte
 	//go:embed assets/k8s-neuron-device-plugin.yml
 	NeuronDevicePluginManifest []byte
+
+	//go:embed assets/dcgm-exporter.yaml
+	DCGMExporterManifest []byte
+
 )
