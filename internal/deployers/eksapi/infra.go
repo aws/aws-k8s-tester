@@ -91,10 +91,57 @@ func (i *Infrastructure) subnets() []string {
 	return append(i.subnetsPublic, i.subnetsPrivate...)
 }
 
+// getAZsWithIPv6Support returns availability zones that support IPv6 CIDR blocks
+func (m *InfrastructureManager) getAZsWithIPv6Support() (*ec2.DescribeAvailabilityZonesOutput, error) {
+	// Get all AZs that are either regular AZs or IPv6-compatible Local Zones
+	azOutput, err := m.clients.EC2().DescribeAvailabilityZones(context.TODO(), &ec2.DescribeAvailabilityZonesInput{
+		Filters: []ec2types.Filter{
+			{
+				Name:   aws.String("opt-in-status"),
+				Values: []string{"opt-in-not-required", "opted-in"},
+			},
+		},
+	})
+	
+	if err != nil {
+		return nil, err
+	}
+	
+	// List of Local Zones known to support IPv6
+	ipv6LocalZones := map[string]bool{
+		"us-east-1-atl-2a": true,
+		"us-east-1-chi-2a": true,
+		"us-east-1-dfw-2a": true,
+		"us-east-1-iah-2a": true,
+		"us-east-1-mia-2a": true,
+		"us-east-1-nyc-2a": true,
+		"us-west-2-lax-1a": true,
+		"us-west-2-lax-1b": true,
+		"us-west-2-phx-2a": true,
+	}
+	
+	// Filter to keep only regular AZs and IPv6-compatible Local Zones
+	var filteredAZs []ec2types.AvailabilityZone
+	for _, az := range azOutput.AvailabilityZones {
+		zoneName := aws.ToString(az.ZoneName)
+		zoneType := aws.ToString(az.ZoneType)
+		
+		// Keep if it's a regular AZ or an IPv6-compatible Local Zone
+		if zoneType == "availability-zone" || ipv6LocalZones[zoneName] {
+			filteredAZs = append(filteredAZs, az)
+		}
+	}
+	
+	// Return the filtered list
+	return &ec2.DescribeAvailabilityZonesOutput{
+		AvailabilityZones: filteredAZs,
+	}, nil
+}
+
 func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions) (*Infrastructure, error) {
 	// TODO: create a subnet in every AZ
-	// get two AZs for the subnets
-	azs, err := m.clients.EC2().DescribeAvailabilityZones(context.TODO(), &ec2.DescribeAvailabilityZonesInput{})
+	// get two AZs for the subnets that support IPv6 CIDR blocks
+	regularAZs, err := m.getAZsWithIPv6Support()
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +152,7 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 			return nil, err
 		}
 	} else if len(opts.InstanceTypes) > 0 {
-		azs, err := m.getRankedAZsForInstanceTypes(opts)
+		azs, err := m.getRankedAZsForInstanceTypes(opts, regularAZs)
 		if err != nil {
 			return nil, err
 		}
@@ -115,12 +162,12 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 		subnetAzs = azs[0:int(math.Min(float64(len(azs)), numInfraAZs))]
 	} else {
 		for i := range numInfraAZs {
-			subnetAzs = append(subnetAzs, aws.ToString(azs.AvailabilityZones[i].ZoneName))
+			subnetAzs = append(subnetAzs, aws.ToString(regularAZs.AvailabilityZones[i].ZoneName))
 		}
 	}
 	// make sure we always have the number of AZs used in the infra stack. can end up here if using
 	// a single capacity reservation or the provided instance types are offered in fewer AZs
-	for _, az := range azs.AvailabilityZones {
+	for _, az := range regularAZs.AvailabilityZones {
 		if len(subnetAzs) == numInfraAZs {
 			break
 		}
@@ -404,7 +451,16 @@ func (m *InfrastructureManager) getVPCCNINetworkInterfaceIds(vpcId string) ([]st
 
 // getAZsWithInstanceTypes returns the availability zones ordered decreasingly by the number of
 // requested instance types they support
-func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptions) ([]string, error) {
+func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptions, regularAZs *ec2.DescribeAvailabilityZonesOutput) ([]string, error) {
+	// Extract regular AZ names for location filter
+	var azNames []string
+	for _, az := range regularAZs.AvailabilityZones {
+		azNames = append(azNames, aws.ToString(az.ZoneName))
+	}
+	
+	// Process instance types if provided
+	
+	// Filter instance types by both instance-type and location (AZ)
 	offerings, err := m.clients.EC2().DescribeInstanceTypeOfferings(context.TODO(), &ec2.DescribeInstanceTypeOfferingsInput{
 		LocationType: ec2types.LocationTypeAvailabilityZone,
 		Filters: []ec2types.Filter{
@@ -412,38 +468,21 @@ func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptio
 				Name:   aws.String("instance-type"),
 				Values: opts.InstanceTypes,
 			},
+			{
+				Name:   aws.String("location"),
+				Values: azNames,
+			},
 		},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to describe instance type offerings: %v", err)
 	}
 	
-	// Get all regular AZs excluding Local Zones
-	azDetails, err := m.clients.EC2().DescribeAvailabilityZones(context.TODO(), &ec2.DescribeAvailabilityZonesInput{
-		Filters: []ec2types.Filter{
-			{
-				Name:   aws.String("zone-type"),
-				Values: []string{"availability-zone"},
-			},
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to describe availability zones: %v", err)
-	}
-	
-	// map of regular AZ names
-	regularAZNames := make(map[string]bool)
-	for _, az := range azDetails.AvailabilityZones {
-		regularAZNames[aws.ToString(az.ZoneName)] = true
-	}
-	
-	// Count offerings only in regular AZs
+	// Count offerings per AZ
 	counts := make(map[string]int)
 	for _, offering := range offerings.InstanceTypeOfferings {
 		az := aws.ToString(offering.Location)
-		if regularAZNames[az] {
-			counts[az]++
-		}
+		counts[az]++
 	}
 	
 	var azs []string
@@ -453,6 +492,7 @@ func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptio
 	sort.Slice(azs, func(i, j int) bool {
 		return counts[azs[i]] > counts[azs[j]]
 	})
+	// Return the ranked AZs
 	return azs, nil
 }
 
