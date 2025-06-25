@@ -45,12 +45,12 @@ func TestMain(m *testing.M) {
 	testenv.Setup(
 		// Apply all manifests
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Applying NVIDIA device plugin, MPI operator, and EFA device plugin manifests.")
+			log.Println("Applying NVIDIA device plugin, MPI operator, EFA device plugin and DCGM Exporter manifests.")
 			err := fwext.ApplyManifests(config.Client().RESTConfig(), manifests...)
 			if err != nil {
 				return ctx, fmt.Errorf("failed to apply manifests: %w", err)
 			}
-			log.Println("Successfully applied NVIDIA device plugin, MPI operator, and EFA device plugin manifests.")
+			log.Println("Successfully applied NVIDIA device plugin, MPI operator, EFA device plugin and DCGM Exporter manifests.")
 			return ctx, nil
 		},
 
@@ -73,69 +73,23 @@ func TestMain(m *testing.M) {
 			return ctx, nil
 		},
 
-		// Wait for NVIDIA device plugin DaemonSet
-		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Waiting for NVIDIA Device Plugin daemonset to be ready.")
-			daemonset := appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{Name: "nvidia-device-plugin-daemonset", Namespace: "kube-system"},
-			}
-			err := wait.For(
-				fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&daemonset),
-				wait.WithTimeout(time.Minute*5),
-			)
-			if err != nil {
-				return ctx, fmt.Errorf("NVIDIA Device Plugin daemonset is not ready: %w", err)
-			}
-			log.Println("NVIDIA Device Plugin daemonset is ready.")
-			return ctx, nil
-		},
-
-		// Wait for EFA device plugin DaemonSet
-		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Waiting for EFA Device Plugin daemonset to be ready.")
-			daemonset := appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{Name: "aws-efa-k8s-device-plugin-daemonset", Namespace: "kube-system"},
-			}
-			err := wait.For(
-				fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&daemonset),
-				wait.WithTimeout(time.Minute*5),
-			)
-			if err != nil {
-				return ctx, fmt.Errorf("EFA Device Plugin daemonset is not ready: %w", err)
-			}
-			log.Println("EFA Device Plugin daemonset is ready.")
-			return ctx, nil
-		},
-
-		// Wait for DCGM Exporter DaemonSet
-		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Waiting for DCGM Exporter daemonset to be ready.")
-			daemonset := appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{Name: "dcgm-exporter", Namespace: "default"},
-			}
-			err := wait.For(
-				fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&daemonset),
-				wait.WithTimeout(time.Minute*5),
-			)
-			if err != nil {
-				return ctx, fmt.Errorf("DCGM Exporter daemonset is not ready: %w", err)
-			}
-			log.Println("DCGM Exporter daemonset is ready.")
-			return ctx, nil
-		},
+		// Wait for DaemonSets using helper
+		deployDaemonSet("nvidia-device-plugin-daemonset", "kube-system", "NVIDIA Device Plugin"),
+		deployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system", "EFA Device Plugin"),
+		deployDaemonSet("dcgm-exporter", "kube-system", "DCGM Exporter"),
 
 		checkNodeTypes, // Dynamically check node types and capacities after device plugins are ready
 	)
 
 	testenv.Finish(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Deleting NVIDIA device plugin, MPI operator, and EFA device plugin manifests.")
+			log.Println("Deleting NVIDIA device plugin, MPI operator, EFA device plugin and DCGM Exporter manifests.")
 			slices.Reverse(manifests)
 			err := fwext.DeleteManifests(config.Client().RESTConfig(), manifests...)
 			if err != nil {
 				return ctx, fmt.Errorf("failed to delete manifests: %w", err)
 			}
-			log.Println("Successfully deleted NVIDIA device plugin, MPI operator, and EFA device plugin manifests.")
+			log.Println("Successfully deleted NVIDIA device plugin, MPI operator, EFA device plugin and DCGM Exporter manifests.")
 			return ctx, nil
 		},
 	)
@@ -201,4 +155,22 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 	log.Printf("[INFO] EFA Per Node: %d", efaPerNode)
 
 	return ctx, nil
+}
+// Helper function to deploy DaemonSet + Wait for Ready
+func deployDaemonSet(name, namespace, logLabel string) env.Func {
+	return func(ctx context.Context, config *envconf.Config) (context.Context, error) {
+		log.Printf("Waiting for %s daemonset to be ready.", logLabel)
+		daemonset := appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		}
+		err := wait.For(
+			fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&daemonset),
+			wait.WithTimeout(5*time.Minute),
+		)
+		if err != nil {
+			return ctx, fmt.Errorf("%s daemonset is not ready: %w", logLabel, err)
+		}
+		log.Printf("%s daemonset is ready.", logLabel)
+		return ctx, nil
+	}
 }
