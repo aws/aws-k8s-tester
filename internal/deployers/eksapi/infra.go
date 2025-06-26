@@ -95,17 +95,17 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 	// TODO: create a subnet in every AZ
 	// get two AZs for the subnets
 	azs, err := m.clients.EC2().DescribeAvailabilityZones(context.TODO(), &ec2.DescribeAvailabilityZonesInput{
-    Filters: []ec2types.Filter{
-        	{
+		Filters: []ec2types.Filter{
+			{
 				Name:   aws.String("zone-type"),
 				Values: []string{opts.ZoneType},
-        	},
-    	},
+			},
+		},
 	})
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var allowedAZs []string
 	for i := 0; i < numInfraAZs; i++ {
 		allowedAZs = append(allowedAZs, aws.ToString(azs.AvailabilityZones[i].ZoneName))
@@ -428,7 +428,7 @@ func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptio
 			{
 				Name:   aws.String("location"),
 				Values: allowedAZs,
-        	},
+			},
 		},
 	})
 	if err != nil {
