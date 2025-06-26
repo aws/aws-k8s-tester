@@ -85,6 +85,7 @@ type deployerOptions struct {
 	UnmanagedNodes      bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup. Requires --ami"`
 	UpClusterHeaders    []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
 	UserDataFormat      string        `flag:"user-data-format" desc:"Format of the node instance user data"`
+	ZoneType            string        `flag:"zone-type" desc:"Type of zone to use for infrastructure (availability-zone, local-zone, etc). Defaults to availability-zone"`
 }
 
 // NewDeployer implements deployer.New for EKS using the EKS (and other AWS) API(s) directly (no cloudformation)
@@ -253,6 +254,10 @@ func (d *deployer) verifyUpFlags() error {
 	if d.IPFamily == "" {
 		d.IPFamily = string(ekstypes.IpFamilyIpv4)
 		klog.Infof("Using default IP family: %s", d.IPFamily)
+	}
+	if d.ZoneType == "" {
+		d.ZoneType = "availability-zone"
+		klog.Infof("Using default zone type: %s", d.ZoneType)
 	}
 	if d.ClusterCreationTimeout == 0 {
 		d.ClusterCreationTimeout = time.Minute * 15
