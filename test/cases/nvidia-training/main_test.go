@@ -74,9 +74,9 @@ func TestMain(m *testing.M) {
 		},
 
 		// Wait for DaemonSets using helper
-		deployDaemonSet("nvidia-device-plugin-daemonset", "kube-system", "NVIDIA Device Plugin"),
-		deployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system", "EFA Device Plugin"),
-		deployDaemonSet("dcgm-exporter", "kube-system", "DCGM Exporter"),
+		deployDaemonSet("nvidia-device-plugin-daemonset", "kube-system"),
+		deployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system"),
+		deployDaemonSet("dcgm-exporter", "kube-system"),
 
 		checkNodeTypes, // Dynamically check node types and capacities after device plugins are ready
 	)
@@ -157,9 +157,9 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 	return ctx, nil
 }
 // Helper function to deploy DaemonSet + Wait for Ready
-func deployDaemonSet(name, namespace, logLabel string) env.Func {
+func deployDaemonSet(name, namespace string) env.Func {
 	return func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-		log.Printf("Waiting for %s daemonset to be ready.", logLabel)
+		log.Printf("Waiting for %s daemonset to be ready.", name)
 		daemonset := appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		}
@@ -168,9 +168,9 @@ func deployDaemonSet(name, namespace, logLabel string) env.Func {
 			wait.WithTimeout(5*time.Minute),
 		)
 		if err != nil {
-			return ctx, fmt.Errorf("%s daemonset is not ready: %w", logLabel, err)
+			return ctx, fmt.Errorf("%s daemonset is not ready: %w", name, err)
 		}
-		log.Printf("%s daemonset is ready.", logLabel)
+		log.Printf("%s daemonset is ready.", name)
 		return ctx, nil
 	}
 }
