@@ -1,5 +1,5 @@
 ARG CUDA_MAJOR_VERSION=12
-ARG CUDA_MINOR_VERSION=8
+ARG CUDA_MINOR_VERSION=9
 
 # Use the NVIDIA CUDA runtime as a parent image
 FROM nvidia/cuda:$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION.0-devel-ubuntu22.04
@@ -111,7 +111,7 @@ RUN curl -sL https://efa-installer.amazonaws.com/aws-efa-installer-$EFA_INSTALLE
  && cd && rm -rf /tmp/aws-efa-installer
 
 # Install NCCL
-ARG LIBNCCL_VERSION=2.26.2-1
+ARG LIBNCCL_VERSION=2.27.5-1
 RUN apt update \
  && apt install -y \
         libnccl2=$LIBNCCL_VERSION+cuda$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION \
@@ -119,7 +119,7 @@ RUN apt update \
  && rm -rf /var/lib/apt/lists/* 
 
 # Install AWS-OFI-NCCL plugin
-ARG AWS_OFI_NCCL_VERSION=1.14.2
+ARG AWS_OFI_NCCL_VERSION=1.16.0
 RUN curl -sL https://github.com/aws/aws-ofi-nccl/releases/download/v$AWS_OFI_NCCL_VERSION/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION.tar.gz | tar xvz -C /tmp \
  && cd /tmp/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION \
  && ./configure \

@@ -1,7 +1,13 @@
 ###############################################################################
 # Base image, arguments, and environment
 ###############################################################################
-FROM nvidia/cuda:12.8.0-devel-ubuntu22.04
+ARG CUDA_MAJOR_VERSION=12
+ARG CUDA_MINOR_VERSION=9
+
+FROM nvidia/cuda:$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION.0-devel-ubuntu22.04
+
+ARG CUDA_MAJOR_VERSION
+ARG CUDA_MINOR_VERSION
 
 # Disable interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
