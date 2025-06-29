@@ -43,14 +43,14 @@ jobs:
     - uses: actions/checkout@v3
     - run: |
         docker build --file test/images/nvidia-training/Dockerfile test/images/nvidia-training \
-          --build-arg PYTORCH_BUILD_ENV="MAX_JOBS=$(($(nproc) - 2)) USE_MKLDNN=0 USE_DISTRIBUTED=0 USE_CAFFE2=0 USE_QNNPACK=0 USE_NNPACK=0 USE_XNNPACK=0 USE_MPS=0 BUILD_SHARED_LIBS=OFF USE_FLASH_ATTENTION=0 USE_MEM_EFF_ATTENTION=0 BUILD_TEST=0"
+          --build-arg PYTORCH_BUILD_ENV="MAX_JOBS=$(($(nproc) - 2)) USE_MKLDNN=0 USE_DISTRIBUTED=0 USE_CUDA=0 USE_ROCM=0 USE_CAFFE2=0 USE_QNNPACK=0 USE_NNPACK=0 USE_XNNPACK=0 USE_MPS=0 BUILD_SHARED_LIBS=OFF USE_FLASH_ATTENTION=0 USE_MEM_EFF_ATTENTION=0 BUILD_TEST=0"
   build-image-nvidia-inference:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - run: |
         docker build --file test/images/nvidia-inference/Dockerfile test/images/nvidia-inference \
-          --build-arg PYTORCH_BUILD_ENV="MAX_JOBS=$(($(nproc) - 2)) USE_MKLDNN=0 USE_DISTRIBUTED=0 USE_CAFFE2=0 USE_QNNPACK=0 USE_NNPACK=0 USE_XNNPACK=0 USE_MPS=0 BUILD_SHARED_LIBS=OFF USE_FLASH_ATTENTION=0 USE_MEM_EFF_ATTENTION=0 BUILD_TEST=0"
+          --build-arg PYTORCH_BUILD_ENV="MAX_JOBS=$(($(nproc) - 2)) USE_MKLDNN=0 USE_DISTRIBUTED=0 USE_CUDA=0 USE_ROCM=0 USE_CAFFE2=0 USE_QNNPACK=0 USE_NNPACK=0 USE_XNNPACK=0 USE_MPS=0 BUILD_SHARED_LIBS=OFF USE_FLASH_ATTENTION=0 USE_MEM_EFF_ATTENTION=0 BUILD_TEST=0"
   build-image-neuron-training:
     runs-on: ubuntu-latest
     steps:
