@@ -1,12 +1,8 @@
-ARG UBUNTU_MAJOR_VERSION=22
-
 ARG CUDA_MAJOR_VERSION=12
-ARG CUDA_MINOR_VERSION=8
+ARG CUDA_MINOR_VERSION=9
 
 # Start with the NVIDIA CUDA base image
-FROM nvidia/cuda:$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION.0-devel-ubuntu$UBUNTU_MAJOR_VERSION.04
-
-ARG UBUNTU_MAJOR_VERSION
+FROM nvidia/cuda:$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION.0-devel-ubuntu22.04
 
 ARG CUDA_MAJOR_VERSION
 ARG CUDA_MINOR_VERSION
@@ -55,8 +51,10 @@ RUN git clone https://github.com/NVIDIA/cuda-samples.git /tmp/cuda-samples \
       --branch v$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION \
  && cd /tmp/cuda-samples/Samples/0_Introduction/vectorAdd && cmake . && make -j$(nproc) && cp vectorAdd /usr/bin \
  && cd /tmp/cuda-samples/Samples/1_Utilities/deviceQuery && cmake . && make -j$(nproc) && cp deviceQuery /usr/bin \
- && cd /tmp/cuda-samples/Samples/1_Utilities/bandwidthTest && cmake . && make -j$(nproc) && cp bandwidthTest /usr/bin \
  && cd && rm -rf /tmp/cuda-samples
+
+# Build nvbandwidth
+# TODO: see https://github.com/NVIDIA/nvbandwidth
 
 ENV LD_LIBRARY_PATH /opt/amazon/openmpi/lib:/opt/amazon/efa/lib:/opt/aws-ofi-nccl/install/lib:/usr/local/cuda/lib:/usr/local/lib/:/usr/lib64:/usr/lib/x86_64-linux-gnu/:/usr/lib/aarch64-linux-gnu/:$LD_LIBRARY_PATH
 ENV PATH /usr/local/cuda/bin:/opt/amazon/openmpi/bin:/opt/amazon/efa/bin:/usr/sbin:/usr/bin:/usr/local/bin:$PATH
@@ -69,7 +67,7 @@ RUN curl -sL https://efa-installer.amazonaws.com/aws-efa-installer-$EFA_INSTALLE
  && cd && rm -rf /tmp/aws-efa-installer
 
 # Install NCCL
-ARG LIBNCCL_VERSION=2.26.2-1
+ARG LIBNCCL_VERSION=2.27.5-1
 RUN apt update \
  && apt install -y \
       libnccl2=$LIBNCCL_VERSION+cuda$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION \
@@ -77,7 +75,7 @@ RUN apt update \
  && rm -rf /var/lib/apt/lists/*
 
 # Install AWS-OFI-NCCL plugin
-ARG AWS_OFI_NCCL_VERSION=1.14.2
+ARG AWS_OFI_NCCL_VERSION=1.16.0
 RUN curl -sL https://github.com/aws/aws-ofi-nccl/releases/download/v$AWS_OFI_NCCL_VERSION/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION.tar.gz | tar xvz -C /tmp \
  && cd /tmp/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION \
  && ./configure \
@@ -92,16 +90,15 @@ RUN curl -sL https://github.com/aws/aws-ofi-nccl/releases/download/v$AWS_OFI_NCC
  && cd && rm -rf /tmp/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION
 
 # Install NCCL Tests
-ARG NCCL_TESTS_VERSION=2.15.0
-RUN curl -sL https://github.com/NVIDIA/nccl-tests/archive/refs/tags/v$NCCL_TESTS_VERSION.tar.gz | tar xvz -C /tmp \
- && cd /tmp/nccl-tests-$NCCL_TESTS_VERSION \
+RUN git clone https://github.com/NVIDIA/nccl-tests /tmp/nccl-tests \
+ && cd /tmp/nccl-tests \
  && make \
       MPI=1 \
       MPI_HOME=/opt/amazon/openmpi/ \
       CUDA_HOME=/usr/local/cuda \
  && mkdir -p /opt/nccl-tests \
  && mv build /opt/nccl-tests/build \
- && cd && rm -rf /tmp/nccl-tests-$NCCL_TESTS_VERSION
+ && cd && rm -rf /tmp/nccl-tests
 
 # Set a default command for debugging or modify as per requirements
 ENV NCCL_PROTO simple

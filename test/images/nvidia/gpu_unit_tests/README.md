@@ -41,7 +41,6 @@ Create PR with the new `tests/test_sysinfo.sh.data/xxx`
   Usually this is side effect of system misconfiguration (driver or fabric manager is not loaded)
   - test_01_device_query
   - test_02_vector_add
-  - test_03_bandwidth
   - test_04_dcgm_diagnostics
 
 

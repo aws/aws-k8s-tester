@@ -24,11 +24,6 @@ test_02_vector_add()
     assert_status_code 0 "$DEMO_SUITE_DIR/vectorAdd"
 }
 
-test_03_bandwidth()
-{
-    assert_status_code 0 "$DEMO_SUITE_DIR/bandwidthTest --device=all --csv"
-}
-
 test_04_dcgm_diagnostics()
 {
     # https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/dcgm-diagnostics.html#run-levels-and-tests
