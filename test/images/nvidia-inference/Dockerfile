@@ -1,7 +1,13 @@
 ###############################################################################
 # Base image, arguments, and environment
 ###############################################################################
-FROM nvidia/cuda:12.8.0-devel-ubuntu22.04
+ARG CUDA_MAJOR_VERSION=12
+ARG CUDA_MINOR_VERSION=9
+
+FROM nvidia/cuda:$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION.0-devel-ubuntu22.04
+
+ARG CUDA_MAJOR_VERSION
+ARG CUDA_MINOR_VERSION
 
 # Disable interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
@@ -70,7 +76,7 @@ ARG PYTORCH_BUILD_ENV="MAX_JOBS=8 BUILD_TEST=0"
 ENV CUDA_HOME=/usr/local/cuda
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64
 ENV PATH=$PATH:$CUDA_HOME/bin
-ENV TORCH_CUDA_ARCH_LIST="7.5 8.0 8.6 8.7 8.9 9.0 10.0"
+ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.7;8.9;9.0;10.0;12.0"
 
 RUN pip3 install typing-extensions sympy pyyaml
 RUN git clone https://github.com/pytorch/pytorch.git /tmp/pytorch \
