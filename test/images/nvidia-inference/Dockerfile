@@ -2,7 +2,7 @@
 # Base image, arguments, and environment
 ###############################################################################
 ARG CUDA_MAJOR_VERSION=12
-ARG CUDA_MINOR_VERSION=9
+ARG CUDA_MINOR_VERSION=8
 
 FROM nvidia/cuda:$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION.0-devel-ubuntu22.04
 
