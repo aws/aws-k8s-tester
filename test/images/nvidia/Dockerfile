@@ -1,5 +1,5 @@
 ARG CUDA_MAJOR_VERSION=12
-ARG CUDA_MINOR_VERSION=9
+ARG CUDA_MINOR_VERSION=8
 
 # Start with the NVIDIA CUDA base image
 FROM nvidia/cuda:$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION.0-devel-ubuntu22.04
@@ -41,6 +41,9 @@ RUN apt update -y \
 
 RUN ldconfig
 
+ENV LD_LIBRARY_PATH /opt/amazon/openmpi/lib:/opt/amazon/efa/lib:/opt/aws-ofi-nccl/install/lib:/usr/local/cuda/lib:/usr/local/lib/:/usr/lib64:/usr/lib/x86_64-linux-gnu/:/usr/lib/aarch64-linux-gnu/:$LD_LIBRARY_PATH
+ENV PATH /usr/local/cuda/bin:/opt/amazon/openmpi/bin:/opt/amazon/efa/bin:/usr/sbin:/usr/bin:/usr/local/bin:$PATH
+
 RUN mkdir -p /var/run/sshd \
  && sed -i 's/[ #]\(.*StrictHostKeyChecking \).*/ \1no/g' /etc/ssh/ssh_config \
  && echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config \
@@ -53,18 +56,20 @@ RUN git clone https://github.com/NVIDIA/cuda-samples.git /tmp/cuda-samples \
  && cd /tmp/cuda-samples/Samples/1_Utilities/deviceQuery && cmake . && make -j$(nproc) && cp deviceQuery /usr/bin \
  && cd && rm -rf /tmp/cuda-samples
 
-# Build nvbandwidth
-# TODO: see https://github.com/NVIDIA/nvbandwidth
-
-ENV LD_LIBRARY_PATH /opt/amazon/openmpi/lib:/opt/amazon/efa/lib:/opt/aws-ofi-nccl/install/lib:/usr/local/cuda/lib:/usr/local/lib/:/usr/lib64:/usr/lib/x86_64-linux-gnu/:/usr/lib/aarch64-linux-gnu/:$LD_LIBRARY_PATH
-ENV PATH /usr/local/cuda/bin:/opt/amazon/openmpi/bin:/opt/amazon/efa/bin:/usr/sbin:/usr/bin:/usr/local/bin:$PATH
-
 # Install EFA
 ARG EFA_INSTALLER_VERSION=latest
 RUN curl -sL https://efa-installer.amazonaws.com/aws-efa-installer-$EFA_INSTALLER_VERSION.tar.gz | tar xvz -C /tmp \
  && cd /tmp/aws-efa-installer \
  && ./efa_installer.sh --yes --enable-gdr --skip-kmod --skip-limit-conf --no-verify --mpi openmpi4 \
  && cd && rm -rf /tmp/aws-efa-installer
+
+# Build nvbandwidth
+ARG NVBANDWIDTH_VERSION=v0.8
+RUN apt install -y libboost-program-options-dev
+RUN git clone https://github.com/NVIDIA/nvbandwidth.git --branch $NVBANDWIDTH_VERSION /tmp/nvbandwidth \
+ && cd /tmp/nvbandwidth \
+ && cmake -DMULTINODE=1 . && make && cp nvbandwidth /usr/bin \
+ && cd && rm -rf /tmp/cuda-samples
 
 # Install NCCL
 ARG LIBNCCL_VERSION=2.27.5-1
@@ -90,6 +95,7 @@ RUN curl -sL https://github.com/aws/aws-ofi-nccl/releases/download/v$AWS_OFI_NCC
  && cd && rm -rf /tmp/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION
 
 # Install NCCL Tests
+# TODO: automate pin with version bump
 RUN git clone https://github.com/NVIDIA/nccl-tests /tmp/nccl-tests \
  && cd /tmp/nccl-tests \
  && make \
