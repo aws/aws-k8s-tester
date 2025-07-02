@@ -112,11 +112,11 @@ RUN curl -sL https://efa-installer.amazonaws.com/aws-efa-installer-$EFA_INSTALLE
 
 # Install NCCL
 ARG LIBNCCL_VERSION=2.27.5-1
-RUN apt update \
- && apt install -y \
-        libnccl2=$LIBNCCL_VERSION+cuda$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION \
-        libnccl-dev=$LIBNCCL_VERSION+cuda$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION \
- && rm -rf /var/lib/apt/lists/* 
+RUN git clone https://github.com/NVIDIA/nccl.git --branch v$LIBNCCL_VERSION /tmp/nccl \
+ && cd /tmp/nccl \
+ && make -j $(nproc) \
+ && make install \
+ && cd && rm -rf /tmp/nccl
 
 # Install AWS-OFI-NCCL plugin
 ARG AWS_OFI_NCCL_VERSION=1.16.0
