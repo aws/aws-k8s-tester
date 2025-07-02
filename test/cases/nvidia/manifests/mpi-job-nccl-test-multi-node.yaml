@@ -1,7 +1,7 @@
 apiVersion: kubeflow.org/v2beta1
 kind: MPIJob
 metadata:
-  name: multi-node-nccl-test
+  name: {{.JobName}}
 spec:
   slotsPerWorker: {{.GpuPerNode}}
   runPolicy:
@@ -51,7 +51,7 @@ spec:
             - --mca
             - btl_tcp_if_exclude
             - lo,docker0,veth_def_agent
-            - /opt/nccl-tests/build/all_reduce_perf
+            - /opt/nccl-tests/build/{{.TestName}}
             - -b
             - "8"
             - -e
