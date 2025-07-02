@@ -94,10 +94,23 @@ func (i *Infrastructure) subnets() []string {
 func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions) (*Infrastructure, error) {
 	// TODO: create a subnet in every AZ
 	// get two AZs for the subnets
-	azs, err := m.clients.EC2().DescribeAvailabilityZones(context.TODO(), &ec2.DescribeAvailabilityZonesInput{})
+	azs, err := m.clients.EC2().DescribeAvailabilityZones(context.TODO(), &ec2.DescribeAvailabilityZonesInput{
+		Filters: []ec2types.Filter{
+			{
+				Name:   aws.String("zone-type"),
+				Values: []string{opts.ZoneType},
+			},
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
+
+	var allowedAZs []string
+	for i := 0; i < numInfraAZs; i++ {
+		allowedAZs = append(allowedAZs, aws.ToString(azs.AvailabilityZones[i].ZoneName))
+	}
+
 	var subnetAzs []string
 	if opts.CapacityReservation {
 		subnetAzs, err = m.getAZsWithCapacity(opts)
@@ -105,7 +118,7 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 			return nil, err
 		}
 	} else if len(opts.InstanceTypes) > 0 {
-		azs, err := m.getRankedAZsForInstanceTypes(opts)
+		azs, err := m.getRankedAZsForInstanceTypes(opts, allowedAZs)
 		if err != nil {
 			return nil, err
 		}
@@ -114,7 +127,7 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 		}
 		subnetAzs = azs[0:int(math.Min(float64(len(azs)), numInfraAZs))]
 	} else {
-		for i := range numInfraAZs {
+		for i := 0; i < numInfraAZs; i++ {
 			subnetAzs = append(subnetAzs, aws.ToString(azs.AvailabilityZones[i].ZoneName))
 		}
 	}
@@ -404,13 +417,17 @@ func (m *InfrastructureManager) getVPCCNINetworkInterfaceIds(vpcId string) ([]st
 
 // getAZsWithInstanceTypes returns the availability zones ordered decreasingly by the number of
 // requested instance types they support
-func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptions) ([]string, error) {
+func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptions, allowedAZs []string) ([]string, error) {
 	offerings, err := m.clients.EC2().DescribeInstanceTypeOfferings(context.TODO(), &ec2.DescribeInstanceTypeOfferingsInput{
 		LocationType: ec2types.LocationTypeAvailabilityZone,
 		Filters: []ec2types.Filter{
 			{
 				Name:   aws.String("instance-type"),
 				Values: opts.InstanceTypes,
+			},
+			{
+				Name:   aws.String("location"),
+				Values: allowedAZs,
 			},
 		},
 	})
