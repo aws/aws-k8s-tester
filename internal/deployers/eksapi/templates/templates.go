@@ -67,6 +67,7 @@ type UserDataTemplateData struct {
 	CIDR                 string
 	APIServerEndpoint    string
 	KubeletFeatureGates  map[string]bool
+	NodeadmFeatureGates  map[string]bool
 }
 
 var (
