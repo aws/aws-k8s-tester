@@ -321,7 +321,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/outposts v1.50.1 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-resty/resty/v2 v2.11.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
+	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
