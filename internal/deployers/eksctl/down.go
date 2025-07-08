@@ -14,11 +14,7 @@ func (d *deployer) Down() error {
 
 	if d.DeployTarget == "nodegroup" {
 		klog.Infof("deleting nodegroup %s from cluster %s", d.NodegroupName, d.clusterName)
-		args := []string{"delete", "nodegroup", "--cluster", d.clusterName, "--name", d.NodegroupName}
-		if d.SkipDrain {
-			args = append(args, "--drain=false")
-		}
-		args = append(args, "--wait")
+		args := []string{"delete", "nodegroup", "--cluster", d.clusterName, "--name", d.NodegroupName, "--drain=false", "--wait"}
 		err = util.ExecuteCommand("eksctl", args...)
 		if err != nil {
 			return fmt.Errorf("failed to delete nodegroup: %v", err)

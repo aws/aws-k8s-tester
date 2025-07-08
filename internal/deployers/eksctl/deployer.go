@@ -27,7 +27,6 @@ type deployer struct {
 	awsConfig      aws.Config
 	eksClient      *eks.Client
 	KubeconfigPath string `flag:"kubeconfig" desc:"Path to kubeconfig"`
-	SkipDrain      bool   `flag:"skip-drain" desc:"Disable draining nodes before deletion (default: false)"`
 	// ClusterName is the effective cluster name (from flag or RunID)
 	clusterName string
 }
