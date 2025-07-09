@@ -8,6 +8,8 @@ import (
 
 	"github.com/aws/aws-k8s-tester/internal"
 	"github.com/aws/aws-k8s-tester/internal/awssdk"
+	"github.com/aws/aws-k8s-tester/internal/deployers/eksapi/templates"
+	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
 	"github.com/aws/aws-k8s-tester/internal/metrics"
 	"github.com/aws/aws-k8s-tester/internal/util"
 
@@ -232,6 +234,27 @@ func (d *deployer) Up() error {
 			// don't return err, this isn't critical
 		}
 	}
+	
+	if d.deployerOptions.StaticClusterName == "" {
+		klog.Infof("Setting up CloudWatch infrastructure...")
+		oidcIssuerURL := d.cluster.oidcIssuerURL
+		if roleArn, err := d.infraManager.createCloudWatchInfrastructureStack(d.cluster.name, oidcIssuerURL); err != nil {
+			klog.Errorf("CloudWatch infrastructure setup failed: %v", err)
+			return err
+		} else {
+			d.cluster.cloudwatchRoleArn = roleArn
+			klog.Infof("CloudWatch infrastructure setup completed after node creation")
+		}
+		// Apply CloudWatch infrastructure manifest
+		if err := d.applyCloudWatchInfraManifest(); err != nil {
+			klog.Errorf("CloudWatch infrastructure manifest failed: %v", err)
+			return err
+		} else {
+			klog.Infof("CloudWatch infrastructure manifest applied successfully")
+		}
+	} else {
+		klog.Infof("Skipping CloudWatch infrastructure setup for static cluster: %s", d.cluster.name)
+	}
 	return nil
 }
 
@@ -337,7 +360,32 @@ func (d *deployer) Down() error {
 	return deleteResources(d.infraManager, d.clusterManager, d.nodeManager, d.k8sClient, &d.deployerOptions)
 }
 
+func (d *deployer) applyCloudWatchInfraManifest() error {
+	klog.Infof("Using CloudWatch IAM role ARN: %s", d.cluster.cloudwatchRoleArn)
+
+	manifest, err := fwext.RenderManifests([]byte(templates.CloudWatchAgentInfra), struct {
+		IAMRoleARN string
+	}{
+		IAMRoleARN: d.cluster.cloudwatchRoleArn,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to render CloudWatch manifest: %w", err)
+	}
+
+	err = fwext.ApplyManifests(d.k8sClient.config, manifest)
+	if err != nil {
+		klog.Errorf("Failed to apply CloudWatch manifest: %v", err)
+		return err
+	}
+	
+	klog.Infof("Successfully applied CloudWatch infrastructure manifest")
+	return nil
+}
+
 func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *nodeManager, k8sClient *k8sClient /* nillable */, opts *deployerOptions /* nillable */) error {
+	if err := im.deleteCloudWatchInfrastructureStack(); err != nil {
+		klog.Warningf("Failed to delete CloudWatch infrastructure: %v", err)
+	}
 	if err := nm.deleteNodes(k8sClient, opts); err != nil {
 		return err
 	}
