@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudWatch infrastructure for EKS cluster'
+
+# No parameters needed - using Go template substitution
+
+Resources:
+  OIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: {{ .OIDCIssuerURL }}
+      ClientIdList:
+        - sts.amazonaws.com
+      Tags:
+        - Key: Name
+          Value: {{ .ResourceId }}-oidc-provider
+
+  CloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: cloudwatch-role-{{ .ResourceId }}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref OIDCProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                "{{ .OIDCProviderURL }}:aud": "sts.amazonaws.com"
+                "{{ .OIDCProviderURL }}:sub": "system:serviceaccount:amazon-cloudwatch:cwagent-prometheus"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Description: Role for CloudWatch Agent in EKS cluster
+      Tags:
+        - Key: Name
+          Value: {{ .ResourceId }}-cloudwatch-role
+
+Outputs:
+  CloudWatchRoleArn:
+    Description: ARN of the CloudWatch IAM role
+    Value: !GetAtt CloudWatchRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}::CloudWatchRoleArn"
+
+  OIDCProviderArn:
+    Description: ARN of the OIDC provider
+    Value: !Ref OIDCProvider
+    Export:
+      Name: !Sub "${AWS::StackName}::OIDCProviderArn"

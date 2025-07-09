@@ -32,6 +32,8 @@ type Cluster struct {
 	arn                      string
 	name                     string
 	cidr                     string
+	cloudwatchRoleArn        string
+	oidcIssuerURL            string
 }
 
 func (m *ClusterManager) getOrCreateCluster(infra *Infrastructure, opts *deployerOptions) (*Cluster, error) {
@@ -124,6 +126,7 @@ func (m *ClusterManager) waitForClusterActive(clusterName string, timeout time.D
 		endpoint:                 *out.Cluster.Endpoint,
 		name:                     *out.Cluster.Name,
 		securityGroupId:          *out.Cluster.ResourcesVpcConfig.ClusterSecurityGroupId,
+		oidcIssuerURL:            *out.Cluster.Identity.Oidc.Issuer,
 	}, nil
 }
 
