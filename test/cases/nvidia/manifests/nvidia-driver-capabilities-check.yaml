@@ -3,6 +3,7 @@ kind: Pod
 metadata:
   name: moderngl-pod
 spec:
+  restartPolicy: Never
   tolerations:
   - key: "nvidia.com/gpu"
     operator: "Exists"
@@ -31,8 +32,7 @@ spec:
           mesa-utils \
           xvfb
         pip3 install moderngl
-        
-        sleep 3600
+        python3 /scripts/moderngl-script.py
     resources:
       requests:
         memory: "50Gi"
@@ -41,4 +41,14 @@ spec:
       limits:
         memory: "50Gi"
         "nvidia.com/gpu": "1"
-  restartPolicy: Never
+    volumeMounts:
+        - name: moderngl-script-volume
+          mountPath: /scripts
+          readOnly: true
+  volumes:
+    - name: moderngl-script-volume
+      configMap:
+        name: moderngl-script
+        items:
+          - key: moderngl-script.py
+            path: moderngl-script.py

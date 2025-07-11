@@ -17,10 +17,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/resource"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
-	"k8s.io/client-go/tools/remotecommand"
 	"sigs.k8s.io/e2e-framework/klient/decoder"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 )
@@ -124,39 +122,37 @@ func RenderManifests(file []byte, templateData interface{}) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func ExecuteInPod(restConfig *rest.Config, podName, namespace, command string) ([]byte, []byte, error) {
+func CreateConfigMapFromFile(restConfig *rest.Config, namespace, configMapName string, fileName string, content []byte) error {
 	clientset, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create clientset: %v", err)
+		return fmt.Errorf("failed to create clientset: %v", err)
 	}
-
-	req := clientset.CoreV1().RESTClient().Post().
-		Resource("pods").
-		Name(podName).
-		Namespace(namespace).
-		SubResource("exec").
-		VersionedParams(&corev1.PodExecOptions{
-			Command: []string{"/bin/sh", "-c", command},
-			Stdout:  true,
-			Stderr:  true,
-		}, scheme.ParameterCodec)
-
-	exec, err := remotecommand.NewSPDYExecutor(restConfig, "POST", req.URL())
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      configMapName,
+			Namespace: namespace,
+		},
+		Data: map[string]string{
+			fileName: string(content),
+		},
+	}
+	_, err = clientset.CoreV1().ConfigMaps(namespace).Create(context.Background(), cm, metav1.CreateOptions{})
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create SPDY executor: %v", err)
+		return fmt.Errorf("failed to create configmap: %v", err)
 	}
+	return nil
+}
 
-	var stdout, stderr bytes.Buffer
-	err = exec.StreamWithContext(context.Background(), remotecommand.StreamOptions{
-		Stdout: &stdout,
-		Stderr: &stderr,
-	})
-
+func DeleteConfigMap(restConfig *rest.Config, namespace, configMapName string) error {
+	clientset, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
-		return stdout.Bytes(), stderr.Bytes(), fmt.Errorf("failed to execute command: %v", err)
+		return fmt.Errorf("failed to create clientset: %v", err)
 	}
-
-	return stdout.Bytes(), stderr.Bytes(), nil
+	err = clientset.CoreV1().ConfigMaps(namespace).Delete(context.Background(), configMapName, metav1.DeleteOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to delete configmap: %v", err)
+	}
+	return nil
 }
 
 // GetJobLogs get logs from MPIJob
