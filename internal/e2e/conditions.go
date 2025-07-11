@@ -32,6 +32,19 @@ func (c *ConditionExtension) ResourceMatch(obj k8s.Object, matchFetcher func(obj
 	}
 }
 
+func (c *ConditionExtension) PodRunning(pod k8s.Object) apimachinerywait.ConditionWithContextFunc {
+	return func(ctx context.Context) (done bool, err error) {
+		if err := c.resources.Get(ctx, pod.GetName(), pod.GetNamespace(), pod); err != nil {
+			return false, err
+		}
+		status := pod.(*v1.Pod).Status
+		if status.Phase == v1.PodRunning {
+			done = true
+		}
+		return
+	}
+}
+
 func (c *ConditionExtension) DaemonSetReady(daemonset k8s.Object) apimachinerywait.ConditionWithContextFunc {
 	return func(ctx context.Context) (done bool, err error) {
 		if err := c.resources.Get(ctx, daemonset.GetName(), daemonset.GetNamespace(), daemonset); err != nil {

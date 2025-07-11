@@ -17,8 +17,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/resource"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
+	"k8s.io/client-go/tools/remotecommand"
 	"sigs.k8s.io/e2e-framework/klient/decoder"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 )
@@ -120,6 +122,41 @@ func RenderManifests(file []byte, templateData interface{}) ([]byte, error) {
 	buf := bytes.Buffer{}
 	err = tpl.Execute(&buf, templateData)
 	return buf.Bytes(), err
+}
+
+func ExecuteInPod(restConfig *rest.Config, podName, namespace, command string) ([]byte, []byte, error) {
+	clientset, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create clientset: %v", err)
+	}
+
+	req := clientset.CoreV1().RESTClient().Post().
+		Resource("pods").
+		Name(podName).
+		Namespace(namespace).
+		SubResource("exec").
+		VersionedParams(&corev1.PodExecOptions{
+			Command: []string{"/bin/sh", "-c", command},
+			Stdout:  true,
+			Stderr:  true,
+		}, scheme.ParameterCodec)
+
+	exec, err := remotecommand.NewSPDYExecutor(restConfig, "POST", req.URL())
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create SPDY executor: %v", err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	err = exec.StreamWithContext(context.Background(), remotecommand.StreamOptions{
+		Stdout: &stdout,
+		Stderr: &stderr,
+	})
+
+	if err != nil {
+		return stdout.Bytes(), stderr.Bytes(), fmt.Errorf("failed to execute command: %v", err)
+	}
+
+	return stdout.Bytes(), stderr.Bytes(), nil
 }
 
 // GetJobLogs get logs from MPIJob
