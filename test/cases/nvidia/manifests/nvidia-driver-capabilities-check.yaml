@@ -13,7 +13,7 @@ spec:
     env:
     - name: NVIDIA_DRIVER_CAPABILITIES
       value: "all"
-    image: ubuntu:22.04
+    image: public.ecr.aws/ubuntu/ubuntu:22.04
     command: ["/bin/bash"]
     args:
       - -c
