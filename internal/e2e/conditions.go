@@ -40,16 +40,11 @@ func (c *ConditionExtension) PodSucceeded(pod k8s.Object) apimachinerywait.Condi
 		status := pod.(*v1.Pod).Status
 		if status.Phase == v1.PodSucceeded {
 			done = true
+		} else if status.Phase == v1.PodFailed {
+			return false, fmt.Errorf("Pod in Failed status")
 		}
 		return
 	}
-}
-
-func (c *ConditionExtension) GetPodPhase(pod k8s.Object) (v1.PodPhase, error) {
-	if err := c.resources.Get(context.Background(), pod.GetName(), pod.GetNamespace(), pod); err != nil {
-		return v1.PodUnknown, err
-	}
-	return pod.(*v1.Pod).Status.Phase, nil
 }
 
 func (c *ConditionExtension) DaemonSetReady(daemonset k8s.Object) apimachinerywait.ConditionWithContextFunc {

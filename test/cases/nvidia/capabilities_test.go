@@ -58,14 +58,10 @@ func TestNvidiaDriverCapabilities(t *testing.T) {
 				wait.WithTimeout(5*time.Minute),
 			)
 			if err != nil {
-				podPhase, err2 := e2e.NewConditionExtension(cfg.Client().Resources()).GetPodPhase(pod)
-				if err2 != nil {
-					t.Fatalf("[Assess] nvidia capabilities check pod not in succeeded phase within 5 minute: %v, failed to get current pod phase: %v", err, err2)
-				} else if podPhase == v1.PodFailed {
+				if err.Error() == "Pod in Failed status" {
 					t.Fatalf("[Assess] nvidia capabilities pod in Failed status, ModernGL check failed. Could be caused by required library missing")
-				} else {
-					t.Fatalf("[Assess] nvidia capabilities check pod not in compeleted phase (succeeded or failed) within 5 minute: %v, current pod phase: %v", err, podPhase)
 				}
+				t.Fatalf("[Assess] nvidia capabilities check pod not in compeleted phase (succeeded or failed) within 5 minute and waiter timeout: %v", err)
 			}
 			log.Println("[Assess] nvidia driver capabilities check succeeded.")
 			return ctx
