@@ -5,6 +5,12 @@ MIME-Version: 1.0
 apiVersion: node.eks.aws/v1alpha1
 kind: NodeConfig
 spec:
+{{- if .NodeadmFeatureGates}}
+  featureGates:
+    {{- range $gate, $value := .NodeadmFeatureGates }}
+    {{$gate}}: {{$value}}
+    {{- end }}
+{{- end }}
   cluster:
     name: {{.Name}}
     apiServerEndpoint: {{.APIServerEndpoint}}
