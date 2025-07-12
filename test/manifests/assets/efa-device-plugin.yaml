@@ -29,7 +29,7 @@ spec:
       priorityClassName: "system-node-critical"
       hostNetwork: true
       containers:
-        - image: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/aws-efa-k8s-device-plugin:v0.5.6
+        - image: 602401143452.dkr.ecr.us-west-2.amazonaws.com/eks/aws-efa-k8s-device-plugin:v0.5.8
           name: aws-efa-k8s-device-plugin
           securityContext:
             allowPrivilegeEscalation: false
