@@ -29,6 +29,7 @@ spec:
           mesa-utils \
           xvfb
         pip3 install moderngl
+        sleep 60
         cat <<'EOF' > moderngl-script.py
         import moderngl
         moderngl.create_standalone_context(backend='egl')

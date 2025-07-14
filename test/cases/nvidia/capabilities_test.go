@@ -4,7 +4,6 @@ package nvidia
 
 import (
 	"context"
-	"log"
 	"testing"
 	"time"
 
@@ -34,14 +33,16 @@ func TestNvidiaDriverCapabilities(t *testing.T) {
 	feat := features.New("nvidia-driver-capabilities-check").
 		WithLabel("suite", "nvidia").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			log.Println("[Setup] Applying nvidia driver capabilities check pod manifest.")
+			t.Log("[Setup] Applying nvidia driver capabilities check pod manifest.")
+			// capabilitiesCheckPod only run moderngl.create_standalone_context() with NVIDIA_DRIVER_CAPABILITIES=all to load all capabilities enabled by nvidia driver.
+			// If any lib required by any of nvidia driver capabilities is missing, it will failed with exception.
 			if err := e2e.ApplyManifests(cfg.Client().RESTConfig(), capabilitiesCheckPod); err != nil {
 				t.Fatalf("Failed to apply capabilities check pod manifest: %v", err)
 			}
 			return ctx
 		}).
 		Assess("Check Pod becomes ready", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			log.Println("[Assess] Waiting up to 5 minute for pod to become Running...")
+			t.Log("[Assess] Waiting up to 5 minute for pod to complete...")
 			pod := &v1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      PodName,
@@ -58,13 +59,13 @@ func TestNvidiaDriverCapabilities(t *testing.T) {
 				}
 				t.Fatalf("[Assess] nvidia capabilities pod in Failed status, ModernGL check failed. Could be caused by required library missing")
 			}
-			log.Println("[Assess] nvidia driver capabilities check succeeded.")
+			t.Log("[Assess] nvidia driver capabilities check succeeded.")
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			t.Log("[Teardown] Removing nvidia driver capabilities check pod.")
 			if err := e2e.DeleteManifests(cfg.Client().RESTConfig(), capabilitiesCheckPod); err != nil {
-				t.Fatalf("Failed to delete pod: %v", err)
+				t.Errorf("Failed to delete pod: %v", err)
 			}
 			t.Log("[Teardown] all test resources removed successfully.")
 			return ctx
