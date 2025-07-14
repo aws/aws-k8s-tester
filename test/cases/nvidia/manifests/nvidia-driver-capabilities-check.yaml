@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: moderngl-pod
+spec:
+  restartPolicy: Never
+  tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Exists"
+    effect: "NoSchedule"
+  containers:
+  - name: moderngl-container
+    env:
+    - name: NVIDIA_DRIVER_CAPABILITIES
+      value: "all"
+    image: public.ecr.aws/ubuntu/ubuntu:22.04
+    command: ["/bin/bash"]
+    args:
+      - -c
+      - |
+        set -e
+        apt-get update
+        apt-get install -y \
+          python3 \
+          python3-pip \
+          libgl1-mesa-glx \
+          libegl1-mesa \
+          libgles2-mesa \
+          mesa-utils \
+          xvfb
+        pip3 install moderngl
+        sleep 60
+        cat <<'EOF' > moderngl-script.py
+        import moderngl
+        moderngl.create_standalone_context(backend='egl')
+        EOF
+        python3 moderngl-script.py
+    resources:
+      requests:
+        memory: "50Gi"
+        cpu: "15"
+        "nvidia.com/gpu": "1"
+      limits:
+        memory: "50Gi"
+        "nvidia.com/gpu": "1"
