@@ -122,39 +122,6 @@ func RenderManifests(file []byte, templateData interface{}) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func CreateConfigMapFromFile(restConfig *rest.Config, namespace, configMapName string, fileName string, content []byte) error {
-	clientset, err := kubernetes.NewForConfig(restConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create clientset: %v", err)
-	}
-	cm := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      configMapName,
-			Namespace: namespace,
-		},
-		Data: map[string]string{
-			fileName: string(content),
-		},
-	}
-	_, err = clientset.CoreV1().ConfigMaps(namespace).Create(context.Background(), cm, metav1.CreateOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to create configmap: %v", err)
-	}
-	return nil
-}
-
-func DeleteConfigMap(restConfig *rest.Config, namespace, configMapName string) error {
-	clientset, err := kubernetes.NewForConfig(restConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create clientset: %v", err)
-	}
-	err = clientset.CoreV1().ConfigMaps(namespace).Delete(context.Background(), configMapName, metav1.DeleteOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to delete configmap: %v", err)
-	}
-	return nil
-}
-
 // GetJobLogs get logs from MPIJob
 func GetJobLogs(restConfig *rest.Config, job k8s.Object) (string, error) {
 	ctx := context.Background()

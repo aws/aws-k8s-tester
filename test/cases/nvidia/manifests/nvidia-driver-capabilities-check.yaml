@@ -29,7 +29,11 @@ spec:
           mesa-utils \
           xvfb
         pip3 install moderngl
-        python3 /scripts/moderngl-script.py
+        cat <<'EOF' > moderngl-script.py
+        import moderngl
+        moderngl.create_standalone_context(backend='egl')
+        EOF
+        python3 moderngl-script.py
     resources:
       requests:
         memory: "50Gi"
@@ -38,14 +42,3 @@ spec:
       limits:
         memory: "50Gi"
         "nvidia.com/gpu": "1"
-    volumeMounts:
-        - name: moderngl-script-volume
-          mountPath: /scripts
-          readOnly: true
-  volumes:
-    - name: moderngl-script-volume
-      configMap:
-        name: moderngl-script
-        items:
-          - key: moderngl-script.py
-            path: moderngl-script.py
