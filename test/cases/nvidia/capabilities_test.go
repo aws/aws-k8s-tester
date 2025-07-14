@@ -32,7 +32,7 @@ func TestNvidiaDriverCapabilities(t *testing.T) {
 	feat := features.New("nvidia-driver-capabilities-check").
 		WithLabel("suite", "nvidia").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			t.Log("[Setup] Applying nvidia driver capabilities check pod manifest.")
+			t.Log("Applying nvidia driver capabilities check pod manifest.")
 			// capabilitiesCheckPod only run moderngl.create_standalone_context() with NVIDIA_DRIVER_CAPABILITIES=all to load all capabilities enabled by nvidia driver.
 			// If any lib required by any of nvidia driver capabilities is missing, it will failed with exception.
 			if err := e2e.ApplyManifests(cfg.Client().RESTConfig(), capabilitiesCheckPod); err != nil {
@@ -41,7 +41,7 @@ func TestNvidiaDriverCapabilities(t *testing.T) {
 			return ctx
 		}).
 		Assess("Check Pod becomes ready", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			t.Log("[Assess] Waiting up to 5 minute for pod to complete...")
+			t.Log("Waiting up to 5 minute for pod to complete...")
 			pod := &v1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      PodName,
@@ -54,19 +54,19 @@ func TestNvidiaDriverCapabilities(t *testing.T) {
 			)
 			if err != nil {
 				if err == wait.ErrWaitTimeout {
-					t.Fatalf("[Assess] nvidia capabilities check pod not in compeleted phase (succeeded or failed) within 5 minute and waiter timeout: %v", err)
+					t.Fatalf("nvidia capabilities check pod not in compeleted phase (succeeded or failed) within 5 minute and waiter timeout: %v", err)
 				}
-				t.Fatalf("[Assess] nvidia capabilities pod in Failed status, ModernGL check failed. Could be caused by required library missing")
+				t.Fatalf("nvidia capabilities pod in Failed status, ModernGL check failed. Could be caused by required library missing")
 			}
-			t.Log("[Assess] nvidia driver capabilities check succeeded.")
+			t.Log("nvidia driver capabilities check succeeded.")
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			t.Log("[Teardown] Removing nvidia driver capabilities check pod.")
+			t.Log("Removing nvidia driver capabilities check pod.")
 			if err := e2e.DeleteManifests(cfg.Client().RESTConfig(), capabilitiesCheckPod); err != nil {
 				t.Errorf("Failed to delete pod: %v", err)
 			}
-			t.Log("[Teardown] all test resources removed successfully.")
+			t.Log("all test resources removed successfully.")
 			return ctx
 		}).
 		Feature()
