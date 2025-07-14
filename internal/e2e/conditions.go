@@ -43,7 +43,7 @@ func (c *ConditionExtension) PodSucceeded(pod k8s.Object) apimachinerywait.Condi
 		} else if status.Phase == v1.PodFailed {
 			return false, fmt.Errorf("Pod in Failed status")
 		}
-		return
+		return false, nil
 	}
 }
 
