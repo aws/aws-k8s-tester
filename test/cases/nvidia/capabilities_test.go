@@ -26,7 +26,6 @@ var capabilitiesCheckPod []byte
 const (
 	PodName      = "moderngl-pod"
 	PodNamespace = "default"
-	ConfigMap    = "moderngl-script"
 )
 
 func TestNvidiaDriverCapabilities(t *testing.T) {
