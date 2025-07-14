@@ -95,5 +95,5 @@ type CloudWatchInfraTemplateData struct {
 	ClusterName      string
 	OIDCIssuerURL    string
 	OIDCProviderURL  string
-	ResourceId       string
+	ClusterUUID      string
 }

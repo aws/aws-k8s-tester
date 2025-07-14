@@ -235,26 +235,21 @@ func (d *deployer) Up() error {
 		}
 	}
 	
-	if d.deployerOptions.StaticClusterName == "" {
-		klog.Infof("Setting up CloudWatch infrastructure...")
-		oidcIssuerURL := d.cluster.oidcIssuerURL
-		if roleArn, err := d.infraManager.createCloudWatchInfrastructureStack(d.cluster.name, oidcIssuerURL); err != nil {
-			klog.Errorf("CloudWatch infrastructure setup failed: %v", err)
-			return err
-		} else {
-			d.cluster.cloudwatchRoleArn = roleArn
-			klog.Infof("CloudWatch infrastructure setup completed after node creation")
-		}
-		// Apply CloudWatch infrastructure manifest
-		if err := d.applyCloudWatchInfraManifest(); err != nil {
-			klog.Errorf("CloudWatch infrastructure manifest failed: %v", err)
-			return err
-		} else {
-			klog.Infof("CloudWatch infrastructure manifest applied successfully")
-		}
+	klog.Infof("Setting up CloudWatch infrastructure...")
+	oidcIssuerURL := d.cluster.oidcIssuerURL
+	if roleArn, err := d.infraManager.createCloudWatchInfrastructureStack(d.cluster.name, oidcIssuerURL); err != nil {
+		klog.Errorf("CloudWatch infrastructure setup failed: %v", err)
+		return err
 	} else {
-		klog.Infof("Skipping CloudWatch infrastructure setup for static cluster: %s", d.cluster.name)
+		d.cluster.cloudwatchRoleArn = roleArn
+		klog.Infof("CloudWatch infrastructure setup completed")
 	}
+	// Apply CloudWatch infrastructure manifest
+	if err := d.applyCloudWatchInfraManifest(); err != nil {
+		klog.Errorf("CloudWatch infrastructure manifest failed: %v", err)
+		return err
+	}
+	klog.Infof("CloudWatch infrastructure manifest applied successfully")
 	return nil
 }
 

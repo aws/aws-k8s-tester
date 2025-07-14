@@ -478,14 +478,14 @@ func (m *InfrastructureManager) getAZsWithCapacity(opts *deployerOptions) ([]str
 
 func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName, oidcIssuerURL string) (string, error) {
 	clusterUUID := strings.TrimPrefix(clusterName, "kubetest2-eksapi-")
-	stackName := fmt.Sprintf("%s-cloudwatch", m.resourceID)
+	stackName := fmt.Sprintf("cloudwatch-%s", clusterUUID)
 	
 	oidcProviderURL := strings.TrimPrefix(oidcIssuerURL, "https://")
 	templateData := templates.CloudWatchInfraTemplateData{
 		ClusterName:     clusterName,
 		OIDCIssuerURL:   oidcIssuerURL,
 		OIDCProviderURL: oidcProviderURL,
-		ResourceId:      clusterUUID,
+		ClusterUUID:     clusterUUID,
 	}
 	
 	var templateBuffer strings.Builder
@@ -493,11 +493,9 @@ func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName,
 		return "", fmt.Errorf("failed to execute CloudWatch infrastructure template: %w", err)
 	}
 	
-	renderedTemplate := templateBuffer.String()
-	
 	input := cloudformation.CreateStackInput{
 		StackName:    aws.String(stackName),
-		TemplateBody: aws.String(renderedTemplate),
+		TemplateBody: aws.String(templateBuffer.String()),
 		Capabilities: []cloudformationtypes.Capability{cloudformationtypes.CapabilityCapabilityNamedIam},
 	}
 	
@@ -537,7 +535,9 @@ func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName,
 }
 
 func (m *InfrastructureManager) deleteCloudWatchInfrastructureStack() error {
-	stackName := fmt.Sprintf("%s-cloudwatch", m.resourceID)
+	// We need to reconstruct the clusterUUID from resourceID to match the creation pattern
+	clusterUUID := strings.TrimPrefix(m.resourceID, "kubetest2-eksapi-")
+	stackName := fmt.Sprintf("cloudwatch-%s", clusterUUID)
 	
 	input := cloudformation.DeleteStackInput{
 		StackName: aws.String(stackName),
@@ -555,18 +555,6 @@ func (m *InfrastructureManager) deleteCloudWatchInfrastructureStack() error {
 		return nil
 	}
 	
-	klog.Infof("waiting for CloudWatch infrastructure stack to be deleted: %s", stackName)
-	err = cloudformation.NewStackDeleteCompleteWaiter(m.clients.CFN()).
-		Wait(context.TODO(),
-			&cloudformation.DescribeStacksInput{
-				StackName: aws.String(stackName),
-			},
-			infraStackDeletionTimeout)
-	if err != nil {
-		klog.Warningf("failed to wait for CloudWatch infrastructure stack deletion: %v", err)
-		return nil
-	}
-	
-	klog.Infof("deleted CloudWatch infrastructure stack: %s", stackName)
+	klog.Infof("initiated deletion of CloudWatch infrastructure stack: %s", stackName)
 	return nil
 }
