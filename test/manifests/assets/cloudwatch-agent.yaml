@@ -17,8 +17,8 @@ data:
             "emf_processor": {
               "metric_declaration": [
                 {
-                  "source_labels": ["job"],
-                  "label_matcher": "dcgm-exporter",
+                  "source_labels": ["Service"],
+                  "label_matcher": ".*dcgm.*",
                   "dimensions": [["TestType", "KubernetesVersion", "Variant", "InstanceType", "TeamIdentifier"]],
                   "metric_selectors": [
                     "^DCGM_FI_DEV_GPU_UTIL$",
@@ -45,44 +45,23 @@ metadata:
 data:
   prometheus.yaml: |
     global:
-      scrape_interval: 1m
-      scrape_timeout: 10s
+      scrape_interval: 1s
+      scrape_timeout: 1s
     scrape_configs:
-      - job_name: dcgm-exporter
-        static_configs:
-          - targets:
-            - dcgm-exporter.kube-system.svc.cluster.local:9400
+      - job_name: 'dcgm-exporter'
+        sample_limit: 10000
         metrics_path: /metrics
-        scrape_interval: 30s
+        kubernetes_sd_configs:
+        - role: pod
+          namespaces:
+            names:
+            - kube-system
         metric_relabel_configs:
-          - action: replace
-            source_labels: [job]
-            target_label: job
-            replacement: "dcgm-exporter"
-          - action: replace
-            source_labels: [job]
-            target_label: KubernetesVersion
-            replacement: "{{.VERSION}}"
-          - action: replace
-            source_labels: [job]
-            target_label: Variant
-            replacement: "{{.VARIANT}}"
-          - action: replace
-            source_labels: [job]
-            target_label: InstanceType
-            replacement: "{{.INSTANCE_TYPE}}"
-          - action: replace
-            source_labels: [job]
-            target_label: TeamIdentifier
-            replacement: "{{.TEAM_IDENTIFIER}}"
-          - action: replace
-            source_labels: [job]
-            target_label: TestType
-            replacement: "{{.TEST_NAME}}"
-
-
-
-
+          - {action: replace, target_label: KubernetesVersion, replacement: "{{.VERSION}}"}
+          - {action: replace, target_label: Variant, replacement: "{{.VARIANT}}"}
+          - {action: replace, target_label: InstanceType, replacement: "{{.INSTANCE_TYPE}}"}
+          - {action: replace, target_label: TeamIdentifier, replacement: "{{.TEAM_IDENTIFIER}}"}
+          - {action: replace, target_label: TestType, replacement: "{{.TEST_NAME}}"}
 ---
 apiVersion: apps/v1
 kind: DaemonSet

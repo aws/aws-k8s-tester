@@ -26,6 +26,8 @@ spec:
         env:
         - name: "DCGM_EXPORTER_LISTEN"
           value: ":9400"
+        - name: "DCGM_EXPORTER_INTERVAL"
+          value: "100"
         - name: "DCGM_EXPORTER_KUBERNETES"
           value: "true"
         name: "dcgm-exporter"
