@@ -48,12 +48,12 @@ func TestMain(m *testing.M) {
 
 	//template data for CloudWatch Agent manifest
 	templateData := map[string]string{
-		"VERSION":       strings.Replace(*kubernetesVersion, ".", "", 1),
-		"VARIANT":       strings.ToLower(*amiVariant),
-		"INSTANCE_TYPE": *nodeType,
-		"REGION":        region,
+		"VERSION":         strings.Replace(*kubernetesVersion, ".", "", 1),
+		"VARIANT":         strings.ToLower(*amiVariant),
+		"INSTANCE_TYPE":   *nodeType,
+		"REGION":          region,
 		"TEAM_IDENTIFIER": *teamIdentifier,
-		"TEST_NAME":     "nvidia.training",
+		"TEST_NAME":       "nvidia.training",
 	}
 
 	renderedCloudWatchAgentManifest, err := fwext.RenderManifests(manifests.CloudWatchAgentManifest, templateData)
@@ -198,6 +198,7 @@ func getRegionFromNodes(ctx context.Context, config *envconf.Config) (string, er
 	region := nodes.Items[0].Labels["topology.kubernetes.io/region"]
 	return region, nil
 }
+
 // Helper function to deploy DaemonSet + Wait for Ready
 func deployDaemonSet(name, namespace string) env.Func {
 	return func(ctx context.Context, config *envconf.Config) (context.Context, error) {
