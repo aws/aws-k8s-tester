@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -31,26 +32,53 @@ func TestMain(m *testing.M) {
 		log.Fatalf("failed to initialize test environment: %v", err)
 	}
 
+	// Validate K8 version format
+	if !strings.Contains(*kubernetesVersion, ".") {
+		log.Fatalf("kubernetesVersion must be in format X.YY, got: %s", *kubernetesVersion)
+	}
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 	testenv = env.NewWithConfig(cfg).WithContext(ctx)
 
-	manifests := [][]byte{
+	region, err := getRegionFromNodes(ctx, cfg)
+	if err != nil || region == "" {
+		log.Fatalf("Warning: failed to get region from nodes: %v", err)
+	}
+
+	//template data for CloudWatch Agent manifest
+	templateData := map[string]string{
+		"VERSION":         strings.Replace(*kubernetesVersion, ".", "", 1),
+		"VARIANT":         strings.ToLower(*amiVariant),
+		"INSTANCE_TYPE":   *nodeType,
+		"REGION":          region,
+		"TEAM_IDENTIFIER": *teamIdentifier,
+		"TEST_NAME":       "nvidia.training",
+	}
+
+	renderedCloudWatchAgentManifest, err := fwext.RenderManifests(manifests.CloudWatchAgentManifest, templateData)
+	if err != nil {
+		log.Fatalf("failed to render CloudWatch Agent manifest: %v", err)
+	}
+
+	manifestsList := [][]byte{
 		manifests.NvidiaDevicePluginManifest,
 		manifests.MpiOperatorManifest,
 		manifests.EfaDevicePluginManifest,
 		manifests.DCGMExporterManifest,
+		renderedCloudWatchAgentManifest,
 	}
 
 	testenv.Setup(
 		// Apply all manifests
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Applying NVIDIA device plugin, MPI operator, EFA device plugin and DCGM Exporter manifests.")
-			err := fwext.ApplyManifests(config.Client().RESTConfig(), manifests...)
+			log.Println("Applying NVIDIA device plugin, MPI operator, EFA device plugin, DCGM Exporter and CloudWatch Agent manifests.")
+
+			err := fwext.ApplyManifests(config.Client().RESTConfig(), manifestsList...)
 			if err != nil {
 				return ctx, fmt.Errorf("failed to apply manifests: %w", err)
 			}
-			log.Println("Successfully applied NVIDIA device plugin, MPI operator, EFA device plugin and DCGM Exporter manifests.")
+			log.Println("Successfully applied NVIDIA device plugin, MPI operator, EFA device plugin, DCGM Exporter and CloudWatch Agent manifests.")
 			return ctx, nil
 		},
 
@@ -77,19 +105,19 @@ func TestMain(m *testing.M) {
 		deployDaemonSet("nvidia-device-plugin-daemonset", "kube-system"),
 		deployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system"),
 		deployDaemonSet("dcgm-exporter", "kube-system"),
-
+		deployDaemonSet("cwagent-prometheus", "amazon-cloudwatch"),
 		checkNodeTypes, // Dynamically check node types and capacities after device plugins are ready
 	)
 
 	testenv.Finish(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Deleting NVIDIA device plugin, MPI operator, EFA device plugin and DCGM Exporter manifests.")
-			slices.Reverse(manifests)
-			err := fwext.DeleteManifests(config.Client().RESTConfig(), manifests...)
+			log.Println("Deleting NVIDIA device plugin, MPI operator, EFA device plugin DCGM Exporter and CloudWatch Agent manifests.")
+			slices.Reverse(manifestsList)
+			err := fwext.DeleteManifests(config.Client().RESTConfig(), manifestsList...)
 			if err != nil {
 				return ctx, fmt.Errorf("failed to delete manifests: %w", err)
 			}
-			log.Println("Successfully deleted NVIDIA device plugin, MPI operator, EFA device plugin and DCGM Exporter manifests.")
+			log.Println("Successfully deleted NVIDIA device plugin, MPI operator, EFA device plugin, DCGM Exporter and CloudWatch Agent manifests.")
 			return ctx, nil
 		},
 	)
@@ -156,6 +184,21 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 
 	return ctx, nil
 }
+
+// getRegionFromNodes extracts the AWS region from node labels
+func getRegionFromNodes(ctx context.Context, config *envconf.Config) (string, error) {
+	clientset, err := kubernetes.NewForConfig(config.Client().RESTConfig())
+	if err != nil {
+		return "", fmt.Errorf("failed to create Kubernetes client: %w", err)
+	}
+	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{Limit: 1})
+	if err != nil {
+		return "", fmt.Errorf("failed to list nodes: %w", err)
+	}
+	region := nodes.Items[0].Labels["topology.kubernetes.io/region"]
+	return region, nil
+}
+
 // Helper function to deploy DaemonSet + Wait for Ready
 func deployDaemonSet(name, namespace string) env.Func {
 	return func(ctx context.Context, config *envconf.Config) (context.Context, error) {
