@@ -29,5 +29,5 @@ func init() {
 	nodeType = flag.String("nodeType", "", "Instance type for cluster nodes")
 	kubernetesVersion = flag.String("kubernetesVersion", "1.32", "Kubernetes version for the cluster")
 	amiVariant = flag.String("amiVariant", "al2023", "AMI variant for the cluster nodes")
-	teamIdentifier = flag.String("teamIdentifier", "node-runtime", "Team identifier for resource tagging")
+	teamIdentifier = flag.String("teamIdentifier", "unknown", "Team identifier for resource tagging")
 }

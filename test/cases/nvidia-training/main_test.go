@@ -32,28 +32,24 @@ func TestMain(m *testing.M) {
 		log.Fatalf("failed to initialize test environment: %v", err)
 	}
 
-	// Validate and transform flags
-	*amiVariant = strings.ToLower(*amiVariant)
-	if *kubernetesVersion != "1.32" && *kubernetesVersion != "1.33" {
-		log.Fatalf("kubernetesVersion must be either 1.32 or 1.33, got: %s", *kubernetesVersion)
+	// Validate K8 version format
+	if !strings.Contains(*kubernetesVersion, ".") {
+		log.Fatalf("kubernetesVersion must be in format X.YY, got: %s", *kubernetesVersion)
 	}
-	
-	manifestVersion := strings.Replace(*kubernetesVersion, ".", "", 1)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 	testenv = env.NewWithConfig(cfg).WithContext(ctx)
 
 	region, err := getRegionFromNodes(ctx, cfg)
-	if err != nil {
-		log.Printf("Warning: failed to get region from nodes, using default us-west-2: %v", err)
-		region = "us-west-2"
+	if err != nil || region == "" {
+		log.Fatalf("Warning: failed to get region from nodes: %v", err)
 	}
 
-	// template data for CloudWatch Agent manifest
+	//template data for CloudWatch Agent manifest
 	templateData := map[string]string{
-		"VERSION":       manifestVersion,
-		"VARIANT":       *amiVariant,
+		"VERSION":       strings.Replace(*kubernetesVersion, ".", "", 1),
+		"VARIANT":       strings.ToLower(*amiVariant),
 		"INSTANCE_TYPE": *nodeType,
 		"REGION":        region,
 		"TEAM_IDENTIFIER": *teamIdentifier,
@@ -72,9 +68,6 @@ func TestMain(m *testing.M) {
 		manifests.DCGMExporterManifest,
 		renderedCloudWatchAgentManifest,
 	}
-
-	log.Printf("Using template variables: REGION=%s, VERSION=%s, VARIANT=%s, INSTANCE_TYPE=%s, TEAM_IDENTIFIER=%s, TEST_NAME=nvidia.training", 
-		region, manifestVersion, *amiVariant, *nodeType, *teamIdentifier)
 
 	testenv.Setup(
 		// Apply all manifests
@@ -202,8 +195,8 @@ func getRegionFromNodes(ctx context.Context, config *envconf.Config) (string, er
 	if err != nil {
 		return "", fmt.Errorf("failed to list nodes: %w", err)
 	}
-	az := nodes.Items[0].Labels["topology.kubernetes.io/zone"]
-	return strings.TrimSuffix(az, az[len(az)-1:]), nil
+	region := nodes.Items[0].Labels["topology.kubernetes.io/region"]
+	return region, nil
 }
 // Helper function to deploy DaemonSet + Wait for Ready
 func deployDaemonSet(name, namespace string) env.Func {
