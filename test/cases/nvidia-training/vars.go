@@ -15,7 +15,7 @@ var (
 	efaEnabled        *bool
 	nodeType          *string
 	kubernetesVersion *string
-	amiVariant	  	  *string
+	amiVariant	  *string
 	teamIdentifier    *string
 
 	nodeCount  int
