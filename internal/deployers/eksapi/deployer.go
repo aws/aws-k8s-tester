@@ -75,6 +75,7 @@ type deployerOptions struct {
 	IPFamily                string        `flag:"ip-family" desc:"IP family for the cluster (ipv4 or ipv6)"`
 	KubeconfigPath          string        `flag:"kubeconfig" desc:"Path to kubeconfig"`
 	KubernetesVersion       string        `flag:"kubernetes-version" desc:"cluster Kubernetes version"`
+	NodeadmFeatureGates     []string      `flag:"nodeadm-feature-gates" desc:"Feature gates to enable for nodeadm (key=value pairs)"`
 	LogBucket               string        `flag:"log-bucket" desc:"S3 bucket for storing logs for each run. If empty, logs will not be stored."`
 	NodeCreationTimeout     time.Duration `flag:"node-creation-timeout" desc:"Time to wait for nodes to be created/launched. This should consider instance availability."`
 	NodeReadyTimeout        time.Duration `flag:"node-ready-timeout" desc:"Time to wait for all nodes to become ready"`
