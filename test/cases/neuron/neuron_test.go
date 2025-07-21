@@ -84,13 +84,14 @@ func TestNeuronNodes(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "neuronx-single-node", Namespace: "default"},
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
+			} else {
+				t.Log("Test log for neuronx-single-node:")
+				t.Log(log)
 			}
-			t.Log("Test log for neuronx-single-node:")
-			t.Log(log)
 			err = fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedNeuronSingleNodeManifest)
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 			return ctx
 		}).
