@@ -107,9 +107,10 @@ func multiNode(testName string) features.Feature {
 			if err != nil {
 				t.Error(err)
 			}
+			t.Logf("final mpijob resource: %v", mpiJob)
 			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), mpiJob)
 			if err != nil {
-				t.Error(err)
+				t.Errorf("failed to get job logs: %v", err)
 			}
 			t.Logf("Test log for %s:", jobName)
 			t.Log(log)
@@ -167,9 +168,11 @@ func singleNode() features.Feature {
 			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).ResourceMatch(mpiJob, mpijobs.MPIJobSucceeded),
 				wait.WithContext(ctx))
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
+			} else {
+				t.Log("Single node job completed")
 			}
-			t.Log("Single node job completed")
+			t.Logf("final mpijob resource: %v", mpiJob)
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -180,17 +183,17 @@ func singleNode() features.Feature {
 			}
 			u, ok := job.(*unstructured.Unstructured)
 			if !ok {
-				t.Fatalf("mpiJob in context is not unstructured: %v", job)
+				t.Errorf("mpiJob in context is not unstructured: %v", job)
 			}
 			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), u)
 			if err != nil {
-				t.Fatal(err)
+				t.Errorf("failed to get job logs: %v", err)
 			}
 			t.Log("Test log for pytorch-training-single-node:")
 			t.Log(log)
 			err = fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedSingleNodeManifest)
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 			return ctx
 		}).
