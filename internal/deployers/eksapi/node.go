@@ -349,7 +349,7 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 	var capacityReservationId string
 	stackName := m.getUnmanagedNodegroupStackName()
 	klog.Infof("creating unmanaged nodegroup stack %s...", stackName)
-	userData, userDataIsMimePart, err := generateUserData(opts.UserDataFormat, cluster, opts)
+	userData, userDataIsMimePart, err := generateUserData(cluster, opts)
 	if err != nil {
 		return err
 	}

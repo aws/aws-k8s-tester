@@ -7,7 +7,9 @@ import (
 	_ "embed"
 	"fmt"
 	"regexp"
+	"strings"
 	"testing"
+	"time"
 
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
 	"github.com/aws/aws-k8s-tester/internal/e2e/mpijobs"
@@ -28,8 +30,7 @@ var (
 	//go:embed manifests/mpi-job-pytorch-training-single-node.yaml
 	mpiJobPytorchTrainingSingleNodeManifest []byte
 	//go:embed manifests/mpi-job-nccl-test-multi-node.yaml
-	mpiJobNcclTestMultiNodeManifest         []byte
-	renderedMpiJobNcclTestMultiNodeManifest []byte
+	mpiJobNcclTestMultiNodeManifest []byte
 )
 
 type ncclTestManifestTplVars struct {
@@ -40,12 +41,105 @@ type ncclTestManifestTplVars struct {
 	EfaInterfacePerNode int
 	MaxBytes            string
 	NcclBuffSize        string
+	TestName            string
+	JobName             string
 }
 
 func TestMPIJobPytorchTraining(t *testing.T) {
+	testenv.Test(t,
+		singleNode(),
+		multiNode("all_reduce_perf"),
+		multiNode("all_gather_perf"),
+		multiNode("alltoall_perf"),
+	)
+}
+
+func multiNode(testName string) features.Feature {
+	var renderedMpiJobNcclTestMultiNodeManifest []byte
+	jobName := strings.ReplaceAll(fmt.Sprintf("multi-node-%s", testName), "_", "-")
+
+	return features.New(fmt.Sprintf("multi-node:%s", testName)).
+		WithLabel("suite", "nvidia").
+		WithLabel("hardware", "gpu").
+		WithLabel("hardware", "efa").
+		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			if *nvidiaTestImage == "" {
+				t.Fatal(fmt.Errorf("nvidiaTestImage must be set to run unit test, use https://github.com/aws/aws-k8s-tester/blob/main/test/images/nvidia/Dockerfile to build the image and -nvidiaTestImage to set the image url"))
+			}
+			maxBytes := "2G"
+			ncclBuffSize := "4194304"
+			if slices.Contains(instanceSupportsRdmaRead, *nodeType) {
+				t.Log("Instance supports RDMA")
+				maxBytes = "16G"
+				ncclBuffSize = "8388608"
+			}
+			var err error
+			renderedMpiJobNcclTestMultiNodeManifest, err = fwext.RenderManifests(mpiJobNcclTestMultiNodeManifest, ncclTestManifestTplVars{
+				// one of the nodes will be used for the master pod
+				WorkerNodeCount:     nodeCount,
+				WorkerNodeGpuCount:  nodeCount * gpuPerNode,
+				GpuPerNode:          gpuPerNode,
+				NvidiaTestImage:     *nvidiaTestImage,
+				EfaInterfacePerNode: efaPerNode,
+				MaxBytes:            maxBytes,
+				NcclBuffSize:        ncclBuffSize,
+				TestName:            testName,
+				JobName:             jobName,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Log("Applying multi node manifest")
+			err = fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedMpiJobNcclTestMultiNodeManifest)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Log("Manifest applied successfully")
+			return ctx
+		}).
+		Assess("MPIJob succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			mpiJob := mpijobs.NewUnstructured(jobName, "default")
+			t.Log("Waiting for multi node job to complete")
+			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(mpiJob, mpijobs.MPIJobSucceeded),
+				wait.WithContext(ctx),
+				wait.WithTimeout(20*time.Minute),
+			)
+			if err != nil {
+				t.Error(err)
+			}
+			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), mpiJob)
+			if err != nil {
+				t.Error(err)
+			}
+			t.Logf("Test log for %s:", jobName)
+			t.Log(log)
+
+			if !t.Failed() {
+				t.Log("Multi node job completed")
+				// Verify GPU Direct RDMA is used on P4/P5
+				if *efaEnabled && slices.Contains(instanceSupportsRdmaRead, *nodeType) {
+					pattern := regexp.MustCompile(`\[send\] via NET/.*Libfabric/.*/GDRDMA`)
+					if !pattern.MatchString(log) {
+						t.Errorf("GPU Direct RDMA is not utilized for inter-node communication in NCCL tests on instances that support GDRDMA: %s", *nodeType)
+					}
+				}
+			}
+			return ctx
+		}).
+		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedMpiJobNcclTestMultiNodeManifest)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return ctx
+		}).
+		Feature()
+}
+
+func singleNode() features.Feature {
 	var renderedSingleNodeManifest []byte
 
-	singleNode := features.New("single-node").
+	return features.New("single-node").
 		WithLabel("suite", "nvidia").
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -102,75 +196,4 @@ func TestMPIJobPytorchTraining(t *testing.T) {
 		}).
 		Feature()
 
-	multiNode := features.New("multi-node").
-		WithLabel("suite", "nvidia").
-		WithLabel("hardware", "gpu").
-		WithLabel("hardware", "efa").
-		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			if *nvidiaTestImage == "" {
-				t.Fatal(fmt.Errorf("nvidiaTestImage must be set to run unit test, use https://github.com/aws/aws-k8s-tester/blob/main/test/images/nvidia/Dockerfile to build the image and -nvidiaTestImage to set the image url"))
-			}
-			maxBytes := "2G"
-			ncclBuffSize := "4194304"
-			if slices.Contains(instanceSupportsRdmaRead, *nodeType) {
-				t.Log("Instance supports RDMA")
-				maxBytes = "16G"
-				ncclBuffSize = "8388608"
-			}
-			renderedMpiJobNcclTestMultiNodeManifest, err := fwext.RenderManifests(mpiJobNcclTestMultiNodeManifest, ncclTestManifestTplVars{
-				// one of the nodes will be used for the master pod
-				WorkerNodeCount:     nodeCount,
-				WorkerNodeGpuCount:  nodeCount * gpuPerNode,
-				GpuPerNode:          gpuPerNode,
-				NvidiaTestImage:     *nvidiaTestImage,
-				EfaInterfacePerNode: efaPerNode,
-				MaxBytes:            maxBytes,
-				NcclBuffSize:        ncclBuffSize,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Log("Applying multi node manifest")
-			err = fwext.ApplyManifests(cfg.Client().RESTConfig(), renderedMpiJobNcclTestMultiNodeManifest)
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Log("Manifest applied successfully")
-			return ctx
-		}).
-		Assess("MPIJob succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			mpiJob := mpijobs.NewUnstructured("multi-node-nccl-test", "default")
-			t.Log("Waiting for multi node job to complete")
-			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(mpiJob, mpijobs.MPIJobSucceeded),
-				wait.WithContext(ctx))
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Log("Multi node job completed")
-
-			// Verify GPU Direct RDMA is used on P4/P5
-			log, err := fwext.GetJobLogs(cfg.Client().RESTConfig(), mpiJob)
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Log("Test log for multi-node-nccl-test:")
-			t.Log(log)
-			if *efaEnabled && slices.Contains(instanceSupportsRdmaRead, *nodeType) {
-				pattern := regexp.MustCompile(`\[send\] via NET/.*Libfabric/.*/GDRDMA`)
-				if !pattern.MatchString(log) {
-					t.Fatalf("GPU Direct RDMA is not utilized for inter-node communication in NCCL tests on instances that support GDRDMA: %s", *nodeType)
-				}
-			}
-			return ctx
-		}).
-		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), renderedMpiJobNcclTestMultiNodeManifest)
-			if err != nil {
-				t.Fatal(err)
-			}
-			return ctx
-		}).
-		Feature()
-
-	testenv.Test(t, singleNode, multiNode)
 }
