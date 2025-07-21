@@ -43,7 +43,8 @@ func TestMain(m *testing.M) {
 
 	region, err := getRegionFromNodes(ctx, cfg)
 	if err != nil || region == "" {
-		log.Fatalf("Warning: failed to get region from nodes: %v", err)
+		log.Printf("Warning: failed to get region from nodes. The test metrics will be emitted to PDX by default: %v", err)
+		region = "us-west-2"
 	}
 
 	//template data for CloudWatch Agent manifest
@@ -105,7 +106,7 @@ func TestMain(m *testing.M) {
 		deployDaemonSet("nvidia-device-plugin-daemonset", "kube-system"),
 		deployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system"),
 		deployDaemonSet("dcgm-exporter", "kube-system"),
-		deployDaemonSet("cwagent-prometheus", "amazon-cloudwatch"),
+		deployDaemonSet("cwagent", "amazon-cloudwatch"),
 		checkNodeTypes, // Dynamically check node types and capacities after device plugins are ready
 	)
 
@@ -195,8 +196,7 @@ func getRegionFromNodes(ctx context.Context, config *envconf.Config) (string, er
 	if err != nil {
 		return "", fmt.Errorf("failed to list nodes: %w", err)
 	}
-	region := nodes.Items[0].Labels["topology.kubernetes.io/region"]
-	return region, nil
+	return nodes.Items[0].Labels["topology.kubernetes.io/region"], nil
 }
 
 // Helper function to deploy DaemonSet + Wait for Ready

@@ -63,26 +63,23 @@ data:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: cwagent-prometheus
+  name: cwagent
   namespace: amazon-cloudwatch
 spec:
   selector:
     matchLabels:
-      app: cwagent-prometheus
+      app: cwagent
   template:
     metadata:
       labels:
-        app: cwagent-prometheus
+        app: cwagent
     spec:
-      serviceAccountName: cwagent-prometheus
+      serviceAccountName: cwagent
       dnsPolicy: ClusterFirst 
       containers:
         - name: cloudwatch-agent
           image: public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest
           imagePullPolicy: Always
-          env:
-            - name: RUN_WITH_IRSA
-              value: "True"
           resources:
             limits:
               cpu: 1000m
