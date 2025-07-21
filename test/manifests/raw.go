@@ -20,5 +20,4 @@ var (
 
 	//go:embed assets/dcgm-exporter.yaml
 	DCGMExporterManifest []byte
-
 )
