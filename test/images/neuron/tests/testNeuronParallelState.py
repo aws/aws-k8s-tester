@@ -9,6 +9,7 @@ from datetime import datetime
 import torch
 import torch_xla.core.xla_model as xm
 import torch_xla.debug.metrics as met
+import torch_xla.runtime as xr
 
 from neuronx_distributed.parallel_layers import parallel_state
 from neuronx_distributed.parallel_layers.utils import is_pjrt_device
@@ -98,7 +99,7 @@ if __name__ == "__main__":
         torch.distributed.init_process_group("xla", init_method="pjrt://")
     else:
         torch.distributed.init_process_group("xla")
-    world_size = xm.xrt_world_size()
+    world_size = xr.world_size()
     tensor_model_parallel_size = 1
     while tensor_model_parallel_size <= world_size:
         test_initialize_model_parallel(tensor_model_parallel_size)
