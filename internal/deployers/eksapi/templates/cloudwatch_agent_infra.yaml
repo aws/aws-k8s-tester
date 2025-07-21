@@ -9,17 +9,15 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: cwagent-prometheus
+  name: cwagent
   namespace: amazon-cloudwatch
-  annotations:
-    eks.amazonaws.com/role-arn: {{.IAMRoleARN}}
 
 ---
 # ClusterRole for cwagent
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: cwagent-prometheus-role
+  name: cwagent-role
 rules:
   - apiGroups: [""]
     resources:
@@ -41,12 +39,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: cwagent-prometheus-role-binding
+  name: cwagent-role-binding
 subjects:
   - kind: ServiceAccount
-    name: cwagent-prometheus
+    name: cwagent
     namespace: amazon-cloudwatch
 roleRef:
   kind: ClusterRole
-  name: cwagent-prometheus-role
+  name: cwagent-role
   apiGroup: rbac.authorization.k8s.io

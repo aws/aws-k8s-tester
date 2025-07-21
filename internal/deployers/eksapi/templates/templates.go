@@ -17,11 +17,10 @@ var (
 	UnmanagedNodegroup         = template.Must(template.New("unmanagedNodegroup").Parse(unmanagedNodegroupTemplate))
 )
 
-
 var (
-    //go:embed cloudwatch-infra.yaml.template
-    cloudwatchInfraTemplate string
-    CloudWatchInfra = template.Must(template.New("cloudwatchInfra").Parse(cloudwatchInfraTemplate))
+	//go:embed cloudwatch-infra.yaml.template
+	cloudwatchInfraTemplate string
+	CloudWatchInfra         = template.Must(template.New("cloudwatchInfra").Parse(cloudwatchInfraTemplate))
 )
 
 type NetworkInterface struct {
@@ -92,8 +91,6 @@ type AuthMapRoleTemplateData struct {
 }
 
 type CloudWatchInfraTemplateData struct {
-	ClusterName      string
-	OIDCIssuerURL    string
-	OIDCProviderURL  string
-	ClusterUUID      string
+	ClusterName string
+	ClusterUUID string
 }

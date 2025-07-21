@@ -76,7 +76,6 @@ type deployerOptions struct {
 	KubeconfigPath          string        `flag:"kubeconfig" desc:"Path to kubeconfig"`
 	KubernetesVersion       string        `flag:"kubernetes-version" desc:"cluster Kubernetes version"`
 	LogBucket               string        `flag:"log-bucket" desc:"S3 bucket for storing logs for each run. If empty, logs will not be stored."`
-	NodeadmFeatureGates     []string      `flag:"nodeadm-feature-gates" desc:"Feature gates to enable for nodeadm (key=value pairs)"`
 	NodeCreationTimeout     time.Duration `flag:"node-creation-timeout" desc:"Time to wait for nodes to be created/launched. This should consider instance availability."`
 	NodeReadyTimeout        time.Duration `flag:"node-ready-timeout" desc:"Time to wait for all nodes to become ready"`
 	Nodes                   int           `flag:"nodes" desc:"number of nodes to launch in cluster"`
@@ -234,10 +233,9 @@ func (d *deployer) Up() error {
 			// don't return err, this isn't critical
 		}
 	}
-	
+
 	klog.Infof("Setting up CloudWatch infrastructure...")
-	oidcIssuerURL := d.cluster.oidcIssuerURL
-	if roleArn, err := d.infraManager.createCloudWatchInfrastructureStack(d.cluster.name, oidcIssuerURL); err != nil {
+	if roleArn, err := d.infraManager.createCloudWatchInfrastructureStack(d.cluster.name); err != nil {
 		klog.Errorf("CloudWatch infrastructure setup failed: %v", err)
 		return err
 	} else {
@@ -245,7 +243,8 @@ func (d *deployer) Up() error {
 		klog.Infof("CloudWatch infrastructure setup completed")
 	}
 	// Apply CloudWatch infrastructure manifest
-	if err := d.applyCloudWatchInfraManifest(); err != nil {
+	manifest := []byte(templates.CloudWatchAgentInfra)
+	if err := fwext.ApplyManifests(d.k8sClient.config, manifest); err != nil {
 		klog.Errorf("CloudWatch infrastructure manifest failed: %v", err)
 		return err
 	}
@@ -353,28 +352,6 @@ func (d *deployer) Down() error {
 		return d.staticClusterManager.TearDownNodeForStaticCluster()
 	}
 	return deleteResources(d.infraManager, d.clusterManager, d.nodeManager, d.k8sClient, &d.deployerOptions)
-}
-
-func (d *deployer) applyCloudWatchInfraManifest() error {
-	klog.Infof("Using CloudWatch IAM role ARN: %s", d.cluster.cloudwatchRoleArn)
-
-	manifest, err := fwext.RenderManifests([]byte(templates.CloudWatchAgentInfra), struct {
-		IAMRoleARN string
-	}{
-		IAMRoleARN: d.cluster.cloudwatchRoleArn,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to render CloudWatch manifest: %w", err)
-	}
-
-	err = fwext.ApplyManifests(d.k8sClient.config, manifest)
-	if err != nil {
-		klog.Errorf("Failed to apply CloudWatch manifest: %v", err)
-		return err
-	}
-	
-	klog.Infof("Successfully applied CloudWatch infrastructure manifest")
-	return nil
 }
 
 func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *nodeManager, k8sClient *k8sClient /* nillable */, opts *deployerOptions /* nillable */) error {

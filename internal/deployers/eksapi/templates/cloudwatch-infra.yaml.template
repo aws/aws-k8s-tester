@@ -1,40 +1,38 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'CloudWatch infrastructure for EKS cluster'
-
-# No parameters needed - using Go template substitution
+Description: kubetest2-eksapi CloudWatch using Pod Identity
 
 Resources:
-  OIDCProvider:
-    Type: AWS::IAM::OIDCProvider
-    Properties:
-      Url: {{ .OIDCIssuerURL }}
-      ClientIdList:
-        - sts.amazonaws.com
-      Tags:
-        - Key: Name
-          Value: {{ .ResourceId }}-oidc-provider
-
   CloudWatchRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: cloudwatch-role-{{ .ResourceId }}
+      RoleName: cloudwatch-role-{{ .ClusterUUID }}
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          - Effect: Allow
+          - Sid: AllowEksAuthToAssumeRoleForPodIdentity
+            Effect: Allow
             Principal:
-              Federated: !Ref OIDCProvider
-            Action: sts:AssumeRoleWithWebIdentity
-            Condition:
-              StringEquals:
-                "{{ .OIDCProviderURL }}:aud": "sts.amazonaws.com"
-                "{{ .OIDCProviderURL }}:sub": "system:serviceaccount:amazon-cloudwatch:cwagent-prometheus"
+              Service: pods.eks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+              - sts:TagSession
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
       Description: Role for CloudWatch Agent in EKS cluster
-      Tags:
-        - Key: Name
-          Value: {{ .ResourceId }}-cloudwatch-role
+
+  PodIdentityAssociation:
+    Type: AWS::EKS::PodIdentityAssociation
+    Properties:
+      ClusterName: {{ .ClusterName }}
+      Namespace: amazon-cloudwatch
+      ServiceAccount: cwagent
+      RoleArn: !GetAtt CloudWatchRole.Arn
+  
+  EksPodIdentityAgentAddon:
+    Type: AWS::EKS::Addon
+    Properties:
+      AddonName: eks-pod-identity-agent
+      ClusterName: {{ .ClusterName }}
 
 Outputs:
   CloudWatchRoleArn:
@@ -43,8 +41,8 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}::CloudWatchRoleArn"
 
-  OIDCProviderArn:
-    Description: ARN of the OIDC provider
-    Value: !Ref OIDCProvider
+  PodIdentityAssociationArn:
+    Description: ARN of the Pod Identity Association
+    Value: !Ref PodIdentityAssociation
     Export:
-      Name: !Sub "${AWS::StackName}::OIDCProviderArn"
+      Name: !Sub '${AWS::StackName}-PodIdentityAssociationArn'
