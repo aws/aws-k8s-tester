@@ -477,12 +477,13 @@ func (m *InfrastructureManager) getAZsWithCapacity(opts *deployerOptions) ([]str
 }
 
 func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName string) (string, error) {
-	stackName := fmt.Sprintf("cloudwatch-%s", strings.TrimPrefix(clusterName, "kubetest2-eksapi-"))
+	clusterUUID := strings.TrimPrefix(clusterName, "kubetest2-eksapi-")
+	stackName := fmt.Sprintf("cloudwatch-%s", clusterUUID)
 
 	var templateBuffer strings.Builder
 	err := templates.CloudWatchInfra.Execute(&templateBuffer, templates.CloudWatchInfraTemplateData{
 		ClusterName: clusterName,
-		ClusterUUID: strings.TrimPrefix(clusterName, "kubetest2-eksapi-"),
+		ClusterUUID: clusterUUID,
 	})
 	if err != nil {
 		return "", fmt.Errorf("executing CloudWatch template: %w", err)
@@ -530,9 +531,7 @@ func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName 
 }
 
 func (m *InfrastructureManager) deleteCloudWatchInfrastructureStack() error {
-	// We need to reconstruct the clusterUUID from resourceID to match the creation pattern
-	clusterUUID := strings.TrimPrefix(m.resourceID, "kubetest2-eksapi-")
-	stackName := fmt.Sprintf("cloudwatch-%s", clusterUUID)
+	stackName := fmt.Sprintf("cloudwatch-%s", strings.TrimPrefix(m.resourceID, "kubetest2-eksapi-"))
 
 	input := cloudformation.DeleteStackInput{
 		StackName: aws.String(stackName),
