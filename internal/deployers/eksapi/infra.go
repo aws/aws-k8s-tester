@@ -482,7 +482,7 @@ func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName 
 	var templateBuffer strings.Builder
 	err := templates.CloudWatchInfra.Execute(&templateBuffer, templates.CloudWatchInfraTemplateData{
 		ClusterName: clusterName,
-		ClusterUUID: stackName,
+		ClusterUUID: strings.TrimPrefix(clusterName, "kubetest2-eksapi-"),
 	})
 	if err != nil {
 		return "", fmt.Errorf("executing CloudWatch template: %w", err)

@@ -9,7 +9,7 @@ import (
 var Infrastructure string
 
 //go:embed cloudwatch_agent_infra.yaml
-var CloudWatchAgentInfra string
+var CloudWatchAgentRbac string
 
 var (
 	//go:embed unmanaged-nodegroup.yaml.template
