@@ -240,11 +240,11 @@ func (d *deployer) Up() error {
 		klog.Errorf("CloudWatch infrastructure setup failed: %v", err)
 		return err
 	} else {
-		d.cluster.cloudwatchRoleArn = roleArn
+		d.infra.cloudwatchRoleArn = roleArn
 		klog.Infof("CloudWatch infrastructure setup completed")
 	}
 	// Apply CloudWatch infrastructure manifest
-	manifest := []byte(templates.CloudWatchAgentRbac)
+	manifest := templates.CloudWatchAgentRbac
 	if err := fwext.ApplyManifests(d.k8sClient.config, manifest); err != nil {
 		klog.Errorf("CloudWatch infrastructure manifest failed: %v", err)
 		return err
@@ -357,7 +357,7 @@ func (d *deployer) Down() error {
 
 func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *nodeManager, k8sClient *k8sClient /* nillable */, opts *deployerOptions /* nillable */) error {
 	if err := im.deleteCloudWatchInfrastructureStack(); err != nil {
-		klog.Warningf("Failed to delete CloudWatch infrastructure: %v", err)
+		return err
 	}
 	if err := nm.deleteNodes(k8sClient, opts); err != nil {
 		return err

@@ -32,7 +32,6 @@ type Cluster struct {
 	arn                      string
 	name                     string
 	cidr                     string
-	cloudwatchRoleArn        string
 }
 
 func (m *ClusterManager) getOrCreateCluster(infra *Infrastructure, opts *deployerOptions) (*Cluster, error) {

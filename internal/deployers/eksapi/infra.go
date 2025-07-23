@@ -85,6 +85,7 @@ type Infrastructure struct {
 	clusterRoleARN    string
 	nodeRoleARN       string
 	nodeRoleName      string
+	cloudwatchRoleArn string
 }
 
 func (i *Infrastructure) subnets() []string {
@@ -477,38 +478,36 @@ func (m *InfrastructureManager) getAZsWithCapacity(opts *deployerOptions) ([]str
 }
 
 func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName string) (string, error) {
-	clusterUUID := strings.TrimPrefix(clusterName, "kubetest2-eksapi-")
+	clusterUUID := strings.TrimPrefix(clusterName, ResourcePrefix+"-")
 	stackName := fmt.Sprintf("cloudwatch-%s", clusterUUID)
 
-	var templateBuffer strings.Builder
-	err := templates.CloudWatchInfra.Execute(&templateBuffer, templates.CloudWatchInfraTemplateData{
-		ClusterName: clusterName,
-		ClusterUUID: clusterUUID,
-	})
-	if err != nil {
-		return "", fmt.Errorf("executing CloudWatch template: %w", err)
-	}
-
-	input := cloudformation.CreateStackInput{
-		StackName:    aws.String(stackName),
-		TemplateBody: aws.String(templateBuffer.String()),
-		Capabilities: []cloudformationtypes.Capability{cloudformationtypes.CapabilityCapabilityNamedIam},
-	}
-
 	klog.Infof("creating CloudWatch infrastructure stack: %s", stackName)
-	out, err := m.clients.CFN().CreateStack(context.TODO(), &input)
+	out, err := m.clients.CFN().CreateStack(context.TODO(), &cloudformation.CreateStackInput{
+		StackName:    aws.String(stackName),
+		TemplateBody: aws.String(templates.CloudWatchInfra),
+		Capabilities: []cloudformationtypes.Capability{cloudformationtypes.CapabilityCapabilityNamedIam},
+		Parameters: []cloudformationtypes.Parameter{
+			{
+				ParameterKey:   aws.String("ClusterName"),
+				ParameterValue: aws.String(clusterName),
+			},
+			{
+				ParameterKey:   aws.String("ClusterUUID"),
+				ParameterValue: aws.String(clusterUUID),
+			},
+		},
+	})
 	if err != nil {
 		return "", fmt.Errorf("failed to create CloudWatch infrastructure stack: %w", err)
 	}
 
 	klog.Infof("waiting for CloudWatch infrastructure stack to be created: %s", *out.StackId)
-	err = cloudformation.NewStackCreateCompleteWaiter(m.clients.CFN()).
+	if err := cloudformation.NewStackCreateCompleteWaiter(m.clients.CFN()).
 		Wait(context.TODO(),
 			&cloudformation.DescribeStacksInput{
 				StackName: out.StackId,
 			},
-			infraStackCreationTimeout)
-	if err != nil {
+			infraStackCreationTimeout); err != nil {
 		return "", fmt.Errorf("failed to wait for CloudWatch infrastructure stack creation: %w", err)
 	}
 
@@ -521,9 +520,9 @@ func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName 
 	}
 
 	for _, output := range stack.Stacks[0].Outputs {
-		if *output.OutputKey == "CloudWatchRoleArn" {
-			klog.Infof("CloudWatch infrastructure stack created successfully with role ARN: %s", *output.OutputValue)
-			return *output.OutputValue, nil
+		if aws.ToString(output.OutputKey) == "CloudWatchRoleArn" {
+			klog.Infof("CloudWatch infrastructure stack created successfully with role ARN: %s", aws.ToString(output.OutputValue))
+			return aws.ToString(output.OutputValue), nil
 		}
 	}
 
@@ -531,22 +530,18 @@ func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName 
 }
 
 func (m *InfrastructureManager) deleteCloudWatchInfrastructureStack() error {
-	stackName := fmt.Sprintf("cloudwatch-%s", strings.TrimPrefix(m.resourceID, "kubetest2-eksapi-"))
-
-	input := cloudformation.DeleteStackInput{
-		StackName: aws.String(stackName),
-	}
+	stackName := fmt.Sprintf("cloudwatch-%s", strings.TrimPrefix(m.resourceID, ResourcePrefix+"-"))
 
 	klog.Infof("deleting CloudWatch infrastructure stack: %s", stackName)
-	_, err := m.clients.CFN().DeleteStack(context.TODO(), &input)
-	if err != nil {
+	if _, err := m.clients.CFN().DeleteStack(context.TODO(), &cloudformation.DeleteStackInput{
+		StackName: aws.String(stackName),
+	}); err != nil {
 		var notFound *cloudformationtypes.StackNotFoundException
 		if errors.As(err, &notFound) {
 			klog.Infof("CloudWatch infrastructure stack does not exist: %s", stackName)
 			return nil
 		}
-		klog.Warningf("failed to delete CloudWatch infrastructure stack: %v", err)
-		return nil
+		return fmt.Errorf("failed to delete CloudWatch infrastructure stack: %w", err)
 	}
 
 	klog.Infof("initiated deletion of CloudWatch infrastructure stack: %s", stackName)

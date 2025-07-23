@@ -1,11 +1,20 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: kubetest2-eksapi CloudWatch using Pod Identity
 
+Parameters:
+  ClusterName:
+    Description: Name of the EKS cluster
+    Type: String
+  
+  ClusterUUID:
+    Description: UUID portion of the cluster name
+    Type: String
+
 Resources:
   CloudWatchRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: cloudwatch-role-{{ .ClusterUUID }}
+      RoleName: !Sub "cloudwatch-role-${ClusterUUID}"
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -23,7 +32,7 @@ Resources:
   PodIdentityAssociation:
     Type: AWS::EKS::PodIdentityAssociation
     Properties:
-      ClusterName: {{ .ClusterName }}
+      ClusterName: !Ref ClusterName
       Namespace: amazon-cloudwatch
       ServiceAccount: cwagent
       RoleArn: !GetAtt CloudWatchRole.Arn
@@ -32,7 +41,7 @@ Resources:
     Type: AWS::EKS::Addon
     Properties:
       AddonName: eks-pod-identity-agent
-      ClusterName: {{ .ClusterName }}
+      ClusterName: !Ref ClusterName
 
 Outputs:
   CloudWatchRoleArn:

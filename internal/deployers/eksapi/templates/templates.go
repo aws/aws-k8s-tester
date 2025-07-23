@@ -5,11 +5,11 @@ import (
 	"text/template"
 )
 
-//go:embed infra.yaml
+//go:embed manifests/infra.yaml
 var Infrastructure string
 
-//go:embed cloudwatch_agent_infra.yaml
-var CloudWatchAgentRbac string
+//go:embed manifests/cloudwatch_agent_infra.yaml
+var CloudWatchAgentRbac []byte
 
 var (
 	//go:embed unmanaged-nodegroup.yaml.template
@@ -17,11 +17,8 @@ var (
 	UnmanagedNodegroup         = template.Must(template.New("unmanagedNodegroup").Parse(unmanagedNodegroupTemplate))
 )
 
-var (
-	//go:embed cloudwatch-infra.yaml.template
-	cloudwatchInfraTemplate string
-	CloudWatchInfra         = template.Must(template.New("cloudwatchInfra").Parse(cloudwatchInfraTemplate))
-)
+//go:embed cloudwatch-infra.yaml.template
+var CloudWatchInfra string
 
 type NetworkInterface struct {
 	Description         *string
@@ -88,9 +85,4 @@ var (
 type AuthMapRoleTemplateData struct {
 	NodeNameStrategy string
 	Rolearn          string
-}
-
-type CloudWatchInfraTemplateData struct {
-	ClusterName string
-	ClusterUUID string
 }
