@@ -477,10 +477,13 @@ func (m *InfrastructureManager) getAZsWithCapacity(opts *deployerOptions) ([]str
 	return subnetAzs, nil
 }
 
-func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName string) (string, error) {
-	clusterUUID := strings.TrimPrefix(clusterName, ResourcePrefix+"-")
-	stackName := fmt.Sprintf("cloudwatch-%s", clusterUUID)
+func getCloudWatchStackName(resourceID string) (string, string) {
+	clusterUUID := strings.TrimPrefix(resourceID, ResourcePrefix+"-")
+	return fmt.Sprintf("cloudwatch-%s", clusterUUID), clusterUUID
+}
 
+func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName string) (string, error) {
+	stackName, clusterUUID := getCloudWatchStackName(clusterName)
 	klog.Infof("creating CloudWatch infrastructure stack: %s", stackName)
 	out, err := m.clients.CFN().CreateStack(context.TODO(), &cloudformation.CreateStackInput{
 		StackName:    aws.String(stackName),
@@ -530,7 +533,7 @@ func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName 
 }
 
 func (m *InfrastructureManager) deleteCloudWatchInfrastructureStack() error {
-	stackName := fmt.Sprintf("cloudwatch-%s", strings.TrimPrefix(m.resourceID, ResourcePrefix+"-"))
+	stackName, _ := getCloudWatchStackName(m.resourceID)
 
 	klog.Infof("deleting CloudWatch infrastructure stack: %s", stackName)
 	if _, err := m.clients.CFN().DeleteStack(context.TODO(), &cloudformation.DeleteStackInput{

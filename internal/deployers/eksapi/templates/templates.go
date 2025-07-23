@@ -5,10 +5,10 @@ import (
 	"text/template"
 )
 
-//go:embed manifests/infra.yaml
+//go:embed infra.yaml
 var Infrastructure string
 
-//go:embed manifests/cloudwatch_agent_infra.yaml
+//go:embed cloudwatch_agent_infra.yaml
 var CloudWatchAgentRbac []byte
 
 var (
