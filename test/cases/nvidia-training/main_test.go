@@ -42,7 +42,7 @@ func TestMain(m *testing.M) {
 
 	region, err := getRegionFromNodes(ctx, cfg)
 	if err != nil || region == "" {
-		log.Printf("Warning: failed to get region from nodes. The test metrics will be emitted to PDX by default: %v", err)
+		log.Printf("Warning: failed to get region from nodes. The test metrics will be emitted to us-west-2 by default: %v", err)
 		region = "us-west-2"
 	}
 
