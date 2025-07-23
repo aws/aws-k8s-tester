@@ -2,6 +2,10 @@ package manifests
 
 import (
 	_ "embed"
+	"fmt"
+	"strings"
+
+	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
 )
 
 var (
@@ -24,3 +28,20 @@ var (
 	//go:embed assets/cloudwatch-agent.yaml
 	CloudWatchAgentManifest []byte
 )
+
+func RenderCloudWatchAgentManifest(kubernetesVersion, amiVariant, nodeType, region, teamIdentifier, testName string) ([]byte, error) {
+	templateData := map[string]string{
+		"VERSION":         strings.Replace(kubernetesVersion, ".", "", 1),
+		"VARIANT":         strings.ToLower(amiVariant),
+		"INSTANCE_TYPE":   nodeType,
+		"REGION":          region,
+		"TEAM_IDENTIFIER": teamIdentifier,
+		"TEST_NAME":       testName,
+	}
+
+	renderedManifest, err := fwext.RenderManifests(CloudWatchAgentManifest, templateData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render CloudWatch Agent manifest: %w", err)
+	}
+	return renderedManifest, nil
+}

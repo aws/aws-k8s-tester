@@ -32,7 +32,6 @@ func TestMain(m *testing.M) {
 		log.Fatalf("failed to initialize test environment: %v", err)
 	}
 
-	// Validate K8 version format
 	if !strings.Contains(*kubernetesVersion, ".") {
 		log.Fatalf("kubernetesVersion must be in format X.YY, got: %s", *kubernetesVersion)
 	}
@@ -47,19 +46,9 @@ func TestMain(m *testing.M) {
 		region = "us-west-2"
 	}
 
-	//template data for CloudWatch Agent manifest
-	templateData := map[string]string{
-		"VERSION":         strings.Replace(*kubernetesVersion, ".", "", 1),
-		"VARIANT":         strings.ToLower(*amiVariant),
-		"INSTANCE_TYPE":   *nodeType,
-		"REGION":          region,
-		"TEAM_IDENTIFIER": *teamIdentifier,
-		"TEST_NAME":       "nvidia.training",
-	}
-
-	renderedCloudWatchAgentManifest, err := fwext.RenderManifests(manifests.CloudWatchAgentManifest, templateData)
+	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(*kubernetesVersion, *amiVariant, *nodeType, region, *teamIdentifier, "nvidia.training")
 	if err != nil {
-		log.Fatalf("failed to render CloudWatch Agent manifest: %v", err)
+		log.Fatalf("%v", err)
 	}
 
 	manifestsList := [][]byte{
@@ -185,8 +174,19 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 
 	return ctx, nil
 }
+/*
+TODO: Consider loading region from AWS default config if AWS API calls are added to this test
 
-// getRegionFromNodes extracts the AWS region from node labels
+import "github.com/aws/aws-sdk-go-v2/config"
+...
+if cfg, err := config.LoadDefaultConfig(context.TODO()); err != nil {
+return "", fmt.Errorf("failed loading config, %v", err)
+} else {
+return cfg.Region, nil
+}
+*/
+
+//getRegionFromNodes extracts the AWS region from node labels
 func getRegionFromNodes(ctx context.Context, config *envconf.Config) (string, error) {
 	clientset, err := kubernetes.NewForConfig(config.Client().RESTConfig())
 	if err != nil {
@@ -196,7 +196,10 @@ func getRegionFromNodes(ctx context.Context, config *envconf.Config) (string, er
 	if err != nil {
 		return "", fmt.Errorf("failed to list nodes: %w", err)
 	}
-	return nodes.Items[0].Labels["topology.kubernetes.io/region"], nil
+	if len(nodes.Items) > 0 {
+		return nodes.Items[0].Labels["topology.kubernetes.io/region"], nil
+	}
+	return "", fmt.Errorf("no nodes found in the cluster")
 }
 
 // Helper function to deploy DaemonSet + Wait for Ready
