@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: kubetest2-eksapi CloudWatch using Pod Identity
+
+Parameters:
+  ClusterName:
+    Description: Name of the EKS cluster
+    Type: String
+  
+  ClusterUUID:
+    Description: UUID portion of the cluster name
+    Type: String
+
+Resources:
+  CloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "cloudwatch-role-${ClusterUUID}"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowEksAuthToAssumeRoleForPodIdentity
+            Effect: Allow
+            Principal:
+              Service: pods.eks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+              - sts:TagSession
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Description: Role for CloudWatch Agent in EKS cluster
+
+  PodIdentityAssociation:
+    Type: AWS::EKS::PodIdentityAssociation
+    Properties:
+      ClusterName: !Ref ClusterName
+      Namespace: amazon-cloudwatch
+      ServiceAccount: cwagent
+      RoleArn: !GetAtt CloudWatchRole.Arn
+  
+  EksPodIdentityAgentAddon:
+    Type: AWS::EKS::Addon
+    Properties:
+      AddonName: eks-pod-identity-agent
+      ClusterName: !Ref ClusterName
+
+Outputs:
+  CloudWatchRoleArn:
+    Description: ARN of the CloudWatch IAM role
+    Value: !GetAtt CloudWatchRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}::CloudWatchRoleArn"
+
+  PodIdentityAssociationArn:
+    Description: ARN of the Pod Identity Association
+    Value: !Ref PodIdentityAssociation
+    Export:
+      Name: !Sub '${AWS::StackName}-PodIdentityAssociationArn'
