@@ -110,7 +110,7 @@ RUN git clone https://github.com/NVIDIA/nccl-tests /tmp/nccl-tests \
 # Set a default command for debugging or modify as per requirements
 ENV NCCL_PROTO simple
 # see https://linux.die.net/man/8/ld.so for usage. replaces LD_PRELOAD env.
-RUN echo "/usr/lib/$(uname -m)-linux-gnu/libnccl.so" >> /etc/ld.so.preload
+RUN echo "/usr/local/lib/libnccl.so" >> /etc/ld.so.preload
 
 RUN rm -rf /var/lib/apt/lists/*
 

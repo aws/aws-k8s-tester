@@ -85,6 +85,7 @@ type Infrastructure struct {
 	clusterRoleARN    string
 	nodeRoleARN       string
 	nodeRoleName      string
+	cloudwatchRoleArn string
 }
 
 func (i *Infrastructure) subnets() []string {
@@ -474,4 +475,78 @@ func (m *InfrastructureManager) getAZsWithCapacity(opts *deployerOptions) ([]str
 		}
 	}
 	return subnetAzs, nil
+}
+
+func getCloudWatchStackName(resourceID string) (string, string) {
+	clusterUUID := strings.TrimPrefix(resourceID, ResourcePrefix+"-")
+	return fmt.Sprintf("cloudwatch-%s", clusterUUID), clusterUUID
+}
+
+func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName string) (string, error) {
+	stackName, clusterUUID := getCloudWatchStackName(clusterName)
+	klog.Infof("creating CloudWatch infrastructure stack: %s", stackName)
+	out, err := m.clients.CFN().CreateStack(context.TODO(), &cloudformation.CreateStackInput{
+		StackName:    aws.String(stackName),
+		TemplateBody: aws.String(templates.CloudWatchInfra),
+		Capabilities: []cloudformationtypes.Capability{cloudformationtypes.CapabilityCapabilityNamedIam},
+		Parameters: []cloudformationtypes.Parameter{
+			{
+				ParameterKey:   aws.String("ClusterName"),
+				ParameterValue: aws.String(clusterName),
+			},
+			{
+				ParameterKey:   aws.String("ClusterUUID"),
+				ParameterValue: aws.String(clusterUUID),
+			},
+		},
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to create CloudWatch infrastructure stack: %w", err)
+	}
+
+	klog.Infof("waiting for CloudWatch infrastructure stack to be created: %s", *out.StackId)
+	if err := cloudformation.NewStackCreateCompleteWaiter(m.clients.CFN()).
+		Wait(context.TODO(),
+			&cloudformation.DescribeStacksInput{
+				StackName: out.StackId,
+			},
+			infraStackCreationTimeout); err != nil {
+		return "", fmt.Errorf("failed to wait for CloudWatch infrastructure stack creation: %w", err)
+	}
+
+	// Get the CloudWatch role ARN from stack outputs
+	stack, err := m.clients.CFN().DescribeStacks(context.TODO(), &cloudformation.DescribeStacksInput{
+		StackName: out.StackId,
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to describe CloudWatch infrastructure stack: %w", err)
+	}
+
+	for _, output := range stack.Stacks[0].Outputs {
+		if aws.ToString(output.OutputKey) == "CloudWatchRoleArn" {
+			klog.Infof("CloudWatch infrastructure stack created successfully with role ARN: %s", aws.ToString(output.OutputValue))
+			return aws.ToString(output.OutputValue), nil
+		}
+	}
+
+	return "", fmt.Errorf("CloudWatch role ARN not found in stack outputs")
+}
+
+func (m *InfrastructureManager) deleteCloudWatchInfrastructureStack() error {
+	stackName, _ := getCloudWatchStackName(m.resourceID)
+
+	klog.Infof("deleting CloudWatch infrastructure stack: %s", stackName)
+	if _, err := m.clients.CFN().DeleteStack(context.TODO(), &cloudformation.DeleteStackInput{
+		StackName: aws.String(stackName),
+	}); err != nil {
+		var notFound *cloudformationtypes.StackNotFoundException
+		if errors.As(err, &notFound) {
+			klog.Infof("CloudWatch infrastructure stack does not exist: %s", stackName)
+			return nil
+		}
+		return fmt.Errorf("failed to delete CloudWatch infrastructure stack: %w", err)
+	}
+
+	klog.Infof("initiated deletion of CloudWatch infrastructure stack: %s", stackName)
+	return nil
 }

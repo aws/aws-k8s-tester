@@ -8,6 +8,8 @@ import (
 
 	"github.com/aws/aws-k8s-tester/internal"
 	"github.com/aws/aws-k8s-tester/internal/awssdk"
+	"github.com/aws/aws-k8s-tester/internal/deployers/eksapi/templates"
+	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
 	"github.com/aws/aws-k8s-tester/internal/metrics"
 	"github.com/aws/aws-k8s-tester/internal/util"
 
@@ -232,6 +234,22 @@ func (d *deployer) Up() error {
 			// don't return err, this isn't critical
 		}
 	}
+
+	klog.Infof("Setting up CloudWatch infrastructure...")
+	if roleArn, err := d.infraManager.createCloudWatchInfrastructureStack(d.cluster.name); err != nil {
+		klog.Errorf("CloudWatch infrastructure setup failed: %v", err)
+		return err
+	} else {
+		d.infra.cloudwatchRoleArn = roleArn
+		klog.Infof("CloudWatch infrastructure setup completed")
+	}
+	// Apply CloudWatch infrastructure manifest
+	manifest := templates.CloudWatchAgentRbac
+	if err := fwext.ApplyManifests(d.k8sClient.config, manifest); err != nil {
+		klog.Errorf("CloudWatch infrastructure manifest failed: %v", err)
+		return err
+	}
+	klog.Infof("CloudWatch infrastructure manifest applied successfully")
 	return nil
 }
 
@@ -338,6 +356,9 @@ func (d *deployer) Down() error {
 }
 
 func deleteResources(im *InfrastructureManager, cm *ClusterManager, nm *nodeManager, k8sClient *k8sClient /* nillable */, opts *deployerOptions /* nillable */) error {
+	if err := im.deleteCloudWatchInfrastructureStack(); err != nil {
+		return err
+	}
 	if err := nm.deleteNodes(k8sClient, opts); err != nil {
 		return err
 	}

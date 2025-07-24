@@ -8,11 +8,17 @@ import (
 //go:embed infra.yaml
 var Infrastructure string
 
+//go:embed cloudwatch_agent_infra.yaml
+var CloudWatchAgentRbac []byte
+
 var (
 	//go:embed unmanaged-nodegroup.yaml.template
 	unmanagedNodegroupTemplate string
 	UnmanagedNodegroup         = template.Must(template.New("unmanagedNodegroup").Parse(unmanagedNodegroupTemplate))
 )
+
+//go:embed cloudwatch-infra.yaml.template
+var CloudWatchInfra string
 
 type NetworkInterface struct {
 	Description         *string
