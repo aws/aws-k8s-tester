@@ -19,7 +19,7 @@ data:
                 {
                   "source_labels": ["job"],
                   "label_matcher": "dcgm-exporter",
-                  "dimensions": [["TestType", "KubernetesVersion", "Variant", "InstanceType", "TeamIdentifier"]],
+                  "dimensions": [[{{.DIMENSIONS}}]],
                   "metric_selectors": [
                     "^DCGM_FI_DEV_GPU_UTIL$",
                     "^DCGM_FI_DEV_MEM_COPY_UTIL$",
@@ -54,11 +54,7 @@ data:
             - dcgm-exporter.kube-system.svc.cluster.local:9400
         metrics_path: /metrics
         metric_relabel_configs:
-          - {action: replace, target_label: KubernetesVersion, replacement: "{{.VERSION}}"}
-          - {action: replace, target_label: Variant, replacement: "{{.VARIANT}}"}
-          - {action: replace, target_label: InstanceType, replacement: "{{.INSTANCE_TYPE}}"}
-          - {action: replace, target_label: TeamIdentifier, replacement: "{{.TEAM_IDENTIFIER}}"}
-          - {action: replace, target_label: TestType, replacement: "{{.TEST_NAME}}"}
+{{.RELABEL_CONFIGS}}
 ---
 apiVersion: apps/v1
 kind: DaemonSet

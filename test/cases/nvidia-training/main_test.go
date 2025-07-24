@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"slices"
-	"strings"
 	"testing"
 	"time"
 
@@ -32,23 +31,22 @@ func TestMain(m *testing.M) {
 		log.Fatalf("failed to initialize test environment: %v", err)
 	}
 
-	if !strings.Contains(*kubernetesVersion, ".") {
-		log.Fatalf("kubernetesVersion must be in format X.YY, got: %s", *kubernetesVersion)
-	}
-
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 	testenv = env.NewWithConfig(cfg).WithContext(ctx)
 
-	region, err := getRegionFromNodes(ctx, cfg)
+	metricDimensionsMap := manifests.ParseMetricDimensions(*metricDimensions)
+	region, err := manifests.GetRegionFromNodes(ctx, cfg)
 	if err != nil || region == "" {
 		log.Printf("Warning: failed to get region from nodes. The test metrics will be emitted to us-west-2 by default: %v", err)
 		region = "us-west-2"
 	}
-
-	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(*kubernetesVersion, *amiVariant, *nodeType, region, *teamIdentifier, "nvidia.training")
+	// Render CloudWatch Agent manifest with dynamic dimensions
+	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(region, metricDimensionsMap)
+	//print the rendered manifest for debugging
+	log.Printf("Rendered CloudWatch Agent Manifest:\n%s", string(renderedCloudWatchAgentManifest))
 	if err != nil {
-		log.Fatalf("%v", err)
+		log.Printf("Warning: failed to render CloudWatch Agent manifest: %v", err)
 	}
 
 	manifestsList := [][]byte{
@@ -173,33 +171,6 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 	log.Printf("[INFO] EFA Per Node: %d", efaPerNode)
 
 	return ctx, nil
-}
-/*
-TODO: Consider loading region from AWS default config if AWS API calls are added to this test
-
-import "github.com/aws/aws-sdk-go-v2/config"
-...
-if cfg, err := config.LoadDefaultConfig(context.TODO()); err != nil {
-return "", fmt.Errorf("failed loading config, %v", err)
-} else {
-return cfg.Region, nil
-}
-*/
-
-//getRegionFromNodes extracts the AWS region from node labels
-func getRegionFromNodes(ctx context.Context, config *envconf.Config) (string, error) {
-	clientset, err := kubernetes.NewForConfig(config.Client().RESTConfig())
-	if err != nil {
-		return "", fmt.Errorf("failed to create Kubernetes client: %w", err)
-	}
-	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{Limit: 1})
-	if err != nil {
-		return "", fmt.Errorf("failed to list nodes: %w", err)
-	}
-	if len(nodes.Items) > 0 {
-		return nodes.Items[0].Labels["topology.kubernetes.io/region"], nil
-	}
-	return "", fmt.Errorf("no nodes found in the cluster")
 }
 
 // Helper function to deploy DaemonSet + Wait for Ready
