@@ -4,12 +4,16 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
-	"html/template"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"log"
 	"strings"
+	"time"
+
+	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/e2e-framework/klient/wait"
+	"sigs.k8s.io/e2e-framework/pkg/env"
+	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
 var (
@@ -49,60 +53,29 @@ func ParseMetricDimensions(metricDimensions string) map[string]string {
 }
 
 // RenderCloudWatchAgentManifest renders the CloudWatch Agent manifest with dynamic dimensions
-func RenderCloudWatchAgentManifest(region string, metricDimensions map[string]string) ([]byte, error) {
-	templateData := map[string]interface{}{
-		"REGION":          region,
-		"DIMENSIONS":      "",
-		"RELABEL_CONFIGS": "",
-	}
-
-	if len(metricDimensions) > 0 {
-		dimensions := make([]string, 0, len(metricDimensions))
-		relabelConfigs := make([]string, 0, len(metricDimensions))
-
-		for key, value := range metricDimensions {
-			templateData[strings.ToUpper(key)] = value
-			dimensions = append(dimensions, fmt.Sprintf(`"%s"`, key))
-			relabelConfigs = append(relabelConfigs,
-				fmt.Sprintf("          - {action: replace, target_label: %s, replacement: '%s'}",
-					key, value))
-		}
-
-		templateData["RELABEL_CONFIGS"] = template.HTML(strings.Join(relabelConfigs, "\n"))
-		templateData["DIMENSIONS"] = template.HTML(strings.Join(dimensions, ", "))
-	}
-
-	renderedManifest, err := fwext.RenderManifests(CloudWatchAgentManifest, templateData)
+func RenderCloudWatchAgentManifest(metricDimensions map[string]string) ([]byte, error) {
+	renderedManifest, err := fwext.RenderManifests(CloudWatchAgentManifest, map[string]interface{}{"MetricDimensions": metricDimensions})
 	if err != nil {
 		return nil, fmt.Errorf("failed to render CloudWatch Agent manifest: %w", err)
 	}
 	return renderedManifest, nil
 }
 
-// GetRegionFromNodes extracts the AWS region from node labels
-func GetRegionFromNodes(ctx context.Context, config *envconf.Config) (string, error) {
-	clientset, err := kubernetes.NewForConfig(config.Client().RESTConfig())
-	if err != nil {
-		return "", fmt.Errorf("failed to create Kubernetes client: %w", err)
+// DeployDaemonSet returns a function to deploy and wait for a DaemonSet to be ready
+func DeployDaemonSet(name, namespace string) env.Func {
+	return func(ctx context.Context, config *envconf.Config) (context.Context, error) {
+		log.Printf("Waiting for %s daemonset to be ready.", name)
+		daemonset := appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
+		}
+		err := wait.For(
+			fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&daemonset),
+			wait.WithTimeout(5*time.Minute),
+		)
+		if err != nil {
+			return ctx, fmt.Errorf("%s daemonset is not ready: %w", name, err)
+		}
+		log.Printf("%s daemonset is ready.", name)
+		return ctx, nil
 	}
-	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{Limit: 1})
-	if err != nil {
-		return "", fmt.Errorf("failed to list nodes: %w", err)
-	}
-	if len(nodes.Items) > 0 {
-		return nodes.Items[0].Labels["topology.kubernetes.io/region"], nil
-	}
-	return "", fmt.Errorf("no nodes found in the cluster")
 }
-
-/*
-TODO: Consider loading region from AWS default config if AWS API calls are added to this test
-
-import "github.com/aws/aws-sdk-go-v2/config"
-...
-if cfg, err := config.LoadDefaultConfig(context.TODO()); err != nil {
-return "", fmt.Errorf("failed loading config, %v", err)
-} else {
-return cfg.Region, nil
-}
-*/

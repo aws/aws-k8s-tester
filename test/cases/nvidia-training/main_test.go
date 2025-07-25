@@ -34,15 +34,9 @@ func TestMain(m *testing.M) {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 	testenv = env.NewWithConfig(cfg).WithContext(ctx)
-
 	metricDimensionsMap := manifests.ParseMetricDimensions(*metricDimensions)
-	region, err := manifests.GetRegionFromNodes(ctx, cfg)
-	if err != nil || region == "" {
-		log.Printf("Warning: failed to get region from nodes. The test metrics will be emitted to us-west-2 by default: %v", err)
-		region = "us-west-2"
-	}
 	// Render CloudWatch Agent manifest with dynamic dimensions
-	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(region, metricDimensionsMap)
+	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(metricDimensionsMap)
 	if err != nil {
 		log.Printf("Warning: failed to render CloudWatch Agent manifest: %v", err)
 	}
@@ -88,10 +82,10 @@ func TestMain(m *testing.M) {
 		},
 
 		// Wait for DaemonSets using helper
-		deployDaemonSet("nvidia-device-plugin-daemonset", "kube-system"),
-		deployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system"),
-		deployDaemonSet("dcgm-exporter", "kube-system"),
-		deployDaemonSet("cwagent", "amazon-cloudwatch"),
+		manifests.DeployDaemonSet("nvidia-device-plugin-daemonset", "kube-system"),
+		manifests.DeployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system"),
+		manifests.DeployDaemonSet("dcgm-exporter", "kube-system"),
+		manifests.DeployDaemonSet("cwagent", "amazon-cloudwatch"),
 		checkNodeTypes, // Dynamically check node types and capacities after device plugins are ready
 	)
 
@@ -169,23 +163,4 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 	log.Printf("[INFO] EFA Per Node: %d", efaPerNode)
 
 	return ctx, nil
-}
-
-// Helper function to deploy DaemonSet + Wait for Ready
-func deployDaemonSet(name, namespace string) env.Func {
-	return func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-		log.Printf("Waiting for %s daemonset to be ready.", name)
-		daemonset := appsv1.DaemonSet{
-			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
-		}
-		err := wait.For(
-			fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&daemonset),
-			wait.WithTimeout(5*time.Minute),
-		)
-		if err != nil {
-			return ctx, fmt.Errorf("%s daemonset is not ready: %w", name, err)
-		}
-		log.Printf("%s daemonset is ready.", name)
-		return ctx, nil
-	}
 }
