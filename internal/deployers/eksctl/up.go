@@ -27,10 +27,10 @@ type UpOptions struct {
 	VolumeSize            int      `flag:"volume-size" desc:"Size of the node root volume in GB"`
 	PrivateNetworking     bool     `flag:"private-networking" desc:"Use private networking for nodes"`
 	WithOIDC              bool     `flag:"with-oidc" desc:"Enable OIDC provider for IAM roles for service accounts"`
-	DeployTarget          string   `flag:"deploy-target" desc:"The target to deploy, supported values: cluster | nodegroup. It is a thin wrapper to eksctl create subcommand with limited supported values."`
+	DeployTarget          string   `flag:"deploy-target" desc:"The target to deploy, supported values: cluster | nodegroup (defaults to 'cluster'). It is a thin wrapper to eksctl create subcommand with limited supported values."`
 	ClusterName           string   `flag:"cluster-name" desc:"Name of the EKS cluster (defaults to RunID if not specified)"`
 	UseUnmanagedNodegroup bool     `flag:"unmanaged-nodegroup" desc:"Use unmanaged nodegroup instead of managed nodegroup"`
-	NodegroupName         string   `flag:"nodegroup-name" desc:"Name of the nodegroup (defaults to 'ng-1' for unmanaged or 'managed' for managed nodegroups)"`
+	NodegroupName         string   `flag:"nodegroup-name" desc:"Name of the nodegroup (defaults to 'ng-1')"`
 }
 
 func (d *deployer) verifyUpFlags() error {
@@ -65,12 +65,16 @@ func (d *deployer) verifyUpFlags() error {
 		} else if len(d.InstanceTypes) == 0 {
 			// If no instance type specified, use a default
 			d.InstanceTypes = []string{"m5.xlarge"}
-			return fmt.Errorf("No instance type specified for unmanaged nodegroup. Using default: %s", d.InstanceTypes[0])
+			klog.Infof("No instance type specified for unmanaged nodegroup. Using default: %s", d.InstanceTypes[0])
 		}
 	}
 
 	if d.DeployTarget != "" && !slices.Contains(supportedDeployTargets, d.DeployTarget) {
 		return fmt.Errorf("Unsupported deploy target: %s, supported options: `cluster`, `nodegroup`.", d.DeployTarget)
+	} else if d.DeployTarget == "" {
+			// If no deploy target specified, use "cluster" as default
+			d.DeployTarget = "cluster"
+			klog.Infof("No deploy target specified. Using default: %s", d.DeployTarget)
 	}
 
 	return nil
