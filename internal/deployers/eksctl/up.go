@@ -58,13 +58,6 @@ func (d *deployer) verifyUpFlags() error {
 		klog.V(2).Infof("Using default number of nodes: %d", d.Nodes)
 	}
 
-	// If Bottlerocket AMI family is specified with a custom AMI ID,
-	// ensure we use unmanaged nodegroups as managed nodegroups don't support this combination
-	if d.AMIFamily == "Bottlerocket" && d.AMI != "" && !d.UseUnmanagedNodegroup {
-		klog.Warningf("Bottlerocket with custom AMI requires unmanaged nodegroups. Setting --unmanaged-nodegroup=true")
-		d.UseUnmanagedNodegroup = true
-	}
-
 	// Validate instance types for unmanaged nodegroups
 	if d.UseUnmanagedNodegroup {
 		if len(d.InstanceTypes) > 1 {
