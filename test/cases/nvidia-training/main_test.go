@@ -43,8 +43,6 @@ func TestMain(m *testing.M) {
 	}
 	// Render CloudWatch Agent manifest with dynamic dimensions
 	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(region, metricDimensionsMap)
-	//print the rendered manifest for debugging
-	log.Printf("Rendered CloudWatch Agent Manifest:\n%s", string(renderedCloudWatchAgentManifest))
 	if err != nil {
 		log.Printf("Warning: failed to render CloudWatch Agent manifest: %v", err)
 	}

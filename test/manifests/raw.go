@@ -4,11 +4,12 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"strings"
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
+	"html/template"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"strings"
 )
 
 var (
@@ -49,33 +50,33 @@ func ParseMetricDimensions(metricDimensions string) map[string]string {
 
 // RenderCloudWatchAgentManifest renders the CloudWatch Agent manifest with dynamic dimensions
 func RenderCloudWatchAgentManifest(region string, metricDimensions map[string]string) ([]byte, error) {
-    templateData := map[string]interface{}{
-        "REGION":           region,
-        "DIMENSIONS":       "",
-        "RELABEL_CONFIGS": "",
-    }
+	templateData := map[string]interface{}{
+		"REGION":          region,
+		"DIMENSIONS":      "",
+		"RELABEL_CONFIGS": "",
+	}
 
-    if len(metricDimensions) > 0 {
-        dimensions := make([]string, 0, len(metricDimensions))
-        relabelConfigs := make([]string, 0, len(metricDimensions))
+	if len(metricDimensions) > 0 {
+		dimensions := make([]string, 0, len(metricDimensions))
+		relabelConfigs := make([]string, 0, len(metricDimensions))
 
-        for key, value := range metricDimensions {
-            templateData[strings.ToUpper(key)] = value
-            dimensions = append(dimensions, fmt.Sprintf(`"%s"`, key))
-            relabelConfigs = append(relabelConfigs, 
-                fmt.Sprintf("          - {action: replace, target_label: %s, replacement: '%s'}", 
-                    key, value))
-        }
+		for key, value := range metricDimensions {
+			templateData[strings.ToUpper(key)] = value
+			dimensions = append(dimensions, fmt.Sprintf(`"%s"`, key))
+			relabelConfigs = append(relabelConfigs,
+				fmt.Sprintf("          - {action: replace, target_label: %s, replacement: '%s'}",
+					key, value))
+		}
 
-        templateData["DIMENSIONS"] = strings.Join(dimensions, ", ")
-        templateData["RELABEL_CONFIGS"] = strings.Join(relabelConfigs, "\n")
-    }
+		templateData["RELABEL_CONFIGS"] = template.HTML(strings.Join(relabelConfigs, "\n"))
+		templateData["DIMENSIONS"] = template.HTML(strings.Join(dimensions, ", "))
+	}
 
-    renderedManifest, err := fwext.RenderManifests(CloudWatchAgentManifest, templateData)
-    if err != nil {
-        return nil, fmt.Errorf("failed to render CloudWatch Agent manifest: %w", err)
-    }
-    return renderedManifest, nil
+	renderedManifest, err := fwext.RenderManifests(CloudWatchAgentManifest, templateData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render CloudWatch Agent manifest: %w", err)
+	}
+	return renderedManifest, nil
 }
 
 // GetRegionFromNodes extracts the AWS region from node labels
