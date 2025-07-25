@@ -79,7 +79,7 @@ func getEfaNodes(ctx context.Context, config *envconf.Config) ([]corev1.Node, er
 		}
 
 		expectedDeviceCount := aws.ToInt(expectedEFADeviceCount)
-		if expectedDeviceCount == 0 {
+		if expectedDeviceCount < 0 {
 			instanceInfo, err := ec2Client.DescribeInstanceType(instanceType)
 			if err != nil {
 				return []corev1.Node{}, err
