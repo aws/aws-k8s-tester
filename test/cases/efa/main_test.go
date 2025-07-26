@@ -55,7 +55,7 @@ func TestMain(m *testing.M) {
 	pingPongIters = flag.Int("pingPongIters", 10000, "number of iterations to use for ping pong")
 	pingPongDeadlineSeconds = flag.Int("pingPongDeadlineSeconds", 120, "maximum run time for a ping pong attempt")
 	nodeType = flag.String("nodeType", "", "instance type to target for tests")
-	expectedEFADeviceCount = flag.Int("expectedEFADeviceCount", 0, "expected number of efa devices for the target nodes")
+	expectedEFADeviceCount = flag.Int("expectedEFADeviceCount", -1, "expected number of efa devices for the target nodes")
 	verbose = flag.Bool("verbose", true, "use verbose mode for tests")
 
 	cfg, err := envconf.NewFromFlags()
