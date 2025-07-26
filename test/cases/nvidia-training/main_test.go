@@ -35,22 +35,36 @@ func TestMain(m *testing.M) {
 	defer cancel()
 	testenv = env.NewWithConfig(cfg).WithContext(ctx)
 
-	manifests := [][]byte{
+	metricDimensionsMap := manifests.ParseMetricDimensions(*metricDimensions)
+	region, err := manifests.GetRegionFromNodes(ctx, cfg)
+	if err != nil || region == "" {
+		log.Printf("Warning: failed to get region from nodes. The test metrics will be emitted to us-west-2 by default: %v", err)
+		region = "us-west-2"
+	}
+	// Render CloudWatch Agent manifest with dynamic dimensions
+	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(region, metricDimensionsMap)
+	if err != nil {
+		log.Printf("Warning: failed to render CloudWatch Agent manifest: %v", err)
+	}
+
+	manifestsList := [][]byte{
 		manifests.NvidiaDevicePluginManifest,
 		manifests.MpiOperatorManifest,
 		manifests.EfaDevicePluginManifest,
 		manifests.DCGMExporterManifest,
+		renderedCloudWatchAgentManifest,
 	}
 
 	testenv.Setup(
 		// Apply all manifests
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Applying NVIDIA device plugin, MPI operator, EFA device plugin and DCGM Exporter manifests.")
-			err := fwext.ApplyManifests(config.Client().RESTConfig(), manifests...)
+			log.Println("Applying NVIDIA device plugin, MPI operator, EFA device plugin, DCGM Exporter and CloudWatch Agent manifests.")
+
+			err := fwext.ApplyManifests(config.Client().RESTConfig(), manifestsList...)
 			if err != nil {
 				return ctx, fmt.Errorf("failed to apply manifests: %w", err)
 			}
-			log.Println("Successfully applied NVIDIA device plugin, MPI operator, EFA device plugin and DCGM Exporter manifests.")
+			log.Println("Successfully applied NVIDIA device plugin, MPI operator, EFA device plugin, DCGM Exporter and CloudWatch Agent manifests.")
 			return ctx, nil
 		},
 
@@ -77,19 +91,19 @@ func TestMain(m *testing.M) {
 		deployDaemonSet("nvidia-device-plugin-daemonset", "kube-system"),
 		deployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system"),
 		deployDaemonSet("dcgm-exporter", "kube-system"),
-
+		deployDaemonSet("cwagent", "amazon-cloudwatch"),
 		checkNodeTypes, // Dynamically check node types and capacities after device plugins are ready
 	)
 
 	testenv.Finish(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Deleting NVIDIA device plugin, MPI operator, EFA device plugin and DCGM Exporter manifests.")
-			slices.Reverse(manifests)
-			err := fwext.DeleteManifests(config.Client().RESTConfig(), manifests...)
+			log.Println("Deleting NVIDIA device plugin, MPI operator, EFA device plugin DCGM Exporter and CloudWatch Agent manifests.")
+			slices.Reverse(manifestsList)
+			err := fwext.DeleteManifests(config.Client().RESTConfig(), manifestsList...)
 			if err != nil {
 				return ctx, fmt.Errorf("failed to delete manifests: %w", err)
 			}
-			log.Println("Successfully deleted NVIDIA device plugin, MPI operator, EFA device plugin and DCGM Exporter manifests.")
+			log.Println("Successfully deleted NVIDIA device plugin, MPI operator, EFA device plugin, DCGM Exporter and CloudWatch Agent manifests.")
 			return ctx, nil
 		},
 	)
@@ -156,6 +170,7 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 
 	return ctx, nil
 }
+
 // Helper function to deploy DaemonSet + Wait for Ready
 func deployDaemonSet(name, namespace string) env.Func {
 	return func(ctx context.Context, config *envconf.Config) (context.Context, error) {
