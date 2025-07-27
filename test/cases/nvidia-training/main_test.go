@@ -34,9 +34,9 @@ func TestMain(m *testing.M) {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 	testenv = env.NewWithConfig(cfg).WithContext(ctx)
-	metricDimensionsMap := manifests.ParseMetricDimensions(*metricDimensions)
+
 	// Render CloudWatch Agent manifest with dynamic dimensions
-	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(metricDimensionsMap)
+	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(*metricDimensions)
 	if err != nil {
 		log.Printf("Warning: failed to render CloudWatch Agent manifest: %v", err)
 	}
