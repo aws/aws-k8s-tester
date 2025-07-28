@@ -6,6 +6,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"github.com/aws/aws-k8s-tester/test/cases/common"
 	"log"
 	"os"
 	"os/signal"
@@ -36,7 +37,7 @@ func TestMain(m *testing.M) {
 	testenv = env.NewWithConfig(cfg).WithContext(ctx)
 
 	// Render CloudWatch Agent manifest with dynamic dimensions
-	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(testConfig.MetricDimensions)
+	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(common.MetricDimensions)
 	if err != nil {
 		log.Printf("Warning: failed to render CloudWatch Agent manifest: %v", err)
 	}

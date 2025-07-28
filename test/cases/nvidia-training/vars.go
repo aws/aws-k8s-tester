@@ -3,17 +3,14 @@
 package training
 
 import (
-	"flag"
-	"github.com/octago/sflags/gen/gpflag"
-	"github.com/spf13/pflag"
+	"github.com/aws/aws-k8s-tester/test/cases/common"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
 type Config struct {
-	BertTrainingImage string   `flag:"bertTrainingImage" desc:"Docker image used for BERT training workload"`
-	EfaEnabled        bool     `flag:"efaEnabled" desc:"Enable Elastic Fabric Adapter (EFA)"`
-	NodeType          string   `flag:"nodeType" desc:"Instance type for cluster nodes"`
-	MetricDimensions  []string `flag:"metricDimensions" desc:"Metric dimensions as comma-separated key=value pairs"`
+	BertTrainingImage string `flag:"bertTrainingImage" desc:"Docker image used for BERT training workload"`
+	EfaEnabled        bool   `flag:"efaEnabled" desc:"Enable Elastic Fabric Adapter (EFA)"`
+	NodeType          string `flag:"nodeType" desc:"Instance type for cluster nodes"`
 }
 
 // Shared global variables
@@ -27,11 +24,5 @@ var (
 )
 
 func init() {
-	flags, err := gpflag.Parse(testConfig)
-	if err != nil {
-		panic(err)
-	}
-	flags.VisitAll(func(pf *pflag.Flag) {
-		flag.CommandLine.Var(pf.Value, pf.Name, pf.Usage)
-	})
+	common.InitFlags(testConfig)
 }

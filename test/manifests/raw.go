@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"html/template"
 	"log"
 	"strings"
 	"time"
@@ -37,34 +38,17 @@ var (
 	CloudWatchAgentManifest []byte
 )
 
-// GetMetricDimensions parses CW metric dimensions from key=value pairs
-func GetMetricDimensions(metricDimensions []string) (map[string]string, error) {
-	dimensions := make(map[string]string)
-	for _, pair := range metricDimensions {
-		kv := strings.Split(strings.TrimSpace(pair), "=")
-		if len(kv) != 2 {
-			return nil, fmt.Errorf("invalid dimension: %q", pair)
-		}
-		key, value := strings.TrimSpace(kv[0]), strings.TrimSpace(kv[1])
-		if key == "" || value == "" {
-			return nil, fmt.Errorf("invalid dimension: %q", pair)
-		}
-		dimensions[key] = value
-	}
-	return dimensions, nil
-}
-
 // RenderCloudWatchAgentManifest renders the CloudWatch Agent manifest with dynamic dimensions
-func RenderCloudWatchAgentManifest(metricDimensionsSlice []string) ([]byte, error) {
-	metricDimensions, err := GetMetricDimensions(metricDimensionsSlice)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse metric dimensions: %w", err)
+func RenderCloudWatchAgentManifest(metricDimensions map[string]string) ([]byte, error) {
+	var keys []string
+	for key := range metricDimensions {
+		keys = append(keys, `"`+key+`"`)
 	}
-	renderedManifest, err := fwext.RenderManifests(CloudWatchAgentManifest, map[string]interface{}{"MetricDimensions": metricDimensions})
-	if err != nil {
-		return nil, fmt.Errorf("failed to render CloudWatch Agent manifest: %w", err)
-	}
-	return renderedManifest, nil
+	dimensionsStr := strings.Join(keys, ", ")
+	return fwext.RenderManifests(CloudWatchAgentManifest, map[string]interface{}{
+		"MetricDimensions": metricDimensions,
+		"DimensionKeys":    template.HTML(dimensionsStr),
+	})
 }
 
 // DeployDaemonSet returns a function to deploy and wait for a DaemonSet to be ready

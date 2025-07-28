@@ -18,7 +18,7 @@ data:
                 {
                   "source_labels": ["job"],
                   "label_matcher": "dcgm-exporter",
-                  "dimensions": [[{{- if .MetricDimensions}}{{$first := true}}{{range $key, $value := .MetricDimensions}}{{if not $first}}, {{end}}"{{$key}}"{{$first = false}}{{end}}{{- end}}]],
+                  "dimensions": [[{{.DimensionKeys}}]],
                   "metric_selectors": [
                     "^DCGM_FI_DEV_GPU_UTIL$",
                     "^DCGM_FI_DEV_MEM_COPY_UTIL$",
@@ -53,10 +53,8 @@ data:
             - dcgm-exporter.kube-system.svc.cluster.local:9400
         metrics_path: /metrics
         metric_relabel_configs:
-{{- if .MetricDimensions}}
 {{- range $key, $value := .MetricDimensions}}
           - {action: replace, target_label: {{$key}}, replacement: '{{$value}}'}
-{{- end}}
 {{- end}}
 ---
 apiVersion: apps/v1
