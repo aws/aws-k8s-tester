@@ -28,7 +28,7 @@ var (
 )
 
 func TestBertTraining(t *testing.T) {
-	if *bertTrainingImage == "" {
+	if testConfig.BertTrainingImage == "" {
 		t.Fatal(fmt.Errorf("bertTrainingImage must be set to run the test"))
 	}
 
@@ -36,7 +36,7 @@ func TestBertTraining(t *testing.T) {
 	workerReplicas := nodeCount
 	np := slotsPerWorker * workerReplicas
 	efaRequested := 0
-	if *efaEnabled && efaPerNode > 0 {
+	if testConfig.EfaEnabled && efaPerNode > 0 {
 		efaRequested = 1
 	}
 
@@ -45,7 +45,7 @@ func TestBertTraining(t *testing.T) {
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			renderVars := map[string]string{
-				"BertTrainingImage": *bertTrainingImage,
+				"BertTrainingImage": testConfig.BertTrainingImage,
 				"SlotsPerWorker":    fmt.Sprintf("%d", slotsPerWorker),
 				"NP":                fmt.Sprintf("%d", np),
 				"WorkerReplicas":    fmt.Sprintf("%d", workerReplicas),

@@ -16,12 +16,8 @@ type Config struct {
 
 // Shared global variables
 var (
-	testenv           env.Environment
-	bertTrainingImage *string
-	efaEnabled        *bool
-	nodeType          *string
-	metricDimensions  *[]string
-	testConfig        = &Config{}
+	testenv    env.Environment
+	testConfig = &Config{}
 
 	nodeCount  int
 	gpuPerNode int
@@ -30,8 +26,4 @@ var (
 
 func init() {
 	gflag.ParseToDef(testConfig)
-	bertTrainingImage = &testConfig.BertTrainingImage
-	efaEnabled = &testConfig.EfaEnabled
-	nodeType = &testConfig.NodeType
-	metricDimensions = &testConfig.MetricDimensions
 }

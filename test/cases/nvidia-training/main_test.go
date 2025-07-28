@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 	testenv = env.NewWithConfig(cfg).WithContext(ctx)
 
 	// Render CloudWatch Agent manifest with dynamic dimensions
-	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(*metricDimensions)
+	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(testConfig.MetricDimensions)
 	if err != nil {
 		log.Printf("Warning: failed to render CloudWatch Agent manifest: %v", err)
 	}
@@ -129,10 +129,10 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		}
 	}
 
-	if *nodeType != "" {
+	if testConfig.NodeType != "" {
 		count := 0
 		for _, v := range nodes.Items {
-			if v.Labels["node.kubernetes.io/instance-type"] == *nodeType {
+			if v.Labels["node.kubernetes.io/instance-type"] == testConfig.NodeType {
 				count++
 				if gpuCap, ok := v.Status.Capacity["nvidia.com/gpu"]; ok {
 					gpuPerNode = int(gpuCap.Value())
@@ -143,11 +143,11 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 			}
 		}
 		if count == 0 {
-			return ctx, fmt.Errorf("no nodes match the specified nodeType: %s", *nodeType)
+			return ctx, fmt.Errorf("no nodes match the specified nodeType: %s", testConfig.NodeType)
 		}
 		nodeCount = count
 	} else {
-		*nodeType = nodes.Items[0].Labels["node.kubernetes.io/instance-type"]
+		testConfig.NodeType = nodes.Items[0].Labels["node.kubernetes.io/instance-type"]
 		nodeCount = len(nodes.Items)
 		if gpuCap, ok := nodes.Items[0].Status.Capacity["nvidia.com/gpu"]; ok {
 			gpuPerNode = int(gpuCap.Value())
@@ -157,7 +157,7 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		}
 	}
 
-	log.Printf("[INFO] Node Type: %s", *nodeType)
+	log.Printf("[INFO] Node Type: %s", testConfig.NodeType)
 	log.Printf("[INFO] Node Count: %d", nodeCount)
 	log.Printf("[INFO] GPU Per Node: %d", gpuPerNode)
 	log.Printf("[INFO] EFA Per Node: %d", efaPerNode)
