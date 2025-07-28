@@ -3,7 +3,9 @@
 package training
 
 import (
-	"github.com/urfave/sflags/gen/gflag"
+	"flag"
+	"github.com/octago/sflags/gen/gpflag"
+	"github.com/spf13/pflag"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
@@ -25,5 +27,11 @@ var (
 )
 
 func init() {
-	gflag.ParseToDef(testConfig)
+	flags, err := gpflag.Parse(testConfig)
+	if err != nil {
+		panic(err)
+	}
+	flags.VisitAll(func(pf *pflag.Flag) {
+		flag.CommandLine.Var(pf.Value, pf.Name, pf.Usage)
+	})
 }
