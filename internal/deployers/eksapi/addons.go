@@ -26,10 +26,13 @@ func NewAddonManager(clients *awsClients) *AddonManager {
 }
 
 func (m *AddonManager) createAddons(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
+	ctx := context.TODO()
+
+	addonMap := map[string]string{}
 	for _, addon := range opts.Addons {
 		addonParts := strings.Split(addon, ":")
 		if len(addonParts) != 2 {
-			return fmt.Errorf("invalid addon: %s", addon)
+			return fmt.Errorf("invalid addon format: %s", addon)
 		}
 		name := addonParts[0]
 		version := addonParts[1]
@@ -38,26 +41,32 @@ func (m *AddonManager) createAddons(infra *Infrastructure, cluster *Cluster, opt
 		if err != nil {
 			return err
 		}
-		klog.Infof("creating addon %s version: %s", name, resolvedVersion)
+		// dedupe addons with the same name. last provided entry wins.
+		addonMap[name] = resolvedVersion
+	}
+
+	for addonName, addonVersion := range addonMap {
+		klog.Infof("creating addon %s version: %s", addonName, addonVersion)
 		input := eks.CreateAddonInput{
-			AddonName:    aws.String(name),
-			AddonVersion: aws.String(resolvedVersion),
+			AddonName:    aws.String(addonName),
+			AddonVersion: aws.String(addonVersion),
 			ClusterName:  aws.String(cluster.name),
 		}
-		_, err = m.clients.EKS().CreateAddon(context.TODO(), &input)
+		_, err := m.clients.EKS().CreateAddon(ctx, &input)
 		if err != nil {
 			return fmt.Errorf("failed to create addon: %v", err)
 		}
-		klog.Infof("waiting for addon to be active: %s", name)
+		klog.Infof("waiting for addon to be active: %s", addonName)
 		err = eks.NewAddonActiveWaiter(m.clients.EKS()).
-			Wait(context.TODO(), &eks.DescribeAddonInput{
+			Wait(ctx, &eks.DescribeAddonInput{
+				AddonName:   aws.String(addonName),
 				ClusterName: aws.String(cluster.name),
-				AddonName:   aws.String(name),
 			}, addonCreationTimeout)
 		if err != nil {
 			return fmt.Errorf("failed to wait for addon to be active: %v", err)
 		}
 	}
+
 	return nil
 }
 
