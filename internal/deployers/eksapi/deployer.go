@@ -209,6 +209,12 @@ func (d *deployer) Up() error {
 	if d.AMI != "" && d.ExpectedAMI == "" {
 		d.ExpectedAMI = d.AMI
 	}
+
+	// TODO: add the pod identity agent addons because it is required for
+	// cloudwatch infrastructure. cloudwatch infra might want to be optional.
+	// this must be prepended to the list in order to respect user overrides.
+	d.deployerOptions.Addons = slices.Insert(d.deployerOptions.Addons, 0, "eks-pod-identity-agent:default")
+
 	if err := d.addonManager.createAddons(d.infra, d.cluster, &d.deployerOptions); err != nil {
 		return err
 	}
