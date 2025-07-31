@@ -64,6 +64,7 @@ type deployerOptions struct {
 	CapacityReservation         bool          `flag:"capacity-reservation" desc:"Use capacity reservation for the unmanaged nodegroup"`
 	ClusterCreationTimeout      time.Duration `flag:"cluster-creation-timeout" desc:"Time to wait for cluster to be created and become active."`
 	ClusterRoleServicePrincipal string        `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
+	CloudWatchAgent             bool          `flag:"cloud-watch-agent" desc:"enable cloudwatch agent to deploy the cloud watch infra."`
 	EFA                         bool          `flag:"efa" desc:"Create EFA interfaces on the node of an unmanaged nodegroup. One instance type must be passed if set. Requires --unmanaged-nodes and --instance-types."`
 	EKSEndpointURL              string        `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
 	EmitMetrics                 bool          `flag:"emit-metrics" desc:"Record and emit metrics to CloudWatch"`
@@ -241,21 +242,23 @@ func (d *deployer) Up() error {
 		}
 	}
 
-	klog.Infof("Setting up CloudWatch infrastructure...")
-	if roleArn, err := d.infraManager.createCloudWatchInfrastructureStack(d.cluster.name); err != nil {
-		klog.Errorf("CloudWatch infrastructure setup failed: %v", err)
-		return err
-	} else {
-		d.infra.cloudwatchRoleArn = roleArn
-		klog.Infof("CloudWatch infrastructure setup completed")
+	if d.CloudWatchAgent {
+		klog.Infof("Setting up CloudWatch infrastructure...")
+		if roleArn, err := d.infraManager.createCloudWatchInfrastructureStack(d.cluster.name); err != nil {
+			klog.Errorf("CloudWatch infrastructure setup failed: %v", err)
+			return err
+		} else {
+			d.infra.cloudwatchRoleArn = roleArn
+			klog.Infof("CloudWatch infrastructure setup completed")
+		}
+		// Apply CloudWatch infrastructure manifest
+		manifest := templates.CloudWatchAgentRbac
+		if err := fwext.ApplyManifests(d.k8sClient.config, manifest); err != nil {
+			klog.Errorf("CloudWatch infrastructure manifest failed: %v", err)
+			return err
+		}
+		klog.Infof("CloudWatch infrastructure manifest applied successfully")
 	}
-	// Apply CloudWatch infrastructure manifest
-	manifest := templates.CloudWatchAgentRbac
-	if err := fwext.ApplyManifests(d.k8sClient.config, manifest); err != nil {
-		klog.Errorf("CloudWatch infrastructure manifest failed: %v", err)
-		return err
-	}
-	klog.Infof("CloudWatch infrastructure manifest applied successfully")
 	return nil
 }
 
