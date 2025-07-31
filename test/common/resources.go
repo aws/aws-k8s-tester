@@ -5,9 +5,7 @@ package common
 import (
 	"context"
 	"fmt"
-	"html/template"
 	"log"
-	"strings"
 	"time"
 
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
@@ -18,21 +16,9 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-// RenderCloudWatchAgentManifest renders the CloudWatch Agent manifest with dynamic dimensions
-func RenderCloudWatchAgentManifest(cloudWatchAgentManifest []byte, metricDimensions map[string]string) ([]byte, error) {
-	var keys []string
-	for key := range metricDimensions {
-		keys = append(keys, `"`+key+`"`)
-	}
-	dimensionsStr := strings.Join(keys, ", ")
-	return fwext.RenderManifests(cloudWatchAgentManifest, map[string]interface{}{
-		"MetricDimensions": metricDimensions,
-		"DimensionKeys":    template.HTML(dimensionsStr),
-	})
-}
-
 // DeployDaemonSet returns a function to deploy and wait for a DaemonSet to be ready
-func DeployDaemonSet(name, namespace string) env.Func {
+// If isOptional is true, failures will log warnings instead of returning errors
+func DeployDaemonSet(name, namespace string, isOptional bool) env.Func {
 	return func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 		log.Printf("Waiting for %s daemonset to be ready.", name)
 		daemonset := appsv1.DaemonSet{
@@ -44,8 +30,7 @@ func DeployDaemonSet(name, namespace string) env.Func {
 			wait.WithContext(ctx),
 		)
 		if err != nil {
-			// Do not fail test for optional daemonset failures
-			if name == "cwagent" || name == "dcgm-exporter" {
+			if isOptional {
 				log.Printf("Warning: %s daemonset is not ready: %v", name, err)
 				return ctx, nil
 			}

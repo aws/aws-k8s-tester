@@ -27,7 +27,10 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	fwext.InitFlags(&testConfig, &testConfig.MetricDimensions)
+	_, err := fwext.ParseFlags(&testConfig)
+	if err != nil {
+		log.Fatalf("failed to parse flags: %v", err)
+	}
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
 		log.Fatalf("failed to initialize test environment: %v", err)
@@ -38,7 +41,7 @@ func TestMain(m *testing.M) {
 	testenv = env.NewWithConfig(cfg).WithContext(ctx)
 
 	// Render CloudWatch Agent manifest with dynamic dimensions
-	renderedCloudWatchAgentManifest, err := common.RenderCloudWatchAgentManifest(manifests.CloudWatchAgentManifest, testConfig.MetricDimensions)
+	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(testConfig.MetricDimensions)
 	if err != nil {
 		log.Printf("Warning: failed to render CloudWatch Agent manifest: %v", err)
 	}
@@ -84,10 +87,10 @@ func TestMain(m *testing.M) {
 		},
 
 		// Wait for DaemonSets using helper
-		common.DeployDaemonSet("nvidia-device-plugin-daemonset", "kube-system"),
-		common.DeployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system"),
-		common.DeployDaemonSet("dcgm-exporter", "kube-system"),
-		common.DeployDaemonSet("cwagent", "amazon-cloudwatch"),
+		common.DeployDaemonSet("nvidia-device-plugin-daemonset", "kube-system", false),
+		common.DeployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system", false),
+		common.DeployDaemonSet("dcgm-exporter", "kube-system", true),
+		common.DeployDaemonSet("cwagent", "amazon-cloudwatch", true),
 		checkNodeTypes, // Dynamically check node types and capacities after device plugins are ready
 	)
 
