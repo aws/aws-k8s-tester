@@ -20,4 +20,7 @@ var (
 
 	//go:embed assets/dcgm-exporter.yaml
 	DCGMExporterManifest []byte
+
+	//go:embed assets/cloudwatch-agent.yaml
+	cloudWatchAgentManifestTemplate []byte
 )
