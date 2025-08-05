@@ -91,15 +91,21 @@ func TestMain(m *testing.M) {
 		// Wait for required DaemonSets
 		common.DeployDaemonSet("nvidia-device-plugin-daemonset", "kube-system"),
 		common.DeployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system"),
+
+		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
+			if len(testConfig.MetricDimensions) > 0 {
+				if ctx, err := common.DeployDaemonSet("dcgm-exporter", "kube-system")(ctx, config); err != nil {
+					return ctx, err
+				}
+				if ctx, err := common.DeployDaemonSet("cwagent", "amazon-cloudwatch")(ctx, config); err != nil {
+					return ctx, err
+				}
+			}
+			return ctx, nil
+		}, // Deploy CloudWatch Agent + DCGM only if MetricDimensions are set
+
 		checkNodeTypes, // Dynamically check node types and capacities after device plugins are ready
 	)
-
-	if len(testConfig.MetricDimensions) > 0 {
-		testenv.Setup(
-			common.DeployDaemonSet("dcgm-exporter", "kube-system"),
-			common.DeployDaemonSet("cwagent", "amazon-cloudwatch"),
-		)
-	}
 
 	testenv.Finish(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
