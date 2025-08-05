@@ -27,7 +27,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	_, err := fwext.ParseFlags(&testConfig)
+	_, err := common.ParseFlags(&testConfig)
 	if err != nil {
 		log.Fatalf("failed to parse flags: %v", err)
 	}
@@ -86,13 +86,19 @@ func TestMain(m *testing.M) {
 			return ctx, nil
 		},
 
-		// Wait for DaemonSets using helper
-		common.DeployDaemonSet("nvidia-device-plugin-daemonset", "kube-system", false),
-		common.DeployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system", false),
-		common.DeployDaemonSet("dcgm-exporter", "kube-system", true),
-		common.DeployDaemonSet("cwagent", "amazon-cloudwatch", true),
+		// Wait for required DaemonSets
+		common.DeployDaemonSet("nvidia-device-plugin-daemonset", "kube-system"),
+		common.DeployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system"),
 		checkNodeTypes, // Dynamically check node types and capacities after device plugins are ready
 	)
+
+	// Add monitoring daemonsets if MetricDimensions is configured
+	if len(testConfig.MetricDimensions) > 0 {
+		testenv.Setup(
+			common.DeployDaemonSet("dcgm-exporter", "kube-system"),
+			common.DeployDaemonSet("cwagent", "amazon-cloudwatch"),
+		)
+	}
 
 	testenv.Finish(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {

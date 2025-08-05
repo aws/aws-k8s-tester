@@ -17,8 +17,7 @@ import (
 )
 
 // DeployDaemonSet returns a function to deploy and wait for a DaemonSet to be ready
-// If isOptional is true, failures will log warnings instead of returning errors
-func DeployDaemonSet(name, namespace string, isOptional bool) env.Func {
+func DeployDaemonSet(name, namespace string) env.Func {
 	return func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 		log.Printf("Waiting for %s daemonset to be ready.", name)
 		daemonset := appsv1.DaemonSet{
@@ -30,10 +29,6 @@ func DeployDaemonSet(name, namespace string, isOptional bool) env.Func {
 			wait.WithContext(ctx),
 		)
 		if err != nil {
-			if isOptional {
-				log.Printf("Warning: %s daemonset is not ready: %v", name, err)
-				return ctx, nil
-			}
 			return ctx, fmt.Errorf("%s daemonset is not ready: %w", name, err)
 		}
 		log.Printf("%s daemonset is ready.", name)
