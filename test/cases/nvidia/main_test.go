@@ -5,7 +5,6 @@ package nvidia
 import (
 	"context"
 	_ "embed"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -14,8 +13,8 @@ import (
 	"testing"
 
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
+	"github.com/aws/aws-k8s-tester/test/common"
 	"github.com/aws/aws-k8s-tester/test/manifests"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,17 +25,22 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
+type Config struct {
+	common.MetricOps
+	NodeType               string `flag:"nodeType" desc:"node type for the tests"`
+	InstallDevicePlugin    bool   `flag:"installDevicePlugin" desc:"install nvidia device plugin"`
+	EfaEnabled             bool   `flag:"efaEnabled" desc:"enable efa tests"`
+	NvidiaTestImage        string `flag:"nvidiaTestImage" desc:"nccl test image for nccl tests"`
+	PytorchImage           string `flag:"pytorchImage" desc:"pytorch cuda image for single node tests"`
+	SkipUnitTestSubcommand string `flag:"skipUnitTestSubcommand" desc:"optional command to skip specified unit test"`
+}
+
 var (
-	testenv                env.Environment
-	nodeType               *string
-	installDevicePlugin    *bool
-	efaEnabled             *bool
-	nvidiaTestImage        *string
-	pytorchImage           *string
-	skipUnitTestSubcommand *string
-	nodeCount              int
-	gpuPerNode             int
-	efaPerNode             int
+	testenv    env.Environment
+	testConfig Config
+	nodeCount  int
+	gpuPerNode int
+	efaPerNode int
 )
 
 func deployMPIOperator(ctx context.Context, config *envconf.Config) (context.Context, error) {
@@ -48,31 +52,6 @@ func deployMPIOperator(ctx context.Context, config *envconf.Config) (context.Con
 	if err != nil {
 		return ctx, fmt.Errorf("failed to deploy mpi-operator: %v", err)
 	}
-	return ctx, nil
-}
-
-func deployNvidiaDevicePlugin(ctx context.Context, config *envconf.Config) (context.Context, error) {
-	ds := appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{Name: "nvidia-device-plugin-daemonset", Namespace: "kube-system"},
-	}
-	err := wait.For(fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&ds),
-		wait.WithContext(ctx))
-	if err != nil {
-		return ctx, fmt.Errorf("failed to deploy nvidia-device-plugin: %v", err)
-	}
-	return ctx, nil
-}
-
-func deployEFAPlugin(ctx context.Context, config *envconf.Config) (context.Context, error) {
-	ds := appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{Name: "aws-efa-k8s-device-plugin-daemonset", Namespace: "kube-system"},
-	}
-	err := wait.For(fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&ds),
-		wait.WithContext(ctx))
-	if err != nil {
-		return ctx, fmt.Errorf("failed to deploy efa-device-plugin: %v", err)
-	}
-
 	return ctx, nil
 }
 
@@ -93,9 +72,9 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		}
 	}
 
-	if *nodeType != "" {
+	if testConfig.NodeType != "" {
 		for _, v := range nodes.Items {
-			if v.Labels["node.kubernetes.io/instance-type"] == *nodeType {
+			if v.Labels["node.kubernetes.io/instance-type"] == testConfig.NodeType {
 				nodeCount++
 				gpu := v.Status.Capacity["nvidia.com/gpu"]
 				gpuPerNode = int(gpu.Value())
@@ -105,7 +84,7 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 		}
 	} else {
 		log.Printf("No node type specified. Using the node type %s in the node groups.", nodes.Items[0].Labels["node.kubernetes.io/instance-type"])
-		nodeType = aws.String(nodes.Items[0].Labels["node.kubernetes.io/instance-type"])
+		testConfig.NodeType = nodes.Items[0].Labels["node.kubernetes.io/instance-type"]
 		nodeCount = len(nodes.Items)
 		gpu := nodes.Items[0].Status.Capacity["nvidia.com/gpu"]
 		gpuPerNode = int(gpu.Value())
@@ -117,28 +96,38 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 }
 
 func TestMain(m *testing.M) {
-	nodeType = flag.String("nodeType", "", "node type for the tests")
-	nvidiaTestImage = flag.String("nvidiaTestImage", "", "nccl test image for nccl tests")
-	pytorchImage = flag.String("pytorchImage", "763104351884.dkr.ecr.us-west-2.amazonaws.com/pytorch-training:2.1.0-gpu-py310-cu121-ubuntu20.04-ec2", "pytorch cuda image for single node tests")
-	efaEnabled = flag.Bool("efaEnabled", false, "enable efa tests")
-	installDevicePlugin = flag.Bool("installDevicePlugin", true, "install nvidia device plugin")
-	skipUnitTestSubcommand = flag.String("skipUnitTestSubcommand", "", "optional command to skip specified unit test, `-s test1|test2|...`")
+	_, err := common.ParseFlags(&testConfig)
+	if err != nil {
+		log.Fatalf("failed to parse flags: %v", err)
+	}
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
 		log.Fatalf("failed to initialize test environment: %v", err)
 	}
-	testenv = env.NewWithConfig(cfg)
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
-	testenv = testenv.WithContext(ctx)
+	testenv = env.NewWithConfig(cfg).WithContext(ctx)
 
-	// all NVIDIA tests require the device plugin and MPI operator
-	deploymentManifests := [][]byte{
+	// Set default values
+	if testConfig.PytorchImage == "" {
+		testConfig.PytorchImage = "763104351884.dkr.ecr.us-west-2.amazonaws.com/pytorch-training:2.1.0-gpu-py310-cu121-ubuntu20.04-ec2"
+	}
+	if !testConfig.InstallDevicePlugin {
+		testConfig.InstallDevicePlugin = true
+	}
+
+	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(testConfig.MetricDimensions)
+	if err != nil {
+		log.Printf("Warning: failed to render CloudWatch Agent manifest: %v", err)
+	}
+
+	manifestsList := [][]byte{
 		manifests.MpiOperatorManifest,
 	}
-	setUpFunctions := []env.Func{
+	setupFunctions := []env.Func{
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			err := fwext.ApplyManifests(config.Client().RESTConfig(), deploymentManifests...)
+			err := fwext.ApplyManifests(config.Client().RESTConfig(), manifestsList...)
 			if err != nil {
 				return ctx, err
 			}
@@ -147,27 +136,32 @@ func TestMain(m *testing.M) {
 		deployMPIOperator,
 	}
 
-	if *installDevicePlugin {
-		deploymentManifests = append(deploymentManifests, manifests.NvidiaDevicePluginManifest)
-		setUpFunctions = append(setUpFunctions, deployNvidiaDevicePlugin)
+	if testConfig.InstallDevicePlugin {
+		manifestsList = append(manifestsList, manifests.NvidiaDevicePluginManifest)
+		setupFunctions = append(setupFunctions, common.DeployDaemonSet("nvidia-device-plugin-daemonset", "kube-system"))
 	}
 
-	if *efaEnabled {
-		deploymentManifests = append(deploymentManifests, manifests.EfaDevicePluginManifest)
-		setUpFunctions = append(setUpFunctions, deployEFAPlugin)
+	if testConfig.EfaEnabled {
+		manifestsList = append(manifestsList, manifests.EfaDevicePluginManifest)
+		setupFunctions = append(setupFunctions, common.DeployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system"))
 	}
 
-	setUpFunctions = append(setUpFunctions, checkNodeTypes)
-	testenv.Setup(setUpFunctions...)
+	setupFunctions = append(setupFunctions, checkNodeTypes)
+
+	if len(testConfig.MetricDimensions) > 0 {
+		manifestsList = append(manifestsList, manifests.DCGMExporterManifest, renderedCloudWatchAgentManifest)
+		setupFunctions = append(setupFunctions,
+			common.DeployDaemonSet("dcgm-exporter", "kube-system"),
+			common.DeployDaemonSet("cwagent", "amazon-cloudwatch"),
+		)
+	}
+
+	testenv.Setup(setupFunctions...)
 
 	testenv.Finish(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			err := fwext.DeleteManifests(cfg.Client().RESTConfig(), manifests.EfaDevicePluginManifest)
-			if err != nil {
-				return ctx, err
-			}
-			slices.Reverse(deploymentManifests)
-			err = fwext.DeleteManifests(config.Client().RESTConfig(), deploymentManifests...)
+			slices.Reverse(manifestsList)
+			err := fwext.DeleteManifests(config.Client().RESTConfig(), manifestsList...)
 			if err != nil {
 				return ctx, err
 			}
