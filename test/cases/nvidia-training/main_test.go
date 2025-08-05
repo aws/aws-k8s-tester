@@ -50,20 +50,22 @@ func TestMain(m *testing.M) {
 		manifests.NvidiaDevicePluginManifest,
 		manifests.MpiOperatorManifest,
 		manifests.EfaDevicePluginManifest,
-		manifests.DCGMExporterManifest,
-		renderedCloudWatchAgentManifest,
+	}
+
+	if len(testConfig.MetricDimensions) > 0 {
+		manifestsList = append(manifestsList, manifests.DCGMExporterManifest, renderedCloudWatchAgentManifest)
 	}
 
 	testenv.Setup(
 		// Apply all manifests
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Applying NVIDIA device plugin, MPI operator, EFA device plugin, DCGM Exporter and CloudWatch Agent manifests.")
+			log.Println("Applying manifests.")
 
 			err := fwext.ApplyManifests(config.Client().RESTConfig(), manifestsList...)
 			if err != nil {
 				return ctx, fmt.Errorf("failed to apply manifests: %w", err)
 			}
-			log.Println("Successfully applied NVIDIA device plugin, MPI operator, EFA device plugin, DCGM Exporter and CloudWatch Agent manifests.")
+			log.Println("Successfully applied manifests.")
 			return ctx, nil
 		},
 
@@ -92,7 +94,6 @@ func TestMain(m *testing.M) {
 		checkNodeTypes, // Dynamically check node types and capacities after device plugins are ready
 	)
 
-	// Add monitoring daemonsets if MetricDimensions is configured
 	if len(testConfig.MetricDimensions) > 0 {
 		testenv.Setup(
 			common.DeployDaemonSet("dcgm-exporter", "kube-system"),

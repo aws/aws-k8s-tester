@@ -23,7 +23,8 @@ func ParseFlags(config interface{}) (*pflag.FlagSet, error) {
 
 	// Handle MetricDimensions map that gpflag doesn't support
 	if _, hasField := reflect.TypeOf(config).Elem().FieldByName("MetricDimensions"); hasField {
-		metricDims := reflect.ValueOf(config).Elem().FieldByName("MetricDimensions").Addr().Interface().(*map[string]string)
+		field := reflect.ValueOf(config).Elem().FieldByName("MetricDimensions")
+		metricDims := field.Addr().Interface().(*map[string]string)
 		flags.StringToStringVar(metricDims, "metricDimensions", nil, "CloudWatch metric dimensions as comma-separated key=value pairs")
 	}
 
