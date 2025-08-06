@@ -3,25 +3,23 @@
 package training
 
 import (
-	"flag"
-
+	"github.com/aws/aws-k8s-tester/test/common"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 )
 
+type Config struct {
+	common.MetricOps
+	BertTrainingImage string `flag:"bertTrainingImage" desc:"Docker image used for BERT training workload"`
+	EfaEnabled        bool   `flag:"efaEnabled" desc:"Enable Elastic Fabric Adapter (EFA)"`
+	NodeType          string `flag:"nodeType" desc:"Instance type for cluster nodes"`
+}
+
 // Shared global variables
 var (
-	testenv           env.Environment
-	bertTrainingImage *string
-	efaEnabled        *bool
-	nodeType          *string
+	testenv    env.Environment
+	testConfig Config
 
 	nodeCount  int
 	gpuPerNode int
 	efaPerNode int
 )
-
-func init() {
-	bertTrainingImage = flag.String("bertTrainingImage", "", "Docker image used for BERT training workload")
-	efaEnabled = flag.Bool("efaEnabled", false, "Enable Elastic Fabric Adapter (EFA)")
-	nodeType = flag.String("nodeType", "", "Instance type for cluster nodes")
-}
