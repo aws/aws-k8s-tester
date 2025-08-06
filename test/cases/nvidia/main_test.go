@@ -125,7 +125,17 @@ func TestMain(m *testing.M) {
 	manifestsList := [][]byte{
 		manifests.MpiOperatorManifest,
 	}
-	setupFunctions := []env.Func{
+	if testConfig.InstallDevicePlugin {
+		manifestsList = append(manifestsList, manifests.NvidiaDevicePluginManifest)
+	}
+	if testConfig.EfaEnabled {
+		manifestsList = append(manifestsList, manifests.EfaDevicePluginManifest)
+	}
+	if len(testConfig.MetricDimensions) > 0 {
+		manifestsList = append(manifestsList, manifests.DCGMExporterManifest, renderedCloudWatchAgentManifest)
+	}
+
+	testenv.Setup(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 			err := fwext.ApplyManifests(config.Client().RESTConfig(), manifestsList...)
 			if err != nil {
@@ -134,29 +144,35 @@ func TestMain(m *testing.M) {
 			return ctx, nil
 		},
 		deployMPIOperator,
-	}
 
-	if testConfig.InstallDevicePlugin {
-		manifestsList = append(manifestsList, manifests.NvidiaDevicePluginManifest)
-		setupFunctions = append(setupFunctions, common.DeployDaemonSet("nvidia-device-plugin-daemonset", "kube-system"))
-	}
+		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
+			if testConfig.InstallDevicePlugin {
+				if ctx, err := common.DeployDaemonSet("nvidia-device-plugin-daemonset", "kube-system")(ctx, config); err != nil {
+					return ctx, err
+				}
+			}
+			if testConfig.EfaEnabled {
+				if ctx, err := common.DeployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system")(ctx, config); err != nil {
+					return ctx, err
+				}
+			}
+			return ctx, nil
+		}, // Deploy device plugins conditionally
 
-	if testConfig.EfaEnabled {
-		manifestsList = append(manifestsList, manifests.EfaDevicePluginManifest)
-		setupFunctions = append(setupFunctions, common.DeployDaemonSet("aws-efa-k8s-device-plugin-daemonset", "kube-system"))
-	}
+		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
+			if len(testConfig.MetricDimensions) > 0 {
+				if ctx, err := common.DeployDaemonSet("dcgm-exporter", "kube-system")(ctx, config); err != nil {
+					return ctx, err
+				}
+				if ctx, err := common.DeployDaemonSet("cwagent", "amazon-cloudwatch")(ctx, config); err != nil {
+					return ctx, err
+				}
+			}
+			return ctx, nil
+		}, // Deploy CloudWatch Agent + DCGM only if MetricDimensions are set
 
-	setupFunctions = append(setupFunctions, checkNodeTypes)
-
-	if len(testConfig.MetricDimensions) > 0 {
-		manifestsList = append(manifestsList, manifests.DCGMExporterManifest, renderedCloudWatchAgentManifest)
-		setupFunctions = append(setupFunctions,
-			common.DeployDaemonSet("dcgm-exporter", "kube-system"),
-			common.DeployDaemonSet("cwagent", "amazon-cloudwatch"),
-		)
-	}
-
-	testenv.Setup(setupFunctions...)
+		checkNodeTypes, // Dynamically check node types and capacities after device plugins are ready
+	)
 
 	testenv.Finish(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
