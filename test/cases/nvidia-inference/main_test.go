@@ -44,11 +44,11 @@ func TestMain(m *testing.M) {
 
 	_, err := common.ParseFlags(&testConfig)
 	if err != nil {
-		log.Fatalf("failed to parse flags: %v", err)
+		log.Fatalf("[ERROR] Failed to parse flags: %v", err)
 	}
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
-		log.Fatalf("failed to initialize test environment: %v", err)
+		log.Fatalf("[ERROR] Failed to initialize test environment: %v", err)
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -63,19 +63,19 @@ func TestMain(m *testing.M) {
 		// Render CloudWatch Agent manifest with dynamic dimensions
 		renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(testConfig.MetricDimensions)
 		if err != nil {
-			log.Printf("Warning: failed to render CloudWatch Agent manifest: %v", err)
+			log.Printf("Warning: Failed to render CloudWatch Agent manifest: %v", err)
 		}
 		manifestsList = append(manifestsList, manifests.DCGMExporterManifest, renderedCloudWatchAgentManifest)
 	}
 
 	testenv.Setup(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Applying manifests.")
+			log.Println("[INFO] Applying manifests.")
 			err := fwext.ApplyManifests(config.Client().RESTConfig(), manifestsList...)
 			if err != nil {
-				return ctx, fmt.Errorf("failed to apply manifests: %w", err)
+				return ctx, fmt.Errorf("[ERROR] Failed to apply manifests: %w", err)
 			}
-			log.Println("Successfully applied manifests.")
+			log.Println("[INFO] Successfully applied manifests.")
 			return ctx, nil
 		},
 		common.DeployDaemonSet("nvidia-device-plugin-daemonset", "kube-system"),
@@ -95,20 +95,19 @@ func TestMain(m *testing.M) {
 
 	testenv.Finish(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			log.Println("Deleting NVIDIA device plugin, DCGM Exporter and CloudWatch Agent manifests.")
+			log.Println("[INFO] Deleting manifests.")
 			slices.Reverse(manifestsList)
 			err := fwext.DeleteManifests(config.Client().RESTConfig(), manifestsList...)
 			if err != nil {
-				return ctx, fmt.Errorf("failed to delete manifests: %w", err)
+				return ctx, fmt.Errorf("[ERROR] failed to delete manifests: %w", err)
 			}
-			log.Println("Successfully deleted NVIDIA device plugin, DCGM Exporter and CloudWatch Agent manifests.")
+			log.Println("[INFO] Successfully deleted manifests.")
 			return ctx, nil
 		},
 	)
 
-	log.Println("Starting tests...")
 	exitCode := testenv.Run(m)
-	log.Printf("Tests finished with exit code %d", exitCode)
+	log.Printf("[INFO] Tests finished with exit code %d", exitCode)
 	os.Exit(exitCode)
 }
 
