@@ -85,6 +85,8 @@ source /var/lib/cloud/scripts/eksctl/bootstrap.helper.sh
 source /var/lib/cloud/scripts/eksctl/bootstrap.helper.sh
 /etc/eks/bootstrap.sh %s --kubelet-extra-args "--node-labels=${NODE_LABELS}"`, d.clusterName)
 			mng.OverrideBootstrapCommand = &bootstrapCommand
+		} else if d.AMI != "" && amiFamily == eksctl_api.NodeImageFamilyBottlerocket {
+			mng.AMI = d.AMI
 		}
 	}
 	return cfg, nil

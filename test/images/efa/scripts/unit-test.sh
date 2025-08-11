@@ -41,4 +41,10 @@ else
     echo "Verified at least $EXPECTED_EFA_DEVICE_COUNT RDM endpoint(s) are available (found $RDM_ENDPOINT_COUNT)"
 fi
 
+
+echo "Running single-node efa test"
+
+# Run efa_test.sh, a utility added during the build while installing EFA
+efa_test.sh
+
 echo "Success!"

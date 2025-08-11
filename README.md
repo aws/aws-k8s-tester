@@ -46,6 +46,17 @@ kubetest2 \
 - `--ami` - AMI ID for nodes
 - `--nodes` - number of nodes
 - `--region` - AWS region
+- `--config-file` - Path to eksctl config file (**if provided, other flags are ignored**)
+- `--availability-zones` - Node availability zones
+- `--ami-family` - AMI family to use: `AmazonLinux2023` | `Bottlerocket`
+- `--efa-enabled` - Enable Elastic Fabric Adapter for the nodegroup
+- `--volume-size` - Size of the node root volume in GB
+- `--private-networking` - Use private networking for nodes
+- `--with-oidc` - Enable OIDC provider for IAM roles for service accounts
+- `--deploy-target` - The target to deploy: `cluster` | `nodegroup` (defaults to `cluster`)
+- `--cluster-name` - Name of the EKS cluster (defaults to RunID if not specified)
+- `--unmanaged-nodegroup` - Use unmanaged nodegroup instead of managed nodegroup
+- `--nodegroup-name` - Name of the nodegroup (defaults to `ng-1`)
 
 ---
 

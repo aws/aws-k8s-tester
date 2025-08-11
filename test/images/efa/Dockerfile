@@ -1,5 +1,7 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:2023
 
+ARG EFA_BIN_PATH="/opt/amazon/efa/bin"
+
 RUN dnf -y swap gnupg2-minimal gnupg2 && \
     dnf install -y \
     gcc gcc-c++ make \  
@@ -25,7 +27,7 @@ RUN dnf -y swap gnupg2-minimal gnupg2 && \
     tar \
     gnupg2 
 
-ENV PATH="$PATH:/opt/amazon/efa/bin"
+ENV PATH="$PATH:$EFA_BIN_PATH"
 
 RUN cd $HOME \
     && curl -O https://efa-installer.amazonaws.com/aws-efa-installer-latest.tar.gz \
@@ -35,6 +37,10 @@ RUN cd $HOME \
     && tar -xf aws-efa-installer-latest.tar.gz \
     && cd aws-efa-installer \
     && ./efa_installer.sh -y -d --skip-kmod --skip-limit-conf --no-verify \
+    # TODO: remove this in favor of letting the efa installer add it if that ever becomes an option.
+    # At the moment, this is only installed if omitting --no-verify, which would require
+    # building in a context with EFA available
+    && install -T -m 0755 efa_test.sh "${EFA_BIN_PATH}/efa_test.sh" \
     && cd $HOME \
     && rm -rf aws-efa-installer
 

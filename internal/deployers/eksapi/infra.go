@@ -479,7 +479,7 @@ func (m *InfrastructureManager) getAZsWithCapacity(opts *deployerOptions) ([]str
 
 func getCloudWatchStackName(resourceID string) (string, string) {
 	clusterUUID := strings.TrimPrefix(resourceID, ResourcePrefix+"-")
-	return fmt.Sprintf("cloudwatch-%s", clusterUUID), clusterUUID
+	return fmt.Sprintf("%s-cw", resourceID), clusterUUID
 }
 
 func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName string) (string, error) {

@@ -64,6 +64,7 @@ type deployerOptions struct {
 	CapacityReservation         bool          `flag:"capacity-reservation" desc:"Use capacity reservation for the unmanaged nodegroup"`
 	ClusterCreationTimeout      time.Duration `flag:"cluster-creation-timeout" desc:"Time to wait for cluster to be created and become active."`
 	ClusterRoleServicePrincipal string        `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
+	DeployCloudwatchInfra       bool          `flag:"deploy-cloudwatch-infra" desc:"Deploy required infrastructure for emitting metrics to CloudWatch"`
 	EFA                         bool          `flag:"efa" desc:"Create EFA interfaces on the node of an unmanaged nodegroup. One instance type must be passed if set. Requires --unmanaged-nodes and --instance-types."`
 	EKSEndpointURL              string        `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
 	EmitMetrics                 bool          `flag:"emit-metrics" desc:"Record and emit metrics to CloudWatch"`
@@ -209,6 +210,7 @@ func (d *deployer) Up() error {
 	if d.AMI != "" && d.ExpectedAMI == "" {
 		d.ExpectedAMI = d.AMI
 	}
+
 	if err := d.addonManager.createAddons(d.infra, d.cluster, &d.deployerOptions); err != nil {
 		return err
 	}
@@ -235,21 +237,23 @@ func (d *deployer) Up() error {
 		}
 	}
 
-	klog.Infof("Setting up CloudWatch infrastructure...")
-	if roleArn, err := d.infraManager.createCloudWatchInfrastructureStack(d.cluster.name); err != nil {
-		klog.Errorf("CloudWatch infrastructure setup failed: %v", err)
-		return err
-	} else {
-		d.infra.cloudwatchRoleArn = roleArn
-		klog.Infof("CloudWatch infrastructure setup completed")
+	if d.DeployCloudwatchInfra {
+		klog.Infof("Setting up CloudWatch infrastructure...")
+		if roleArn, err := d.infraManager.createCloudWatchInfrastructureStack(d.cluster.name); err != nil {
+			klog.Errorf("CloudWatch infrastructure setup failed: %v", err)
+			return err
+		} else {
+			d.infra.cloudwatchRoleArn = roleArn
+			klog.Infof("CloudWatch infrastructure setup completed")
+		}
+		// Apply CloudWatch infrastructure manifest
+		manifest := templates.CloudWatchAgentRbac
+		if err := fwext.ApplyManifests(d.k8sClient.config, manifest); err != nil {
+			klog.Errorf("CloudWatch infrastructure manifest failed: %v", err)
+			return err
+		}
+		klog.Infof("CloudWatch infrastructure manifest applied successfully")
 	}
-	// Apply CloudWatch infrastructure manifest
-	manifest := templates.CloudWatchAgentRbac
-	if err := fwext.ApplyManifests(d.k8sClient.config, manifest); err != nil {
-		klog.Errorf("CloudWatch infrastructure manifest failed: %v", err)
-		return err
-	}
-	klog.Infof("CloudWatch infrastructure manifest applied successfully")
 	return nil
 }
 
@@ -324,6 +328,11 @@ func (d *deployer) verifyUpFlags() error {
 			d.AMIType = "AL2023_x86_64_STANDARD"
 			klog.Infof("Using default AMI type: %s", d.AMIType)
 		}
+	}
+	if d.DeployCloudwatchInfra {
+		klog.Infof("Prepending pod identity agent to the list of addons because cloudwatch infrastructure deployment was enabled")
+		// this must be prepended to the list in order to respect user overrides.
+		d.deployerOptions.Addons = slices.Insert(d.deployerOptions.Addons, 0, "eks-pod-identity-agent:default")
 	}
 	return nil
 }

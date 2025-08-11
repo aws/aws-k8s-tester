@@ -36,12 +36,6 @@ Resources:
       Namespace: amazon-cloudwatch
       ServiceAccount: cwagent
       RoleArn: !GetAtt CloudWatchRole.Arn
-  
-  EksPodIdentityAgentAddon:
-    Type: AWS::EKS::Addon
-    Properties:
-      AddonName: eks-pod-identity-agent
-      ClusterName: !Ref ClusterName
 
 Outputs:
   CloudWatchRoleArn:
