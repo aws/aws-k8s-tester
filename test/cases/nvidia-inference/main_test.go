@@ -28,7 +28,6 @@ type TestConfig struct {
 	BertInferenceImage string `flag:"bertInferenceImage" desc:"BERT inference container image"`
 	InferenceMode      string `flag:"inferenceMode" desc:"Inference mode for BERT (throughput or latency)"`
 	GpuRequested       int    `flag:"gpuRequested" desc:"Number of GPUs required for inference"`
-	NodeType           string `flag:"nodeType" desc:"Instance type for cluster nodes"`
 }
 
 var (
@@ -37,6 +36,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	// Initialize testConfig with default values
 	testConfig = TestConfig{
 		InferenceMode: "throughput",
 		GpuRequested:  1,
@@ -55,17 +55,16 @@ func TestMain(m *testing.M) {
 	defer cancel()
 	testenv = env.NewWithConfig(cfg).WithContext(ctx)
 
-	// Render CloudWatch Agent manifest with dynamic dimensions
-	renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(testConfig.MetricDimensions)
-	if err != nil {
-		log.Printf("Warning: failed to render CloudWatch Agent manifest: %v", err)
-	}
-
 	manifestsList := [][]byte{
 		manifests.NvidiaDevicePluginManifest,
 	}
 
 	if len(testConfig.MetricDimensions) > 0 {
+		// Render CloudWatch Agent manifest with dynamic dimensions
+		renderedCloudWatchAgentManifest, err := manifests.RenderCloudWatchAgentManifest(testConfig.MetricDimensions)
+		if err != nil {
+			log.Printf("Warning: failed to render CloudWatch Agent manifest: %v", err)
+		}
 		manifestsList = append(manifestsList, manifests.DCGMExporterManifest, renderedCloudWatchAgentManifest)
 	}
 
