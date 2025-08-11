@@ -96,6 +96,11 @@ func checkNodeTypes(ctx context.Context, config *envconf.Config) (context.Contex
 }
 
 func TestMain(m *testing.M) {
+	testConfig = Config{
+		InstallDevicePlugin: true,
+		PytorchImage:        "763104351884.dkr.ecr.us-west-2.amazonaws.com/pytorch-training:2.1.0-gpu-py310-cu121-ubuntu20.04-ec2",
+	}
+
 	_, err := common.ParseFlags(&testConfig)
 	if err != nil {
 		log.Fatalf("failed to parse flags: %v", err)
@@ -108,16 +113,6 @@ func TestMain(m *testing.M) {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 	testenv = env.NewWithConfig(cfg).WithContext(ctx)
-
-	testConfig = Config{
-		MetricOps:              testConfig.MetricOps,
-		NodeType:               testConfig.NodeType,
-		InstallDevicePlugin:    true,
-		EfaEnabled:             testConfig.EfaEnabled,
-		NvidiaTestImage:        testConfig.NvidiaTestImage,
-		PytorchImage:           "763104351884.dkr.ecr.us-west-2.amazonaws.com/pytorch-training:2.1.0-gpu-py310-cu121-ubuntu20.04-ec2",
-		SkipUnitTestSubcommand: testConfig.SkipUnitTestSubcommand,
-	}
 
 	manifestsList := [][]byte{
 		manifests.MpiOperatorManifest,
