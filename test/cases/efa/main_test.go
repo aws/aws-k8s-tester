@@ -68,7 +68,8 @@ func TestMain(m *testing.M) {
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	timedCtx, _ := context.WithTimeout(ctx, 55*time.Minute)
+	defer cancel()
+	timedCtx, cancel := context.WithTimeout(ctx, 55*time.Minute)
 	defer cancel()
 
 	testenv = env.NewWithConfig(cfg)
