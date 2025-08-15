@@ -100,9 +100,10 @@ func multiNode(testName string) features.Feature {
 		Assess("MPIJob succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			mpiJob := mpijobs.NewUnstructured(jobName, "default")
 			t.Log("Waiting for multi node job to complete")
+			waitCtx, cancel := context.WithTimeout(ctx, 20*time.Minute)
+			defer cancel()
 			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(mpiJob, mpijobs.MPIJobSucceeded),
-				wait.WithContext(ctx),
-				wait.WithTimeout(20*time.Minute),
+				wait.WithContext(waitCtx),
 			)
 			if err != nil {
 				t.Error(err)
