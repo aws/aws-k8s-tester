@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-k8s-tester/internal/awssdk"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
-	"github.com/octago/sflags/gen/gpflag"
+	"github.com/urfave/sflags/gen/gpflag"
 	"github.com/spf13/pflag"
 	"k8s.io/klog"
 	"sigs.k8s.io/kubetest2/pkg/types"

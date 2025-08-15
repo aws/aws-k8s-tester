@@ -31,7 +31,7 @@ import (
 	"strings"
 
 	"github.com/kballard/go-shellquote"
-	"github.com/octago/sflags/gen/gpflag"
+	"github.com/urfave/sflags/gen/gpflag"
 	"k8s.io/klog/v2"
 
 	"sigs.k8s.io/kubetest2/pkg/artifacts"

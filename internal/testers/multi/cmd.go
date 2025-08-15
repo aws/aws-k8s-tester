@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-k8s-tester/internal"
-	"github.com/octago/sflags/gen/gpflag"
+	"github.com/urfave/sflags/gen/gpflag"
 	"k8s.io/klog"
 	"sigs.k8s.io/kubetest2/pkg/app/shim"
 	"sigs.k8s.io/kubetest2/pkg/artifacts"
