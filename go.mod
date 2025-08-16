@@ -1,6 +1,6 @@
 module github.com/aws/aws-k8s-tester
 
-go 1.25.0
+go 1.24.4
 
 require (
 	github.com/aws/aws-sdk-go v1.55.8
