@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+set -o errexit
+set -o nounset
+set -o pipefail
+
 TRACE_LOG=trace.log
 TEST_TIMEOUT=1800
 BASH="/usr/bin/bash"
