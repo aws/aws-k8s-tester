@@ -15,7 +15,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
-	"github.com/octago/sflags/gen/gpflag"
+	"github.com/urfave/sflags/gen/gpflag"
 	"github.com/spf13/pflag"
 	"golang.org/x/exp/slices"
 	"k8s.io/klog"

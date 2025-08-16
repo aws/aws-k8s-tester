@@ -5,7 +5,7 @@ package common
 import (
 	"flag"
 	"fmt"
-	"github.com/octago/sflags/gen/gpflag"
+	"github.com/urfave/sflags/gen/gpflag"
 	"github.com/spf13/pflag"
 	"reflect"
 )
