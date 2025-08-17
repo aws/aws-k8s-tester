@@ -72,7 +72,7 @@ RUN git clone https://github.com/NVIDIA/nvbandwidth.git --branch $NVBANDWIDTH_VE
  && cd && rm -rf /tmp/cuda-samples
 
 # Install NCCL
-ARG LIBNCCL_VERSION=2.27.6-1
+ARG LIBNCCL_VERSION=2.27.7-1
 RUN git clone https://github.com/NVIDIA/nccl.git --branch v$LIBNCCL_VERSION /tmp/nccl \
  && cd /tmp/nccl \
  && make -j $(nproc) \
@@ -80,7 +80,7 @@ RUN git clone https://github.com/NVIDIA/nccl.git --branch v$LIBNCCL_VERSION /tmp
  && cd && rm -rf /tmp/nccl
 
 # Install AWS-OFI-NCCL plugin
-ARG AWS_OFI_NCCL_VERSION=1.16.2
+ARG AWS_OFI_NCCL_VERSION=1.16.3
 RUN curl -sL https://github.com/aws/aws-ofi-nccl/releases/download/v$AWS_OFI_NCCL_VERSION/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION.tar.gz | tar xvz -C /tmp \
  && cd /tmp/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION \
  && ./configure \
