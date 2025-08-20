@@ -166,7 +166,9 @@ func singleNode() features.Feature {
 			ctx = context.WithValue(ctx, "mpiJob", mpiJob)
 			t.Log("Waiting for single node job to complete")
 			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).ResourceMatch(mpiJob, mpijobs.MPIJobSucceeded),
-				wait.WithContext(ctx))
+				wait.WithContext(ctx),
+				wait.WithTimeout(10*time.Minute),
+			)
 			if err != nil {
 				t.Error(err)
 			} else {
