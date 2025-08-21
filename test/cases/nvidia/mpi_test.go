@@ -63,12 +63,12 @@ func multiNode(testName string) features.Feature {
 		WithLabel("hardware", "gpu").
 		WithLabel("hardware", "efa").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			if *nvidiaTestImage == "" {
+			if testConfig.NvidiaTestImage == "" {
 				t.Fatal(fmt.Errorf("nvidiaTestImage must be set to run unit test, use https://github.com/aws/aws-k8s-tester/blob/main/test/images/nvidia/Dockerfile to build the image and -nvidiaTestImage to set the image url"))
 			}
 			maxBytes := "2G"
 			ncclBuffSize := "4194304"
-			if slices.Contains(instanceSupportsRdmaRead, *nodeType) {
+			if slices.Contains(instanceSupportsRdmaRead, testConfig.NodeType) {
 				t.Log("Instance supports RDMA")
 				maxBytes = "16G"
 				ncclBuffSize = "8388608"
@@ -79,7 +79,7 @@ func multiNode(testName string) features.Feature {
 				WorkerNodeCount:     nodeCount,
 				WorkerNodeGpuCount:  nodeCount * gpuPerNode,
 				GpuPerNode:          gpuPerNode,
-				NvidiaTestImage:     *nvidiaTestImage,
+				NvidiaTestImage:     testConfig.NvidiaTestImage,
 				EfaInterfacePerNode: efaPerNode,
 				MaxBytes:            maxBytes,
 				NcclBuffSize:        ncclBuffSize,
@@ -118,10 +118,10 @@ func multiNode(testName string) features.Feature {
 			if !t.Failed() {
 				t.Log("Multi node job completed")
 				// Verify GPU Direct RDMA is used on P4/P5
-				if *efaEnabled && slices.Contains(instanceSupportsRdmaRead, *nodeType) {
+				if testConfig.EfaEnabled && slices.Contains(instanceSupportsRdmaRead, testConfig.NodeType) {
 					pattern := regexp.MustCompile(`\[send\] via NET/.*Libfabric/.*/GDRDMA`)
 					if !pattern.MatchString(log) {
-						t.Errorf("GPU Direct RDMA is not utilized for inter-node communication in NCCL tests on instances that support GDRDMA: %s", *nodeType)
+						t.Errorf("GPU Direct RDMA is not utilized for inter-node communication in NCCL tests on instances that support GDRDMA: %s", testConfig.NodeType)
 					}
 				}
 			}
@@ -149,7 +149,7 @@ func singleNode() features.Feature {
 			renderedSingleNodeManifest, err = fwext.RenderManifests(mpiJobPytorchTrainingSingleNodeManifest, struct {
 				PytorchTestImage string
 			}{
-				PytorchTestImage: *pytorchImage,
+				PytorchTestImage: testConfig.PytorchImage,
 			})
 			if err != nil {
 				t.Fatal(err)
