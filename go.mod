@@ -16,7 +16,7 @@ require (
 	github.com/aws/smithy-go v1.22.5
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/spf13/pflag v1.0.7
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	golang.org/x/exp v0.0.0-20250819193227-8b4c13bb791b
 	k8s.io/api v0.33.4
 	k8s.io/apimachinery v0.33.4
@@ -302,7 +302,7 @@ require (
 	github.com/weaveworks/eksctl v0.212.0
 	k8s.io/cli-runtime v0.33.4
 	k8s.io/cloud-provider-aws v1.33.1
-	sigs.k8s.io/e2e-framework v0.6.0
+	sigs.k8s.io/e2e-framework v0.6.1-0.20250826125013-7b9f7914ab82 // bump version once https://github.com/kubernetes-sigs/e2e-framework/pull/517 gets released
 )
 
 require (
@@ -347,6 +347,7 @@ require (
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
+	github.com/vladimirvivien/gexe v0.5.0 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.35.0 // indirect
@@ -356,7 +357,7 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/gcfg.v1 v1.2.3 // indirect
 	k8s.io/cloud-provider v0.33.2 // indirect
-	k8s.io/component-base v0.33.2 // indirect
+	k8s.io/component-base v0.33.4 // indirect
 	k8s.io/kubelet v0.33.0 // indirect
 	sigs.k8s.io/kustomize/api v0.19.0 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.19.0 // indirect
