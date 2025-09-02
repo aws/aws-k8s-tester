@@ -15,6 +15,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -35,6 +36,7 @@ type k8sClient struct {
 	config    *rest.Config
 	clientset kubernetes.Interface
 	client    client.Client
+	dclient   *dynamic.DynamicClient
 }
 
 func newK8sClient(kubeconfigPath string) (*k8sClient, error) {
@@ -46,6 +48,7 @@ func newK8sClient(kubeconfigPath string) (*k8sClient, error) {
 		config:    config,
 		clientset: kubernetes.NewForConfigOrDie(config),
 		client:    util.Must(client.New(config, client.Options{})),
+		dclient:   util.Must(dynamic.NewForConfig(config)),
 	}, nil
 }
 
