@@ -22,6 +22,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/pointer"
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
@@ -62,6 +63,7 @@ var (
 		ekstypes.AMITypesAl2023X8664Standard: defaultInstanceTypes_x86_64,
 		ekstypes.AMITypesAl2023Arm64Standard: defaultInstanceTypes_arm64,
 	}
+	nodeClassResource = schema.GroupVersionResource{Group: "eks.amazonaws.com", Version: "v1", Resource: "nodeclasses"}
 )
 
 type nodeManager struct {
@@ -81,6 +83,9 @@ func (m *nodeManager) createNodes(infra *Infrastructure, cluster *Cluster, opts 
 		return fmt.Errorf("failed to resolve instance types: %v", err)
 	}
 	if opts.AutoMode {
+		if err := m.createNodeClass(opts, k8sClient); err != nil {
+			return err
+		}
 		if err := m.createNodePool(opts, k8sClient); err != nil {
 			return err
 		}
@@ -150,6 +155,36 @@ func (m *nodeManager) resolveInstanceTypes(opts *deployerOptions) (err error) {
 	return nil
 }
 
+func (m *nodeManager) createNodeClass(opts *deployerOptions, k8sClient *k8sClient) error {
+	nodeclass, err := k8sClient.dclient.Resource(nodeClassResource).Get(context.Background(), "default", metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("getting default nodeclass, %w", err)
+	}
+	klog.Infof("got existing default nodeclass for template..")
+
+	// clear out the metadata and set the name only
+	nodeclass.Object["metadata"] = map[string]interface{}{}
+	nodeclass.SetName(m.resourceID)
+
+	// clear out the status
+	delete(nodeclass.Object, "status")
+
+	// update the ephemeral storage spec to be 500Gi
+	if spec, ok := nodeclass.Object["spec"].(map[string]interface{}); ok {
+		if ephemeralStorage, ok := spec["ephemeralStorage"].(map[string]interface{}); ok {
+			ephemeralStorage["size"] = "500Gi"
+		}
+	}
+
+	klog.Infof("creating new node class...")
+	_, err = k8sClient.dclient.Resource(nodeClassResource).Create(context.Background(), nodeclass, metav1.CreateOptions{})
+	if err != nil {
+		return fmt.Errorf("creating new nodeclass, %w", err)
+	}
+	klog.Infof("node class created!")
+	return nil
+}
+
 func (m *nodeManager) createNodePool(opts *deployerOptions, k8sClient *k8sClient) error {
 	nodePool := karpv1.NodePool{
 		ObjectMeta: metav1.ObjectMeta{
@@ -172,7 +207,7 @@ func (m *nodeManager) createNodePool(opts *deployerOptions, k8sClient *k8sClient
 					NodeClassRef: &karpv1.NodeClassReference{
 						Group: "eks.amazonaws.com",
 						Kind:  "NodeClass",
-						Name:  "default",
+						Name:  m.resourceID,
 					},
 					Requirements: []karpv1.NodeSelectorRequirementWithMinValues{
 						{
@@ -209,6 +244,19 @@ func (m *nodeManager) createNodePool(opts *deployerOptions, k8sClient *k8sClient
 	return nil
 }
 
+func (m *nodeManager) deleteNodeClass(k8sClient *k8sClient) error {
+	klog.Infof("deleting node class...")
+	if err := k8sClient.dclient.Resource(nodeClassResource).Delete(context.Background(), m.resourceID, metav1.DeleteOptions{}); err != nil {
+		if apierrors.IsNotFound(err) {
+			klog.Infof("node class does not exist: %s", m.resourceID)
+			return nil
+		}
+		return fmt.Errorf("failed to delete node class, %w", err)
+	}
+	klog.Infof("deleted node class!")
+	return nil
+}
+
 func (m *nodeManager) deleteNodePool(k8sClient *k8sClient) error {
 	nodePool := karpv1.NodePool{
 		ObjectMeta: metav1.ObjectMeta{
@@ -221,7 +269,7 @@ func (m *nodeManager) deleteNodePool(k8sClient *k8sClient) error {
 			klog.Infof("node pool does not exist: %s", m.resourceID)
 			return nil
 		}
-		return fmt.Errorf("failed to delete node pool: %v", err)
+		return fmt.Errorf("failed to delete node pool: %w", err)
 	}
 	klog.Infof("deleted node pool!")
 	return nil
@@ -483,6 +531,9 @@ func (m *nodeManager) deleteNodes(k8sClient *k8sClient, opts *deployerOptions) e
 	// TODO implement cleanup of Auto nodes in the janitor
 	if k8sClient != nil && opts != nil && opts.AutoMode {
 		if err := m.deletePlaceholderDeployment(k8sClient); err != nil {
+			return err
+		}
+		if err := m.deleteNodeClass(k8sClient); err != nil {
 			return err
 		}
 		if err := m.deleteNodePool(k8sClient); err != nil {
