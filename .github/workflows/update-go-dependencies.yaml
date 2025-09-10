@@ -22,7 +22,7 @@ jobs:
           branch: update-go-dependencies
           base: main
           add-paths: |
-            go.*
+            .
           commit-message: "chore: update go dependencies"
           committer: "GitHub <noreply@github.com>"
           author: "GitHub <noreply@github.com>"
