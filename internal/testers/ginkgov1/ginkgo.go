@@ -68,7 +68,7 @@ type Tester struct {
 
 // Test runs the test
 func (t *Tester) Test() error {
-	if err := testers.WriteVersionToMetadata(GitTag); err != nil {
+	if err := testers.WriteVersionToMetadata(GitTag, ""); err != nil {
 		return err
 	}
 

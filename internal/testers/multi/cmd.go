@@ -80,7 +80,7 @@ func execute() error {
 		return nil
 	}
 
-	if err := testers.WriteVersionToMetadata(internal.Version); err != nil {
+	if err := testers.WriteVersionToMetadata(internal.Version, ""); err != nil {
 		return err
 	}
 
