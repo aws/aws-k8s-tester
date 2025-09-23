@@ -31,3 +31,5 @@ jobs:
           ```
           ./hack/update-neuron-dependencies.sh
           ```
+
+          See the following URL for artifactes in the latest Neuron SDK release: https://awsdocs-neuron.readthedocs-hosted.com/en/latest/release-notes/releasecontent.html#latest-neuron-release-artifacts
