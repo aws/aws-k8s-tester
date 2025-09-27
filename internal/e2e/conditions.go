@@ -32,6 +32,23 @@ func (c *ConditionExtension) ResourceMatch(obj k8s.Object, matchFetcher func(obj
 	}
 }
 
+func (c *ConditionExtension) PodRunning(pod k8s.Object) apimachinerywait.ConditionWithContextFunc {
+	return func(ctx context.Context) (done bool, err error) {
+		if err := c.resources.Get(ctx, pod.GetName(), pod.GetNamespace(), pod); err != nil {
+			return false, err
+		}
+		status := pod.(*v1.Pod).Status
+		switch status.Phase {
+		case v1.PodRunning:
+			return true, nil
+		case v1.PodPending:
+			return false, nil
+		default:
+			return false, fmt.Errorf("pod cannot transition to running from current status: %s", status.Phase)
+		}
+	}
+}
+
 func (c *ConditionExtension) PodSucceeded(pod k8s.Object) apimachinerywait.ConditionWithContextFunc {
 	return func(ctx context.Context) (done bool, err error) {
 		if err := c.resources.Get(ctx, pod.GetName(), pod.GetNamespace(), pod); err != nil {
