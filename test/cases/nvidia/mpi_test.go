@@ -70,8 +70,13 @@ func multiNode(testName string) features.Feature {
 			ncclBuffSize := "4194304"
 			if slices.Contains(instanceSupportsRdmaRead, *nodeType) {
 				t.Log("Instance supports RDMA")
-				maxBytes = "16G"
-				ncclBuffSize = "8388608"
+				// TODO: revisit this with some kind of per-instance optimizer, or maybe use the defaults for all instance types unless specified
+				if testName == "alltoall_perf" && strings.Contains(*nodeType, "p4") {
+					// Keep default values for P4 running all-to-all
+				} else {
+					maxBytes = "16G"
+					ncclBuffSize = "8388608"
+				}
 			}
 			var err error
 			renderedMpiJobNcclTestMultiNodeManifest, err = fwext.RenderManifests(mpiJobNcclTestMultiNodeManifest, ncclTestManifestTplVars{
