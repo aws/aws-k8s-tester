@@ -53,3 +53,23 @@ generate_data()
     eval "$cmd" > $expected
     _assert_data "$expected" "$cmd" "$msg"
 }
+
+skip_for_vgpu_instances() {
+    local test_name="$1"
+    local instance_type="$(get_instance_type)"
+    case "$instance_type" in
+        g6f*) echo "skipping $test_name: no current support for instance_type: $instance_type"
+            exit 0;;
+        gr6f*) echo "skipping $test_name: no current support for instance_type: $instance_type"
+            exit 0;;
+    esac
+}
+
+function is_vgpu()
+{
+  local instance_type="$(get_instance_type)"
+  case "${instance_type}" in
+    g6f.*|gr6f.*) return ;;
+    *) return 1 ;;  # Not supported
+  esac
+}
