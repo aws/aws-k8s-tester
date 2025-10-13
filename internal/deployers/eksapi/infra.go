@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"math"
 	"path"
 	"slices"
 	"sort"
@@ -40,9 +39,6 @@ const (
 	// the IPAM controller will add this tag to the ENI's that it creates
 	ipamControllerENITagKey = "eks:kubernetes-cni-node-name"
 )
-
-// this value is not currently configurable, the infra stack is hardcoded to create 2
-const numInfraAZs = 2
 
 // eksEndpointURLTag is the key for an optional tag on the infrastructure CloudFormation stack,
 // which indicates which EKS environment is associated with the stack's resources.
@@ -93,57 +89,33 @@ func (i *Infrastructure) subnets() []string {
 }
 
 func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions) (*Infrastructure, error) {
-	// TODO: create a subnet in every AZ
-	// get two AZs for the subnets
-	azs, err := m.clients.EC2().DescribeAvailabilityZones(context.TODO(), &ec2.DescribeAvailabilityZonesInput{
-		Filters: []ec2types.Filter{
-			{
-				Name:   aws.String("zone-type"),
-				Values: []string{opts.ZoneType},
-			},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	var allowedAZs []string
-	for i := 0; i < numInfraAZs; i++ {
-		allowedAZs = append(allowedAZs, aws.ToString(azs.AvailabilityZones[i].ZoneName))
-	}
-
 	var subnetAzs []string
 	if opts.CapacityReservation {
-		subnetAzs, err = m.getAZsWithCapacity(opts)
+		azs, err := m.getAZsWithCapacity(opts)
 		if err != nil {
 			return nil, err
 		}
+		subnetAzs = azs
 	} else if len(opts.InstanceTypes) > 0 {
-		azs, err := m.getRankedAZsForInstanceTypes(opts, allowedAZs)
+		azs, err := m.getRankedAZsForInstanceTypes(opts)
 		if err != nil {
 			return nil, err
 		}
 		if len(azs) == 0 {
 			return nil, fmt.Errorf("no AZs support any of the provided instance types (%v)", opts.InstanceTypes)
 		}
-		subnetAzs = azs[0:int(math.Min(float64(len(azs)), numInfraAZs))]
-	} else {
-		for i := 0; i < numInfraAZs; i++ {
-			subnetAzs = append(subnetAzs, aws.ToString(azs.AvailabilityZones[i].ZoneName))
-		}
+		subnetAzs = azs
 	}
-	// make sure we always have the number of AZs used in the infra stack. can end up here if using
-	// a single capacity reservation or the provided instance types are offered in fewer AZs
-	for _, az := range azs.AvailabilityZones {
-		if len(subnetAzs) == numInfraAZs {
-			break
-		}
-		if !slices.Contains(subnetAzs, *az.ZoneName) {
-			az := *az.ZoneName
-			klog.Infof("padding infra stack with AZ: %v", az)
-			subnetAzs = append(subnetAzs, az)
-		}
+
+	// this value is not currently configurable, the infra stack is hardcoded to create 2
+	// TODO: create a subnet in every AZ. today we need exactly 2 AZs for the subnets.
+	const numInfraAZs = 2
+
+	subnetAzs, err := m.normalizeAZs(opts, subnetAzs, numInfraAZs)
+	if err != nil {
+		return nil, err
 	}
+
 	klog.Infof("creating infrastructure stack with AZs: %v", subnetAzs)
 	input := cloudformation.CreateStackInput{
 		StackName:    aws.String(m.resourceID),
@@ -416,19 +388,67 @@ func (m *InfrastructureManager) getVPCCNINetworkInterfaceIds(vpcId string) ([]st
 	return enis, nil
 }
 
+// normalizeAZs removes availability zones that don't meet launch requirements
+// for instances and ensures that the resulting list containers enough AZs to
+// satisfy the deployment.
+func (m *InfrastructureManager) normalizeAZs(opts *deployerOptions, subnetAZs []string, expectedCount int) ([]string, error) {
+	azs, err := m.clients.EC2().DescribeAvailabilityZones(context.TODO(), &ec2.DescribeAvailabilityZonesInput{
+		Filters: []ec2types.Filter{
+			{
+				Name:   aws.String("zone-type"),
+				Values: []string{opts.ZoneType},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var supporttedAZs []string
+	for _, az := range azs.AvailabilityZones {
+		supporttedAZs = append(supporttedAZs, aws.ToString(az.ZoneName))
+	}
+
+	var filteredAZs []string
+	for _, az := range subnetAZs {
+		if slices.Contains(supporttedAZs, az) {
+			filteredAZs = append(filteredAZs, az)
+		}
+	}
+
+	// truncate the list if we went over the max
+	filteredAZs = filteredAZs[:min(len(filteredAZs), expectedCount)]
+
+	// pad the availability zones with supported entries if we end up not having
+	// enough after filtering.
+	if len(filteredAZs) < expectedCount {
+		for _, az := range supporttedAZs {
+			if len(filteredAZs) == expectedCount {
+				break
+			}
+			if !slices.Contains(filteredAZs, az) {
+				klog.Infof("padding infra stack with AZ: %v", az)
+				filteredAZs = append(filteredAZs, az)
+			}
+		}
+	}
+
+	if len(filteredAZs) != expectedCount {
+		return nil, fmt.Errorf("failed to provide AZs with expected count %d: %v", expectedCount, filteredAZs)
+	}
+
+	return filteredAZs, nil
+}
+
 // getAZsWithInstanceTypes returns the availability zones ordered decreasingly by the number of
 // requested instance types they support
-func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptions, allowedAZs []string) ([]string, error) {
+func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptions) ([]string, error) {
 	offerings, err := m.clients.EC2().DescribeInstanceTypeOfferings(context.TODO(), &ec2.DescribeInstanceTypeOfferingsInput{
 		LocationType: ec2types.LocationTypeAvailabilityZone,
 		Filters: []ec2types.Filter{
 			{
 				Name:   aws.String("instance-type"),
 				Values: opts.InstanceTypes,
-			},
-			{
-				Name:   aws.String("location"),
-				Values: allowedAZs,
 			},
 		},
 	})
@@ -437,9 +457,7 @@ func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptio
 	}
 	counts := make(map[string]int)
 	for _, offering := range offerings.InstanceTypeOfferings {
-		az := aws.ToString(offering.Location)
-		count := counts[az]
-		counts[az] = count + 1
+		counts[aws.ToString(offering.Location)]++
 	}
 	var azs []string
 	for az := range counts {
