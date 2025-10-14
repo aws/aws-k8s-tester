@@ -416,6 +416,8 @@ func (m *InfrastructureManager) normalizeAZs(opts *deployerOptions, subnetAZs []
 		}
 	}
 
+	// enforce users' preferred ordering over AZs
+	filteredAZs = availabilityZoneHintedOrder(filteredAZs)
 	// truncate the list if we went over the max
 	filteredAZs = filteredAZs[:min(len(filteredAZs), expectedCount)]
 
