@@ -63,7 +63,9 @@ test_nvidia_gpu_throttled()
 
     # vGPU instances don't support GPU clock throttling detection.
     # This test is not applicable for vGPU instance types.
-    skip_for_vgpu_instances
+    if is_vgpu; then
+        skip "This test does not apply to vGPU instances (g6f.*, gr6f.*)"
+    fi
     # https://docs.nvidia.com/deploy/nvml-api/group__nvmlClocksEventReasons.html#group__nvmlClocksEventReasons
     # The only  bit allowed is nvmlClocksEventReasonGpuIdle 0x0000000000000001LL
     filter="egrep -v -e '(0x0000000000000000|0x0000000000000001|0x0000000000000004)'"
@@ -78,7 +80,7 @@ test_nvidia_vgpu_license_status()
         skip "This test only applies to vGPU instances (g6f.*, gr6f.*)"
     fi
 
-    assert_golden $data/nvidia_vgpu_license_status.txt \
+    assert_data $data/nvidia_vgpu_license_status.txt \
           "nvidia-smi -q | grep 'vGPU Software' -A 2" \
           "vGPU license status validation failed"
 }
