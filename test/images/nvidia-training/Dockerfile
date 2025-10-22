@@ -66,7 +66,7 @@ RUN ln -s /usr/local/bin/pip3 /usr/bin/pip \
 
 # Install Pytorch from Source
 ARG PYTORCH_BRANCH=v2.6.0
-ARG PYTORCH_BUILD_ENV="MAX_JOBS=1 BUILD_TEST=0"
+ARG PYTORCH_BUILD_ENV="MAX_JOBS=8 BUILD_TEST=0"
 
 ENV CUDA_HOME=/usr/local/cuda
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64
