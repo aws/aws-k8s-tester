@@ -43,7 +43,7 @@ func (m *ClusterManager) getOrCreateCluster(infra *Infrastructure, opts *deploye
 			ResourcesVpcConfig: &ekstypes.VpcConfigRequest{
 				EndpointPrivateAccess: aws.Bool(true),
 				EndpointPublicAccess:  aws.Bool(true),
-				SubnetIds:             append(infra.subnetsPublic, infra.subnetsPrivate...),
+				SubnetIds:             infra.subnets(),
 			},
 			RoleArn: aws.String(infra.clusterRoleARN),
 			KubernetesNetworkConfig: &ekstypes.KubernetesNetworkConfigRequest{

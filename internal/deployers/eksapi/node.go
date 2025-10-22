@@ -699,8 +699,12 @@ func (m *nodeManager) getValidAvailabilityZonesFilter(opts *deployerOptions, inf
 	if describeResponse == nil || len(describeResponse.InstanceTypeOfferings) == 0 {
 		return nil, fmt.Errorf("no instance type offerings in current region with filters %v", describeFilters)
 	}
+	var candidateAZs []string
+	for _, offering := range describeResponse.InstanceTypeOfferings {
+		candidateAZs = append(candidateAZs, aws.ToString(offering.Location))
+	}
 	// EFA traffic cannot cross an AZ https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/efa.html#efa-limits
-	targetAZ := aws.ToString(describeResponse.InstanceTypeOfferings[0].Location)
+	targetAZ := availabilityZoneHintedOrder(candidateAZs)[0]
 	klog.Infof("Found availability zone %q with offering for instance types %v", targetAZ, opts.InstanceTypes)
 	return []string{targetAZ}, nil
 }
@@ -718,8 +722,7 @@ func (m *nodeManager) getValidSubnets(opts *deployerOptions, infra *Infrastructu
 		describeFilters = append(describeFilters, ec2types.Filter{
 			Name:   aws.String("availability-zone"),
 			Values: availabilityZoneFilter,
-		},
-		)
+		})
 	}
 	describeResponse, err := m.clients.EC2().DescribeSubnets(context.TODO(), &ec2.DescribeSubnetsInput{
 		Filters:   describeFilters,
