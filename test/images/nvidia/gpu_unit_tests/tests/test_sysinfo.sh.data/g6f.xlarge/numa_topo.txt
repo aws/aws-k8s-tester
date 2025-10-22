@@ -1,0 +1,2 @@
+/sys/devices/system/node/node0/cpulist:0-3
+/sys/devices/system/node/node0/distance:10
