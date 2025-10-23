@@ -24,6 +24,7 @@ import (
 
 	"github.com/aws/aws-k8s-tester/internal/deployers/eksapi/templates"
 	"github.com/aws/aws-k8s-tester/internal/metrics"
+	"github.com/aws/aws-k8s-tester/internal/util"
 )
 
 const (
@@ -531,7 +532,7 @@ func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName 
 				StackName: out.StackId,
 			},
 			infraStackCreationTimeout); err != nil {
-		return "", fmt.Errorf("failed to wait for CloudWatch infrastructure stack creation: %w", err)
+		return "", util.WrapCFNStackFailure(context.TODO(), m.clients.CFN(), fmt.Errorf("failed to wait for CloudWatch infrastructure stack creation: %w", err), stackName)
 	}
 
 	// Get the CloudWatch role ARN from stack outputs
