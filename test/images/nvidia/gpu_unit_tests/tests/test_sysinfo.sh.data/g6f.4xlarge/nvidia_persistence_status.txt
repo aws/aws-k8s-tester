@@ -1,0 +1,2 @@
+name, pci.bus_id, persistence_mode
+NVIDIA L4-12Q, 00000000:35:00.0, Enabled

@@ -31,6 +31,11 @@ test_03_nvbandwidth()
 
 test_04_dcgm_diagnostics()
 {
+    # This test is not applicable for vGPU instance types.
+    if is_vgpu; then
+        skip "This test does not apply to vGPU instances (g6f.*, gr6f.*)"
+    fi
+
     # https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/dcgm-diagnostics.html#run-levels-and-tests
     if [[ $EC2_INSTANCE_TYPE == g* ]]; then
         # The G series instance don't have nvlink and GPU p2p communication

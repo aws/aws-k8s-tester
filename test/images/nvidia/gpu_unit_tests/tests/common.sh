@@ -53,3 +53,12 @@ generate_data()
     eval "$cmd" > $expected
     _assert_data "$expected" "$cmd" "$msg"
 }
+
+function is_vgpu()
+{
+  local instance_type=${EC2_INSTANCE_TYPE:-$(get_instance_type)}
+  case "${instance_type}" in
+    g6f.*|gr6f.*) return ;;
+    *) return 1 ;;  # Not supported
+  esac
+}

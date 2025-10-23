@@ -1,0 +1,2 @@
+name, index, pci.bus_id
+NVIDIA L4-6Q, 0, 00000000:31:00.0

@@ -1,0 +1,2 @@
+	[4mGPU0	CPU Affinity	NUMA Affinity	GPU NUMA ID[0m
+GPU0	 X 	0-15	0		N/A
