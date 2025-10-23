@@ -1,7 +1,7 @@
-FROM public.ecr.aws/amazonlinux/amazonlinux:2 AS builder
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023 AS builder
 ARG TARGETOS
 ARG TARGETARCH
-RUN yum install -y git tar gzip make unzip gcc rsync wget jq curl
+RUN dnf install -y git tar gzip make unzip gcc rsync wget jq
 ARG GO_MINOR_VERSION=1.25
 RUN curl https://go.dev/dl/?mode=json | jq -r .[].version | grep "^go${GO_MINOR_VERSION}" | head -n1 > go-version.txt
 RUN  wget -O go.tar.gz https://go.dev/dl/$(cat go-version.txt).${TARGETOS}-${TARGETARCH}.tar.gz && \
@@ -20,16 +20,16 @@ RUN go install sigs.k8s.io/kubetest2 && \
     go install sigs.k8s.io/kubetest2/kubetest2-tester-exec && \
     go install sigs.k8s.io/kubetest2/kubetest2-tester-ginkgo
 
-FROM public.ecr.aws/amazonlinux/amazonlinux:2
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /workdir
-RUN yum install -y tar gzip unzip wget openssh
+RUN dnf install -y tar gzip unzip wget openssh
 RUN wget -O awscli.zip https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && \
     unzip awscli.zip && \
     ./aws/install
 # we need gsutil from the gcloud CLI for kubetest-tester-ginkgo
-RUN amazon-linux-extras install python3.8
+RUN dnf install -y python3.13
 ARG GCLOUD_SDK_URL=https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.tar.gz
 RUN wget -O google-cloud-sdk.tar.gz -q $GCLOUD_SDK_URL && \
     tar xzf google-cloud-sdk.tar.gz -C / && \
