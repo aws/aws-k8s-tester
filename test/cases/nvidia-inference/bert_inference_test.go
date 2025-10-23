@@ -38,7 +38,7 @@ func TestBertInference(t *testing.T) {
 		WithLabel("suite", "nvidia").
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			if *bertInferenceImage == "" {
+			if testConfig.BertInferenceImage == "" {
 				t.Fatalf("[ERROR] bertInferenceImage must be set")
 			}
 
@@ -47,9 +47,9 @@ func TestBertInference(t *testing.T) {
 			renderedBertInferenceManifest, err = fwext.RenderManifests(
 				bertInferenceManifest,
 				bertInferenceManifestTplVars{
-					BertInferenceImage: *bertInferenceImage,
-					InferenceMode:      *inferenceMode,
-					GPUPerNode:         fmt.Sprintf("%d", *gpuRequested),
+					BertInferenceImage: testConfig.BertInferenceImage,
+					InferenceMode:      testConfig.InferenceMode,
+					GPUPerNode:         fmt.Sprintf("%d", testConfig.GpuRequested),
 				},
 			)
 			if err != nil {
