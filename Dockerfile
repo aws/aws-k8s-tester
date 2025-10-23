@@ -29,7 +29,7 @@ RUN wget -O awscli.zip https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip 
     unzip awscli.zip && \
     ./aws/install
 # we need gsutil from the gcloud CLI for kubetest-tester-ginkgo
-RUN dnf install -y python3.14
+RUN dnf install -y python3.13
 ARG GCLOUD_SDK_URL=https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.tar.gz
 RUN wget -O google-cloud-sdk.tar.gz -q $GCLOUD_SDK_URL && \
     tar xzf google-cloud-sdk.tar.gz -C / && \
