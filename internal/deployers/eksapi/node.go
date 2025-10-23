@@ -28,6 +28,7 @@ import (
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 
 	"github.com/aws/aws-k8s-tester/internal/deployers/eksapi/templates"
+	"github.com/aws/aws-k8s-tester/internal/util"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -504,7 +505,7 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 			},
 			opts.NodeCreationTimeout)
 	if err != nil {
-		return fmt.Errorf("failed to wait for unmanaged nodegroup stack creation: %w", err)
+		return util.WrapCFNStackFailure(context.TODO(), m.clients.CFN(), fmt.Errorf("failed to wait for unmanaged nodegroup stack creation: %w", err), stackName)
 	}
 	klog.Infof("created unmanaged nodegroup stack: %s", *out.StackId)
 	if opts.ExpectedAMI != "" {
