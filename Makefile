@@ -9,3 +9,6 @@ update-deps:
     	"$$SCRIPT" ; \
 	done
 
+.PHONY: test-integration
+test-integration: ## Run unit and integration tests
+	go test -v -tags=integration ./...

@@ -10,16 +10,22 @@ import (
 	"github.com/aws/aws-k8s-tester/internal/deployers/eksapi/templates"
 )
 
+const (
+	UserDataBootstrapSh  = "bootstrap.sh"
+	UserDataNodeadm      = "nodeadm"
+	UserDataBottlerocket = "bottlerocket"
+)
+
 func generateUserData(cluster *Cluster, opts *deployerOptions) (string, bool, error) {
 	userDataIsMimePart := true
 	var t *template.Template
 	switch opts.UserDataFormat {
-	case "bootstrap.sh":
+	case UserDataBootstrapSh:
 		t = templates.UserDataBootstrapSh
-	case "nodeadm":
+	case UserDataNodeadm:
 		// TODO: replace the YAML template with proper usage of the nodeadm API go types
 		t = templates.UserDataNodeadm
-	case "bottlerocket":
+	case UserDataBottlerocket:
 		t = templates.UserDataBottlerocket
 		userDataIsMimePart = false
 	default:
