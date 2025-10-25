@@ -1,6 +1,7 @@
 package eksapi
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"path/filepath"
@@ -15,8 +16,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
-	"github.com/urfave/sflags/gen/gpflag"
 	"github.com/spf13/pflag"
+	"github.com/urfave/sflags/gen/gpflag"
 	"golang.org/x/exp/slices"
 	"k8s.io/klog"
 	"sigs.k8s.io/kubetest2/pkg/types"
@@ -299,9 +300,6 @@ func (d *deployer) verifyUpFlags() error {
 		return fmt.Errorf("--instance-types and --instance-type-archs are mutually exclusive")
 	}
 	if d.UnmanagedNodes {
-		if d.AMI == "" {
-			return fmt.Errorf("--ami must be specified for --unmanaged-nodes")
-		}
 		if d.AMIType != "" {
 			return fmt.Errorf("--ami-type should not be provided with --unmanaged-nodes")
 		}
@@ -314,9 +312,19 @@ func (d *deployer) verifyUpFlags() error {
 			}
 		}
 		if d.UserDataFormat == "" {
-			d.UserDataFormat = "bootstrap.sh"
+			d.UserDataFormat = UserDataBootstrapSh
 			klog.Infof("Using default user data format: %s", d.UserDataFormat)
 		}
+		// AMI ID check must come after user-data format resolution because we
+		// can try to infer the AMI type for unmanaged nodes.
+		if d.AMI == "" {
+			ami, err := NewAMIResolver(d.awsClients).Resolve(context.TODO(), &d.deployerOptions)
+			if err != nil {
+				return fmt.Errorf("failed to automatically resolve ami for unmanaged nodegroup (provide --ami to short circuit this): %w", err)
+			}
+			d.AMI = ami
+		}
+
 		if d.EFA && len(d.InstanceTypes) != 1 {
 			return fmt.Errorf("--efa requires a single instance type")
 		}
