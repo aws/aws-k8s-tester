@@ -80,7 +80,7 @@ RUN git clone https://github.com/NVIDIA/nccl.git --branch v$LIBNCCL_VERSION /tmp
  && cd && rm -rf /tmp/nccl
 
 # Install AWS-OFI-NCCL plugin
-ARG AWS_OFI_NCCL_VERSION=1.17.1
+ARG AWS_OFI_NCCL_VERSION=1.17.0
 RUN curl -sL https://github.com/aws/aws-ofi-nccl/releases/download/v$AWS_OFI_NCCL_VERSION/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION.tar.gz | tar xvz -C /tmp \
  && cd /tmp/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION \
  && ./configure \
