@@ -4,16 +4,16 @@ go 1.25.1
 
 require (
 	github.com/aws/aws-sdk-go v1.55.8
-	github.com/aws/aws-sdk-go-v2 v1.39.4
-	github.com/aws/aws-sdk-go-v2/config v1.31.15
-	github.com/aws/aws-sdk-go-v2/service/autoscaling v1.60.1
-	github.com/aws/aws-sdk-go-v2/service/cloudformation v1.68.1
-	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.51.4
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.258.1
-	github.com/aws/aws-sdk-go-v2/service/eks v1.74.5
-	github.com/aws/aws-sdk-go-v2/service/iam v1.48.1
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.88.7
-	github.com/aws/smithy-go v1.23.1
+	github.com/aws/aws-sdk-go-v2 v1.39.6
+	github.com/aws/aws-sdk-go-v2/config v1.31.17
+	github.com/aws/aws-sdk-go-v2/service/autoscaling v1.60.3
+	github.com/aws/aws-sdk-go-v2/service/cloudformation v1.68.3
+	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.52.1
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.264.0
+	github.com/aws/aws-sdk-go-v2/service/eks v1.74.7
+	github.com/aws/aws-sdk-go-v2/service/iam v1.49.2
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.90.0
+	github.com/aws/smithy-go v1.23.2
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
@@ -23,16 +23,16 @@ require (
 	k8s.io/client-go v0.34.1
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.130.1
-	sigs.k8s.io/controller-runtime v0.22.3
+	sigs.k8s.io/controller-runtime v0.22.4
 	sigs.k8s.io/karpenter v1.8.0
-	sigs.k8s.io/kubetest2 v0.0.0-20251021071638-2d5ab51d025c
+	sigs.k8s.io/kubetest2 v0.0.0-20251106133453-0cd7a7d5b287
 )
 
 require (
-	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.2 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.11 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.9.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.11 // indirect
+	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.3 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.13 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.9.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.13 // indirect
 	github.com/awslabs/operatorpkg v0.0.0-20250909182303-e8e550b6f339 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
@@ -82,19 +82,19 @@ require (
 	github.com/alibabacloud-go/tea-xml v1.1.3 // indirect
 	github.com/aliyun/credentials-go v1.3.2 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.18.19 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.11 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.11 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.11 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.18.21 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.13 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.13 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.13 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.36.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.27.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.11 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssm v1.66.2
-	github.com/aws/aws-sdk-go-v2/service/sso v1.29.8 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.3 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.38.9 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.13 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssm v1.67.0
+	github.com/aws/aws-sdk-go-v2/service/sso v1.30.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.39.1 // indirect
 	github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.0.0-20240318154307-a1a918375412 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
@@ -296,7 +296,7 @@ require (
 
 require (
 	github.com/urfave/sflags v0.4.1
-	github.com/weaveworks/eksctl v0.215.0
+	github.com/weaveworks/eksctl v0.216.0
 	k8s.io/cli-runtime v0.34.1
 	k8s.io/cloud-provider-aws v1.34.1
 	sigs.k8s.io/e2e-framework v0.6.1-0.20250909060333-8677714ff9a6 // bump version once https://github.com/kubernetes-sigs/e2e-framework/pull/517 gets released
