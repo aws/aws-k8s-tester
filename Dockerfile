@@ -24,7 +24,7 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:2023
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /workdir
-RUN dnf install -y tar gzip unzip wget openssh
+RUN dnf install -y tar gzip unzip wget openssh diffutils
 RUN wget -O awscli.zip https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip && \
     unzip awscli.zip && \
     ./aws/install
