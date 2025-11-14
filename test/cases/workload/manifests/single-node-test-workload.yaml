@@ -1,0 +1,20 @@
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: {{.WorkloadTestName}}
+  labels:
+    app: {{.WorkloadTestName}}
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{.WorkloadTestName}}
+    spec:
+      containers:
+      - name: {{.WorkloadTestName}}
+        image: {{.WorkloadTestImage}}
+        command: ["/bin/bash", "-c"]
+        args: ["{{.WorkloadTestCommand}}"]
+        imagePullPolicy: Always
+      restartPolicy: Never
+  backoffLimit: 4
