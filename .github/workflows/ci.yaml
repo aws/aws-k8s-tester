@@ -21,16 +21,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - run: ./hack/free-disk-space.sh
     - run: docker build --build-arg=KUBERNETES_MINOR_VERSION=latest --file Dockerfile .
   build-image-efa:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - run: ./hack/free-disk-space.sh
     - run: docker build --file test/images/efa/Dockerfile .
   build-image-neuronx:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - run: ./hack/free-disk-space.sh
     - run: docker build --file test/images/neuron/Dockerfile .
   build-image-nvidia:
     runs-on: ubuntu-latest
@@ -58,9 +61,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - run: ./hack/free-disk-space.sh
     - run: docker build --file test/images/neuron-training/Dockerfile test/images/neuron-training
   build-image-neuron-inference:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - run: ./hack/free-disk-space.sh
     - run: docker build --file test/images/neuron-inference/Dockerfile test/images/neuron-inference
