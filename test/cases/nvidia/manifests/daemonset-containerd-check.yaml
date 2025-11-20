@@ -28,17 +28,18 @@ spec:
           echo "=== content read by the container ==="
           cat /host-etc/containerd/config.toml
 
-          # 2. Attempt to extract 'sandbox_image' from the config
-          #    If grep returns nothing, pipefail triggers an error
-          #    OR you can explicitly check if the variable is empty
-          source <(grep sandbox_image /host-etc/containerd/config.toml | tr -d ' "')
-
-          # 3. If sandbox_image is missing, fail explicitly
-          if [ -z "$sandbox_image" ]; then
-            echo "FAIL: no sandbox_image line found"
+          # 2. Attempt to extract 'sandbox' from the config to be compatible with latest containerd config.
+          #    In containerd config version = 2 expect to find pattern `sandbox_image = "registry.k8s.io/pause:3.10.1"`
+          #    In containerd config version = 3 expect to find pattern `sandbox = 'registry.k8s.io/pause:3.10.1'`
+          #    For more details: https://github.com/containerd/containerd/blob/main/docs/cri/config.md
+          sandbox_line=$(grep -E '(sandbox)\s*=' /host-etc/containerd/config.toml || true)
+          # 3. If no sandbox configuration is found, fail explicitly
+          if [ -z "$sandbox_line" ]; then
+            echo "FAIL: no sandbox_image or sandbox line found"
             echo "=== debug ==="
             exit 1
           fi
+          sandbox_image=$(echo "$sandbox_line" | cut -d'"' -f2)
 
           # 4. Check that $sandbox_image references .ecr. or is provided on the instance
           if [[ "$sandbox_image" == "localhost"* ]]; then
