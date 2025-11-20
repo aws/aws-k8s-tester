@@ -28,11 +28,29 @@ spec:
           echo "=== content read by the container ==="
           cat /host-etc/containerd/config.toml
 
-          # 2. Attempt to extract 'sandbox' from the config to be compatible with latest containerd config.
+          # 2. Check containerd config version and look for appropriate sandbox field
           #    In containerd config version = 2 expect to find pattern `sandbox_image = "registry.k8s.io/pause:3.10.1"`
-          #    In containerd config version = 3 expect to find pattern `sandbox = 'registry.k8s.io/pause:3.10.1'`
+          #    In containerd config version = 3 expect to find pattern `sandbox = "registry.k8s.io/pause:3.10.1"`
           #    For more details: https://github.com/containerd/containerd/blob/main/docs/cri/config.md
-          sandbox_line=$(grep -E '(sandbox)\s*=' /host-etc/containerd/config.toml || true)
+          version_line=$(grep -E '^version\s*=' /host-etc/containerd/config.toml || true)
+          if [ -z "$version_line" ]; then
+            echo "FAIL: no version line found in containerd config"
+            exit 1
+          fi
+
+          version=$(echo "$version_line" | cut -d'=' -f2 | tr -d ' ')
+          echo "INFO: containerd config version = $version"
+          if [ "$version" = "2" ]; then
+            sandbox_line=$(grep -E 'sandbox_image\s*=' /host-etc/containerd/config.toml || true)
+            field_name="sandbox_image"
+          elif [ "$version" = "3" ]; then
+            sandbox_line=$(grep -E 'sandbox\s*=' /host-etc/containerd/config.toml || true)
+            field_name="sandbox"
+          else
+            echo "FAIL: unsupported containerd config version: $version"
+            exit 1
+          fi
+
           # 3. If no sandbox configuration is found, fail explicitly
           if [ -z "$sandbox_line" ]; then
             echo "FAIL: no sandbox_image or sandbox line found"
