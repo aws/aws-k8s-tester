@@ -42,10 +42,8 @@ spec:
           echo "INFO: containerd config version = $version"
           if [ "$version" = "2" ]; then
             sandbox_line=$(grep -E 'sandbox_image\s*=' /host-etc/containerd/config.toml || true)
-            field_name="sandbox_image"
           elif [ "$version" = "3" ]; then
             sandbox_line=$(grep -E 'sandbox\s*=' /host-etc/containerd/config.toml || true)
-            field_name="sandbox"
           else
             echo "FAIL: unsupported containerd config version: $version"
             exit 1
