@@ -42,7 +42,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/samber/lo v1.51.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	golang.org/x/crypto v0.44.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	k8s.io/apiextensions-apiserver v0.34.1 // indirect
 )
