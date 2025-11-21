@@ -24,8 +24,8 @@ spec:
           python3 \
           python3-pip \
           libgl1-mesa-glx \
-          libegl1-mesa \
-          libgles2-mesa \
+          libegl1-mesa-dev \
+          libgles2-mesa-dev \
           mesa-utils \
           xvfb
         pip3 install moderngl
