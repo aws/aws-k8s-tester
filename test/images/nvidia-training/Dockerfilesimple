@@ -1,0 +1,84 @@
+FROM nvcr.io/nvidia/pytorch:25.10-py3
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install OpenSSH for MPI Operator
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        openssh-server openssh-client && \
+    rm -rf /var/lib/apt/lists/*
+
+# Configure SSH for MPI
+RUN mkdir -p /var/run/sshd && \
+    sed -i 's/[ #]\(.*StrictHostKeyChecking \).*/ \1no/g' /etc/ssh/ssh_config && \
+    echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config && \
+    sed -i 's/#\(StrictModes \).*/\1no/g' /etc/ssh/sshd_config
+
+# Install EFA drivers and libraries for optimal network performance
+# Note: EFA installer will place OpenMPI at /opt/amazon/openmpi
+ARG EFA_INSTALLER_VERSION=latest
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends wget curl libhwloc-dev && \
+    curl -sL https://efa-installer.amazonaws.com/aws-efa-installer-$EFA_INSTALLER_VERSION.tar.gz | tar xvz -C /tmp && \
+    cd /tmp/aws-efa-installer && \
+    ./efa_installer.sh -y -g -d --skip-kmod --skip-limit-conf --no-verify && \
+    cd && rm -rf /tmp/aws-efa-installer && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install AWS-OFI-NCCL plugin for EFA optimization
+ARG AWS_OFI_NCCL_VERSION=1.17.1
+RUN curl -sL https://github.com/aws/aws-ofi-nccl/releases/download/v$AWS_OFI_NCCL_VERSION/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION.tar.gz | tar xvz -C /tmp && \
+    cd /tmp/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION && \
+    ./configure \
+        --prefix=/opt/aws-ofi-nccl/install \
+        --with-mpi=/opt/amazon/openmpi \
+        --with-libfabric=/opt/amazon/efa \
+        --with-cuda=/usr/local/cuda \
+        --enable-platform-aws \
+        --disable-tests && \
+    make -j $(nproc) && \
+    make install && \
+    cd && rm -rf /tmp/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION
+
+# Remove HPCX paths from environment to avoid conflicts with EFA OpenMPI
+RUN sed -i '/hpcx/d' /etc/environment || true && \
+    sed -i '/hpcx/d' ~/.bashrc || true
+
+# Update library paths for EFA and AWS-OFI-NCCL
+# Place EFA paths FIRST to override any NVIDIA container defaults
+ENV PATH=/opt/amazon/openmpi/bin:/opt/amazon/efa/bin:$PATH
+ENV LD_LIBRARY_PATH=/opt/amazon/openmpi/lib64:/opt/amazon/openmpi/lib:/opt/amazon/efa/lib64:/opt/aws-ofi-nccl/install/lib:/usr/local/cuda/lib64:/usr/local/lib
+ENV OPAL_PREFIX=/opt/amazon/openmpi
+ENV MPI_ROOT=/opt/amazon/openmpi
+ENV NCCL_PROTO=simple
+
+ENV FI_PROVIDER=efa
+ENV FI_EFA_USE_DEVICE_RDMA=1
+ENV NCCL_DEBUG=INFO
+ENV NCCL_SOCKET_IFNAME=^docker0,lo
+ENV FI_EFA_FORK_SAFE=1
+
+ENV LD_PRELOAD=/opt/aws-ofi-nccl/install/lib/libnccl-net.so
+
+RUN ldconfig
+
+# Set working directory
+WORKDIR /app
+
+# Copy training script and requirements
+COPY train.py /app/
+COPY requirements.txt /app/
+
+# Install additional Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# The base image already includes:
+# - PyTorch with CUDA support
+# - NCCL for multi-GPU communication
+# - OpenMPI for distributed training
+# - EFA support
+# - All necessary CUDA libraries
+
+# Default command (can be overridden)
+# CMD ["python", "train.py"]

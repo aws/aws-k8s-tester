@@ -36,6 +36,7 @@ type unitTestManifestTplVars struct {
 
 type hpcTestManifestTplVars struct {
 	GpuPerNode int
+	EfaPerNode int
 }
 
 func TestSingleNodeUnitTest(t *testing.T) {
@@ -98,6 +99,7 @@ func TestSingleNodeUnitTest(t *testing.T) {
 			var err error
 			renderedJobHpcBenchmarksSingleNodeManifest, err = fwext.RenderManifests(jobHpcBenchmarksSingleNodeManifest, hpcTestManifestTplVars{
 				GpuPerNode: gpuPerNode,
+				EfaPerNode: efaPerNode,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -113,7 +115,8 @@ func TestSingleNodeUnitTest(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "hpc-benckmarks-job", Namespace: "default"},
 			}
 			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
-				wait.WithContext(ctx))
+				wait.WithContext(ctx),
+				wait.WithTimeout(20*time.Minute))
 			if err != nil {
 				t.Fatal(err)
 			}
