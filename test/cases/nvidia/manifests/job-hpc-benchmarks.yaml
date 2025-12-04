@@ -53,6 +53,7 @@ spec:
         resources:
           limits:
             nvidia.com/gpu: {{.GpuPerNode}}
+            vpc.amazonaws.com/efa: {{.EfaPerNode}}
         env:
         - name: UCX_TLS
           value: "^sysv"
