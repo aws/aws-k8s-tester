@@ -37,7 +37,8 @@ RUN apt update -y \
       libhwloc-dev \
       freeglut3-dev \
       libglu1-mesa-dev \
-      datacenter-gpu-manager
+      datacenter-gpu-manager-4-cuda12 \
+      datacenter-gpu-manager-4-cuda13
 
 RUN ldconfig
 
