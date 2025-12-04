@@ -37,10 +37,5 @@ test_04_dcgm_diagnostics()
     fi
 
     # https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/dcgm-diagnostics.html#run-levels-and-tests
-    if [[ $EC2_INSTANCE_TYPE == g* ]]; then
-        # The G series instance don't have nvlink and GPU p2p communication
-        assert_status_code 0 'dcgmi diag -r "software,memory,memory_bandwidth"'
-    else
-        assert_status_code 0 "dcgmi diag -r 2"
-    fi
+    assert_status_code 0 "dcgmi diag -r 2"
 }
