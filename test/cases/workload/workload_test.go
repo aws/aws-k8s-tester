@@ -21,6 +21,24 @@ import (
 )
 
 func createWorkloadJob(name, image, command string, resources map[string]string, timeout time.Duration) *batchv1.Job {
+	container := corev1.Container{
+		Name:            name,
+		Image:           image,
+		ImagePullPolicy: corev1.PullAlways,
+		Resources:       buildResourceRequirements(resources),
+	}
+
+	// Override entrypoint if command is provided
+	if command != "" {
+		container.Command = strings.Fields(command)
+	}
+
+	podSpec := corev1.PodSpec{
+		RestartPolicy:         corev1.RestartPolicyNever,
+		ActiveDeadlineSeconds: ptr.Int64(int64(timeout.Seconds())),
+		Containers:            []corev1.Container{container},
+	}
+
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -33,19 +51,7 @@ func createWorkloadJob(name, image, command string, resources map[string]string,
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{"app": name},
 				},
-				Spec: corev1.PodSpec{
-					RestartPolicy:         corev1.RestartPolicyNever,
-					ActiveDeadlineSeconds: ptr.Int64(int64(timeout.Seconds())),
-					Containers: []corev1.Container{
-						{
-							Name:            name,
-							Image:           image,
-							Args:            strings.Fields(command),
-							ImagePullPolicy: corev1.PullAlways,
-							Resources:       buildResourceRequirements(resources),
-						},
-					},
-				},
+				Spec: podSpec,
 			},
 		},
 	}
