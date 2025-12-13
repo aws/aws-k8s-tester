@@ -145,26 +145,43 @@ func (m *ClusterManager) isClusterActive() (bool, error) {
 }
 
 func (m *ClusterManager) deleteCluster() error {
-	input := eks.DeleteClusterInput{
-		Name: aws.String(m.resourceID),
-	}
-	klog.Infof("deleting cluster...")
-	out, err := m.clients.EKS().DeleteCluster(context.TODO(), &input)
-	if err != nil {
-		var notFound *ekstypes.ResourceNotFoundException
-		if errors.As(err, &notFound) {
-			klog.Infof("cluster does not exist: %s", m.resourceID)
-			return nil
-		}
-		return fmt.Errorf("failed to delete cluster: %v", err)
-	}
-	klog.Infof("waiting for cluster to be deleted: %s", *out.Cluster.Arn)
-	err = eks.NewClusterDeletedWaiter(m.clients.EKS()).
-		Wait(context.TODO(), &eks.DescribeClusterInput{
-			Name: aws.String(m.resourceID),
-		}, time.Minute*15) // TODO: make this configurable? it's more complicated than the creation timeout, since this func may be called by the janitor
-	if err != nil {
-		return fmt.Errorf("failed to wait for cluster to be deleted: %v", err)
-	}
-	return nil
+    const (
+        retryInterval = 2 * time.Minute
+        maxAttempts   = 5
+    )
+
+    for attempt := 1; attempt <= maxAttempts; attempt++ {
+        input := eks.DeleteClusterInput{
+            Name: aws.String(m.resourceID),
+        }
+
+        klog.Infof("Attempt %d: deleting cluster...", attempt)
+        out, err := m.clients.EKS().DeleteCluster(context.TODO(), &input)
+        if err != nil {
+            var notFound *ekstypes.ResourceNotFoundException
+            if errors.As(err, &notFound) {
+                klog.Infof("cluster does not exist: %s", m.resourceID)
+                return nil
+            }
+            if attempt == maxAttempts {
+                return fmt.Errorf("Failed to delete cluster after %d attempts: %v", maxAttempts, err)
+            }
+            klog.Infof("Deletion failed: %v. Waiting %v before retry...", err, retryInterval)
+            time.Sleep(retryInterval)
+            continue
+        }
+
+        klog.Infof("waiting for cluster to be deleted: %s", *out.Cluster.Arn)
+        err = eks.NewClusterDeletedWaiter(m.clients.EKS()).
+            Wait(context.TODO(), &eks.DescribeClusterInput{
+                Name: aws.String(m.resourceID),
+            }, time.Minute*15)
+
+        if err != nil {
+            return fmt.Errorf("failed to wait for cluster to be deleted: %v", err)
+        }
+        return nil
+    }
+
+    return fmt.Errorf("Failed to delete cluster after %d attempts", maxAttempts)
 }
