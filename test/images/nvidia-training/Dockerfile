@@ -1,5 +1,5 @@
-ARG CUDA_MAJOR_VERSION=12
-ARG CUDA_MINOR_VERSION=8
+ARG CUDA_MAJOR_VERSION=13
+ARG CUDA_MINOR_VERSION=0
 
 # Use the NVIDIA CUDA runtime as a parent image
 FROM nvidia/cuda:$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION.0-devel-ubuntu22.04
@@ -65,7 +65,7 @@ RUN ln -s /usr/local/bin/pip3 /usr/bin/pip \
  && pip --no-cache-dir install --upgrade pip setuptools
 
 # Install Pytorch from Source
-ARG PYTORCH_BRANCH=v2.6.0
+ARG PYTORCH_BRANCH=v2.9.0
 ARG PYTORCH_BUILD_ENV="MAX_JOBS=8 BUILD_TEST=0"
 
 ENV CUDA_HOME=/usr/local/cuda
@@ -73,7 +73,7 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extra
 ENV PATH=$PATH:$CUDA_HOME/bin
 ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.7;8.9;9.0;10.0;12.0"
 
-RUN pip install typing-extensions sympy pyyaml
+RUN pip install typing-extensions sympy pyyaml cmake
 RUN git clone https://github.com/pytorch/pytorch.git /tmp/pytorch \
         --recursive \
         --branch $PYTORCH_BRANCH \
@@ -111,7 +111,7 @@ RUN curl -sL https://efa-installer.amazonaws.com/aws-efa-installer-$EFA_INSTALLE
  && cd && rm -rf /tmp/aws-efa-installer
 
 # Install NCCL
-ARG LIBNCCL_VERSION=2.27.7-1
+ARG LIBNCCL_VERSION=2.28.3-1
 RUN git clone https://github.com/NVIDIA/nccl.git --branch v$LIBNCCL_VERSION /tmp/nccl \
  && cd /tmp/nccl \
  && make -j $(nproc) \
@@ -119,7 +119,7 @@ RUN git clone https://github.com/NVIDIA/nccl.git --branch v$LIBNCCL_VERSION /tmp
  && cd && rm -rf /tmp/nccl
 
 # Install AWS-OFI-NCCL plugin
-ARG AWS_OFI_NCCL_VERSION=1.16.3
+ARG AWS_OFI_NCCL_VERSION=1.17.1
 RUN curl -sL https://github.com/aws/aws-ofi-nccl/releases/download/v$AWS_OFI_NCCL_VERSION/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION.tar.gz | tar xvz -C /tmp \
  && cd /tmp/aws-ofi-nccl-$AWS_OFI_NCCL_VERSION \
  && ./configure \
