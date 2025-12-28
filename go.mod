@@ -9,10 +9,10 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/autoscaling v1.62.4
 	github.com/aws/aws-sdk-go-v2/service/cloudformation v1.71.4
 	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.53.0
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.278.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.279.0
 	github.com/aws/aws-sdk-go-v2/service/eks v1.76.3
 	github.com/aws/aws-sdk-go-v2/service/iam v1.53.1
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.94.0
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.95.0
 	github.com/aws/smithy-go v1.24.0
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/spf13/pflag v1.0.10
@@ -281,7 +281,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
 	k8s.io/release v0.18.0 // indirect
-	k8s.io/utils v0.0.0-20251220205832-9d40a56c1308
+	k8s.io/utils v0.0.0-20251222233032-718f0e51e6d2
 	modernc.org/libc v1.45.2 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.2 // indirect
@@ -298,7 +298,7 @@ require (
 	github.com/urfave/sflags v0.4.1
 	github.com/weaveworks/eksctl v0.221.0
 	k8s.io/cli-runtime v0.35.0
-	k8s.io/cloud-provider-aws v1.34.1
+	k8s.io/cloud-provider-aws v1.35.0
 	sigs.k8s.io/e2e-framework v0.6.1-0.20250909060333-8677714ff9a6 // bump version once https://github.com/kubernetes-sigs/e2e-framework/pull/517 gets released
 )
 
@@ -357,9 +357,9 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/gcfg.v1 v1.2.3 // indirect
-	k8s.io/cloud-provider v0.34.1 // indirect
-	k8s.io/component-base v0.34.1 // indirect
-	k8s.io/kubelet v0.34.1 // indirect
+	k8s.io/cloud-provider v0.35.0 // indirect
+	k8s.io/component-base v0.35.0 // indirect
+	k8s.io/kubelet v0.35.0 // indirect
 	sigs.k8s.io/kustomize/api v0.20.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.20.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
