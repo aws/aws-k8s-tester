@@ -43,15 +43,15 @@ func TestSingleNodeUnitTest(t *testing.T) {
 		WithLabel("suite", "nvidia").
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			if *nvidiaTestImage == "" {
+			if testConfig.NvidiaTestImage == "" {
 				t.Fatal(fmt.Errorf("nvidiaTestImage must be set to run unit test, use https://github.com/aws/aws-k8s-tester/blob/main/test/images/nvidia/Dockerfile to build the image and -nvidiaTestImage to set the image url"))
 			}
 			var err error
 			renderedJobUnitTestSingleNodeManifest, err = fwext.RenderManifests(jobUnitTestSingleNodeManifest, unitTestManifestTplVars{
-				NvidiaTestImage:    *nvidiaTestImage,
-				SkipTestSubcommand: *skipUnitTestSubcommand,
+				NvidiaTestImage:    testConfig.NvidiaTestImage,
+				SkipTestSubcommand: testConfig.SkipUnitTestSubcommand,
 				GpuPerNode:         gpuPerNode,
-				NodeType:           *nodeType,
+				NodeType:           testConfig.NodeType,
 			})
 			if err != nil {
 				t.Fatal(err)
