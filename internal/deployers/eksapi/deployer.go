@@ -63,6 +63,7 @@ type deployerOptions struct {
 	AMIType                     string        `flag:"ami-type" desc:"AMI type for managed nodes"`
 	AutoMode                    bool          `flag:"auto-mode" desc:"Enable EKS Auto Mode"`
 	CapacityReservation         bool          `flag:"capacity-reservation" desc:"Use capacity reservation for the unmanaged nodegroup"`
+	TargetCapacityReservationId string        `flag:"target-capacity-reservation-id" desc:"CapacityReservation ID to use for targeted launches. Implies --capacity-reservation."`
 	ClusterCreationTimeout      time.Duration `flag:"cluster-creation-timeout" desc:"Time to wait for cluster to be created and become active."`
 	ClusterRoleServicePrincipal string        `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
 	DeployCloudwatchInfra       bool          `flag:"deploy-cloudwatch-infra" desc:"Deploy required infrastructure for emitting metrics to CloudWatch"`
@@ -298,6 +299,9 @@ func (d *deployer) verifyUpFlags() error {
 	}
 	if len(d.InstanceTypes) > 0 && len(d.InstanceTypeArchs) > 0 {
 		return fmt.Errorf("--instance-types and --instance-type-archs are mutually exclusive")
+	}
+	if d.TargetCapacityReservationId != "" {
+		d.CapacityReservation = true
 	}
 	if d.UnmanagedNodes {
 		if d.AMIType != "" {
