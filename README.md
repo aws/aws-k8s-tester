@@ -108,3 +108,25 @@ kubetest2 \
   exec \
   go test ./my/test/package
 ```
+
+---
+
+### `gotest-junit` tester
+
+This tester executes a Go test binary and generates JUnit XML output.
+
+It wraps the test execution, captures the output, and uses `go-junit-report` to generate a JUnit XML file in the artifacts directory.
+
+```
+kubetest2 \
+  eksapi \
+  --kubernetes-version=X.XX \
+  --up \
+  --down \
+  --test=gotest-junit \
+  -- ./my/gotest/binary.test
+```
+
+The JUnit XML file is written to `$ARTIFACTS/junit_<test-case>.xml` (e.g., `_artifacts/junit_testcase.xml`).
+
+The artifacts directory defaults to `./_artifacts` or can be set via the `ARTIFACTS` environment variable.
