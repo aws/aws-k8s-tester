@@ -4,15 +4,15 @@ go 1.25.1
 
 require (
 	github.com/aws/aws-sdk-go v1.55.8
-	github.com/aws/aws-sdk-go-v2 v1.41.0
-	github.com/aws/aws-sdk-go-v2/config v1.32.6
-	github.com/aws/aws-sdk-go-v2/service/autoscaling v1.62.4
-	github.com/aws/aws-sdk-go-v2/service/cloudformation v1.71.4
-	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.53.0
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.279.0
-	github.com/aws/aws-sdk-go-v2/service/eks v1.76.3
-	github.com/aws/aws-sdk-go-v2/service/iam v1.53.1
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.95.0
+	github.com/aws/aws-sdk-go-v2 v1.41.1
+	github.com/aws/aws-sdk-go-v2/config v1.32.7
+	github.com/aws/aws-sdk-go-v2/service/autoscaling v1.62.5
+	github.com/aws/aws-sdk-go-v2/service/cloudformation v1.71.5
+	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.53.1
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.279.1
+	github.com/aws/aws-sdk-go-v2/service/eks v1.76.4
+	github.com/aws/aws-sdk-go-v2/service/iam v1.53.2
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.95.1
 	github.com/aws/smithy-go v1.24.0
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/spf13/pflag v1.0.10
@@ -25,14 +25,14 @@ require (
 	k8s.io/klog/v2 v2.130.1
 	sigs.k8s.io/controller-runtime v0.22.4
 	sigs.k8s.io/karpenter v1.8.0
-	sigs.k8s.io/kubetest2 v0.0.0-20251212143746-57fcb7870313
+	sigs.k8s.io/kubetest2 v0.0.0-20260108084739-2f9a9397f033
 )
 
 require (
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.4 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.16 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.9.7 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.16 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.17 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.9.8 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.17 // indirect
 	github.com/awslabs/operatorpkg v0.0.0-20250909182303-e8e550b6f339 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
@@ -82,19 +82,19 @@ require (
 	github.com/alibabacloud-go/tea-xml v1.1.3 // indirect
 	github.com/aliyun/credentials-go v1.3.2 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.19.6 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.16 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.16 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.16 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.19.7 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.17 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.17 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.17 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.36.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.27.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.4 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.16 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssm v1.67.7
-	github.com/aws/aws-sdk-go-v2/service/sso v1.30.8 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.12 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.41.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.17 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssm v1.67.8
+	github.com/aws/aws-sdk-go-v2/service/sso v1.30.9 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.13 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.41.6 // indirect
 	github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.0.0-20240318154307-a1a918375412 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
@@ -281,7 +281,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
 	k8s.io/release v0.18.0 // indirect
-	k8s.io/utils v0.0.0-20251222233032-718f0e51e6d2
+	k8s.io/utils v0.0.0-20260108192941-914a6e750570
 	modernc.org/libc v1.45.2 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.2 // indirect
@@ -318,7 +318,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2 v1.54.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/kms v1.47.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/outposts v1.57.8 // indirect
-	github.com/aws/aws-sdk-go-v2/service/signin v1.0.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/signin v1.0.5 // indirect
 	github.com/cncf/xds/go v0.0.0-20250501225837-2ac532fd4443 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.2.1 // indirect
