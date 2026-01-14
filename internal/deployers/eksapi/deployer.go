@@ -87,6 +87,7 @@ type deployerOptions struct {
 	Region                  string        `flag:"region" desc:"AWS region for EKS cluster"`
 	SkipNodeReadinessChecks bool          `flag:"skip-node-readiness-checks" desc:"Skip performing readiness checks on created nodes"`
 	StaticClusterName       string        `flag:"static-cluster-name" desc:"Optional when re-use existing cluster and node group by querying the kubeconfig and run test"`
+	SetClusterDNSIP         bool          `flag:"set-cluster-dns-ip" desc:"Explicitly set cluster-dns-ip in node userdata instead of letting the node derive it"`
 	TuneVPCCNI              bool          `flag:"tune-vpc-cni" desc:"Apply tuning parameters to the VPC CNI DaemonSet"`
 	UnmanagedNodes          bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup. Requires --ami"`
 	UpClusterHeaders        []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`

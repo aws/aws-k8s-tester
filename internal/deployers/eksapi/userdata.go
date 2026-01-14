@@ -3,6 +3,7 @@ package eksapi
 import (
 	"bytes"
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 	"text/template"
@@ -43,11 +44,20 @@ func generateUserData(cluster *Cluster, opts *deployerOptions) (string, bool, er
 		return "", false, err
 	}
 
+	var dnsIP string
+	if opts.SetClusterDNSIP {
+		dnsIP, err = deriveClusterDNSIP(cluster.cidr)
+		if err != nil {
+			return "", false, err
+		}
+	}
+
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, templates.UserDataTemplateData{
 		APIServerEndpoint:    cluster.endpoint,
 		CertificateAuthority: cluster.certificateAuthorityData,
 		CIDR:                 cluster.cidr,
+		ClusterDNSIP:         dnsIP,
 		Name:                 cluster.name,
 		KubeletFeatureGates:  kubeletFeatureGates,
 		NodeadmFeatureGates:  nodeadmFeatureGates,
@@ -55,6 +65,16 @@ func generateUserData(cluster *Cluster, opts *deployerOptions) (string, bool, er
 		return "", false, err
 	}
 	return buf.String(), userDataIsMimePart, nil
+}
+
+func deriveClusterDNSIP(cidr string) (string, error) {
+	_, ipNet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return "", fmt.Errorf("invalid CIDR: %v", err)
+	}
+	ip := ipNet.IP
+	ip[len(ip)-1] += 10
+	return ip.String(), nil
 }
 
 func extractFeatureGates(featureGatePairs []string) (map[string]bool, error) {

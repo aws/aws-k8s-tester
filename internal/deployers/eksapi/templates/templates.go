@@ -71,6 +71,7 @@ type UserDataTemplateData struct {
 	Name                 string
 	CertificateAuthority string
 	CIDR                 string
+	ClusterDNSIP         string
 	APIServerEndpoint    string
 	KubeletFeatureGates  map[string]bool
 	NodeadmFeatureGates  map[string]bool

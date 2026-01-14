@@ -80,6 +80,17 @@ device-ownership-from-security-context = true
 "enabled" = true
 `
 
+const bottlerocketUserDataWithDNS = `[settings.kubernetes]
+"cluster-name" = "cluster"
+"api-server" = "https://example.com"
+"cluster-certificate" = "certificateAuthority"
+"cluster-dns-ip" = "10.100.0.10"
+device-ownership-from-security-context = true
+
+[settings.host-containers.admin]
+"enabled" = true
+`
+
 func Test_generateUserData(t *testing.T) {
 	cases := []struct {
 		format              string
@@ -87,6 +98,7 @@ func Test_generateUserData(t *testing.T) {
 		expectedIsMimePart  bool
 		kubernetesVersion   string
 		NodeadmFeatureGates []string
+		setClusterDNSIP     bool
 		wantErr             bool
 	}{
 		{
@@ -103,6 +115,12 @@ func Test_generateUserData(t *testing.T) {
 			format:             "bottlerocket",
 			expected:           bottlerocketUserData,
 			expectedIsMimePart: false,
+		},
+		{
+			format:             "bottlerocket",
+			expected:           bottlerocketUserDataWithDNS,
+			expectedIsMimePart: false,
+			setClusterDNSIP:    true,
 		},
 		{
 			format:             "nodeadm",
@@ -123,6 +141,7 @@ func Test_generateUserData(t *testing.T) {
 			deployerOpts := &deployerOptions{
 				KubernetesVersion:   c.kubernetesVersion,
 				NodeadmFeatureGates: c.NodeadmFeatureGates,
+				SetClusterDNSIP:     c.setClusterDNSIP,
 				UserDataFormat:      c.format,
 			}
 			actual, isMimePart, err := generateUserData(&cluster, deployerOpts)
@@ -165,6 +184,28 @@ func Test_extractFeatureGates(t *testing.T) {
 		} else {
 			assert.NoError(t, err)
 			assert.Equal(t, testCase.expected, output)
+		}
+	}
+}
+
+func Test_deriveClusterDNSIP(t *testing.T) {
+	testCases := []struct {
+		cidr      string
+		expected  string
+		expectErr bool
+	}{
+		{cidr: "192.0.2.0/24", expected: "192.0.2.10"},
+		{cidr: "198.51.100.0/24", expected: "198.51.100.10"},
+		{cidr: "2001:db8:1234::/108", expected: "2001:db8:1234::a"},
+		{cidr: "invalid", expectErr: true},
+	}
+	for _, tc := range testCases {
+		result, err := deriveClusterDNSIP(tc.cidr)
+		if tc.expectErr {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expected, result)
 		}
 	}
 }
