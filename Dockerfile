@@ -18,7 +18,8 @@ RUN go test -c -tags=e2e ./test/... -o $GOPATH/bin/
 
 RUN go install sigs.k8s.io/kubetest2 && \
     go install sigs.k8s.io/kubetest2/kubetest2-tester-exec && \
-    go install sigs.k8s.io/kubetest2/kubetest2-tester-ginkgo
+    go install sigs.k8s.io/kubetest2/kubetest2-tester-ginkgo && \
+    go install sigs.k8s.io/hydrophone@latest
 
 FROM public.ecr.aws/amazonlinux/amazonlinux:2023
 ARG TARGETOS
