@@ -812,8 +812,8 @@ github.com/sigstore/protobuf-specs v0.5.0 h1:F8YTI65xOHw70NrvPwJ5PhAzsvTnuJMGLkA
 github.com/sigstore/protobuf-specs v0.5.0/go.mod h1:+gXR+38nIa2oEupqDdzg4qSBT0Os+sP7oYv6alWewWc=
 github.com/sigstore/rekor v1.3.9 h1:sUjRpKVh/hhgqGMs0t+TubgYsksArZ6poLEC3MsGAzU=
 github.com/sigstore/rekor v1.3.9/go.mod h1:xThNUhm6eNEmkJ/SiU/FVU7pLY2f380fSDZFsdDWlcM=
-github.com/sigstore/sigstore v1.10.3 h1:s7fBYYOzW/2Vd0nND2ZdpWySb5vRF2u9eix/NZMHJm0=
-github.com/sigstore/sigstore v1.10.3/go.mod h1:T26vXIkpnGEg391v3TaZ8EERcXbnjtZb/1erh5jbIQk=
+github.com/sigstore/sigstore v1.10.4 h1:ytOmxMgLdcUed3w1SbbZOgcxqwMG61lh1TmZLN+WeZE=
+github.com/sigstore/sigstore v1.10.4/go.mod h1:tDiyrdOref3q6qJxm2G+JHghqfmvifB7hw+EReAfnbI=
 github.com/sigstore/sigstore-go v0.6.1 h1:tGkkv1oDIER+QYU5MrjqlttQOVDWfSkmYwMqkJhB/cg=
 github.com/sigstore/sigstore-go v0.6.1/go.mod h1:Xe5GHmUeACRFbomUWzVkf/xYCn8xVifb9DgqJrV2dIw=
 github.com/sigstore/sigstore/pkg/signature/kms/aws v1.8.12 h1:EC3UmIaa7nV9sCgSpVevmvgvTYTkMqyrRbj5ojPp7tE=
@@ -878,8 +878,8 @@ github.com/thales-e-security/pool v0.0.2 h1:RAPs4q2EbWsTit6tpzuvTFlgFRJ3S8Evf5gt
 github.com/thales-e-security/pool v0.0.2/go.mod h1:qtpMm2+thHtqhLzTwgDBj/OuNnMpupY8mv0Phz0gjhU=
 github.com/theupdateframework/go-tuf v0.7.0 h1:CqbQFrWo1ae3/I0UCblSbczevCCbS31Qvs5LdxRWqRI=
 github.com/theupdateframework/go-tuf v0.7.0/go.mod h1:uEB7WSY+7ZIugK6R1hiBMBjQftaFzn7ZCDJcp1tCUug=
-github.com/theupdateframework/go-tuf/v2 v2.3.1 h1:fReZUTLvPdqIL8Rd9xEKPmaxig8GIXe0kS4RSEaRfaM=
-github.com/theupdateframework/go-tuf/v2 v2.3.1/go.mod h1:9S0Srkf3c13FelsOyt5OyG3ZZDq9OJDA4IILavrt72Y=
+github.com/theupdateframework/go-tuf/v2 v2.4.1 h1:K6ewW064rKZCPkRo1W/CTbTtm/+IB4+coG1iNURAGCw=
+github.com/theupdateframework/go-tuf/v2 v2.4.1/go.mod h1:Nex2enPVYDFCklrnbTzl3OVwD7fgIAj0J5++z/rvCj8=
 github.com/tidwall/gjson v1.18.0 h1:FIDeeyB800efLX89e5a8Y0BNH+LOngJyGrIWxG2FKQY=
 github.com/tidwall/gjson v1.18.0/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
 github.com/tidwall/match v1.1.1 h1:+Ho715JplO36QYgwN9PGYNhgZvoUSc9X2c80KVTi+GA=
@@ -1164,8 +1164,8 @@ google.golang.org/protobuf v1.21.0/go.mod h1:47Nbq4nVaFHyn7ilMalzfO3qCViNmqZ2kzi
 google.golang.org/protobuf v1.23.0/go.mod h1:EGpADcykh3NcUnDUJcl1+ZksZNG86OlYog2l/sGQquU=
 google.golang.org/protobuf v1.26.0-rc.1/go.mod h1:jlhhOSvTdKEhbULTjvd4ARK9grFBp09yW+WbY/TyQbw=
 google.golang.org/protobuf v1.26.0/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
-google.golang.org/protobuf v1.36.10 h1:AYd7cD/uASjIL6Q9LiTjz8JLcrh/88q5UObnmY3aOOE=
-google.golang.org/protobuf v1.36.10/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
+google.golang.org/protobuf v1.36.11 h1:fV6ZwhNocDyBLK0dj+fg8ektcVegBBuEolpbTQyBNVE=
+google.golang.org/protobuf v1.36.11/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
