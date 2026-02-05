@@ -70,6 +70,7 @@ type deployerOptions struct {
 	EFA                         bool          `flag:"efa" desc:"Create EFA interfaces on the node of an unmanaged nodegroup. One instance type must be passed if set. Requires --unmanaged-nodes and --instance-types."`
 	EKSEndpointURL              string        `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
 	EmitMetrics                 bool          `flag:"emit-metrics" desc:"Record and emit metrics to CloudWatch"`
+	EnableClusterLogging        bool          `flag:"enable-cluster-logging" desc:"Enable sending EKS control plane logs to an /aws/eks/<cluster_name/cluster log group. https://docs.aws.amazon.com/eks/latest/userguide/control-plane-logs.html"`
 	ExpectedAMI                 string        `flag:"expected-ami" desc:"Expected AMI of nodes. Up will fail if the actual nodes are not utilizing the expected AMI. Defaults to --ami if defined."`
 	// TODO: remove this once it's no longer used in downstream jobs
 	GenerateSSHKey          bool          `flag:"generate-ssh-key" desc:"Generate an SSH key to use for tests. The generated key should not be used in production, as it will not have a passphrase."`

@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
+	"github.com/aws/smithy-go/ptr"
 	"k8s.io/klog/v2"
 )
 
@@ -72,6 +73,16 @@ func (m *ClusterManager) getOrCreateCluster(infra *Infrastructure, opts *deploye
 				AuthenticationMode: ekstypes.AuthenticationModeApi,
 			}
 			input.BootstrapSelfManagedAddons = aws.Bool(false)
+		}
+		if opts.EnableClusterLogging {
+			input.Logging = &ekstypes.Logging{
+				ClusterLogging: []ekstypes.LogSetup{
+					{
+						Enabled: ptr.Bool(true),
+						Types:   ekstypes.LogTypeApi.Values(),
+					},
+				},
+			}
 		}
 		apiOpts, err := util.NewHTTPHeaderAPIOptions(opts.UpClusterHeaders)
 		if err != nil {
@@ -145,43 +156,43 @@ func (m *ClusterManager) isClusterActive() (bool, error) {
 }
 
 func (m *ClusterManager) deleteCluster() error {
-    const (
-        retryInterval = 2 * time.Minute
-        maxAttempts   = 5
-    )
+	const (
+		retryInterval = 2 * time.Minute
+		maxAttempts   = 5
+	)
 
-    for attempt := 1; attempt <= maxAttempts; attempt++ {
-        input := eks.DeleteClusterInput{
-            Name: aws.String(m.resourceID),
-        }
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		input := eks.DeleteClusterInput{
+			Name: aws.String(m.resourceID),
+		}
 
-        klog.Infof("Attempt %d: deleting cluster...", attempt)
-        out, err := m.clients.EKS().DeleteCluster(context.TODO(), &input)
-        if err != nil {
-            var notFound *ekstypes.ResourceNotFoundException
-            if errors.As(err, &notFound) {
-                klog.Infof("cluster does not exist: %s", m.resourceID)
-                return nil
-            }
-            if attempt == maxAttempts {
-                return fmt.Errorf("Failed to delete cluster after %d attempts: %v", maxAttempts, err)
-            }
-            klog.Infof("Deletion failed: %v. Waiting %v before retry...", err, retryInterval)
-            time.Sleep(retryInterval)
-            continue
-        }
+		klog.Infof("Attempt %d: deleting cluster...", attempt)
+		out, err := m.clients.EKS().DeleteCluster(context.TODO(), &input)
+		if err != nil {
+			var notFound *ekstypes.ResourceNotFoundException
+			if errors.As(err, &notFound) {
+				klog.Infof("cluster does not exist: %s", m.resourceID)
+				return nil
+			}
+			if attempt == maxAttempts {
+				return fmt.Errorf("failed to delete cluster after %d attempts: %v", maxAttempts, err)
+			}
+			klog.Infof("Deletion failed: %v. Waiting %v before retry...", err, retryInterval)
+			time.Sleep(retryInterval)
+			continue
+		}
 
-        klog.Infof("waiting for cluster to be deleted: %s", *out.Cluster.Arn)
-        err = eks.NewClusterDeletedWaiter(m.clients.EKS()).
-            Wait(context.TODO(), &eks.DescribeClusterInput{
-                Name: aws.String(m.resourceID),
-            }, time.Minute*15)
+		klog.Infof("waiting for cluster to be deleted: %s", *out.Cluster.Arn)
+		err = eks.NewClusterDeletedWaiter(m.clients.EKS()).
+			Wait(context.TODO(), &eks.DescribeClusterInput{
+				Name: aws.String(m.resourceID),
+			}, time.Minute*15)
 
-        if err != nil {
-            return fmt.Errorf("failed to wait for cluster to be deleted: %v", err)
-        }
-        return nil
-    }
+		if err != nil {
+			return fmt.Errorf("failed to wait for cluster to be deleted: %v", err)
+		}
+		return nil
+	}
 
-    return fmt.Errorf("Failed to delete cluster after %d attempts", maxAttempts)
+	return fmt.Errorf("failed to delete cluster after %d attempts", maxAttempts)
 }
