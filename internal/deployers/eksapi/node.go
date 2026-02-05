@@ -199,8 +199,7 @@ func (m *nodeManager) createNodePool(opts *deployerOptions, k8sClient *k8sClient
 						Nodes: "10%",
 					},
 				},
-				ConsolidationPolicy: karpv1.ConsolidationPolicyWhenEmpty,
-				ConsolidateAfter:    karpv1.MustParseNillableDuration("600s"),
+				ConsolidateAfter: karpv1.MustParseNillableDuration("Never"),
 			},
 			Template: karpv1.NodeClaimTemplate{
 				Spec: karpv1.NodeClaimTemplateSpec{
