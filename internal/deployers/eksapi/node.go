@@ -175,6 +175,19 @@ func (m *nodeManager) createNodeClass(opts *deployerOptions, k8sClient *k8sClien
 		if ephemeralStorage, ok := spec["ephemeralStorage"].(map[string]interface{}); ok {
 			ephemeralStorage["size"] = "500Gi"
 		}
+
+		// configure capacity reservation selector terms if capacity reservation is enabled
+		if opts.CapacityReservation {
+			capacityReservation, err := m.getCapacityReservation(opts)
+			if err != nil {
+				return fmt.Errorf("failed to get capacity reservation: %w", err)
+			}
+			spec["capacityReservationSelectorTerms"] = []map[string]interface{}{
+				{
+					"id": aws.ToString(capacityReservation.CapacityReservationId),
+				},
+			}
+		}
 	}
 
 	klog.Infof("creating new node class...")
@@ -221,7 +234,7 @@ func (m *nodeManager) createNodePool(opts *deployerOptions, k8sClient *k8sClient
 							NodeSelectorRequirement: corev1.NodeSelectorRequirement{
 								Key:      "karpenter.sh/capacity-type",
 								Operator: corev1.NodeSelectorOpIn,
-								Values:   []string{"on-demand"},
+								Values:   []string{"reserved", "on-demand"},
 							},
 						},
 						{
