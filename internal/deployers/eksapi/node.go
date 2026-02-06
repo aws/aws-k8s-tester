@@ -177,11 +177,14 @@ func (m *nodeManager) createNodeClass(opts *deployerOptions, k8sClient *k8sClien
 		}
 
 		// configure capacity reservation selector terms if capacity reservation is enabled
-		if opts.CapacityReservation && opts.TargetCapacityReservationId != "" {
-			klog.Infof("configuring capacity reservation selector for ODCR: %s", opts.TargetCapacityReservationId)
+		if opts.CapacityReservation {
+			capacityReservation, err := m.getCapacityReservation(opts)
+			if err != nil {
+				return fmt.Errorf("failed to get capacity reservation: %w", err)
+			}
 			spec["capacityReservationSelectorTerms"] = []map[string]interface{}{
 				{
-					"id": opts.TargetCapacityReservationId,
+					"id": aws.ToString(capacityReservation.CapacityReservationId),
 				},
 			}
 		}
