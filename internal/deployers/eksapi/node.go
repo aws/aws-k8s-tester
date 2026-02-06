@@ -221,7 +221,7 @@ func (m *nodeManager) createNodePool(opts *deployerOptions, k8sClient *k8sClient
 							NodeSelectorRequirement: corev1.NodeSelectorRequirement{
 								Key:      "karpenter.sh/capacity-type",
 								Operator: corev1.NodeSelectorOpIn,
-								Values:   []string{"on-demand"},
+								Values:   []string{"reserved", "on-demand"},
 							},
 						},
 						{
