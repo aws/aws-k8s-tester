@@ -63,12 +63,14 @@ type deployerOptions struct {
 	AMIType                     string        `flag:"ami-type" desc:"AMI type for managed nodes"`
 	AutoMode                    bool          `flag:"auto-mode" desc:"Enable EKS Auto Mode"`
 	CapacityReservation         bool          `flag:"capacity-reservation" desc:"Use capacity reservation for the unmanaged nodegroup"`
+	TargetCapacityReservationId string        `flag:"target-capacity-reservation-id" desc:"CapacityReservation ID to use for targeted launches. Implies --capacity-reservation."`
 	ClusterCreationTimeout      time.Duration `flag:"cluster-creation-timeout" desc:"Time to wait for cluster to be created and become active."`
 	ClusterRoleServicePrincipal string        `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
 	DeployCloudwatchInfra       bool          `flag:"deploy-cloudwatch-infra" desc:"Deploy required infrastructure for emitting metrics to CloudWatch"`
 	EFA                         bool          `flag:"efa" desc:"Create EFA interfaces on the node of an unmanaged nodegroup. One instance type must be passed if set. Requires --unmanaged-nodes and --instance-types."`
 	EKSEndpointURL              string        `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
 	EmitMetrics                 bool          `flag:"emit-metrics" desc:"Record and emit metrics to CloudWatch"`
+	EnableClusterLogging        bool          `flag:"enable-cluster-logging" desc:"Enable sending EKS control plane logs to an /aws/eks/<cluster_name/cluster log group. https://docs.aws.amazon.com/eks/latest/userguide/control-plane-logs.html"`
 	ExpectedAMI                 string        `flag:"expected-ami" desc:"Expected AMI of nodes. Up will fail if the actual nodes are not utilizing the expected AMI. Defaults to --ami if defined."`
 	// TODO: remove this once it's no longer used in downstream jobs
 	GenerateSSHKey          bool          `flag:"generate-ssh-key" desc:"Generate an SSH key to use for tests. The generated key should not be used in production, as it will not have a passphrase."`
@@ -86,6 +88,7 @@ type deployerOptions struct {
 	Region                  string        `flag:"region" desc:"AWS region for EKS cluster"`
 	SkipNodeReadinessChecks bool          `flag:"skip-node-readiness-checks" desc:"Skip performing readiness checks on created nodes"`
 	StaticClusterName       string        `flag:"static-cluster-name" desc:"Optional when re-use existing cluster and node group by querying the kubeconfig and run test"`
+	SetClusterDNSIP         bool          `flag:"set-cluster-dns-ip" desc:"Explicitly set cluster-dns-ip in node userdata instead of letting the node derive it"`
 	TuneVPCCNI              bool          `flag:"tune-vpc-cni" desc:"Apply tuning parameters to the VPC CNI DaemonSet"`
 	UnmanagedNodes          bool          `flag:"unmanaged-nodes" desc:"Use an AutoScalingGroup instead of an EKS-managed nodegroup. Requires --ami"`
 	UpClusterHeaders        []string      `flag:"up-cluster-header" desc:"Additional header to add to eks:CreateCluster requests. Specified in the same format as curl's -H flag."`
@@ -298,6 +301,9 @@ func (d *deployer) verifyUpFlags() error {
 	}
 	if len(d.InstanceTypes) > 0 && len(d.InstanceTypeArchs) > 0 {
 		return fmt.Errorf("--instance-types and --instance-type-archs are mutually exclusive")
+	}
+	if d.TargetCapacityReservationId != "" {
+		d.CapacityReservation = true
 	}
 	if d.UnmanagedNodes {
 		if d.AMIType != "" {

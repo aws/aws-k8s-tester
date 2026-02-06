@@ -473,8 +473,9 @@ func (m *InfrastructureManager) getRankedAZsForInstanceTypes(opts *deployerOptio
 }
 
 func (m *InfrastructureManager) getAZsWithCapacity(opts *deployerOptions) ([]string, error) {
+	// TODO: consolidate this with the CapacityReservation logic in node.go
 	var subnetAzs []string
-	capacityReservations, err := m.clients.EC2().DescribeCapacityReservations(context.TODO(), &ec2.DescribeCapacityReservationsInput{
+	describeReservationsInput := ec2.DescribeCapacityReservationsInput{
 		Filters: []ec2types.Filter{
 			{
 				Name:   aws.String("instance-type"),
@@ -485,7 +486,11 @@ func (m *InfrastructureManager) getAZsWithCapacity(opts *deployerOptions) ([]str
 				Values: []string{"active"},
 			},
 		},
-	})
+	}
+	if opts.TargetCapacityReservationId != "" {
+		describeReservationsInput.CapacityReservationIds = []string{opts.TargetCapacityReservationId}
+	}
+	capacityReservations, err := m.clients.EC2().DescribeCapacityReservations(context.TODO(), &describeReservationsInput)
 	if err != nil {
 		return nil, err
 	}

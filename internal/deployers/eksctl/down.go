@@ -21,7 +21,7 @@ func (d *deployer) Down() error {
 		klog.Infof("Successfully deleted nodegroup: %s from cluster: %s", d.NodegroupName, d.clusterName)
 	} else if d.DeployTarget == "cluster" {
 		klog.Infof("deleting cluster %s", d.clusterName)
-		err = util.ExecuteCommand("eksctl", "delete", "cluster", "--name", d.clusterName, "--wait")
+		err = util.ExecuteCommand("eksctl", "delete", "cluster", "--name", d.clusterName, "--wait", "--disable-nodegroup-eviction")
 		if err != nil {
 			return fmt.Errorf("failed to delete cluster: %v", err)
 		}

@@ -199,8 +199,7 @@ func (m *nodeManager) createNodePool(opts *deployerOptions, k8sClient *k8sClient
 						Nodes: "10%",
 					},
 				},
-				ConsolidationPolicy: karpv1.ConsolidationPolicyWhenEmpty,
-				ConsolidateAfter:    karpv1.MustParseNillableDuration("600s"),
+				ConsolidateAfter: karpv1.MustParseNillableDuration("Never"),
 			},
 			Template: karpv1.NodeClaimTemplate{
 				Spec: karpv1.NodeClaimTemplateSpec{
@@ -646,7 +645,7 @@ func (m *nodeManager) verifyASGAMI(asgName string, amiId string) (bool, error) {
 }
 
 func (m *nodeManager) getCapacityReservation(opts *deployerOptions) (*ec2types.CapacityReservation, error) {
-	capacityReservations, err := m.clients.EC2().DescribeCapacityReservations(context.TODO(), &ec2.DescribeCapacityReservationsInput{
+	describeReservationsInput := ec2.DescribeCapacityReservationsInput{
 		Filters: []ec2types.Filter{
 			{
 				Name:   aws.String("instance-type"),
@@ -657,7 +656,11 @@ func (m *nodeManager) getCapacityReservation(opts *deployerOptions) (*ec2types.C
 				Values: []string{"active"},
 			},
 		},
-	})
+	}
+	if opts.TargetCapacityReservationId != "" {
+		describeReservationsInput.CapacityReservationIds = []string{opts.TargetCapacityReservationId}
+	}
+	capacityReservations, err := m.clients.EC2().DescribeCapacityReservations(context.TODO(), &describeReservationsInput)
 	if err != nil {
 		return nil, fmt.Errorf("failed to describe capacity reservation: %v", err)
 	}
