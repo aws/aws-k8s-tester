@@ -175,6 +175,16 @@ func (m *nodeManager) createNodeClass(opts *deployerOptions, k8sClient *k8sClien
 		if ephemeralStorage, ok := spec["ephemeralStorage"].(map[string]interface{}); ok {
 			ephemeralStorage["size"] = "500Gi"
 		}
+
+		// configure capacity reservation selector terms if capacity reservation is enabled
+		if opts.CapacityReservation && opts.TargetCapacityReservationId != "" {
+			klog.Infof("configuring capacity reservation selector for ODCR: %s", opts.TargetCapacityReservationId)
+			spec["capacityReservationSelectorTerms"] = []map[string]interface{}{
+				{
+					"id": opts.TargetCapacityReservationId,
+				},
+			}
+		}
 	}
 
 	klog.Infof("creating new node class...")
