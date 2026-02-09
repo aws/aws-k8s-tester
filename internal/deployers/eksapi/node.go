@@ -726,6 +726,14 @@ func (m *nodeManager) getValidAvailabilityZonesFilter(opts *deployerOptions, inf
 	return []string{targetAZ}, nil
 }
 
+func formatFilters(filters []ec2types.Filter) string {
+	var parts []string
+	for _, f := range filters {
+		parts = append(parts, fmt.Sprintf("{Name:%s Values:%v}", aws.ToString(f.Name), f.Values))
+	}
+	return "[" + strings.Join(parts, ",") + "]"
+}
+
 func (m *nodeManager) getValidSubnets(opts *deployerOptions, infra *Infrastructure, availabilityZoneFilter []string) ([]string, error) {
 	var describeFilters []ec2types.Filter
 	var targetSubnets []string
@@ -749,7 +757,7 @@ func (m *nodeManager) getValidSubnets(opts *deployerOptions, infra *Infrastructu
 		return nil, fmt.Errorf("failed to describe subnets %v: %v", targetSubnets, err)
 	}
 	if describeResponse == nil || len(describeResponse.Subnets) == 0 {
-		return nil, fmt.Errorf("no subnet in %v satisfied filters: %+v", targetSubnets, describeFilters)
+		return nil, fmt.Errorf("no subnet in %v satisfied filters: %s", targetSubnets, formatFilters(describeFilters))
 	}
 	var subnetIds []string
 	for _, subnet := range describeResponse.Subnets {
