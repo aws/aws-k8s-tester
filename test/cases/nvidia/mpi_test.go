@@ -71,7 +71,7 @@ func multiNode(testName string) features.Feature {
 			if slices.Contains(instanceSupportsRdmaRead, testConfig.NodeType) {
 				t.Log("Instance supports RDMA")
 				// TODO: revisit this with some kind of per-instance optimizer, or maybe use the defaults for all instance types unless specified
-				if testName == "alltoall_perf" && strings.Contains(*nodeType, "p4") {
+				if testName == "alltoall_perf" && strings.Contains(testConfig.NodeType, "p4") {
 					// Keep default values for P4 running all-to-all
 				} else {
 					maxBytes = "16G"

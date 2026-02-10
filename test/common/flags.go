@@ -12,7 +12,9 @@ import (
 
 // For CloudWatch metric dimension flag
 type MetricOps struct {
-	MetricDimensions map[string]string `flag:"metricDimensions" desc:"CloudWatch metric dimensions as comma-separated key=value pairs"`
+	// gpflag supports map[string]string but with a different non-standard parsing format (key:val) that doesn't match
+	// what the project wants (comma separated key=value pairs). So, we force it to skip parsing under gpflag.Parse.
+	MetricDimensions map[string]string `flag:"-"`
 }
 
 func ParseFlags(config interface{}) (*pflag.FlagSet, error) {
@@ -21,7 +23,9 @@ func ParseFlags(config interface{}) (*pflag.FlagSet, error) {
 		return nil, fmt.Errorf("failed to parse flags: %w", err)
 	}
 
-	// Handle MetricDimensions map that gpflag doesn't support
+	// gpflag supports map[string]string but with a different non-standard parsing format (key:val) that doesn't
+	// match what the project wants (key=val,key=val). So, we handle MetricDimensions separately here to accept
+	// comma separated key=value pairs.
 	if _, hasField := reflect.TypeOf(config).Elem().FieldByName("MetricDimensions"); hasField {
 		field := reflect.ValueOf(config).Elem().FieldByName("MetricDimensions")
 		metricDims := field.Addr().Interface().(*map[string]string)
