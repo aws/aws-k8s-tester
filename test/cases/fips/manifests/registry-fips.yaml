@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: registry-fips
+spec:
+  selector:
+    matchLabels:
+      name: registry-fips
+  template:
+    metadata:
+      labels:
+        name: registry-fips
+    spec:
+      hostNetwork: true
+      containers:
+        - name: registry
+          image: registry:2
+          env:
+            - name: REGISTRY_HTTP_ADDR
+              value: "0.0.0.0:5000"
+            - name: REGISTRY_HTTP_TLS_CERTIFICATE
+              value: "/certs/server.crt"
+            - name: REGISTRY_HTTP_TLS_KEY
+              value: "/certs/server.key"
+          volumeMounts:
+            - name: certs
+              mountPath: /certs
+        - name: seed-image
+          image: public.ecr.aws/docker/library/alpine:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community skopeo
+              sleep 5
+              skopeo copy --dest-tls-verify=false docker://public.ecr.aws/docker/library/alpine:latest docker://127.0.0.1:5000/test:latest
+              echo "Image seeded successfully"
+              sleep infinity
+      volumes:
+        - name: certs
+          hostPath:
+            path: /mnt/server-conf/certs
