@@ -2,10 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: kubetest2-eksapi CloudWatch using Pod Identity
 
 Parameters:
-  ClusterName:
-    Description: Name of the EKS cluster
-    Type: String
-  
   ClusterUUID:
     Description: UUID portion of the cluster name
     Type: String
@@ -29,23 +25,9 @@ Resources:
         - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
       Description: Role for CloudWatch Agent in EKS cluster
 
-  PodIdentityAssociation:
-    Type: AWS::EKS::PodIdentityAssociation
-    Properties:
-      ClusterName: !Ref ClusterName
-      Namespace: amazon-cloudwatch
-      ServiceAccount: cwagent
-      RoleArn: !GetAtt CloudWatchRole.Arn
-
 Outputs:
   CloudWatchRoleArn:
     Description: ARN of the CloudWatch IAM role
     Value: !GetAtt CloudWatchRole.Arn
     Export:
       Name: !Sub "${AWS::StackName}::CloudWatchRoleArn"
-
-  PodIdentityAssociationArn:
-    Description: ARN of the Pod Identity Association
-    Value: !Ref PodIdentityAssociation
-    Export:
-      Name: !Sub '${AWS::StackName}-PodIdentityAssociationArn'

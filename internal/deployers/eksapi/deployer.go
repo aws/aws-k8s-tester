@@ -243,13 +243,17 @@ func (d *deployer) Up() error {
 
 	if d.DeployCloudwatchInfra {
 		klog.Infof("Setting up CloudWatch infrastructure...")
-		if roleArn, err := d.infraManager.createCloudWatchInfrastructureStack(d.cluster.name); err != nil {
-			klog.Errorf("CloudWatch infrastructure setup failed: %v", err)
+		roleArn, err := d.infraManager.createCloudWatchInfrastructureStack(d.cluster.name)
+		if err != nil {
+			klog.Errorf("CloudWatch infrastructure stack creation failed: %v", err)
 			return err
-		} else {
-			d.infra.cloudwatchRoleArn = roleArn
-			klog.Infof("CloudWatch infrastructure setup completed")
 		}
+		d.infra.cloudwatchRoleArn = roleArn
+		if err := d.infraManager.createCloudWatchPodIdentityAssociation(d.cluster.name, roleArn); err != nil {
+			klog.Errorf("CloudWatch PodIdentityAssociation creation failed: %v", err)
+			return err
+		}
+		klog.Infof("CloudWatch infrastructure setup completed")
 		// Apply CloudWatch infrastructure manifest
 		manifest := templates.CloudWatchAgentRbac
 		if err := fwext.ApplyManifests(d.k8sClient.config, manifest); err != nil {

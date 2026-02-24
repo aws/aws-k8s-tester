@@ -17,6 +17,7 @@ import (
 	cloudwatchtypes "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go-v2/service/eks"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/aws/aws-sdk-go/aws/arn"
@@ -517,10 +518,6 @@ func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName 
 		Capabilities: []cloudformationtypes.Capability{cloudformationtypes.CapabilityCapabilityNamedIam},
 		Parameters: []cloudformationtypes.Parameter{
 			{
-				ParameterKey:   aws.String("ClusterName"),
-				ParameterValue: aws.String(clusterName),
-			},
-			{
 				ParameterKey:   aws.String("ClusterUUID"),
 				ParameterValue: aws.String(clusterUUID),
 			},
@@ -548,18 +545,45 @@ func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName 
 		return "", fmt.Errorf("failed to describe CloudWatch infrastructure stack: %w", err)
 	}
 
+	var roleArn string
 	for _, output := range stack.Stacks[0].Outputs {
 		if aws.ToString(output.OutputKey) == "CloudWatchRoleArn" {
-			klog.Infof("CloudWatch infrastructure stack created successfully with role ARN: %s", aws.ToString(output.OutputValue))
-			return aws.ToString(output.OutputValue), nil
+			roleArn = aws.ToString(output.OutputValue)
+			break
 		}
 	}
+	if roleArn == "" {
+		return "", fmt.Errorf("CloudWatch role ARN not found in stack outputs")
+	}
 
-	return "", fmt.Errorf("CloudWatch role ARN not found in stack outputs")
+	klog.Infof("CloudWatch infrastructure stack created successfully with role ARN: %s", roleArn)
+	return roleArn, nil
+}
+
+// createCloudWatchPodIdentityAssociation creates a PodIdentityAssociation
+// via the EKS API directly, rather than through CloudFormation, to ensure
+// the correct EKS endpoint is used when a custom endpoint URL is configured.
+// The association is automatically cleaned up when the cluster is deleted.
+func (m *InfrastructureManager) createCloudWatchPodIdentityAssociation(clusterName string, roleArn string) error {
+	klog.Infof("creating PodIdentityAssociation for cluster %s...", clusterName)
+	_, err := m.clients.EKS().CreatePodIdentityAssociation(context.TODO(), &eks.CreatePodIdentityAssociationInput{
+		ClusterName:    aws.String(clusterName),
+		Namespace:      aws.String("amazon-cloudwatch"),
+		ServiceAccount: aws.String("cwagent"),
+		RoleArn:        aws.String(roleArn),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create PodIdentityAssociation: %w", err)
+	}
+	klog.Infof("PodIdentityAssociation created successfully for cluster %s", clusterName)
+	return nil
 }
 
 func (m *InfrastructureManager) deleteCloudWatchInfrastructureStack() error {
 	stackName, _ := getCloudWatchStackName(m.resourceID)
+
+	// The PodIdentityAssociation created via the EKS API is automatically
+	// cleaned up when the cluster is deleted, so no explicit deletion is needed.
 
 	klog.Infof("deleting CloudWatch infrastructure stack: %s", stackName)
 	if _, err := m.clients.CFN().DeleteStack(context.TODO(), &cloudformation.DeleteStackInput{
