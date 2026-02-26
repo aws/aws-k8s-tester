@@ -192,6 +192,10 @@ RUN useradd -ms /bin/bash ubuntu
 RUN echo 'ubuntu:password' | chpasswd
 RUN usermod -aG sudo ubuntu
 
+COPY test/images/neuron/hack/install-test-resources.sh ./hack/install-test-resources.sh
+RUN chmod +x ./hack/install-test-resources.sh && \
+    ./hack/install-test-resources.sh /home/ubuntu
+
 WORKDIR /home/ubuntu
 USER ubuntu
 
