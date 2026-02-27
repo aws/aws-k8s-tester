@@ -188,13 +188,15 @@ RUN mkdir -p /var/run/sshd && \
     sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
 
-RUN useradd -ms /bin/bash ubuntu
-RUN echo 'ubuntu:password' | chpasswd
-RUN usermod -aG sudo ubuntu
-
 COPY test/images/neuron/hack/install-test-resources.sh ./hack/install-test-resources.sh
 RUN chmod +x ./hack/install-test-resources.sh && \
-    ./hack/install-test-resources.sh /home/ubuntu
+    ./hack/install-test-resources.sh /home/ubuntu && \
+    rm -f ./hack/install-test-resources.sh
+
+RUN useradd -ms /bin/bash ubuntu
+RUN echo 'ubuntu:password' | chpasswd
+RUN usermod -aG sudo ubuntu &&\
+    chown -R ubuntu /home/ubuntu
 
 WORKDIR /home/ubuntu
 USER ubuntu
