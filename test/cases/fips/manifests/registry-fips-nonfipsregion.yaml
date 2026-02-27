@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: registry-fips
+spec:
+  selector:
+    matchLabels:
+      name: registry-fips
+  template:
+    metadata:
+      labels:
+        name: registry-fips
+    spec:
+      hostNetwork: true
+      containers:
+        - name: registry
+          image: registry:2
+          env:
+            - name: REGISTRY_HTTP_ADDR
+              value: "0.0.0.0:5000"
+            - name: REGISTRY_HTTP_TLS_CERTIFICATE
+              value: "/certs/server.crt"
+            - name: REGISTRY_HTTP_TLS_KEY
+              value: "/certs/server.key"
+          volumeMounts:
+            - name: certs
+              mountPath: /certs
+        - name: seed-image
+          image: quay.io/skopeo/stable
+          command:
+            - /bin/sh
+            - -c
+            - |
+              sleep 10
+              skopeo copy --dest-tls-verify=false docker://{{.ECREndpoint}} docker://127.0.0.1:5000/test:latest
+              sleep infinity
+      volumes:
+        - name: certs
+          hostPath:
+            path: /mnt/server-conf/certs
