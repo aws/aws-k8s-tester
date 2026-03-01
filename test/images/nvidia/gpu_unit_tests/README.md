@@ -28,7 +28,7 @@ Create PR with the new `tests/test_sysinfo.sh.data/xxx`
 
 -  test_sysinfo.sh :: Validate basic system configuration by comparing it with test config
   - test_numa_topo_topo :: check cpu/numa topology
-  - test_nvidia_gpu_count :: fail if one of GPUs is broken or is not visiable
+  - test_nvidia_gpu_count :: fail if one of GPUs is broken or is not visible
   - test_nvidia_fabric_status :: fail if fabric manager is not active
   - test_nvidia_smi_topo :: fail if nvidia-smi topology is differ
   - test_nvidia_persistence_status :: validate persistence state
