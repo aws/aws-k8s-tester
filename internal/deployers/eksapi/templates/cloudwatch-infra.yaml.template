@@ -17,7 +17,9 @@ Resources:
           - Sid: AllowEksAuthToAssumeRoleForPodIdentity
             Effect: Allow
             Principal:
-              Service: pods.eks.amazonaws.com
+              Service:
+                - pods.eks.amazonaws.com
+                - beta.pods.eks.aws.internal
             Action:
               - sts:AssumeRole
               - sts:TagSession
