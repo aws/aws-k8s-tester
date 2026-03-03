@@ -27,5 +27,5 @@ spec:
               aws.amazon.com/neuroncore: "{{.NeuronCorePerNode}}"
             limits:
               aws.amazon.com/neuroncore: "{{.NeuronCorePerNode}}"
-          nodeSelector:
-            node.kubernetes.io/instance-type: {{.NodeType}}
+      nodeSelector:
+        node.kubernetes.io/instance-type: {{.NodeType}}
