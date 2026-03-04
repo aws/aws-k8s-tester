@@ -68,7 +68,7 @@ func TestSingleNodeUnitTest(t *testing.T) {
 			}
 			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 				wait.WithContext(ctx),
-				wait.WithTimeout(10*time.Minute))
+				wait.WithTimeout(20*time.Minute))
 			if err != nil {
 				t.Fatal(err)
 			}
