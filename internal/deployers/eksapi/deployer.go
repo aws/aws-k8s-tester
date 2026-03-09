@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/internal"
@@ -346,6 +347,13 @@ func (d *deployer) verifyUpFlags() error {
 			d.AMIType = "AL2023_x86_64_STANDARD"
 			klog.Infof("Using default AMI type: %s", d.AMIType)
 		}
+	}
+	if d.EKSEndpointURL != "" && d.ClusterRoleServicePrincipal == "" {
+		spType := "beta"
+		if strings.Contains(d.EKSEndpointURL, "gamma") {
+			spType = "gamma"
+		}
+		d.ClusterRoleServicePrincipal = fmt.Sprintf("eks-%s.aws.internal", spType)
 	}
 	if d.DeployCloudwatchInfra {
 		klog.Infof("Prepending pod identity agent to the list of addons because cloudwatch infrastructure deployment was enabled")
