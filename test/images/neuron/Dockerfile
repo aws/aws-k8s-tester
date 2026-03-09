@@ -61,6 +61,7 @@ RUN apt-get update \
     libcap-dev \
     gnupg2 \
     gpg-agent \
+    libarchive13 \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 

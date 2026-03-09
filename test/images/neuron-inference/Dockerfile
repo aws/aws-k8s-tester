@@ -58,6 +58,7 @@ RUN apt-get update \
      libffi-dev \
      gnupg2 \
      gpg-agent \
+     libarchive13 \
      openssh-server \
      sudo \
      && rm -rf /var/lib/apt/lists/* \
