@@ -48,7 +48,6 @@ func TestNeuronInference(t *testing.T) {
 	if err != nil {
 		t.Fatalf("[ERROR] Failed to render Neuron inference manifest: %v", err)
 	}
-	log.Printf("[DEBUG] Rendered manifest:\n%s", string(renderedManifest))
 
 	feature := features.New("neuron-inference").
 		WithLabel("suite", "neuron").
@@ -72,12 +71,9 @@ func TestNeuronInference(t *testing.T) {
 				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 				wait.WithTimeout(60*time.Minute),
 			); err != nil {
-				log.Println("[ERROR] Neuron inference job failed. Gathering diagnostics...")
-				if diagErr := printJobDiagnostics(ctx, cfg, "default", "neuron-inference"); diagErr != nil {
-					t.Logf("[WARNING] Failed to retrieve job diagnostics: %v", diagErr)
-				}
-				if logErr := printJobLogs(ctx, cfg, "default", "neuron-inference"); logErr != nil {
-					t.Logf("[WARNING] Failed to retrieve job logs: %v", logErr)
+				log.Println("[ERROR] Neuron inference job failed. Gathering logs...")
+				if err := printJobLogs(ctx, cfg, "default", "neuron-inference"); err != nil {
+					t.Logf("[WARNING] Failed to retrieve neuron-inference job logs: %v", err)
 				}
 				t.Fatalf("[ERROR] Neuron inference job did not succeed: %v", err)
 			}
@@ -107,130 +103,6 @@ func TestNeuronInference(t *testing.T) {
 		Feature()
 
 	testenv.Test(t, feature)
-}
-
-func printJobDiagnostics(ctx context.Context, cfg *envconf.Config, namespace, jobName string) error {
-	cs, err := getClientset(cfg.Client().RESTConfig())
-	if err != nil {
-		return fmt.Errorf("[ERROR] failed to create kubernetes client: %w", err)
-	}
-
-	// Get job status
-	job, err := cs.BatchV1().Jobs(namespace).Get(ctx, jobName, metav1.GetOptions{})
-	if err != nil {
-		return fmt.Errorf("[ERROR] failed to get job %s: %w", jobName, err)
-	}
-
-	log.Printf("[INFO] Job Status: Active=%d, Succeeded=%d, Failed=%d",
-		job.Status.Active, job.Status.Succeeded, job.Status.Failed)
-
-	for _, condition := range job.Status.Conditions {
-		log.Printf("[INFO] Job Condition: Type=%s, Status=%s, Reason=%s, Message=%s",
-			condition.Type, condition.Status, condition.Reason, condition.Message)
-	}
-
-	// Get events for the job
-	events, err := cs.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("involvedObject.name=%s,involvedObject.kind=Job", jobName),
-	})
-	if err != nil {
-		log.Printf("[WARNING] Failed to get events for job: %v", err)
-	} else {
-		for _, event := range events.Items {
-			log.Printf("[INFO] Job Event: Type=%s, Reason=%s, Message=%s",
-				event.Type, event.Reason, event.Message)
-		}
-	}
-
-	// Get pods and their events
-	pods, err := cs.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("job-name=%s", jobName),
-	})
-	if err != nil {
-		log.Printf("[WARNING] Failed to list pods for job %s: %v", jobName, err)
-		return nil
-	}
-
-	if len(pods.Items) == 0 {
-		log.Printf("[WARNING] No pods found for job %s", jobName)
-		log.Printf("[INFO] Job spec details:")
-		log.Printf("[INFO]   NodeSelector: %v", job.Spec.Template.Spec.NodeSelector)
-		log.Printf("[INFO]   Tolerations: %v", job.Spec.Template.Spec.Tolerations)
-		if len(job.Spec.Template.Spec.Containers) > 0 {
-			log.Printf("[INFO]   Resource requests: %v", job.Spec.Template.Spec.Containers[0].Resources.Requests)
-			log.Printf("[INFO]   Resource limits: %v", job.Spec.Template.Spec.Containers[0].Resources.Limits)
-		}
-
-		// Check if matching nodes exist
-		if nodeSelector := job.Spec.Template.Spec.NodeSelector; len(nodeSelector) > 0 {
-			nodes, err := cs.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-			if err != nil {
-				log.Printf("[WARNING] Failed to list nodes: %v", err)
-			} else {
-				matchingNodes := 0
-				for _, node := range nodes.Items {
-					matches := true
-					for key, value := range nodeSelector {
-						if node.Labels[key] != value {
-							matches = false
-							break
-						}
-					}
-					if matches {
-						matchingNodes++
-						log.Printf("[INFO] Found matching node: %s (capacity: %v)", node.Name, node.Status.Capacity)
-					}
-				}
-				if matchingNodes == 0 {
-					log.Printf("[ERROR] No nodes found matching nodeSelector: %v", nodeSelector)
-				}
-			}
-		}
-
-		// List all pods in namespace to see cluster-wide scheduling status
-		allPods, err := cs.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{})
-		if err != nil {
-			log.Printf("[WARNING] Failed to list all pods in namespace: %v", err)
-		} else {
-			log.Printf("[INFO] Total pods in namespace %s: %d", namespace, len(allPods.Items))
-			pendingCount := 0
-			runningCount := 0
-			for _, pod := range allPods.Items {
-				if pod.Status.Phase == v1.PodPending {
-					pendingCount++
-					log.Printf("[INFO] Pending pod: %s (reason: %s)", pod.Name, pod.Status.Reason)
-				} else if pod.Status.Phase == v1.PodRunning {
-					runningCount++
-				}
-			}
-			log.Printf("[INFO] Pod summary: %d Running, %d Pending, %d Other", runningCount, pendingCount, len(allPods.Items)-runningCount-pendingCount)
-		}
-		return nil
-	}
-
-	for _, pod := range pods.Items {
-		log.Printf("[INFO] Pod %s: Phase=%s, Node=%s", pod.Name, pod.Status.Phase, pod.Spec.NodeName)
-
-		for _, condition := range pod.Status.Conditions {
-			log.Printf("[INFO] Pod %s Condition: Type=%s, Status=%s, Reason=%s, Message=%s",
-				pod.Name, condition.Type, condition.Status, condition.Reason, condition.Message)
-		}
-
-		// Get pod events
-		podEvents, err := cs.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{
-			FieldSelector: fmt.Sprintf("involvedObject.name=%s,involvedObject.kind=Pod", pod.Name),
-		})
-		if err != nil {
-			log.Printf("[WARNING] Failed to get events for pod %s: %v", pod.Name, err)
-		} else {
-			for _, event := range podEvents.Items {
-				log.Printf("[INFO] Pod %s Event: Type=%s, Reason=%s, Message=%s",
-					pod.Name, event.Type, event.Reason, event.Message)
-			}
-		}
-	}
-
-	return nil
 }
 
 func printJobLogs(ctx context.Context, cfg *envconf.Config, namespace, jobName string) error {
