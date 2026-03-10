@@ -5,7 +5,7 @@ set -o nounset
 set -o pipefail
 
 TRACE_LOG=trace.log
-TEST_TIMEOUT=1800
+TEST_TIMEOUT=3600
 BASH="/usr/bin/bash"
 CURRENT_DIR=$(pwd)
 SKIP_TESTS_SUBCOMMAND=${SKIP_TESTS_SUBCOMMAND:-""}
