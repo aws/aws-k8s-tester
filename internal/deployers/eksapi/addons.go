@@ -25,26 +25,31 @@ func NewAddonManager(clients *awsClients) *AddonManager {
 	}
 }
 
-func (m *AddonManager) createAddons(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
-	ctx := context.TODO()
-
+// resolveAddons resolves addon versions and returns a map of addon name to resolved version.
+func (m *AddonManager) resolveAddons(opts *deployerOptions) (map[string]string, error) {
 	addonMap := map[string]string{}
 	for _, addon := range opts.Addons {
 		addonParts := strings.Split(addon, ":")
 		if len(addonParts) != 2 {
-			return fmt.Errorf("invalid addon format: %s", addon)
+			return nil, fmt.Errorf("invalid addon format: %s", addon)
 		}
 		name := addonParts[0]
 		version := addonParts[1]
 		klog.Infof("resolving addon %s version: %s", name, version)
 		resolvedVersion, err := m.resolveAddonVersion(name, version, opts.KubernetesVersion)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		// dedupe addons with the same name. last provided entry wins.
 		addonMap[name] = resolvedVersion
 	}
+	return addonMap, nil
+}
 
+// createAddons creates the addons on the cluster without waiting for them to become active.
+// This allows nodes to be created before waiting, which is necessary for DaemonSet-based addons.
+func (m *AddonManager) createAddons(cluster *Cluster, addonMap map[string]string) error {
+	ctx := context.TODO()
 	for addonName, addonVersion := range addonMap {
 		klog.Infof("creating addon %s version: %s", addonName, addonVersion)
 		input := eks.CreateAddonInput{
@@ -56,8 +61,17 @@ func (m *AddonManager) createAddons(infra *Infrastructure, cluster *Cluster, opt
 		if err != nil {
 			return fmt.Errorf("failed to create addon: %v", err)
 		}
+	}
+	return nil
+}
+
+// waitForAddons waits for all addons to become active.
+// This should be called after nodes are created so that DaemonSet-based addons can be scheduled.
+func (m *AddonManager) waitForAddons(cluster *Cluster, addonMap map[string]string) error {
+	ctx := context.TODO()
+	for addonName := range addonMap {
 		klog.Infof("waiting for addon to be active: %s", addonName)
-		err = eks.NewAddonActiveWaiter(m.clients.EKS()).
+		err := eks.NewAddonActiveWaiter(m.clients.EKS()).
 			Wait(ctx, &eks.DescribeAddonInput{
 				AddonName:   aws.String(addonName),
 				ClusterName: aws.String(cluster.name),
@@ -66,7 +80,6 @@ func (m *AddonManager) createAddons(infra *Infrastructure, cluster *Cluster, opt
 			return fmt.Errorf("failed to wait for addon to be active: %v", err)
 		}
 	}
-
 	return nil
 }
 

@@ -215,7 +215,11 @@ func (d *deployer) Up() error {
 		d.ExpectedAMI = d.AMI
 	}
 
-	if err := d.addonManager.createAddons(d.infra, d.cluster, &d.deployerOptions); err != nil {
+	addonMap, err := d.addonManager.resolveAddons(&d.deployerOptions)
+	if err != nil {
+		return err
+	}
+	if err := d.addonManager.createAddons(d.cluster, addonMap); err != nil {
 		return err
 	}
 	if d.deployerOptions.TuneVPCCNI {
@@ -224,6 +228,9 @@ func (d *deployer) Up() error {
 		}
 	}
 	if err := d.nodeManager.createNodes(d.infra, d.cluster, &d.deployerOptions, d.k8sClient); err != nil {
+		return err
+	}
+	if err := d.addonManager.waitForAddons(d.cluster, addonMap); err != nil {
 		return err
 	}
 	if !d.SkipNodeReadinessChecks {
