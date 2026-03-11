@@ -2,9 +2,9 @@ package eksctl
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/aws/aws-k8s-tester/internal/util"
-	"k8s.io/klog"
 )
 
 func (d *deployer) Down() error {
@@ -13,19 +13,19 @@ func (d *deployer) Down() error {
 	var err error
 
 	if d.DeployTarget == "nodegroup" {
-		klog.Infof("deleting nodegroup %s from cluster %s", d.NodegroupName, d.clusterName)
+		slog.Info("deleting nodegroup", "nodegroupName", d.NodegroupName, "clusterName", d.clusterName)
 		err = util.ExecuteCommand("eksctl", "delete", "nodegroup", "--cluster", d.clusterName, "--name", d.NodegroupName, "--drain=false", "--wait")
 		if err != nil {
 			return fmt.Errorf("failed to delete nodegroup: %v", err)
 		}
-		klog.Infof("Successfully deleted nodegroup: %s from cluster: %s", d.NodegroupName, d.clusterName)
+		slog.Info("successfully deleted nodegroup", "nodegroupName", d.NodegroupName, "clusterName", d.clusterName)
 	} else if d.DeployTarget == "cluster" {
-		klog.Infof("deleting cluster %s", d.clusterName)
+		slog.Info("deleting cluster", "clusterName", d.clusterName)
 		err = util.ExecuteCommand("eksctl", "delete", "cluster", "--name", d.clusterName, "--wait", "--disable-nodegroup-eviction")
 		if err != nil {
 			return fmt.Errorf("failed to delete cluster: %v", err)
 		}
-		klog.Infof("Successfully deleted cluster: %s", d.clusterName)
+		slog.Info("successfully deleted cluster", "clusterName", d.clusterName)
 	} else {
 		return fmt.Errorf("Unsupported deploy target: %s, supported options: `cluster`, `nodegroup`.", d.DeployTarget)
 	}

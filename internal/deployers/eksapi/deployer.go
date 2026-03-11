@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log/slog"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -19,7 +21,6 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/urfave/sflags/gen/gpflag"
 	"golang.org/x/exp/slices"
-	"k8s.io/klog"
 	"sigs.k8s.io/kubetest2/pkg/types"
 )
 
@@ -110,10 +111,9 @@ func NewDeployer(opts types.Options) (types.Deployer, *pflag.FlagSet) {
 func bindFlags(d *deployer) *pflag.FlagSet {
 	flags, err := gpflag.Parse(d)
 	if err != nil {
-		klog.Fatalf("unable to bind flags for deployer")
-		return nil
+		slog.Error("unable to bind flags for deployer")
+		os.Exit(1)
 	}
-	klog.InitFlags(nil)
 	flags.AddGoFlagSet(flag.CommandLine)
 	return flags
 }
@@ -164,7 +164,7 @@ func (d *deployer) Kubeconfig() (string, error) {
 		kubeconfigPath := filepath.Join(d.commonOptions.RunDir(), "kubeconfig")
 		err := writeKubeconfig(d.cluster, kubeconfigPath)
 		if err != nil {
-			klog.Warningf("failed to write kubeconfig: %v", err)
+			slog.Warn("failed to write kubeconfig", "error", err)
 			return "", err
 		}
 		d.KubeconfigPath = kubeconfigPath
@@ -197,13 +197,13 @@ func (d *deployer) Up() error {
 		return err
 	}
 	if d.deployerOptions.StaticClusterName != "" {
-		klog.Infof("inited k8sclient, skip the rest resource creation for static cluster")
+		slog.Info("inited k8s client, skip the rest resource creation for static cluster")
 		d.staticClusterManager.SetK8sClient(kubeconfig)
 		if err := d.staticClusterManager.EnsureNodeForStaticCluster(); err != nil {
-			klog.Errorf("Failed to launch nodes: %v", err)
+			slog.Error("failed to launch nodes", "error", err)
 			return err
 		}
-		klog.Infof("Nodes launched for static cluster")
+		slog.Info("nodes launched for static cluster")
 		return nil
 	}
 	if d.UnmanagedNodes {
@@ -236,43 +236,43 @@ func (d *deployer) Up() error {
 			}
 		}
 		if err := d.logManager.gatherLogsFromNodes(d.k8sClient, &d.deployerOptions, deployerPhaseUp); err != nil {
-			klog.Warningf("failed to gather logs from nodes: %v", err)
+			slog.Warn("failed to gather logs from nodes", "error", err)
 			// don't return err, this isn't critical
 		}
 	}
 
 	if d.DeployCloudwatchInfra {
-		klog.Infof("Setting up CloudWatch infrastructure...")
+		slog.Info("setting up CloudWatch infrastructure...")
 		roleArn, err := d.infraManager.createCloudWatchInfrastructureStack(d.cluster.name)
 		if err != nil {
-			klog.Errorf("CloudWatch infrastructure stack creation failed: %v", err)
+			slog.Error("CloudWatch infrastructure stack creation failed", "error", err)
 			return err
 		}
 		d.infra.cloudwatchRoleArn = roleArn
 		if err := d.infraManager.createCloudWatchPodIdentityAssociation(d.cluster.name, roleArn); err != nil {
-			klog.Errorf("CloudWatch PodIdentityAssociation creation failed: %v", err)
+			slog.Error("CloudWatch PodIdentityAssociation creation failed", "error", err)
 			return err
 		}
-		klog.Infof("CloudWatch infrastructure setup completed")
+		slog.Info("CloudWatch infrastructure setup completed")
 		// Apply CloudWatch infrastructure manifest
 		manifest := templates.CloudWatchAgentRbac
 		if err := fwext.ApplyManifests(d.k8sClient.config, manifest); err != nil {
-			klog.Errorf("CloudWatch infrastructure manifest failed: %v", err)
+			slog.Error("CloudWatch infrastructure manifest failed", "error", err)
 			return err
 		}
-		klog.Infof("CloudWatch infrastructure manifest applied successfully")
+		slog.Info("CloudWatch infrastructure manifest applied successfully")
 	}
 	return nil
 }
 
 func (d *deployer) verifyUpFlags() error {
 	if d.KubernetesVersion == "" {
-		klog.Infof("--kubernetes-version is empty, attempting to detect it...")
+		slog.Info("--kubernetes-version is empty, attempting to detect it...")
 		detectedVersion, err := detectKubernetesVersion()
 		if err != nil {
 			return fmt.Errorf("unable to detect --kubernetes-version, flag cannot be empty")
 		}
-		klog.Infof("detected --kubernetes-version=%s", detectedVersion)
+		slog.Info("detected kubernetes version", "version", detectedVersion)
 		d.KubernetesVersion = detectedVersion
 	}
 	if d.Nodes < 0 {
@@ -280,15 +280,15 @@ func (d *deployer) verifyUpFlags() error {
 	}
 	if d.Nodes == 0 {
 		d.Nodes = 3
-		klog.Infof("Using default number of nodes: %d", d.Nodes)
+		slog.Info("using default number of nodes", "nodes", d.Nodes)
 	}
 	if d.IPFamily == "" {
 		d.IPFamily = string(ekstypes.IpFamilyIpv4)
-		klog.Infof("Using default IP family: %s", d.IPFamily)
+		slog.Info("using default IP family", "ipFamily", d.IPFamily)
 	}
 	if d.ZoneType == "" {
 		d.ZoneType = "availability-zone"
-		klog.Infof("Using default zone type: %s", d.ZoneType)
+		slog.Info("using default zone type", "zoneType", d.ZoneType)
 	}
 	if d.ClusterCreationTimeout == 0 {
 		d.ClusterCreationTimeout = time.Minute * 15
@@ -300,7 +300,7 @@ func (d *deployer) verifyUpFlags() error {
 		d.NodeReadyTimeout = time.Minute * 5
 	}
 	if d.StaticClusterName != "" {
-		klog.Infof("Skip configuration for static cluster")
+		slog.Info("skip configuration for static cluster")
 		return nil
 	}
 	if len(d.InstanceTypes) > 0 && len(d.InstanceTypeArchs) > 0 {
@@ -315,7 +315,7 @@ func (d *deployer) verifyUpFlags() error {
 		}
 		if d.NodeNameStrategy == "" {
 			d.NodeNameStrategy = "EC2PrivateDNSName"
-			klog.Infof("Using default node name strategy: EC2PrivateDNSName")
+			slog.Info("using default node name strategy", "strategy", "EC2PrivateDNSName")
 		} else {
 			if !slices.Contains(SupportedNodeNameStrategy, d.NodeNameStrategy) {
 				return fmt.Errorf("--node-name-strategy must be one of the following values: ['SessionName', 'EC2PrivateDNSName']")
@@ -323,7 +323,7 @@ func (d *deployer) verifyUpFlags() error {
 		}
 		if d.UserDataFormat == "" {
 			d.UserDataFormat = UserDataBootstrapSh
-			klog.Infof("Using default user data format: %s", d.UserDataFormat)
+			slog.Info("using default user data format", "format", d.UserDataFormat)
 		}
 		// AMI ID check must come after user-data format resolution because we
 		// can try to infer the AMI type for unmanaged nodes.
@@ -344,11 +344,11 @@ func (d *deployer) verifyUpFlags() error {
 		}
 		if d.AMIType == "" {
 			d.AMIType = "AL2023_x86_64_STANDARD"
-			klog.Infof("Using default AMI type: %s", d.AMIType)
+			slog.Info("using default AMI type", "amiType", d.AMIType)
 		}
 	}
 	if d.DeployCloudwatchInfra {
-		klog.Infof("Prepending pod identity agent to the list of addons because cloudwatch infrastructure deployment was enabled")
+		slog.Info("prepending pod identity agent to addons for cloudwatch infrastructure")
 		// this must be prepended to the list in order to respect user overrides.
 		d.deployerOptions.Addons = slices.Insert(d.deployerOptions.Addons, 0, "eks-pod-identity-agent:default")
 	}
@@ -373,7 +373,7 @@ func (d *deployer) IsUp() (up bool, err error) {
 
 func (d *deployer) Down() error {
 	if err := d.logManager.gatherLogsFromNodes(d.k8sClient, &d.deployerOptions, deployerPhaseDown); err != nil {
-		klog.Warningf("failed to gather logs from nodes: %v", err)
+		slog.Warn("failed to gather logs from nodes", "error", err)
 		// don't return err, this isn't critical
 	}
 	if d.deployerOptions.StaticClusterName != "" {

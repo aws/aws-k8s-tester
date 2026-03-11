@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -16,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 	"sigs.k8s.io/yaml"
@@ -39,17 +38,20 @@ func NewStaticClusterManager(options *deployerOptions) *StaticClusterManager {
 func (s *StaticClusterManager) SetK8sClient(kubeconfig string) {
 	cfg, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
-		log.Fatalf("Failed to build kubeconfig: %v", err)
+		slog.Error("failed to build kubeconfig", "error", err)
+		panic(err)
 	}
 
 	s.k8sClient, err = kubernetes.NewForConfig(cfg)
 	if err != nil {
-		log.Fatalf("Failed to create Kubernetes client: %v", err)
+		slog.Error("failed to create Kubernetes client", "error", err)
+		panic(err)
 	}
 
 	s.karpenterClient, err = client.New(cfg, client.Options{})
 	if err != nil {
-		log.Fatalf("Failed to create Karpenter client: %v", err)
+		slog.Error("failed to create Karpenter client", "error", err)
+		panic(err)
 	}
 }
 
@@ -69,7 +71,7 @@ func (s *StaticClusterManager) TearDownNodeForStaticCluster() error {
 
 func (s *StaticClusterManager) CreateNodePool() error {
 	if !strings.Contains(strings.ToLower(s.options.StaticClusterName), "nvidia") {
-		klog.Info("NVIDIA not in cluster name, skipping node pool creation")
+		slog.Info("NVIDIA not in cluster name, skipping node pool creation")
 		return nil
 	}
 
@@ -111,7 +113,7 @@ func (s *StaticClusterManager) CreateNodePool() error {
 
 func (s *StaticClusterManager) TearDownNodePool() error {
 	if !strings.Contains(strings.ToLower(s.options.StaticClusterName), "nvidia") {
-		klog.Info("NVIDIA not in cluster name, skipping node pool deletion")
+		slog.Info("NVIDIA not in cluster name, skipping node pool deletion")
 		return nil
 	}
 
@@ -123,18 +125,18 @@ func (s *StaticClusterManager) TearDownNodePool() error {
 
 	if err := s.karpenterClient.Delete(context.TODO(), nodePool); err != nil {
 		if errors.IsNotFound(err) {
-			klog.Info("NodePool 'nvidia' not found, skipping deletion")
+			slog.Info("NodePool 'nvidia' not found, skipping deletion")
 			return nil
 		}
 		return fmt.Errorf("failed to delete nodepool: %v", err)
 	}
 
-	klog.Info("NodePool deleted successfully")
+	slog.Info("NodePool deleted successfully")
 	return nil
 }
 
 func (s *StaticClusterManager) DeployBusyboxAndWaitForNodes() error {
-	klog.Infof("Deploying busybox pods")
+	slog.Info("deploying busybox pods")
 
 	t := templates.BusyboxDeployment
 	var buf bytes.Buffer
@@ -155,7 +157,7 @@ func (s *StaticClusterManager) DeployBusyboxAndWaitForNodes() error {
 		return err
 	}
 
-	klog.Infof("Created deployment %q.\n", result.GetObjectMeta().GetName())
+	slog.Info("created deployment", "name", result.GetObjectMeta().GetName())
 	return waitForNodeCondition(s.k8sClient, func(nodes []corev1.Node) bool {
 		readyNodes := 0
 		for _, node := range nodes {
@@ -163,19 +165,19 @@ func (s *StaticClusterManager) DeployBusyboxAndWaitForNodes() error {
 				readyNodes++
 			}
 		}
-		klog.Infof("Ready nodes: %d, Expected nodes: %d", readyNodes, s.options.Nodes)
+		slog.Info("waiting for nodes", "readyNodes", readyNodes, "expectedNodes", s.options.Nodes)
 		return readyNodes >= s.options.Nodes
 	}, 15*time.Minute, "Waiting for nodes to be ready")
 }
 
 func (s *StaticClusterManager) TearDownBusyboxAndNodes() error {
-	klog.Infof("Cleaning up busybox pods")
+	slog.Info("cleaning up busybox pods")
 
 	err := s.k8sClient.AppsV1().Deployments("default").Delete(context.TODO(), "busybox-deployment", metav1.DeleteOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to delete deployment: %v", err)
 	}
-	klog.Info("Busybox deployment deleted successfully")
+	slog.Info("busybox deployment deleted successfully")
 
 	return waitForNodeCondition(s.k8sClient, func(nodes []corev1.Node) bool {
 		return len(nodes) == 0
@@ -192,7 +194,7 @@ func waitForNodeCondition(clientset *kubernetes.Clientset, condition NodeConditi
 		}
 
 		conditionMet := condition(nodes.Items)
-		klog.Infof("%s: Current node count: %d", description, len(nodes.Items))
+		slog.Info(description, "nodeCount", len(nodes.Items))
 		return conditionMet, nil
 	})
 }

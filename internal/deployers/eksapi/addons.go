@@ -3,12 +3,12 @@ package eksapi
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
-	"k8s.io/klog/v2"
 )
 
 const (
@@ -36,7 +36,7 @@ func (m *AddonManager) createAddons(infra *Infrastructure, cluster *Cluster, opt
 		}
 		name := addonParts[0]
 		version := addonParts[1]
-		klog.Infof("resolving addon %s version: %s", name, version)
+		slog.Info("resolving addon version", "addon", name, "version", version)
 		resolvedVersion, err := m.resolveAddonVersion(name, version, opts.KubernetesVersion)
 		if err != nil {
 			return err
@@ -46,7 +46,7 @@ func (m *AddonManager) createAddons(infra *Infrastructure, cluster *Cluster, opt
 	}
 
 	for addonName, addonVersion := range addonMap {
-		klog.Infof("creating addon %s version: %s", addonName, addonVersion)
+		slog.Info("creating addon", "addon", addonName, "version", addonVersion)
 		input := eks.CreateAddonInput{
 			AddonName:    aws.String(addonName),
 			AddonVersion: aws.String(addonVersion),
@@ -56,7 +56,7 @@ func (m *AddonManager) createAddons(infra *Infrastructure, cluster *Cluster, opt
 		if err != nil {
 			return fmt.Errorf("failed to create addon: %v", err)
 		}
-		klog.Infof("waiting for addon to be active: %s", addonName)
+		slog.Info("waiting for addon to be active", "addon", addonName)
 		err = eks.NewAddonActiveWaiter(m.clients.EKS()).
 			Wait(ctx, &eks.DescribeAddonInput{
 				AddonName:   aws.String(addonName),
