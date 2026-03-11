@@ -31,7 +31,7 @@ import (
 	"runtime"
 	"strings"
 
-	"k8s.io/klog/v2"
+	"log/slog"
 	"sigs.k8s.io/kubetest2/pkg/artifacts"
 	"sigs.k8s.io/kubetest2/pkg/exec"
 )
@@ -57,7 +57,7 @@ func (t *Tester) AcquireTestPackage() error {
 		}
 		t.TestPackageVersion = lines[0]
 
-		klog.V(1).Infof("Test package version was not specified. Defaulting to version from %s: %s", t.TestPackageMarker, t.TestPackageVersion)
+		slog.Info("test package version not specified, using default", "marker", t.TestPackageMarker, "version", t.TestPackageVersion)
 	}
 
 	releaseTar := fmt.Sprintf("kubernetes-test-%s-%s.tar.gz", runtime.GOOS, runtime.GOARCH)
@@ -165,13 +165,13 @@ func (t *Tester) ensureKubectl(downloadPath string) error {
 		runtime.GOARCH,
 	)
 	if _, err := os.Stat(downloadPath); err == nil {
-		klog.V(0).Infof("Found existing kubectl at %v", downloadPath)
+		slog.Info("found existing kubectl", "path", downloadPath)
 		err := t.compareSHA(downloadPath, kubectlPathInGCS)
 		if err == nil {
-			klog.V(0).Infof("Validated hash for existing kubectl at %v", downloadPath)
+			slog.Info("validated hash for existing kubectl", "path", downloadPath)
 			return nil
 		}
-		klog.Warning(err)
+		slog.Warn("hash validation failed", "error", err)
 	}
 
 	cmd := exec.Command("gsutil", "cp", kubectlPathInGCS, downloadPath)
@@ -199,13 +199,13 @@ func (t *Tester) ensureReleaseTar(downloadPath, releaseTar string) error {
 	)
 
 	if _, err := os.Stat(downloadPath); err == nil {
-		klog.V(0).Infof("Found existing tar at %v", downloadPath)
+		slog.Info("found existing tar", "path", downloadPath)
 		err := t.compareSHA(downloadPath, releaseTarPathInGCS)
 		if err == nil {
-			klog.V(0).Infof("Validated hash for existing tar at %v", downloadPath)
+			slog.Info("validated hash for existing tar", "path", downloadPath)
 			return nil
 		}
-		klog.Warning(err)
+		slog.Warn("hash validation failed", "error", err)
 	}
 
 	cmd := exec.Command("gsutil", "cp",

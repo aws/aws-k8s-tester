@@ -32,7 +32,7 @@ import (
 
 	"github.com/kballard/go-shellquote"
 	"github.com/urfave/sflags/gen/gpflag"
-	"k8s.io/klog/v2"
+	"log/slog"
 
 	"sigs.k8s.io/kubetest2/pkg/artifacts"
 	"sigs.k8s.io/kubetest2/pkg/build"
@@ -115,7 +115,7 @@ func (t *Tester) Test() error {
 		"--")
 	ginkgoArgs = append(ginkgoArgs, e2eTestArgs...)
 
-	klog.V(0).Infof("Running ginkgo test as %s %+v", t.ginkgoPath, ginkgoArgs)
+	slog.Info("running ginkgo test", "path", t.ginkgoPath, "args", ginkgoArgs)
 	cmd := exec.Command(t.ginkgoPath, ginkgoArgs...)
 	cmd.SetEnv(t.Env...)
 	exec.InheritOutput(cmd)
@@ -134,7 +134,7 @@ func (t *Tester) pretestSetup() error {
 			if err != nil {
 				return fmt.Errorf("failed to convert kubeconfig to absolute path: %s", err)
 			}
-			klog.V(0).Infof("Ginkgo tester received a non-absolute path for KUBECONFIG. Updating to: %s", newKubeconfig)
+			slog.Info("ginkgo tester received non-absolute KUBECONFIG path, updating", "path", newKubeconfig)
 			config = newKubeconfig
 		}
 
@@ -146,7 +146,7 @@ func (t *Tester) pretestSetup() error {
 		}
 		t.kubeconfigPath = filepath.Join(home, ".kube", "config")
 	}
-	klog.V(0).Infof("Using kubeconfig at %s", t.kubeconfigPath)
+	slog.Info("using kubeconfig", "path", t.kubeconfigPath)
 
 	if t.UseBuiltBinaries {
 		return t.validateLocalBinaries()
@@ -163,19 +163,19 @@ func (t *Tester) pretestSetup() error {
 }
 
 func (t *Tester) validateLocalBinaries() error {
-	klog.V(2).Infof("checking existing test binaries ...")
+	slog.Debug("checking existing test binaries...")
 	for _, binary := range build.CommonTestBinaries {
 		path := filepath.Join(t.runDir, binary)
 		if _, err := os.Stat(path); err != nil {
 			logPath := path
 			if abspath, err := filepath.Abs(path); err != nil {
-				klog.Warningf("failed to convert path %q to absolute path: %v", path, err)
+				slog.Warn("failed to convert path to absolute path", "path", path, "error", err)
 			} else {
 				logPath = abspath
 			}
 			return fmt.Errorf("failed to validate pre-built binary %s (checked at %q): %w", binary, logPath, err)
 		}
-		klog.V(2).Infof("found existing %s at %s", binary, path)
+		slog.Debug("found existing binary", "binary", binary, "path", path)
 	}
 	t.e2eTestPath = filepath.Join(t.runDir, "e2e.test")
 	t.ginkgoPath = filepath.Join(t.runDir, "ginkgo")
@@ -184,13 +184,13 @@ func (t *Tester) validateLocalBinaries() error {
 }
 
 func (t *Tester) validateBinariesFromPath() error {
-	klog.V(2).Infof("checking for test binaries on PATH...")
+	slog.Debug("checking for test binaries on PATH...")
 	for _, binary := range build.CommonTestBinaries {
 		path, err := stdexec.LookPath(binary)
 		if err != nil {
 			return fmt.Errorf("failed to validate binary %s from PATH: %w", binary, err)
 		}
-		klog.V(2).Infof("found existing %s at %s", binary, path)
+		slog.Debug("found existing binary", "binary", binary, "path", path)
 		switch binary {
 		case "e2e.test":
 			t.e2eTestPath = path
@@ -206,7 +206,7 @@ func (t *Tester) validateBinariesFromPath() error {
 // ginkgoMajorVersion returns the ginkgo major version
 // empty if not found
 func (t *Tester) ginkgoMajorVersion() string {
-	klog.V(2).Infof("checking ginkgo version ...")
+	slog.Debug("checking ginkgo version...")
 	cmd := exec.Command(t.ginkgoPath, "version")
 	lines, err := exec.OutputLines(cmd)
 	if err != nil || len(lines) != 1 {
@@ -293,6 +293,7 @@ func NewDefaultTester() *Tester {
 func Main() {
 	t := NewDefaultTester()
 	if err := t.Execute(); err != nil {
-		klog.Fatalf("failed to run ginkgo tester: %v", err)
+		slog.Error("failed to run ginkgo tester", "error", err)
+		os.Exit(1)
 	}
 }

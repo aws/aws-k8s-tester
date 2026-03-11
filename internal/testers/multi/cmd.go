@@ -3,13 +3,13 @@ package multi
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/aws/aws-k8s-tester/internal"
 	"github.com/urfave/sflags/gen/gpflag"
-	"k8s.io/klog"
 	"sigs.k8s.io/kubetest2/pkg/app/shim"
 	"sigs.k8s.io/kubetest2/pkg/artifacts"
 	"sigs.k8s.io/kubetest2/pkg/process"
@@ -30,7 +30,8 @@ const usage = `kubetest2 --test=multi -- [MultiTesterDriverArgs] -- [TesterName]
 
 func Main() {
 	if err := execute(); err != nil {
-		klog.Fatalf("failed to run multi tester: %v", err)
+		slog.Error("failed to run multi tester", "error", err)
+		os.Exit(1)
 	}
 }
 
@@ -95,12 +96,12 @@ func test(testers []tester, failFast bool) error {
 	metadataPath := filepath.Join(artifacts.BaseDir(), "metadata.json")
 	backupMetdataPath := metadataPath + ".bak"
 	if err := os.Rename(metadataPath, backupMetdataPath); err != nil {
-		klog.Errorf("failed to backup driver metadata: %v", err)
+		slog.Error("failed to backup driver metadata", "error", err)
 	}
 	var testerErrs []error
 	for _, tester := range testers {
 		if err := tester.run(); err != nil {
-			klog.Errorf("tester failed: %+v: %v", tester, err)
+			slog.Error("tester failed", "tester", tester, "error", err)
 			testerErrs = append(testerErrs, fmt.Errorf("%+v: %v", tester, err))
 			if failFast {
 				break
@@ -171,6 +172,6 @@ func expandEnv(args []string) []string {
 }
 
 func (t *tester) run() error {
-	klog.Infof("running tester: %+v", t)
+	slog.Info("running tester", "tester", t)
 	return process.ExecJUnit(t.path, t.args, os.Environ())
 }

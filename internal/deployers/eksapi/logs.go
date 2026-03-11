@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -41,11 +41,11 @@ func NewLogManager(clients *awsClients, resourceID string) *logManager {
 
 func (m *logManager) gatherLogsFromNodes(k8sClient *k8sClient, opts *deployerOptions, phase deployerPhase) error {
 	if opts.LogBucket == "" {
-		klog.Info("--log-bucket is empty, no logs will be gathered!")
+		slog.Info("--log-bucket is empty, no logs will be gathered!")
 		return nil
 	}
 	if k8sClient == nil {
-		klog.Infof("no k8s client available, no logs will be gathered!")
+		slog.Info("no k8s client available, no logs will be gathered!")
 		return nil
 	}
 	if opts.AutoMode {
@@ -55,7 +55,7 @@ func (m *logManager) gatherLogsFromNodes(k8sClient *k8sClient, opts *deployerOpt
 	case "bootstrap.sh", "nodeadm", "": // if no --user-data-format was passed, we must be using managed nodes, which default to AL-based AMIs
 		return m.gatherLogsUsingScript(k8sClient, opts, phase)
 	default:
-		klog.Warningf("unable to gather logs for userDataFormat: %s\n", opts.UserDataFormat)
+		slog.Warn("unable to gather logs for userDataFormat", "format", opts.UserDataFormat)
 		return nil
 	}
 }
@@ -66,7 +66,7 @@ var logCollectorScriptSsmDocumentContent string
 const logCollectorSsmDocumentTimeout = 5 * time.Minute
 
 func (m *logManager) gatherLogsUsingScript(k8sClient *k8sClient, opts *deployerOptions, phase deployerPhase) error {
-	klog.Info("gathering logs using script...")
+	slog.Info("gathering logs using script...")
 	nodes, err := k8sClient.clientset.CoreV1().Nodes().List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		return err
@@ -78,19 +78,19 @@ func (m *logManager) gatherLogsUsingScript(k8sClient *k8sClient, opts *deployerO
 			return err
 		}
 	} else {
-		klog.Warning("no nodes found in cluster!")
+		slog.Warn("no nodes found in cluster!")
 		// if we're using unmanaged nodes, we can track down the instances in the ASG even if they didn't join the cluster
 		if opts.UnmanagedNodes {
-			klog.Info("fetching instances from unmanaged nodegroup...")
+			slog.Info("fetching instances from unmanaged nodegroup...")
 			out, err := m.clients.ASG().DescribeAutoScalingGroups(context.TODO(), &autoscaling.DescribeAutoScalingGroupsInput{
 				AutoScalingGroupNames: []string{m.resourceID},
 			})
 			if err != nil {
-				klog.Warningf("failed to describe unmanaged nodegroup ASG: %v", err)
+				slog.Warn("failed to describe unmanaged nodegroup ASG", "error", err)
 				return nil
 			}
 			if len(out.AutoScalingGroups) != 1 {
-				klog.Warningf("autoscaling group not found: %s", m.resourceID)
+				slog.Warn("autoscaling group not found", "resourceID", m.resourceID)
 			} else {
 				for _, asg := range out.AutoScalingGroups {
 					for _, instance := range asg.Instances {
@@ -101,7 +101,7 @@ func (m *logManager) gatherLogsUsingScript(k8sClient *k8sClient, opts *deployerO
 		}
 	}
 	if len(instanceIds) == 0 {
-		klog.Warning("no nodes to gather logs from!")
+		slog.Warn("no nodes to gather logs from!")
 		return nil
 	}
 	doc, err := m.clients.SSM().CreateDocument(context.TODO(), &ssm.CreateDocumentInput{
@@ -137,26 +137,26 @@ func (m *logManager) gatherLogsUsingScript(k8sClient *k8sClient, opts *deployerO
 		if err != nil {
 			errs = append(errs, err)
 		} else {
-			klog.Infof("log collection command for %s: %s", instanceId, out.Status)
+			slog.Info("log collection command completed", "instanceId", instanceId, "status", out.Status)
 		}
 	}
 	if len(errs) > 0 {
 		return errors.Join(errs...)
 	}
-	klog.Infof("gathered logs from nodes: %v", instanceIds)
+	slog.Info("gathered logs from nodes", "instanceIds", instanceIds)
 	return nil
 }
 
 const logCollectorNodeDiagnosticTimeout = 5 * time.Minute
 
 func (m *logManager) gatherLogsUsingNodeDiagnostic(k8sClient *k8sClient, opts *deployerOptions, phase deployerPhase) error {
-	klog.Info("gathering logs using NodeDiagnostic...")
+	slog.Info("gathering logs using NodeDiagnostic...")
 	nodes, err := k8sClient.clientset.CoreV1().Nodes().List(context.TODO(), v1.ListOptions{})
 	if err != nil {
 		return err
 	}
 	if len(nodes.Items) == 0 {
-		klog.Warning("no nodes to gather logs from!")
+		slog.Warn("no nodes to gather logs from!")
 		return nil
 	}
 	instanceIds, err := getNodeInstanceIDs(nodes.Items)
@@ -214,7 +214,7 @@ func (m *logManager) gatherLogsUsingNodeDiagnostic(k8sClient *k8sClient, opts *d
 	if len(errs) > 0 {
 		return errors.Join(errs...)
 	}
-	klog.Infof("gathered logs from nodes: %v", instanceIds)
+	slog.Info("gathered logs from nodes", "instanceIds", instanceIds)
 	return nil
 }
 
@@ -253,7 +253,7 @@ func (m *logManager) waitForNodeDiagnostics(k8sClient *k8sClient, nodeDiagnostic
 func (m *logManager) isNodeDiagnosticComplete(nodeDiagnostic *unstructured.Unstructured) (bool, []string) {
 	captureStatuses, found, err := unstructured.NestedSlice(nodeDiagnostic.Object, "status", "captureStatuses")
 	if err != nil {
-		klog.Errorf("NodeDiagnostic captureStatuses does not match expected type: %+v", nodeDiagnostic)
+		slog.Error("NodeDiagnostic captureStatuses does not match expected type", "nodeDiagnostic", nodeDiagnostic)
 		return false, nil
 	}
 	if !found {
@@ -263,12 +263,12 @@ func (m *logManager) isNodeDiagnosticComplete(nodeDiagnostic *unstructured.Unstr
 	for _, captureStatus := range captureStatuses {
 		captureStatusMap, ok := captureStatus.(map[string]interface{})
 		if !ok {
-			klog.Errorf("NodeDiagnostic captureStatus does not match expected type: %+v", nodeDiagnostic)
+			slog.Error("NodeDiagnostic captureStatus does not match expected type", "nodeDiagnostic", nodeDiagnostic)
 			return false, nil
 		}
 		reason, found, err := unstructured.NestedString(captureStatusMap, "state", "completed", "reason")
 		if err != nil {
-			klog.Errorf("NodeDiagnostic captureStatus.reason does not match expected type: %+v", nodeDiagnostic)
+			slog.Error("NodeDiagnostic captureStatus.reason does not match expected type", "nodeDiagnostic", nodeDiagnostic)
 			return false, nil
 		}
 		if !found {

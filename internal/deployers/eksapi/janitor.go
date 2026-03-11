@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
@@ -14,7 +15,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	cloudformationtypes "github.com/aws/aws-sdk-go-v2/service/cloudformation/types"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
-	"k8s.io/klog/v2"
 )
 
 func NewJanitor(maxResourceAge time.Duration, emitMetrics bool, workers int, stackStatus string) *janitor {
@@ -101,19 +101,19 @@ func (j *janitor) sweepWorker(wg *sync.WaitGroup, stackQueue <-chan cloudformati
 			continue
 		}
 		if j.stackStatus != "" && j.stackStatus != string(stack.StackStatus) {
-			klog.Infof("skipping resources (status: %v): %s", stack.StackStatus, resourceID)
+			slog.Info("skipping resources", "status", stack.StackStatus, "resourceID", resourceID)
 			continue
 		}
 		resourceAge := time.Since(*stack.CreationTime)
 		if resourceAge < j.maxResourceAge {
-			klog.Infof("skipping resources (%v old): %s", resourceAge, resourceID)
+			slog.Info("skipping resources", "age", resourceAge, "resourceID", resourceID)
 			continue
 		}
 		clients := j.awsClientsForStack(stack)
 		infraManager := NewInfrastructureManager(clients, resourceID, j.metrics)
 		clusterManager := NewClusterManager(clients, resourceID)
 		nodeManager := NewNodeManager(clients, resourceID)
-		klog.Infof("deleting resources (%v old): %s", resourceAge, resourceID)
+		slog.Info("deleting resources", "age", resourceAge, "resourceID", resourceID)
 		if err := deleteResources(infraManager, clusterManager, nodeManager, nil /* k8sClient */, nil /* deployerOptions */); err != nil {
 			errChan <- fmt.Errorf("failed to delete resources: %s: %v", resourceID, err)
 		}

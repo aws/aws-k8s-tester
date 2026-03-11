@@ -3,10 +3,9 @@ package eksapi
 import (
 	"bytes"
 	"fmt"
+	"log/slog"
 	"os"
 	"text/template"
-
-	"k8s.io/klog"
 )
 
 const kubeconfigPerm = 0666
@@ -50,7 +49,7 @@ func writeKubeconfig(cluster *Cluster, kubeconfigPath string) error {
 	if cluster == nil {
 		return fmt.Errorf("Cluster is nil, you might need set --static-cluster-name or set --up to initial cluster resrouces")
 	}
-	klog.Infof("writing kubeconfig to %s for cluster: %s", kubeconfigPath, cluster.arn)
+	slog.Info("writing kubeconfig", "path", kubeconfigPath, "clusterArn", cluster.arn)
 	templateParams := kubeconfigTemplateParameters{
 		ClusterCertificateAuthority: cluster.certificateAuthorityData,
 		ClusterARN:                  cluster.arn,
@@ -74,6 +73,6 @@ func writeKubeconfig(cluster *Cluster, kubeconfigPath string) error {
 		return err
 	}
 
-	klog.Infof("wrote kubeconfig: %s\n%s", kubeconfigPath, kubeconfig.String())
+	slog.Info("wrote kubeconfig", "path", kubeconfigPath, "content", kubeconfig.String())
 	return nil
 }

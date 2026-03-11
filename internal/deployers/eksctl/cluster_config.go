@@ -2,9 +2,9 @@ package eksctl
 
 import (
 	"fmt"
+	"log/slog"
 
 	eksctl_api "github.com/weaveworks/eksctl/pkg/apis/eksctl.io/v1alpha5"
-	"k8s.io/klog"
 	"sigs.k8s.io/yaml"
 )
 
@@ -102,8 +102,8 @@ func (d *deployer) RenderClusterConfig() ([]byte, error) {
 
 	cfg, err := d.CreateClusterConfig()
 	if err != nil {
-		klog.Errorf("failed to create ClusterConfig with the deployer: %v", err)
+		slog.Error("failed to create ClusterConfig", "error", err)
 	}
-	klog.Infof("rendering cluster config yaml based on the ClusterConfig: %v", cfg)
+	slog.Info("rendering cluster config yaml", "config", cfg)
 	return yaml.Marshal(cfg)
 }

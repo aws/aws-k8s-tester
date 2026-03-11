@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/internal/util"
@@ -11,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/aws/smithy-go/ptr"
-	"k8s.io/klog/v2"
 )
 
 type ClusterManager struct {
@@ -38,7 +38,7 @@ type Cluster struct {
 func (m *ClusterManager) getOrCreateCluster(infra *Infrastructure, opts *deployerOptions) (*Cluster, error) {
 	targetClusterName := opts.StaticClusterName
 	if targetClusterName == "" {
-		klog.Infof("creating cluster...")
+		slog.Info("creating cluster...")
 		input := eks.CreateClusterInput{
 			Name: aws.String(m.resourceID),
 			ResourcesVpcConfig: &ekstypes.VpcConfigRequest{
@@ -97,7 +97,7 @@ func (m *ClusterManager) getOrCreateCluster(infra *Infrastructure, opts *deploye
 		}
 		targetClusterName = aws.ToString(createOutput.Cluster.Name)
 	} else {
-		klog.Infof("reusing existing static cluster %s", opts.StaticClusterName)
+		slog.Info("reusing existing static cluster", "clusterName", opts.StaticClusterName)
 	}
 	cluster, waitErr := m.waitForClusterActive(targetClusterName, opts.ClusterCreationTimeout)
 	if waitErr != nil {
@@ -107,18 +107,18 @@ func (m *ClusterManager) getOrCreateCluster(infra *Infrastructure, opts *deploye
 }
 
 func (m *ClusterManager) waitForClusterActive(clusterName string, timeout time.Duration) (*Cluster, error) {
-	klog.Infof("waiting for cluster to be active: %s", clusterName)
+	slog.Info("waiting for cluster to be active", "clusterName", clusterName)
 	out, err := eks.NewClusterActiveWaiter(m.clients.EKS()).WaitForOutput(context.TODO(), &eks.DescribeClusterInput{
 		Name: aws.String(clusterName),
 	}, timeout)
 	// log when possible, whether there was an error or not
 	if out != nil {
-		klog.Infof("cluster details: %+v", out.Cluster)
+		slog.Info("cluster details", "cluster", out.Cluster)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed waiting for cluster be active: %v", err)
 	}
-	klog.Infof("cluster is active: %s", *out.Cluster.Arn)
+	slog.Info("cluster is active", "arn", *out.Cluster.Arn)
 	var cidr string
 	switch out.Cluster.KubernetesNetworkConfig.IpFamily {
 	case ekstypes.IpFamilyIpv4:
@@ -166,23 +166,23 @@ func (m *ClusterManager) deleteCluster() error {
 			Name: aws.String(m.resourceID),
 		}
 
-		klog.Infof("Attempt %d: deleting cluster...", attempt)
+		slog.Info("deleting cluster...", "attempt", attempt)
 		out, err := m.clients.EKS().DeleteCluster(context.TODO(), &input)
 		if err != nil {
 			var notFound *ekstypes.ResourceNotFoundException
 			if errors.As(err, &notFound) {
-				klog.Infof("cluster does not exist: %s", m.resourceID)
+				slog.Info("cluster does not exist", "resourceID", m.resourceID)
 				return nil
 			}
 			if attempt == maxAttempts {
 				return fmt.Errorf("failed to delete cluster after %d attempts: %v", maxAttempts, err)
 			}
-			klog.Infof("Deletion failed: %v. Waiting %v before retry...", err, retryInterval)
+			slog.Info("deletion failed, retrying...", "error", err, "retryInterval", retryInterval)
 			time.Sleep(retryInterval)
 			continue
 		}
 
-		klog.Infof("waiting for cluster to be deleted: %s", *out.Cluster.Arn)
+		slog.Info("waiting for cluster to be deleted", "arn", *out.Cluster.Arn)
 		err = eks.NewClusterDeletedWaiter(m.clients.EKS()).
 			Wait(context.TODO(), &eks.DescribeClusterInput{
 				Name: aws.String(m.resourceID),

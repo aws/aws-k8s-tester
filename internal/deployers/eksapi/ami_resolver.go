@@ -3,12 +3,12 @@ package eksapi
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
-	"k8s.io/klog/v2"
 )
 
 func NewAMIResolver(awsClients *awsClients) *amiResolver {
@@ -111,7 +111,7 @@ func (r *amiResolver) ResolveBottlerocket(ctx context.Context, opts *deployerOpt
 func (r *amiResolver) getInstance(opts *deployerOptions) string {
 	instanceType := opts.InstanceTypes[0]
 	if len(opts.InstanceTypes) > 1 {
-		klog.Warningf("only resolving AMI based on first instance type: %s", instanceType)
+		slog.Warn("only resolving AMI based on first instance type", "instanceType", instanceType)
 	}
 	return instanceType
 }

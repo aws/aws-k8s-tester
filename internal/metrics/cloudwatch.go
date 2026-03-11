@@ -2,13 +2,13 @@ package metrics
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/aws/aws-sdk-go/aws"
-	"k8s.io/klog"
 )
 
 // NewCloudWatchRegistry creates a new metric registry that will emit values using the specified cloudwatch client
@@ -76,7 +76,7 @@ func (r *cloudwatchRegistry) Emit() error {
 				return err
 			}
 		}
-		klog.Infof("emitted %d metrics to namespace: %s", len(data), namespace)
+		slog.Info("emitted metrics", "count", len(data), "namespace", namespace)
 	}
 	r.dataByNamespace = make(map[string][]*cloudwatchMetricDatum)
 	return nil
