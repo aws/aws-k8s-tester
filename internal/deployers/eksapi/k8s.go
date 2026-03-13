@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -31,6 +32,11 @@ func init() {
 	// controller-runtime will complain loudly if this isn't set, even though we don't use this logger
 	crlog.SetLogger(zap.New())
 }
+
+const (
+	apiServerReadyInterval = 10 * time.Second
+	apiServerReadyTimeout  = 2 * time.Minute
+)
 
 type k8sClient struct {
 	config    *rest.Config
@@ -188,16 +194,22 @@ func (k *k8sClient) createAWSAuthConfigMap(nodeNameStrategy string, nodeRoleARN 
 		return err
 	}
 	klog.Infof("generated AuthMapRole %s", mapRoles)
-	_, err = k.clientset.CoreV1().ConfigMaps("kube-system").Create(context.TODO(), &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "aws-auth",
-			Namespace: "kube-system",
-		},
-		Data: map[string]string{
-			"mapRoles": mapRoles,
-		},
-	}, metav1.CreateOptions{})
-	return err
+	return wait.PollUntilContextTimeout(context.TODO(), apiServerReadyInterval, apiServerReadyTimeout, true, func(ctx context.Context) (bool, error) {
+		_, err := k.clientset.CoreV1().ConfigMaps("kube-system").Create(ctx, &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "aws-auth",
+				Namespace: "kube-system",
+			},
+			Data: map[string]string{
+				"mapRoles": mapRoles,
+			},
+		}, metav1.CreateOptions{})
+		if err != nil {
+			klog.Warningf("failed to create aws-auth configmap, retrying: %v", err)
+			return false, nil
+		}
+		return true, nil
+	})
 }
 
 func getNodeInstanceIDs(nodes []corev1.Node) ([]string, error) {
