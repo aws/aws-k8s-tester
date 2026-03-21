@@ -1,0 +1,28 @@
+name: "Neuron Images CI"
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+    paths:
+      - 'test/images/neuron**'
+jobs:
+  build-image-neuronx:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: ./hack/free-disk-space.sh
+    - run: docker build --file test/images/neuron/Dockerfile .
+  build-image-neuron-training:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: ./hack/free-disk-space.sh
+    - run: docker build --file test/images/neuron-training/Dockerfile test/images/neuron-training
+  build-image-neuron-inference:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: ./hack/free-disk-space.sh
+    - run: docker build --file test/images/neuron-inference/Dockerfile test/images/neuron-inference
