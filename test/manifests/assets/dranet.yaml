@@ -1,0 +1,181 @@
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dranet
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+  - apiGroups:
+      - "resource.k8s.io"
+    resources:
+      - resourceslices
+    verbs:
+      - list
+      - watch
+      - create
+      - update
+      - delete
+  - apiGroups:
+      - "resource.k8s.io"
+    resources:
+      - resourceclaims
+      - deviceclasses
+    verbs:
+      - get
+  - apiGroups:
+      - "resource.k8s.io"
+    resources:
+      - resourceclaims/status
+    verbs:
+      - patch
+      - update
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dranet
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dranet
+subjects:
+- kind: ServiceAccount
+  name: dranet
+  namespace: kube-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dranet
+  namespace: kube-system
+  # Disable auto-mounting of the service account token in pods that don't need it.
+  # The DaemonSet below explicitly sets automountServiceAccountToken: true because
+  # it needs API server access.
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dranet
+  namespace: kube-system
+  labels:
+    tier: node
+    app: dranet
+    k8s-app: dranet
+spec:
+  selector:
+    matchLabels:
+      app: dranet
+  template:
+    metadata:
+      labels:
+        tier: node
+        app: dranet
+        k8s-app: dranet
+    spec:
+      hostNetwork: true
+      hostPID: false
+      automountServiceAccountToken: true
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+      serviceAccountName: dranet
+      containers:
+      - name: dranet
+        args:
+        - /dranet
+        - --v=4
+        - --hostname-override=$(NODE_NAME)
+        - --cloud-provider-hint=AWS
+        - --filter=(!("dra.net/type" in attributes) || attributes["dra.net/type"].StringValue != "veth") && (!("dra.net/pciDevice" in attributes) || attributes["dra.net/pciDevice"].StringValue != "Elastic Network Adapter (ENA)")
+        image: {{.RdmaDeviceDraDriverImage}}
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "50Mi"
+          limits:
+            cpu: "500m"
+            memory: "256Mi"
+        securityContext:
+          # Do NOT use privileged: true. Instead, grant only the
+          # capabilities dranet actually needs.
+          privileged: false
+          runAsUser: 0
+          runAsGroup: 0
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+            add:
+              # Enter pod network namespaces (setns), BPF operations,
+              # sysctl writes for VRF/forwarding
+              - SYS_ADMIN
+          seccompProfile:
+            # Use the container runtime's default secure computing profile.
+            # This blocks dangerous syscalls like kexec_load, init_module,
+            # reboot, etc. while allowing the networking/namespace syscalls
+            # dranet needs.
+            type: RuntimeDefault
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 9177
+        volumeMounts:
+        - name: device-plugin
+          mountPath: /var/lib/kubelet/plugins
+        - name: plugin-registry
+          mountPath: /var/lib/kubelet/plugins_registry
+        - name: nri-plugin
+          mountPath: /var/run/nri
+        - name: netns
+          mountPath: /var/run/netns
+          mountPropagation: HostToContainer
+        - name: infiniband
+          mountPath: /dev/infiniband
+          mountPropagation: HostToContainer
+        # Writable tmp for any temp files the Go runtime or libraries need
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: device-plugin
+        hostPath:
+          path: /var/lib/kubelet/plugins
+      - name: plugin-registry
+        hostPath:
+          path: /var/lib/kubelet/plugins_registry
+      - name: nri-plugin
+        hostPath:
+          path: /var/run/nri
+      - name: netns
+        hostPath:
+          path: /var/run/netns
+      - name: infiniband
+        hostPath:
+          path: /dev/infiniband
+      - name: tmp
+        emptyDir:
+          medium: Memory
+          sizeLimit: 10Mi
+---
+apiVersion: resource.k8s.io/v1
+kind: DeviceClass
+metadata:
+  name: efa.networking.k8s.aws
+spec:
+  selectors:
+  - cel:
+      expression: |
+        device.driver == "dra.net" &&
+        device.attributes["dra.net"].pciDevice == 'Elastic Fabric Adapter (EFA)'
+---

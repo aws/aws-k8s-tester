@@ -1,0 +1,4 @@
+expectFailure: true
+resourceClaims:
+- name: 2-efas-4-neurons-wrong-match
+  resourceClaimTemplateName: rct-2-efas-4-neurons-wrong-match

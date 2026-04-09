@@ -1,0 +1,20 @@
+apiVersion: resource.k8s.io/v1beta1
+kind: ResourceClaimTemplate
+metadata:
+  namespace: default
+  name: rct-2-efas-4-neurons-wrong-match
+spec:
+  spec:
+    devices:
+      requests:
+      - name: 4-neurons
+        deviceClassName: neuron.aws.com
+        allocationMode: ExactCount
+        count: 4
+      - name: 2-efas
+        deviceClassName: efa.networking.k8s.aws
+        allocationMode: ExactCount
+        count: 2
+      constraints:
+      - requests: ["4-neurons", "2-efas"]
+        matchAttribute: "resource.aws.com/devicegroup1_id"

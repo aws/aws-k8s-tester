@@ -18,6 +18,9 @@ var (
 	//go:embed assets/k8s-neuron-device-plugin.yml
 	NeuronDevicePluginManifest []byte
 
+	//go:embed assets/dranet.yaml
+	DranetManifest []byte
+
 	//go:embed assets/dcgm-exporter.yaml
 	DCGMExporterManifest []byte
 

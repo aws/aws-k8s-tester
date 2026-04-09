@@ -1,0 +1,93 @@
+apiVersion: kubeflow.org/v2beta1
+kind: MPIJob
+metadata:
+  name: multi-node-nccom-test
+spec:
+  slotsPerWorker: {{.SlotsPerWorker}}
+  runPolicy:
+    backoffLimit: 20
+    cleanPodPolicy: Running
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: nccom-test-launcher
+              image: {{.ContainerTestImage}}
+              imagePullPolicy: Always
+              env:
+                - name: POD_IP
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.podIP
+              command:
+                - /bin/bash
+                - -lc
+              args:
+                - |
+                  set -euo pipefail
+
+                  WORKER_IPS=()
+                  for i in $(seq 0 $(({{.WorkerReplicas}} - 1))); do
+                    WORKER_IP=$(getent hosts multi-node-nccom-test-worker-$i.multi-node-nccom-test | awk '{print $1}')
+                    WORKER_IPS+=("$WORKER_IP")
+                  done
+
+                  export NCCOM_SOCKET_IFNAME=eth0
+                  export NEURON_RT_ROOT_COMM_ID=${WORKER_IPS[0]}:63182
+
+                  nccom-test \
+                    -r {{.TotalRanks}} \
+                    -N {{.WorkerReplicas}} \
+                    -b 8 \
+                    -e 2G \
+                    -f 2 \
+                    -n 5 \
+                    -w 5 \
+                    -d fp32 \
+                    allr \
+                    --hosts ${WORKER_IPS[*]} \
+                    --data-collector-host "${POD_IP}" \
+                    --data-collector-port 60006 \
+                    --debug
+
+    Worker:
+      replicas: {{.WorkerReplicas}}
+      template:
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsUser: 0
+          containers:
+            - name: nccom-test-worker
+              image: {{.ContainerTestImage}}
+              imagePullPolicy: Always
+              securityContext:
+                capabilities:
+                  add: ["NET_ADMIN"]
+              env:
+                - name: FI_EFA_USE_DEVICE_RDMA
+                  value: "1"
+              command:
+                - /bin/bash
+                - -lc
+              args:
+                - |
+                  set -euo pipefail
+
+                  MY_IP=$(hostname -i)
+                  ip addr add ${MY_IP}/16 dev eth0 label eth0:ccom
+                  ip route del 192.168.0.0/16 dev eth0 2>/dev/null || true
+                  /usr/sbin/sshd -D
+              resources:
+                claims:
+{{- range .ResourceClaims}}
+                - name: {{.Name}}
+{{- end}}
+          resourceClaims:
+{{- range .ResourceClaims}}
+          - name: {{.Name}}
+            resourceClaimTemplateName: {{.TemplateName}}
+{{- end}}

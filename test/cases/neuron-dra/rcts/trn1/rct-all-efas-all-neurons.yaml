@@ -1,0 +1,15 @@
+apiVersion: resource.k8s.io/v1beta1
+kind: ResourceClaimTemplate
+metadata:
+  namespace: default
+  name: rct-all-efas-all-neurons
+spec:
+  spec:
+    devices:
+      requests:
+      - name: all-neurons
+        deviceClassName: neuron.aws.com
+        allocationMode: All
+      - name: all-efas
+        deviceClassName: efa.networking.k8s.aws
+        allocationMode: All

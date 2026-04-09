@@ -1,0 +1,3 @@
+resourceClaims:
+- name: all-efas-all-neurons
+  resourceClaimTemplateName: rct-all-efas-all-neurons

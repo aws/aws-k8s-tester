@@ -45,6 +45,10 @@ ARG EKSCTL_VERSION=latest
 RUN wget -O eksctl.tar.gz "https://github.com/eksctl-io/eksctl/releases/${EKSCTL_VERSION}/download/eksctl_Linux_${TARGETARCH}.tar.gz" && \
     tar xzf eksctl.tar.gz -C /bin/ && \
     rm eksctl.tar.gz
+ARG HELM_VERSION=v4.1.4
+RUN wget -O helm.tar.gz "https://get.helm.sh/helm-${HELM_VERSION}-${TARGETOS}-${TARGETARCH}.tar.gz" && \
+    tar xzf helm.tar.gz --strip-components=1 -C /bin/ "${TARGETOS}-${TARGETARCH}/helm" && \
+    rm helm.tar.gz
 ARG KUBERNETES_MINOR_VERSION
 COPY hack/download-kubernetes-binaries.sh .
 RUN ./download-kubernetes-binaries.sh "${KUBERNETES_MINOR_VERSION}" "${TARGETOS}" "${TARGETARCH}"
