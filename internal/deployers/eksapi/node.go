@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/klog/v2"
+	"log/slog"
 	"k8s.io/utils/pointer"
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 
@@ -103,7 +103,7 @@ func (m *nodeManager) resolveInstanceTypes(opts *deployerOptions) (err error) {
 	instanceTypes := opts.InstanceTypes
 	if len(instanceTypes) == 0 {
 		if len(opts.InstanceTypeArchs) > 0 {
-			klog.Infof("choosing instance types based on architecture(s): %v", opts.InstanceTypeArchs)
+			slog.Info("choosing instance types based on architectures", "archs", opts.InstanceTypeArchs)
 			for _, arch := range opts.InstanceTypeArchs {
 				var ec2Arch ec2types.ArchitectureValues
 				switch arch {
@@ -121,7 +121,7 @@ func (m *nodeManager) resolveInstanceTypes(opts *deployerOptions) (err error) {
 				instanceTypes = append(instanceTypes, instanceTypesForArch...)
 			}
 		} else if opts.UnmanagedNodes {
-			klog.Infof("choosing instance types based on AMI architecture...")
+			slog.Info("choosing instance types based on AMI architecture...")
 			if out, err := m.clients.EC2().DescribeImages(context.TODO(), &ec2.DescribeImagesInput{
 				ImageIds: []string{opts.AMI},
 			}); err != nil {
@@ -136,7 +136,7 @@ func (m *nodeManager) resolveInstanceTypes(opts *deployerOptions) (err error) {
 			}
 		} else {
 			// we don't rely on the service's default instance types, because they're a bit too small for the k8s e2e suite
-			klog.Infof("choosing instance types based on managed nodegroup's AMI type...")
+			slog.Info("choosing instance types based on managed nodegroup's AMI type...")
 			instanceTypesForAMIType, ok := defaultInstanceTypesByEKSAMITypes[ekstypes.AMITypes(opts.AMIType)]
 			if !ok {
 				return fmt.Errorf("no default instance types known for AMI type: %v", opts.AMIType)
@@ -152,7 +152,7 @@ func (m *nodeManager) resolveInstanceTypes(opts *deployerOptions) (err error) {
 		return fmt.Errorf("none of the instance types %v were valid", instanceTypes)
 	}
 	opts.InstanceTypes = validInstanceTypes
-	klog.Infof("using instance types: %v", opts.InstanceTypes)
+	slog.Info("using instance types", "instanceTypes", opts.InstanceTypes)
 	return nil
 }
 
@@ -161,7 +161,7 @@ func (m *nodeManager) createNodeClass(opts *deployerOptions, k8sClient *k8sClien
 	if err != nil {
 		return fmt.Errorf("getting default nodeclass, %w", err)
 	}
-	klog.Infof("got existing default nodeclass for template..")
+	slog.Info("got existing default nodeclass for template..")
 
 	// clear out the metadata and set the name only
 	nodeclass.Object["metadata"] = map[string]interface{}{}
@@ -190,12 +190,12 @@ func (m *nodeManager) createNodeClass(opts *deployerOptions, k8sClient *k8sClien
 		}
 	}
 
-	klog.Infof("creating new node class...")
+	slog.Info("creating new node class...")
 	_, err = k8sClient.dclient.Resource(nodeClassResource).Create(context.Background(), nodeclass, metav1.CreateOptions{})
 	if err != nil {
 		return fmt.Errorf("creating new nodeclass, %w", err)
 	}
-	klog.Infof("node class created!")
+	slog.Info("node class created!")
 	return nil
 }
 
@@ -249,24 +249,24 @@ func (m *nodeManager) createNodePool(opts *deployerOptions, k8sClient *k8sClient
 			},
 		},
 	}
-	klog.Infof("creating node pool...")
+	slog.Info("creating node pool...")
 	if err := k8sClient.client.Create(context.TODO(), &nodePool); err != nil {
 		return fmt.Errorf("failed to create node pool: %v", err)
 	}
-	klog.Infof("created node pool: %+v", nodePool)
+	slog.Info("created node pool", "nodePool", nodePool)
 	return nil
 }
 
 func (m *nodeManager) deleteNodeClass(k8sClient *k8sClient) error {
-	klog.Infof("deleting node class...")
+	slog.Info("deleting node class...")
 	if err := k8sClient.dclient.Resource(nodeClassResource).Delete(context.Background(), m.resourceID, metav1.DeleteOptions{}); err != nil {
 		if apierrors.IsNotFound(err) {
-			klog.Infof("node class does not exist: %s", m.resourceID)
+			slog.Info("node class does not exist", "resourceID", m.resourceID)
 			return nil
 		}
 		return fmt.Errorf("failed to delete node class, %w", err)
 	}
-	klog.Infof("deleted node class!")
+	slog.Info("deleted node class!")
 	return nil
 }
 
@@ -276,15 +276,15 @@ func (m *nodeManager) deleteNodePool(k8sClient *k8sClient) error {
 			Name: m.resourceID,
 		},
 	}
-	klog.Infof("deleting node pool...")
+	slog.Info("deleting node pool...")
 	if err := k8sClient.client.Delete(context.TODO(), &nodePool); err != nil {
 		if apierrors.IsNotFound(err) {
-			klog.Infof("node pool does not exist: %s", m.resourceID)
+			slog.Info("node pool does not exist", "resourceID", m.resourceID)
 			return nil
 		}
 		return fmt.Errorf("failed to delete node pool: %w", err)
 	}
-	klog.Infof("deleted node pool!")
+	slog.Info("deleted node pool!")
 	return nil
 }
 
@@ -293,7 +293,7 @@ func (m *nodeManager) deleteNodePool(k8sClient *k8sClient) error {
 // This ensures that (at least) the specified number of nodes exist in an EKS Auto cluster
 func (m *nodeManager) createPlaceholderDeployment(opts *deployerOptions, k8sClient *k8sClient) (*appsv1.Deployment, error) {
 	if opts.Nodes == 0 {
-		klog.Info("not creating placeholder deployment!")
+		slog.Info("not creating placeholder deployment!")
 		return nil, nil
 	}
 	labels := map[string]string{
@@ -334,30 +334,30 @@ func (m *nodeManager) createPlaceholderDeployment(opts *deployerOptions, k8sClie
 			},
 		},
 	}
-	klog.Infof("creating placeholder deployment...")
+	slog.Info("creating placeholder deployment...")
 	d, err := k8sClient.clientset.AppsV1().Deployments("default").Create(context.TODO(), d, metav1.CreateOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create placeholder deployment: %v", err)
 	}
-	klog.Infof("created placeholder deployment: %+v", d)
+	slog.Info("created placeholder deployment", "deployment", d)
 	return d, nil
 }
 
 func (m *nodeManager) deletePlaceholderDeployment(k8sClient *k8sClient) error {
-	klog.Infof("deleting placeholder deployment...")
+	slog.Info("deleting placeholder deployment...")
 	if err := k8sClient.clientset.AppsV1().Deployments("default").Delete(context.TODO(), m.resourceID, *metav1.NewDeleteOptions( /* no grace period */ 0)); err != nil {
 		if apierrors.IsNotFound(err) {
-			klog.Infof("placeholder deployment does not exist: %s", m.resourceID)
+			slog.Info("placeholder deployment does not exist", "resourceID", m.resourceID)
 			return nil
 		}
 		return fmt.Errorf("failed to delete placeholder deployment: %v", err)
 	}
-	klog.Infof("deleted placeholder deployment!")
+	slog.Info("deleted placeholder deployment!")
 	return nil
 }
 
 func (m *nodeManager) createManagedNodegroup(infra *Infrastructure, cluster *Cluster, opts *deployerOptions) error {
-	klog.Infof("creating nodegroup...")
+	slog.Info("creating nodegroup...")
 	input := eks.CreateNodegroupInput{
 		ClusterName:   aws.String(m.resourceID),
 		NodegroupName: aws.String(m.resourceID),
@@ -377,7 +377,7 @@ func (m *nodeManager) createManagedNodegroup(infra *Infrastructure, cluster *Clu
 	if err != nil {
 		return err
 	}
-	klog.Infof("waiting for nodegroup to be active: %s", *out.Nodegroup.NodegroupArn)
+	slog.Info("waiting for nodegroup to be active", "arn", *out.Nodegroup.NodegroupArn)
 	err = eks.NewNodegroupActiveWaiter(m.clients.EKS()).
 		Wait(context.TODO(), &eks.DescribeNodegroupInput{
 			ClusterName:   input.ClusterName,
@@ -386,7 +386,7 @@ func (m *nodeManager) createManagedNodegroup(infra *Infrastructure, cluster *Clu
 	if err != nil {
 		return err
 	}
-	klog.Infof("nodegroup is active: %s", *out.Nodegroup.NodegroupArn)
+	slog.Info("nodegroup is active", "arn", *out.Nodegroup.NodegroupArn)
 	if opts.ExpectedAMI != "" {
 		out, err := m.clients.EKS().DescribeNodegroup(context.TODO(), &eks.DescribeNodegroupInput{
 			ClusterName:   input.ClusterName,
@@ -409,7 +409,7 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 	var availabilityZoneFilter []string
 	var capacityReservationId string
 	stackName := m.getUnmanagedNodegroupStackName()
-	klog.Infof("creating unmanaged nodegroup stack %s...", stackName)
+	slog.Info("creating unmanaged nodegroup stack", "stackName", stackName)
 	userData, userDataIsMimePart, err := generateUserData(cluster, opts)
 	if err != nil {
 		return err
@@ -509,7 +509,7 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 	if err != nil {
 		return err
 	}
-	klog.Infof("waiting for unmanaged nodegroup stack to be created: %s", aws.ToString(out.StackId))
+	slog.Info("waiting for unmanaged nodegroup stack to be created", "stackId", aws.ToString(out.StackId))
 	err = cloudformation.NewStackCreateCompleteWaiter(m.clients.CFN()).
 		Wait(context.TODO(),
 			&cloudformation.DescribeStacksInput{
@@ -519,7 +519,7 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 	if err != nil {
 		return util.WrapCFNStackFailure(context.TODO(), m.clients.CFN(), fmt.Errorf("failed to wait for unmanaged nodegroup stack creation: %w", err), stackName)
 	}
-	klog.Infof("created unmanaged nodegroup stack: %s", *out.StackId)
+	slog.Info("created unmanaged nodegroup stack", "stackId", *out.StackId)
 	if opts.ExpectedAMI != "" {
 		if ok, err := m.verifyASGAMI(m.resourceID, opts.ExpectedAMI); err != nil {
 			return err
@@ -564,17 +564,17 @@ func (m *nodeManager) deleteManagedNodegroup() error {
 		ClusterName:   aws.String(m.resourceID),
 		NodegroupName: aws.String(m.resourceID),
 	}
-	klog.Infof("deleting nodegroup...")
+	slog.Info("deleting nodegroup...")
 	out, err := m.clients.EKS().DeleteNodegroup(context.TODO(), &input)
 	if err != nil {
 		var notFound *ekstypes.ResourceNotFoundException
 		if errors.As(err, &notFound) {
-			klog.Infof("nodegroup does not exist: %s", m.resourceID)
+			slog.Info("nodegroup does not exist", "resourceID", m.resourceID)
 			return nil
 		}
 		return fmt.Errorf("failed to delete nodegroup: %v", err)
 	}
-	klog.Infof("waiting for nodegroup deletion: %s", *out.Nodegroup.NodegroupArn)
+	slog.Info("waiting for nodegroup deletion", "arn", *out.Nodegroup.NodegroupArn)
 	err = eks.NewNodegroupDeletedWaiter(m.clients.EKS()).
 		Wait(context.TODO(), &eks.DescribeNodegroupInput{
 			ClusterName:   input.ClusterName,
@@ -583,7 +583,7 @@ func (m *nodeManager) deleteManagedNodegroup() error {
 	if err != nil {
 		return fmt.Errorf("failed to wait for nodegroup deletion: %v", err)
 	}
-	klog.Infof("nodegroup deleted: %s", *out.Nodegroup.NodegroupArn)
+	slog.Info("nodegroup deleted", "arn", *out.Nodegroup.NodegroupArn)
 	return nil
 }
 
@@ -592,17 +592,17 @@ func (m *nodeManager) deleteUnmanagedNodegroup() error {
 	input := cloudformation.DeleteStackInput{
 		StackName: aws.String(stackName),
 	}
-	klog.Infof("deleting unmanaged nodegroup stack: %s", stackName)
+	slog.Info("deleting unmanaged nodegroup stack", "stackName", stackName)
 	_, err := m.clients.CFN().DeleteStack(context.TODO(), &input)
 	if err != nil {
 		var notFound *cloudformationtypes.StackNotFoundException
 		if errors.As(err, &notFound) {
-			klog.Infof("unmanaged nodegroup stack does not exist: %s", stackName)
+			slog.Info("unmanaged nodegroup stack does not exist", "stackName", stackName)
 			return nil
 		}
 		return fmt.Errorf("failed to delete unmanaged nodegroup stack: %w", err)
 	}
-	klog.Infof("waiting for unmanaged nodegroup stack to be deleted: %s", stackName)
+	slog.Info("waiting for unmanaged nodegroup stack to be deleted", "stackName", stackName)
 	err = cloudformation.NewStackDeleteCompleteWaiter(m.clients.CFN()).
 		Wait(context.TODO(),
 			&cloudformation.DescribeStacksInput{
@@ -612,7 +612,7 @@ func (m *nodeManager) deleteUnmanagedNodegroup() error {
 	if err != nil {
 		return fmt.Errorf("failed to wait for unmanaged nodegroup stack deletion: %w", err)
 	}
-	klog.Infof("deleted unmanaged nodegroup stack: %s", stackName)
+	slog.Info("deleted unmanaged nodegroup stack", "stackName", stackName)
 	return nil
 }
 
@@ -621,7 +621,7 @@ func (m *nodeManager) getUnmanagedNodegroupStackName() string {
 }
 
 func (m *nodeManager) verifyASGAMI(asgName string, amiId string) (bool, error) {
-	klog.Infof("verifying AMI is %s for ASG: %s", amiId, asgName)
+	slog.Info("verifying AMI for ASG", "amiId", amiId, "asgName", asgName)
 	asgOut, err := m.clients.ASG().DescribeAutoScalingGroups(context.TODO(), &autoscaling.DescribeAutoScalingGroupsInput{
 		AutoScalingGroupNames: []string{asgName},
 	})
@@ -635,7 +635,7 @@ func (m *nodeManager) verifyASGAMI(asgName string, amiId string) (bool, error) {
 	for _, instance := range asgOut.AutoScalingGroups[0].Instances {
 		instanceIds = append(instanceIds, *instance.InstanceId)
 	}
-	klog.Infof("verifying AMI for instances: %v", instanceIds)
+	slog.Info("verifying AMI for instances", "instanceIds", instanceIds)
 	ec2Out, err := m.clients.EC2().DescribeInstances(context.TODO(), &ec2.DescribeInstancesInput{
 		InstanceIds: instanceIds,
 	})
@@ -653,7 +653,7 @@ func (m *nodeManager) verifyASGAMI(asgName string, amiId string) (bool, error) {
 	if len(errs) > 0 {
 		return false, errors.Join(errs...)
 	}
-	klog.Infof("ASG instances are using expected AMI: %s", amiId)
+	slog.Info("ASG instances are using expected AMI", "amiId", amiId)
 	return true, nil
 }
 
@@ -687,7 +687,7 @@ func (m *nodeManager) getCapacityReservation(opts *deployerOptions) (*ec2types.C
 	if capacityReservation == nil {
 		return nil, fmt.Errorf("no capacity reservation found for instance type %s with %d nodes count", opts.InstanceTypes[0], opts.Nodes)
 	}
-	klog.Infof("Using capacity reservation: %s", aws.ToString(capacityReservation.CapacityReservationId))
+	slog.Info("using capacity reservation", "id", aws.ToString(capacityReservation.CapacityReservationId))
 	return capacityReservation, nil
 }
 
@@ -722,7 +722,7 @@ func (m *nodeManager) getValidAvailabilityZonesFilter(opts *deployerOptions, inf
 	}
 	// EFA traffic cannot cross an AZ https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/efa.html#efa-limits
 	targetAZ := availabilityZoneHintedOrder(candidateAZs)[0]
-	klog.Infof("Found availability zone %q with offering for instance types %v", targetAZ, opts.InstanceTypes)
+	slog.Info("found availability zone with offering", "az", targetAZ, "instanceTypes", opts.InstanceTypes)
 	return []string{targetAZ}, nil
 }
 
@@ -763,7 +763,7 @@ func (m *nodeManager) getValidSubnets(opts *deployerOptions, infra *Infrastructu
 	for _, subnet := range describeResponse.Subnets {
 		subnetIds = append(subnetIds, *subnet.SubnetId)
 	}
-	klog.Infof("Using subnets: %v", subnetIds)
+	slog.Info("using subnets", "subnetIds", subnetIds)
 	return subnetIds, nil
 }
 
@@ -777,7 +777,7 @@ func (m *nodeManager) getValidInstanceTypes(desiredInstanceTypes []string) ([]st
 		if err != nil {
 			var apierr smithy.APIError
 			if errors.As(err, &apierr) && apierr.ErrorCode() == "InvalidInstanceType" {
-				klog.Infof("Eliminating instance type %s as an option", instanceType)
+				slog.Info("eliminating instance type as an option", "instanceType", instanceType)
 			} else {
 				return nil, fmt.Errorf("failed to describe instance type: %s: %v", instanceType, err)
 			}

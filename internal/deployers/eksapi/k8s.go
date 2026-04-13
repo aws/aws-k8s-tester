@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/url"
 	"strings"
@@ -21,7 +22,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	crlog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -60,7 +60,7 @@ func newK8sClient(kubeconfigPath string) (*k8sClient, error) {
 }
 
 func (k *k8sClient) waitForReadyNodes(nodeCount int, timeout time.Duration) error {
-	klog.Infof("waiting up to %v for %d node(s) to be ready...", timeout, nodeCount)
+	slog.Info("waiting for nodes to be ready", "nodeCount", nodeCount, "timeout", timeout)
 	readyNodes := sets.NewString()
 	watcher, err := k.clientset.CoreV1().Nodes().Watch(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -72,7 +72,8 @@ func (k *k8sClient) waitForReadyNodes(nodeCount int, timeout time.Duration) erro
 		return fmt.Errorf("failed to get ready nodes: %v", err)
 	}
 	counter := len(initialReadyNodes)
-	ctx, _ := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 	for {
 		select {
 		case event, ok := <-watcher.ResultChan():
@@ -101,12 +102,12 @@ func (k *k8sClient) waitForReadyNodes(nodeCount int, timeout time.Duration) erro
 			break
 		}
 	}
-	klog.Infof("%d node(s) are ready: %v", readyNodes.Len(), readyNodes)
+	slog.Info("nodes are ready", "count", readyNodes.Len(), "nodes", readyNodes)
 	return nil
 }
 
 func (k *k8sClient) waitForNodeDeletion(timeout time.Duration) error {
-	klog.Infof("waiting up to %v for node(s) to be deleted...", timeout)
+	slog.Info("waiting for nodes to be deleted", "timeout", timeout)
 	nodes := sets.NewString()
 	watcher, err := k.clientset.CoreV1().Nodes().Watch(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -154,7 +155,7 @@ func (k *k8sClient) waitForNodeDeletion(timeout time.Duration) error {
 			break
 		}
 	}
-	klog.Info("all nodes deleted!")
+	slog.Info("all nodes deleted!")
 	return nil
 }
 
@@ -194,7 +195,7 @@ func (k *k8sClient) createAWSAuthConfigMap(nodeNameStrategy string, nodeRoleARN 
 	if err != nil {
 		return err
 	}
-	klog.Infof("generated AuthMapRole %s", mapRoles)
+	slog.Info("generated AuthMapRole", "mapRoles", mapRoles)
 	return wait.PollUntilContextTimeout(context.TODO(), requestRetryInterval, requestRetryTimeout, true, func(ctx context.Context) (bool, error) {
 		_, err := k.clientset.CoreV1().ConfigMaps("kube-system").Create(ctx, &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
@@ -208,7 +209,7 @@ func (k *k8sClient) createAWSAuthConfigMap(nodeNameStrategy string, nodeRoleARN 
 		if err != nil {
 			var dnsErr *net.DNSError
 			if errors.As(err, &dnsErr) {
-				klog.Warningf("failed to create aws-auth configmap due to DNS error, retrying: %v", err)
+				slog.Warn("failed to create aws-auth configmap due to DNS error, retrying", "error", err)
 				return false, nil
 			}
 			return false, err

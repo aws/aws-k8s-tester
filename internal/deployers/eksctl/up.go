@@ -3,6 +3,7 @@ package eksctl
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"slices"
@@ -11,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
-	"k8s.io/klog"
 )
 
 type UpOptions struct {
@@ -37,17 +37,17 @@ func (d *deployer) verifyUpFlags() error {
 	supportedDeployTargets := []string{"cluster", "nodegroup"}
 	// Skip validation if using a config file
 	if d.ConfigFile != "" {
-		klog.Infof("Using config file %s, skipping command-line flag validation", d.ConfigFile)
+		slog.Info("using config file, skipping command-line flag validation", "configFile", d.ConfigFile)
 		return nil
 	}
 
 	if d.KubernetesVersion == "" {
-		klog.Infof("--kubernetes-version is empty, attempting to detect it...")
+		slog.Info("--kubernetes-version is empty, attempting to detect it...")
 		detectedVersion, err := detectKubernetesVersion()
 		if err != nil {
 			return fmt.Errorf("unable to detect --kubernetes-version, flag cannot be empty")
 		}
-		klog.Infof("detected --kubernetes-version=%s", detectedVersion)
+		slog.Info("detected kubernetes version", "version", detectedVersion)
 		d.KubernetesVersion = detectedVersion
 	}
 	if d.Nodes < 0 {
@@ -55,7 +55,7 @@ func (d *deployer) verifyUpFlags() error {
 	}
 	if d.Nodes == 0 {
 		d.Nodes = 4
-		klog.V(2).Infof("Using default number of nodes: %d", d.Nodes)
+		slog.Debug("using default number of nodes", "nodes", d.Nodes)
 	}
 
 	// Validate instance types for unmanaged nodegroups
@@ -65,7 +65,7 @@ func (d *deployer) verifyUpFlags() error {
 		} else if len(d.InstanceTypes) == 0 {
 			// If no instance type specified, use a default
 			d.InstanceTypes = []string{"m5.xlarge"}
-			klog.Infof("No instance type specified for unmanaged nodegroup. Using default: %s", d.InstanceTypes[0])
+			slog.Info("no instance type specified for unmanaged nodegroup, using default", "instanceType", d.InstanceTypes[0])
 		}
 	}
 
@@ -74,7 +74,7 @@ func (d *deployer) verifyUpFlags() error {
 	} else if d.DeployTarget == "" {
 			// If no deploy target specified, use "cluster" as default
 			d.DeployTarget = "cluster"
-			klog.Infof("No deploy target specified. Using default: %s", d.DeployTarget)
+			slog.Info("no deploy target specified, using default", "deployTarget", d.DeployTarget)
 	}
 
 	return nil
@@ -88,9 +88,9 @@ func (d *deployer) Up() error {
 	}
 
 	if d.UseUnmanagedNodegroup {
-		klog.Infof("Using unmanaged nodegroup for cluster %s", d.clusterName)
+		slog.Info("using unmanaged nodegroup", "clusterName", d.clusterName)
 	} else {
-		klog.Infof("Using managed nodegroup for cluster %s", d.clusterName)
+		slog.Info("using managed nodegroup", "clusterName", d.clusterName)
 	}
 
 	var args []string
@@ -104,7 +104,7 @@ func (d *deployer) Up() error {
 		if err != nil {
 			return err
 		}
-		klog.Infof("Rendered cluster config: %s", string(clusterConfig))
+		slog.Info("rendered cluster config", "config", string(clusterConfig))
 
 		clusterConfigFile, err := os.CreateTemp("", "kubetest2-eksctl-cluster-config")
 		if err != nil {
@@ -137,7 +137,7 @@ func (d *deployer) Up() error {
 		return fmt.Errorf("error creating directory for kubeconfig: %v", err)
 	}
 
-	klog.Infof("Writing kubeconfig to %s", kubeConfigPath)
+	slog.Info("writing kubeconfig", "path", kubeConfigPath)
 	writeKubeconfigArgs := []string{
 		"utils",
 		"write-kubeconfig",
@@ -151,7 +151,7 @@ func (d *deployer) Up() error {
 		return fmt.Errorf("failed to write kubeconfig: %v", err)
 	}
 
-	klog.Infof("Successfully wrote kubeconfig to %s", kubeConfigPath)
+	slog.Info("successfully wrote kubeconfig", "path", kubeConfigPath)
 	d.KubeconfigPath = kubeConfigPath
 	return nil
 }

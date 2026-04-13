@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"flag"
+	"log/slog"
+	"os"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/internal/deployers/eksapi"
-	"k8s.io/klog/v2"
 )
 
 func main() {
@@ -21,6 +22,7 @@ func main() {
 	flag.Parse()
 	j := eksapi.NewJanitor(maxResourceAge, emitMetrics, workers, stackStatus)
 	if err := j.Sweep(context.Background()); err != nil {
-		klog.Fatalf("failed to sweep resources: %v", err)
+		slog.Error("failed to sweep resources", "error", err)
+		os.Exit(1)
 	}
 }

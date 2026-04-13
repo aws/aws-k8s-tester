@@ -3,6 +3,7 @@ package eksctl
 import (
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -10,9 +11,8 @@ import (
 	"github.com/aws/aws-k8s-tester/internal/awssdk"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/eks"
-	"github.com/urfave/sflags/gen/gpflag"
 	"github.com/spf13/pflag"
-	"k8s.io/klog"
+	"github.com/urfave/sflags/gen/gpflag"
 	"sigs.k8s.io/kubetest2/pkg/types"
 	"sigs.k8s.io/yaml"
 )
@@ -63,10 +63,9 @@ func (d *deployer) Version() string {
 func bindFlags(d *deployer) *pflag.FlagSet {
 	flags, err := gpflag.Parse(d)
 	if err != nil {
-		klog.Fatalf("unable to bind flags for deployer")
-		return nil
+		slog.Error("unable to bind flags for deployer")
+		os.Exit(1)
 	}
-	klog.InitFlags(nil)
 	flags.AddGoFlagSet(flag.CommandLine)
 	return flags
 }
@@ -81,19 +80,19 @@ func (d *deployer) initClusterName() {
 		clusterName, err := d.parseClusterNameFromConfig(d.UpOptions.ConfigFile)
 		if err == nil {
 			d.clusterName = clusterName
-			klog.V(2).Infof("Using cluster name from config file: %s", d.clusterName)
+			slog.Debug("using cluster name from config file", "clusterName", d.clusterName)
 			return
 		}
-		klog.Warningf("Failed to extract cluster name from config file: %v", err)
+		slog.Warn("failed to extract cluster name from config file", "error", err)
 		// Continue with other methods if parsing fails
 	}
 
 	if d.UpOptions.ClusterName != "" {
 		d.clusterName = d.UpOptions.ClusterName
-		klog.V(2).Infof("Using cluster name from flag: %s", d.clusterName)
+		slog.Debug("using cluster name from flag", "clusterName", d.clusterName)
 	} else {
 		d.clusterName = d.commonOptions.RunID()
-		klog.V(2).Infof("Using RunID for cluster name: %s", d.clusterName)
+		slog.Debug("using RunID for cluster name", "clusterName", d.clusterName)
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"log/slog"
 	"path"
 	"slices"
 	"sort"
@@ -21,7 +22,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/aws/aws-sdk-go/aws/arn"
-	"k8s.io/klog"
 
 	"github.com/aws/aws-k8s-tester/internal/deployers/eksapi/templates"
 	"github.com/aws/aws-k8s-tester/internal/metrics"
@@ -36,8 +36,7 @@ const (
 
 const (
 	// the VPC CNI will always add this tag to ENI's that it creates
-	vpcCNIENITagKey = "node.k8s.amazonaws.com/createdAt"
-
+	vpcCNIENITagKey         = "node.k8s.amazonaws.com/createdAt"
 	// the IPAM controller will add this tag to the ENI's that it creates
 	ipamControllerENITagKey = "eks:kubernetes-cni-node-name"
 )
@@ -118,7 +117,7 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 		return nil, err
 	}
 
-	klog.Infof("creating infrastructure stack with AZs: %v", subnetAzs)
+	slog.Info("creating infrastructure stack", "availabilityZones", subnetAzs)
 	input := cloudformation.CreateStackInput{
 		StackName:    aws.String(m.resourceID),
 		TemplateBody: aws.String(templates.Infrastructure),
@@ -156,12 +155,12 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 			},
 		}
 	}
-	klog.Infof("creating infrastructure stack...")
+	slog.Info("creating infrastructure stack...")
 	out, err := m.clients.CFN().CreateStack(context.TODO(), &input)
 	if err != nil {
 		return nil, err
 	}
-	klog.Infof("waiting for infrastructure stack to be created: %s", *out.StackId)
+	slog.Info("waiting for infrastructure stack to be created", "stackId", *out.StackId)
 	err = cloudformation.NewStackCreateCompleteWaiter(m.clients.CFN()).
 		Wait(context.TODO(),
 			&cloudformation.DescribeStacksInput{
@@ -171,13 +170,13 @@ func (m *InfrastructureManager) createInfrastructureStack(opts *deployerOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to wait for infrastructure stack creation: %w", err)
 	}
-	klog.Infof("getting infrastructure stack resources: %s", *out.StackId)
+	slog.Info("getting infrastructure stack resources", "stackId", *out.StackId)
 	infra, err := m.getInfrastructureStackResources()
 	infra.availabilityZones = subnetAzs
 	if err != nil {
 		return nil, fmt.Errorf("failed to get infrastructure stack resources: %w", err)
 	}
-	klog.Infof("created infrastructure: %+v", infra)
+	slog.Info("created infrastructure", "infra", infra)
 
 	return infra, nil
 }
@@ -224,7 +223,7 @@ func (m *InfrastructureManager) deleteInfrastructureStack() error {
 	if err != nil {
 		var notFound *cloudformationtypes.StackNotFoundException
 		if errors.As(err, &notFound) {
-			klog.Infof("infrastructure stack does not exist: %s", m.resourceID)
+			slog.Info("infrastructure stack does not exist", "resourceID", m.resourceID)
 			return nil
 		}
 		return err
@@ -235,17 +234,17 @@ func (m *InfrastructureManager) deleteInfrastructureStack() error {
 	input := cloudformation.DeleteStackInput{
 		StackName: aws.String(m.resourceID),
 	}
-	klog.Infof("deleting infrastructure stack: %s", m.resourceID)
+	slog.Info("deleting infrastructure stack", "resourceID", m.resourceID)
 	_, err = m.clients.CFN().DeleteStack(context.TODO(), &input)
 	if err != nil {
 		var notFound *cloudformationtypes.StackNotFoundException
 		if errors.As(err, &notFound) {
-			klog.Infof("infrastructure stack does not exist: %s", m.resourceID)
+			slog.Info("infrastructure stack does not exist", "resourceID", m.resourceID)
 			return nil
 		}
 		return fmt.Errorf("failed to delete infrastructure stack: %w", err)
 	}
-	klog.Infof("waiting for infrastructure stack to be deleted: %s", m.resourceID)
+	slog.Info("waiting for infrastructure stack to be deleted", "resourceID", m.resourceID)
 	err = cloudformation.NewStackDeleteCompleteWaiter(m.clients.CFN()).
 		Wait(context.TODO(),
 			&cloudformation.DescribeStacksInput{
@@ -254,15 +253,15 @@ func (m *InfrastructureManager) deleteInfrastructureStack() error {
 			infraStackDeletionTimeout)
 	if err != nil {
 		// don't fail the overall test, the janitor can clean this up
-		klog.Warningf("failed to wait for infrastructure stack deletion: %v", err)
+		slog.Warn("failed to wait for infrastructure stack deletion", "error", err)
 		m.metrics.Record(infraStackDeletionFailed, 1, nil)
 		return nil
 	}
-	klog.Infof("deleted infrastructure stack: %s", m.resourceID)
+	slog.Info("deleted infrastructure stack", "resourceID", m.resourceID)
 	return nil
 }
 
-// deleteLeakedIntanceProfiles deletes any instance profiles to which the node role is attached,
+// deleteLeakedInstanceProfiles deletes any instance profiles to which the node role is attached,
 // because this will block node role deletion (and deletion of the infrastructure stack).
 // For example, when --auto-mode is used, an instance profile will be created for us and won't be deleted automatically with the cluster.
 func (m *InfrastructureManager) deleteLeakedInstanceProfiles(infra *Infrastructure) error {
@@ -290,7 +289,7 @@ func (m *InfrastructureManager) deleteLeakedInstanceProfiles(infra *Infrastructu
 			if err != nil {
 				var notFound *iamtypes.NoSuchEntityException
 				if errors.As(err, &notFound) {
-					klog.Infof("instance profile does not exist: %s", aws.ToString(instanceProfile.InstanceProfileName))
+					slog.Info("instance profile does not exist", "name", aws.ToString(instanceProfile.InstanceProfileName))
 					continue
 				}
 				return fmt.Errorf("failed to remove node role %s from instance profile: %s: %v", infra.nodeRoleName, aws.ToString(instanceProfile.InstanceProfileName), err)
@@ -301,14 +300,14 @@ func (m *InfrastructureManager) deleteLeakedInstanceProfiles(infra *Infrastructu
 			if err != nil {
 				var notFound *iamtypes.NoSuchEntityException
 				if errors.As(err, &notFound) {
-					klog.Infof("instance profile does not exist: %s", aws.ToString(instanceProfile.InstanceProfileName))
+					slog.Info("instance profile does not exist", "name", aws.ToString(instanceProfile.InstanceProfileName))
 					continue
 				}
 				return fmt.Errorf("failed to delete instance profile: %s: %v", aws.ToString(instanceProfile.InstanceProfileName), err)
 			}
 			deletedInstanceProfiles = append(deletedInstanceProfiles, aws.ToString(instanceProfile.InstanceProfileName))
 		}
-		klog.Infof("deleted %d leaked instance profile(s): %v", len(deletedInstanceProfiles), deletedInstanceProfiles)
+		slog.Info("deleted leaked instance profiles", "count", len(deletedInstanceProfiles), "profiles", deletedInstanceProfiles)
 	}
 	return nil
 }
@@ -331,7 +330,7 @@ func (m *InfrastructureManager) deleteLeakedENIs() error {
 	if len(enis) == 0 {
 		return nil
 	}
-	klog.Infof("waiting for %d leaked ENI(s) to become available: %v", len(enis), enis)
+	slog.Info("waiting for leaked ENIs to become available", "count", len(enis), "enis", enis)
 	if err := ec2.NewNetworkInterfaceAvailableWaiter(m.clients.EC2()).Wait(context.TODO(), &ec2.DescribeNetworkInterfacesInput{
 		NetworkInterfaceIds: enis,
 	}, networkInterfaceDetachmentTimeout); err != nil {
@@ -340,13 +339,13 @@ func (m *InfrastructureManager) deleteLeakedENIs() error {
 			return fmt.Errorf("waiter failed, and re-checking ENIs also failed: %w", err2)
 		}
 		if len(refreshedENIs) == 0 {
-			klog.Infof("ENIs were deleted during waiter timeout, skipping delete.")
+			slog.Info("ENIs were deleted during waiter timeout, skipping delete")
 			return nil
 		}
 		return fmt.Errorf("failed to wait for ENI(s) to become available: %v", err)
 	}
 	for _, eni := range enis {
-		klog.Infof("deleting leaked ENI: %s", eni)
+		slog.Info("deleting leaked ENI", "eni", eni)
 		_, err := m.clients.EC2().DeleteNetworkInterface(context.TODO(), &ec2.DeleteNetworkInterfaceInput{
 			NetworkInterfaceId: aws.String(eni),
 		})
@@ -354,7 +353,7 @@ func (m *InfrastructureManager) deleteLeakedENIs() error {
 			return fmt.Errorf("failed to delete leaked ENI: %w", err)
 		}
 	}
-	klog.Infof("deleted %d leaked ENI(s)!", len(enis))
+	slog.Info("deleted leaked ENIs", "count", len(enis))
 	m.metrics.Record(infraLeakedENIs, float64(len(enis)), nil)
 	return nil
 }
@@ -431,7 +430,7 @@ func (m *InfrastructureManager) normalizeAZs(opts *deployerOptions, subnetAZs []
 				break
 			}
 			if !slices.Contains(filteredAZs, az) {
-				klog.Infof("padding infra stack with AZ: %v", az)
+				slog.Info("padding infra stack with AZ", "az", az)
 				filteredAZs = append(filteredAZs, az)
 			}
 		}
@@ -511,7 +510,7 @@ func getCloudWatchStackName(resourceID string) (string, string) {
 
 func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName string) (string, error) {
 	stackName, clusterUUID := getCloudWatchStackName(clusterName)
-	klog.Infof("creating CloudWatch infrastructure stack: %s", stackName)
+	slog.Info("creating CloudWatch infrastructure stack", "stackName", stackName)
 	out, err := m.clients.CFN().CreateStack(context.TODO(), &cloudformation.CreateStackInput{
 		StackName:    aws.String(stackName),
 		TemplateBody: aws.String(templates.CloudWatchInfra),
@@ -527,7 +526,7 @@ func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName 
 		return "", fmt.Errorf("failed to create CloudWatch infrastructure stack: %w", err)
 	}
 
-	klog.Infof("waiting for CloudWatch infrastructure stack to be created: %s", *out.StackId)
+	slog.Info("waiting for CloudWatch infrastructure stack to be created", "stackId", *out.StackId)
 	if err := cloudformation.NewStackCreateCompleteWaiter(m.clients.CFN()).
 		Wait(context.TODO(),
 			&cloudformation.DescribeStacksInput{
@@ -537,7 +536,6 @@ func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName 
 		return "", util.WrapCFNStackFailure(context.TODO(), m.clients.CFN(), fmt.Errorf("failed to wait for CloudWatch infrastructure stack creation: %w", err), stackName)
 	}
 
-	// Get the CloudWatch role ARN from stack outputs
 	stack, err := m.clients.CFN().DescribeStacks(context.TODO(), &cloudformation.DescribeStacksInput{
 		StackName: out.StackId,
 	})
@@ -545,6 +543,7 @@ func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName 
 		return "", fmt.Errorf("failed to describe CloudWatch infrastructure stack: %w", err)
 	}
 
+	// Get the CloudWatch role ARN from stack outputs
 	var roleArn string
 	for _, output := range stack.Stacks[0].Outputs {
 		if aws.ToString(output.OutputKey) == "CloudWatchRoleArn" {
@@ -556,7 +555,7 @@ func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName 
 		return "", fmt.Errorf("CloudWatch role ARN not found in stack outputs")
 	}
 
-	klog.Infof("CloudWatch infrastructure stack created successfully with role ARN: %s", roleArn)
+	slog.Info("CloudWatch infrastructure stack created successfully", "roleArn", roleArn)
 	return roleArn, nil
 }
 
@@ -565,7 +564,7 @@ func (m *InfrastructureManager) createCloudWatchInfrastructureStack(clusterName 
 // the correct EKS endpoint is used when a custom endpoint URL is configured.
 // The association is automatically cleaned up when the cluster is deleted.
 func (m *InfrastructureManager) createCloudWatchPodIdentityAssociation(clusterName string, roleArn string) error {
-	klog.Infof("creating PodIdentityAssociation for cluster %s...", clusterName)
+	slog.Info("creating PodIdentityAssociation", "clusterName", clusterName)
 	_, err := m.clients.EKS().CreatePodIdentityAssociation(context.TODO(), &eks.CreatePodIdentityAssociationInput{
 		ClusterName:    aws.String(clusterName),
 		Namespace:      aws.String("amazon-cloudwatch"),
@@ -575,7 +574,7 @@ func (m *InfrastructureManager) createCloudWatchPodIdentityAssociation(clusterNa
 	if err != nil {
 		return fmt.Errorf("failed to create PodIdentityAssociation: %w", err)
 	}
-	klog.Infof("PodIdentityAssociation created successfully for cluster %s", clusterName)
+	slog.Info("PodIdentityAssociation created successfully", "clusterName", clusterName)
 	return nil
 }
 
@@ -585,18 +584,18 @@ func (m *InfrastructureManager) deleteCloudWatchInfrastructureStack() error {
 	// The PodIdentityAssociation created via the EKS API is automatically
 	// cleaned up when the cluster is deleted, so no explicit deletion is needed.
 
-	klog.Infof("deleting CloudWatch infrastructure stack: %s", stackName)
+	slog.Info("deleting CloudWatch infrastructure stack", "stackName", stackName)
 	if _, err := m.clients.CFN().DeleteStack(context.TODO(), &cloudformation.DeleteStackInput{
 		StackName: aws.String(stackName),
 	}); err != nil {
 		var notFound *cloudformationtypes.StackNotFoundException
 		if errors.As(err, &notFound) {
-			klog.Infof("CloudWatch infrastructure stack does not exist: %s", stackName)
+			slog.Info("CloudWatch infrastructure stack does not exist", "stackName", stackName)
 			return nil
 		}
 		return fmt.Errorf("failed to delete CloudWatch infrastructure stack: %w", err)
 	}
 
-	klog.Infof("initiated deletion of CloudWatch infrastructure stack: %s", stackName)
+	slog.Info("initiated deletion of CloudWatch infrastructure stack", "stackName", stackName)
 	return nil
 }
