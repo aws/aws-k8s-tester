@@ -66,7 +66,8 @@ func TestSingleNodeUnitTest(t *testing.T) {
 			job := &batchv1.Job{
 				ObjectMeta: metav1.ObjectMeta{Name: "unit-test-job", Namespace: "default"},
 			}
-			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
+			err := fwext.WaitForWithTimeout(t, "Job unit-test-job",
+				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 				wait.WithContext(ctx),
 				wait.WithTimeout(60*time.Minute))
 			if err != nil {

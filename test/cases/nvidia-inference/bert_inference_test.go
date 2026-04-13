@@ -71,7 +71,7 @@ func TestBertInference(t *testing.T) {
 			job := &batchv1.Job{
 				ObjectMeta: metav1.ObjectMeta{Name: "bert-inference", Namespace: "default"},
 			}
-			if err := wait.For(
+			if err := fwext.WaitForWithTimeout(t, "Job bert-inference",
 				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 				wait.WithTimeout(20*time.Minute),
 			); err != nil {
