@@ -1,6 +1,6 @@
 //go:build e2e
 
-package neuron_dra
+package nvidia_dra
 
 import (
 	"embed"
@@ -13,7 +13,7 @@ import (
 //go:embed testcases
 var embeddedTestCases embed.FS
 
-func TestNeuronDRAMultiNode(t *testing.T) {
+func TestNvidiaDRAMultiNode(t *testing.T) {
 	topo, err := GetTopologyForNodeType(*nodeType)
 	if err != nil {
 		t.Fatalf("resolving topology for %s: %v", *nodeType, err)
@@ -31,15 +31,15 @@ func TestNeuronDRAMultiNode(t *testing.T) {
 		embeddedTestCases,
 		tcDir,
 		rctIndex,
-		"neuron-dra",
-		"multi-node-nccom-test",
+		"nvidia-dra",
+		"multi-node-nccl-test",
 		nodeCount,
 		func(tc *common.TestCaseSpec, rctIndex map[string]*common.ResourceClaimTemplateSpec) ([]byte, error) {
-			params, err := ComputeMPIJobParamsFromTestCase(tc, rctIndex, topo, nodeCount, *containerTestImage)
+			params, err := ComputeNvidiaMPIJobParams(tc, rctIndex, topo, nodeCount, *containerTestImage)
 			if err != nil {
 				return nil, err
 			}
-			return RenderMPIJobYAML(*params)
+			return RenderNvidiaMPIJobYAML(*params)
 		},
 		clientset,
 	)

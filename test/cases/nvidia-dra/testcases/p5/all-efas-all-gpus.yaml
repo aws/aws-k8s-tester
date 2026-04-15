@@ -1,0 +1,5 @@
+resourceClaims:
+- name: all-efas
+  resourceClaimTemplateName: rct-all-efas
+- name: all-gpus
+  resourceClaimTemplateName: rct-all-gpus

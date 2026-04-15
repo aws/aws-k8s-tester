@@ -1,47 +1,48 @@
-package neuron_dra
+package nvidia_dra
 
 import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"log"
 	"strings"
 	"text/template"
 
 	"github.com/aws/aws-k8s-tester/test/common"
 )
 
-//go:embed templates/nccom-test-mpijob.yaml.tmpl
+//go:embed templates/nccl-test-mpijob.yaml.tmpl
 var mpijobTemplate string
 
 // ---------------------------------------------------------------------------
 // Instance topology
 // ---------------------------------------------------------------------------
 
-// InstanceTopology describes the Neuron/EFA hardware topology for an instance family.
-type InstanceTopology struct {
-	Family               string
-	NeuronCoresPerDevice int
-	AllNeuronCount       int
-	RdmaType             string // RDMA device type (e.g. "efa")
-	RCTSubDir            string // subdirectory under rcts/
-	TestCaseSubDir       string // subdirectory under testcases/
+// NvidiaInstanceTopology describes the GPU/EFA hardware topology for an NVIDIA instance family.
+type NvidiaInstanceTopology struct {
+	Family         string
+	GPUsPerNode    int    // total GPUs per node (e.g. 8 for p5.48xlarge)
+	AllGPUCount    int    // same as GPUsPerNode for "All" allocation mode
+	RdmaType       string // RDMA device type (e.g. "efa")
+	RCTSubDir      string // subdirectory under rcts/
+	TestCaseSubDir string // subdirectory under testcases/
 }
 
-var instanceTopologies = map[string]InstanceTopology{
-	"trn1": {
-		Family:               "trn1",
-		NeuronCoresPerDevice: 2,
-		AllNeuronCount:       16,
-		RdmaType:             "efa",
-		RCTSubDir:            "trn1",
-		TestCaseSubDir:       "trn1",
+var instanceTopologies = map[string]NvidiaInstanceTopology{
+	"p5": {
+		Family:         "p5",
+		GPUsPerNode:    8,
+		AllGPUCount:    8,
+		RdmaType:       "efa",
+		RCTSubDir:      "p5",
+		TestCaseSubDir: "p5",
 	},
 }
 
-// GetTopologyForNodeType returns the InstanceTopology for a given node type
-// (e.g. "trn1.32xlarge"). It extracts the family prefix before the first "."
+// GetTopologyForNodeType returns the NvidiaInstanceTopology for a given node type
+// (e.g. "p5.48xlarge"). It extracts the family prefix before the first "."
 // and looks it up in the registry.
-func GetTopologyForNodeType(nodeType string) (*InstanceTopology, error) {
+func GetTopologyForNodeType(nodeType string) (*NvidiaInstanceTopology, error) {
 	family := common.ExtractFamily(nodeType)
 	topo, ok := instanceTopologies[family]
 	if !ok {
@@ -63,18 +64,18 @@ func supportedFamilies() string {
 // MPIJob rendering
 // ---------------------------------------------------------------------------
 
-// MPIJobParams holds all template parameters for rendering the MPIJob YAML.
-type MPIJobParams struct {
+// NvidiaMPIJobParams holds all template parameters for rendering the NCCL MPIJob YAML.
+type NvidiaMPIJobParams struct {
 	SlotsPerWorker     int
-	TotalRanks         int
+	TotalProcesses     int
 	WorkerReplicas     int
 	ContainerTestImage string
 	ResourceClaims     []common.ResourceClaimRef
 }
 
-// RenderMPIJobYAML renders the embedded MPIJob Go template with the given params
+// RenderNvidiaMPIJobYAML renders the embedded NCCL MPIJob Go template with the given params
 // and returns the resulting YAML bytes.
-func RenderMPIJobYAML(params MPIJobParams) ([]byte, error) {
+func RenderNvidiaMPIJobYAML(params NvidiaMPIJobParams) ([]byte, error) {
 	tmpl, err := template.New("mpijob").Parse(mpijobTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("parsing MPIJob template: %w", err)
@@ -87,29 +88,33 @@ func RenderMPIJobYAML(params MPIJobParams) ([]byte, error) {
 }
 
 // ---------------------------------------------------------------------------
-// Neuron-specific helpers
+// NVIDIA-specific helpers
 // ---------------------------------------------------------------------------
 
-// getNeuronCount returns the neuron device count from an RCT.
-// For AllocationMode "All" it returns the topology's AllNeuronCount;
-// otherwise it returns the explicit Count from the neuron request.
-func getNeuronCount(rct *common.ResourceClaimTemplateSpec, topo *InstanceTopology) int {
+// getGPUCount returns the GPU device count from an RCT.
+// For AllocationMode "All" it returns the topology's AllGPUCount;
+// otherwise it returns the explicit Count from the gpu.nvidia.com request.
+func getGPUCount(rct *common.ResourceClaimTemplateSpec, topo *NvidiaInstanceTopology) int {
 	for _, req := range rct.Spec.Spec.Devices.Requests {
-		if req.DeviceClassName != "neuron.aws.com" {
+		if req.DeviceClassName != "gpu.nvidia.com" {
 			continue
 		}
 		if req.AllocationMode == "All" {
-			return topo.AllNeuronCount
+			return topo.AllGPUCount
+		}
+		if req.Count <= 0 {
+			log.Printf("[WARN] gpu.nvidia.com request has non-positive count: %d", req.Count)
 		}
 		return req.Count
 	}
+	log.Printf("[WARN] no gpu.nvidia.com device request found in RCT, returning GPU count 0")
 	return 0
 }
 
-// ComputeMPIJobParamsFromTestCase computes MPIJob parameters from a test case spec.
+// ComputeNvidiaMPIJobParams computes MPIJob parameters from a test case spec.
 // It resolves each claim's resourceClaimTemplateName against the RCT index to
-// get the neuron count, then calculates SlotsPerWorker and TotalRanks.
-func ComputeMPIJobParamsFromTestCase(tc *common.TestCaseSpec, rctIndex map[string]*common.ResourceClaimTemplateSpec, topo *InstanceTopology, workerReplicas int, containerTestImage string) (*MPIJobParams, error) {
+// get the GPU count, then calculates SlotsPerWorker and TotalProcesses.
+func ComputeNvidiaMPIJobParams(tc *common.TestCaseSpec, rctIndex map[string]*common.ResourceClaimTemplateSpec, topo *NvidiaInstanceTopology, workerReplicas int, containerTestImage string) (*NvidiaMPIJobParams, error) {
 	if topo == nil {
 		return nil, fmt.Errorf("instance topology is required")
 	}
@@ -120,7 +125,7 @@ func ComputeMPIJobParamsFromTestCase(tc *common.TestCaseSpec, rctIndex map[strin
 		return nil, fmt.Errorf("containerTestImage is required")
 	}
 
-	totalNeurons := 0
+	totalGPUs := 0
 	var claims []common.ResourceClaimRef
 
 	for _, tcClaim := range tc.ResourceClaims {
@@ -129,7 +134,7 @@ func ComputeMPIJobParamsFromTestCase(tc *common.TestCaseSpec, rctIndex map[strin
 			return nil, fmt.Errorf("resource claim template %q not found in RCT index", tcClaim.ResourceClaimTemplateName)
 		}
 
-		totalNeurons += getNeuronCount(rct, topo)
+		totalGPUs += getGPUCount(rct, topo)
 
 		claims = append(claims, common.ResourceClaimRef{
 			Name:         tcClaim.Name,
@@ -137,12 +142,12 @@ func ComputeMPIJobParamsFromTestCase(tc *common.TestCaseSpec, rctIndex map[strin
 		})
 	}
 
-	slotsPerWorker := totalNeurons * topo.NeuronCoresPerDevice
-	totalRanks := slotsPerWorker * workerReplicas
+	slotsPerWorker := totalGPUs
+	totalProcesses := slotsPerWorker * workerReplicas
 
-	return &MPIJobParams{
+	return &NvidiaMPIJobParams{
 		SlotsPerWorker:     slotsPerWorker,
-		TotalRanks:         totalRanks,
+		TotalProcesses:     totalProcesses,
 		WorkerReplicas:     workerReplicas,
 		ContainerTestImage: containerTestImage,
 		ResourceClaims:     claims,

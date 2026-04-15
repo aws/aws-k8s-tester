@@ -13,6 +13,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -34,7 +35,7 @@ func DeployDranet(ctx context.Context, config *envconf.Config, rdmaDeviceDraDriv
 		return nil, fmt.Errorf("failed to apply dranet manifest: %w", err)
 	}
 	ds := appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{Name: "dranet", Namespace: "kube-system"},
+		ObjectMeta: metav1.ObjectMeta{Name: "dranet-aws-dranet", Namespace: "kube-system"},
 	}
 	err = wait.For(
 		fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&ds),
@@ -46,6 +47,24 @@ func DeployDranet(ctx context.Context, config *envconf.Config, rdmaDeviceDraDriv
 	}
 	log.Println("dranet daemonset is ready.")
 	return renderedManifest, nil
+}
+
+// CountNodesByType lists cluster nodes and returns the count of nodes matching
+// the given node.kubernetes.io/instance-type label. Returns an error if the
+// count is 0.
+func CountNodesByType(ctx context.Context, clientset kubernetes.Interface, nodeType string) (int, error) {
+	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{
+		LabelSelector: "node.kubernetes.io/instance-type=" + nodeType,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("failed to list nodes: %w", err)
+	}
+	count := len(nodes.Items)
+	if count == 0 {
+		return 0, fmt.Errorf("no nodes of type %q found", nodeType)
+	}
+	log.Printf("[INFO] Found %d node(s) of type %s", count, nodeType)
+	return count, nil
 }
 
 // DeployMPIOperator applies the MPI operator manifest and waits for the

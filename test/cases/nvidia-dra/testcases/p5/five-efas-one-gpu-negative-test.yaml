@@ -1,0 +1,4 @@
+expectFailure: true
+resourceClaims:
+- name: five-efas-one-gpu
+  resourceClaimTemplateName: rct-five-efas-one-gpu

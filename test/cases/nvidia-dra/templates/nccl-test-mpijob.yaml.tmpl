@@ -1,0 +1,91 @@
+apiVersion: kubeflow.org/v2beta1
+kind: MPIJob
+metadata:
+  name: multi-node-nccl-test
+spec:
+  slotsPerWorker: {{.SlotsPerWorker}}
+  runPolicy:
+    backoffLimit: 20
+    cleanPodPolicy: Running
+  mpiReplicaSpecs:
+    Launcher:
+      replicas: 1
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: nccl-test-launcher
+              image: {{.ContainerTestImage}}
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: PATH
+                  value: $PATH:/opt/amazon/efa/bin:/usr/bin
+              command:
+                - /opt/amazon/openmpi/bin/mpirun
+                - --allow-run-as-root
+                - --tag-output
+                - -np
+                - "{{.TotalProcesses}}"
+                - -N
+                - "{{.SlotsPerWorker}}"
+                - --bind-to
+                - none
+                - -x
+                - PATH
+                - -x
+                - LD_LIBRARY_PATH
+                - -x
+                - NCCL_DEBUG=INFO
+                - -x
+                - NCCL_BUFFSIZE=8388608
+                - -x
+                - NCCL_P2P_NET_CHUNKSIZE=524288
+                - -x
+                - NCCL_TUNER_PLUGIN=/opt/amazon/ofi-nccl/lib/x86_64-linux-gnu/libnccl-ofi-tuner.so
+                - --mca
+                - pml
+                - ^cm,ucx
+                - --mca
+                - btl
+                - tcp,self
+                - --mca
+                - btl_tcp_if_exclude
+                - lo,docker0,veth_def_agent
+                - /opt/nccl-tests/build/all_reduce_perf
+                - -b
+                - "8"
+                - -e
+                - "16G"
+                - -f
+                - "2"
+                - -g
+                - "1"
+                - -c
+                - "1"
+                - -n
+                - "100"
+    Worker:
+      replicas: {{.WorkerReplicas}}
+      template:
+        spec:
+          containers:
+            - name: nccl-tests-worker
+              image: {{.ContainerTestImage}}
+              imagePullPolicy: IfNotPresent
+              volumeMounts:
+                - name: shmem
+                  mountPath: /dev/shm
+              resources:
+                claims:
+{{- range .ResourceClaims}}
+                - name: {{.Name}}
+{{- end}}
+          resourceClaims:
+{{- range .ResourceClaims}}
+          - name: {{.Name}}
+            resourceClaimTemplateName: {{.TemplateName}}
+{{- end}}
+          volumes:
+            - name: shmem
+              hostPath:
+                path: /dev/shm

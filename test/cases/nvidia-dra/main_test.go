@@ -1,6 +1,6 @@
 //go:build e2e
 
-package neuron_dra
+package nvidia_dra
 
 import (
 	"context"
@@ -54,7 +54,7 @@ func validateConfig() error {
 	}); err != nil {
 		return err
 	}
-	// Validate that nodeType maps to a known topology (and thus a known RDMA type)
+	// Validate that nodeType maps to a known topology (and thus a known RDMA type).
 	topo, err := GetTopologyForNodeType(*nodeType)
 	if err != nil {
 		return fmt.Errorf("invalid -nodeType: %w", err)
@@ -66,66 +66,101 @@ func validateConfig() error {
 	if _, err := exec.LookPath("helm"); err != nil {
 		return fmt.Errorf("helm is required but not found on PATH: %w", err)
 	}
+	// Verify kubectl is available on the PATH.
+	if _, err := exec.LookPath("kubectl"); err != nil {
+		return fmt.Errorf("kubectl is required but not found on PATH: %w", err)
+	}
 	return nil
 }
 
 const (
-	neuronHelmReleaseName = "neuron-helm-chart"
-	neuronHelmChartOCI    = "oci://public.ecr.aws/neuron/neuron-helm-chart"
-	neuronDRANamespace    = "neuron-dra-driver"
+	nvidiaDRAHelmReleaseName = "nvidia-dra-driver-gpu"
+	nvidiaDRAHelmRepoName    = "nvidia-dra"
+	nvidiaDRAHelmRepoURL     = "https://helm.ngc.nvidia.com/nvidia"
+	nvidiaDRANamespace       = "nvidia-dra-driver-gpu"
+	nvidiaDRAHelmChartVer    = "25.8.1"
 )
 
-// installNeuronDRADriverHelm installs the Neuron DRA driver via the public Helm chart.
+// labelNodesGPUPresent labels all nodes with nvidia.com/gpu.present=true.
+func labelNodesGPUPresent(ctx context.Context) error {
+	args := []string{
+		"label", "nodes", "--all",
+		"nvidia.com/gpu.present=true",
+		"--overwrite",
+	}
+	log.Printf("[INFO] Labeling nodes: kubectl %s", strings.Join(args, " "))
+	cmd := exec.CommandContext(ctx, "kubectl", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("kubectl label nodes failed: %w", err)
+	}
+	log.Println("All nodes labeled with nvidia.com/gpu.present=true.")
+	return nil
+}
+
+// installNvidiaDRADriverHelm adds the NVIDIA Helm repo and installs the NVIDIA DRA driver.
 // If acceleratorDraDriverImage is non-empty, it splits on the last ":" to extract
 // repository and tag and passes them as --set overrides.
-func installNeuronDRADriverHelm(ctx context.Context, config *envconf.Config) (context.Context, error) {
+func installNvidiaDRADriverHelm(ctx context.Context, config *envconf.Config) (context.Context, error) {
+	// Add the Helm repo.
+	repoArgs := []string{"repo", "add", nvidiaDRAHelmRepoName, nvidiaDRAHelmRepoURL}
+	log.Printf("[INFO] Adding NVIDIA Helm repo: helm %s", strings.Join(repoArgs, " "))
+	repoCmd := exec.CommandContext(ctx, "helm", repoArgs...)
+	repoCmd.Stdout = os.Stdout
+	repoCmd.Stderr = os.Stderr
+	if err := repoCmd.Run(); err != nil {
+		return ctx, fmt.Errorf("helm repo add nvidia-dra failed: %w", err)
+	}
+
+	// Install (or upgrade) the chart.
 	args := []string{
-		"upgrade", "--install", neuronHelmReleaseName, neuronHelmChartOCI,
-		"--namespace", neuronDRANamespace,
+		"upgrade", "--install", nvidiaDRAHelmReleaseName,
+		fmt.Sprintf("%s/%s", nvidiaDRAHelmRepoName, nvidiaDRAHelmReleaseName),
+		"--version", nvidiaDRAHelmChartVer,
 		"--create-namespace",
-		"--set", "devicePlugin.enabled=false",
-		"--set", "npd.enabled=false",
-		"--set", "draDriver.enabled=true",
-		"--wait",
+		"--namespace", nvidiaDRANamespace,
+		"--set", "resources.gpus.enabled=true",
+		"--set", "gpuResourcesEnabledOverride=true",
 		"--timeout", "5m",
 	}
 	if *acceleratorDraDriverImage != "" {
 		repo, tag := common.SplitImageRepoTag(*acceleratorDraDriverImage)
 		args = append(args,
-			"--set", fmt.Sprintf("draDriver.image.repository=%s", repo),
-			"--set", fmt.Sprintf("draDriver.image.tag=%s", tag),
+			"--set", fmt.Sprintf("image.repository=%s", repo),
+			"--set", fmt.Sprintf("image.tag=%s", tag),
 		)
 	}
-	log.Printf("[INFO] Installing Neuron DRA driver via Helm: helm %s", strings.Join(args, " "))
+	log.Printf("[INFO] Installing NVIDIA DRA driver via Helm: helm %s", strings.Join(args, " "))
 	cmd := exec.CommandContext(ctx, "helm", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return ctx, fmt.Errorf("helm install neuron-dra-driver failed: %w", err)
+		return ctx, fmt.Errorf("helm install nvidia-dra-driver-gpu failed: %w", err)
 	}
-	log.Println("Neuron DRA driver Helm release installed successfully.")
+	log.Println("NVIDIA DRA driver Helm release installed successfully.")
 	return ctx, nil
 }
 
-// uninstallNeuronDRADriverHelm uninstalls the Neuron DRA driver Helm release.
-func uninstallNeuronDRADriverHelm(ctx context.Context, config *envconf.Config) (context.Context, error) {
+// uninstallNvidiaDRADriverHelm uninstalls the NVIDIA DRA driver Helm release.
+func uninstallNvidiaDRADriverHelm(ctx context.Context, config *envconf.Config) (context.Context, error) {
 	args := []string{
-		"uninstall", neuronHelmReleaseName,
-		"--namespace", neuronDRANamespace,
+		"uninstall", nvidiaDRAHelmReleaseName,
+		"--namespace", nvidiaDRANamespace,
 	}
-	log.Printf("[INFO] Uninstalling Neuron DRA driver Helm release: helm %s", strings.Join(args, " "))
+	log.Printf("[INFO] Uninstalling NVIDIA DRA driver Helm release: helm %s", strings.Join(args, " "))
 	cmd := exec.CommandContext(ctx, "helm", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		log.Printf("[WARN] helm uninstall neuron-dra-driver failed (may already be removed): %v", err)
+		log.Printf("[WARN] helm uninstall nvidia-dra-driver-gpu failed (may already be removed): %v", err)
 	}
 	return ctx, nil
 }
 
-func deployNeuronDRADriver(ctx context.Context, config *envconf.Config) (context.Context, error) {
+func waitForNvidiaDRADriverReady(ctx context.Context, config *envconf.Config) (context.Context, error) {
 	ds := appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{Name: "neuron-dra-driver-kubelet-plugin", Namespace: neuronDRANamespace},
+		ObjectMeta: metav1.ObjectMeta{Name: "nvidia-dra-driver-gpu-kubelet-plugin", Namespace: nvidiaDRANamespace},
 	}
 	err := wait.For(
 		fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&ds),
@@ -133,17 +168,17 @@ func deployNeuronDRADriver(ctx context.Context, config *envconf.Config) (context
 		wait.WithContext(ctx),
 	)
 	if err != nil {
-		return ctx, fmt.Errorf("neuron-dra-driver daemonset is not ready: %w", err)
+		return ctx, fmt.Errorf("nvidia-dra-driver daemonset is not ready: %w", err)
 	}
-	log.Println("neuron-dra-driver daemonset is ready.")
+	log.Println("nvidia-dra-driver daemonset is ready.")
 	return ctx, nil
 }
 
 func TestMain(m *testing.M) {
-	nodeType = flag.String("nodeType", "", "instance type for the cluster (e.g. trn1.32xlarge)")
+	nodeType = flag.String("nodeType", "", "instance type for the cluster (e.g. p5.48xlarge)")
 	rdmaDeviceDraDriverImage = flag.String("rdmaDeviceDraDriverImage", "", "container image for the dranet DRA driver")
-	acceleratorDraDriverImage = flag.String("acceleratorDraDriverImage", "", "container image for the Neuron DRA driver")
-	containerTestImage = flag.String("containerTestImage", "", "container image for the nccom test workload")
+	acceleratorDraDriverImage = flag.String("acceleratorDraDriverImage", "", "container image for the NVIDIA DRA driver")
+	containerTestImage = flag.String("containerTestImage", "", "container image for the NCCL test workload")
 
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
@@ -158,7 +193,6 @@ func TestMain(m *testing.M) {
 	defer cancel()
 	testenv = env.NewWithConfig(cfg).WithContext(ctx)
 
-	// Build the manifest list and setup functions dynamically.
 	// Resolve topology to determine RDMA type from nodeType.
 	topo, err := GetTopologyForNodeType(*nodeType)
 	if err != nil {
@@ -205,9 +239,14 @@ func TestMain(m *testing.M) {
 				})
 			}
 
-			// Install Neuron DRA driver via Helm chart.
+			// Label all nodes with nvidia.com/gpu.present=true.
 			g.Go(func() error {
-				_, err := installNeuronDRADriverHelm(gctx, config)
+				return labelNodesGPUPresent(gctx)
+			})
+
+			// Add NVIDIA Helm repo and install NVIDIA DRA driver.
+			g.Go(func() error {
+				_, err := installNvidiaDRADriverHelm(gctx, config)
 				return err
 			})
 
@@ -216,7 +255,7 @@ func TestMain(m *testing.M) {
 			}
 			return ctx, nil
 		},
-		deployNeuronDRADriver,
+		waitForNvidiaDRADriverReady,
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 			var err error
 			clientset, err = kubernetes.NewForConfig(config.Client().RESTConfig())
@@ -231,8 +270,8 @@ func TestMain(m *testing.M) {
 
 	testenv.Finish(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
-			// Uninstall Neuron DRA driver Helm release first.
-			ctx, _ = uninstallNeuronDRADriverHelm(ctx, config)
+			// Uninstall NVIDIA DRA driver Helm release first.
+			ctx, _ = uninstallNvidiaDRADriverHelm(ctx, config)
 			// Delete remaining manifests in reverse order.
 			slices.Reverse(manifestsList)
 			if err := fwext.DeleteManifests(config.Client().RESTConfig(), manifestsList...); err != nil {
