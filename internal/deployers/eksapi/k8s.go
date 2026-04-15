@@ -36,7 +36,7 @@ func init() {
 
 const (
 	requestRetryInterval = 10 * time.Second
-	requestRetryTimeout  = 2 * time.Minute
+	requestRetryTimeout  = 3 * time.Minute
 )
 
 type k8sClient struct {
@@ -196,7 +196,7 @@ func (k *k8sClient) createAWSAuthConfigMap(nodeNameStrategy string, nodeRoleARN 
 		return err
 	}
 	slog.Info("generated AuthMapRole", "mapRoles", mapRoles)
-	return wait.PollUntilContextTimeout(context.TODO(), requestRetryInterval, requestRetryTimeout, true, func(ctx context.Context) (bool, error) {
+	err = wait.PollUntilContextTimeout(context.TODO(), requestRetryInterval, requestRetryTimeout, true, func(ctx context.Context) (bool, error) {
 		_, err := k.clientset.CoreV1().ConfigMaps("kube-system").Create(ctx, &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "aws-auth",
@@ -216,6 +216,10 @@ func (k *k8sClient) createAWSAuthConfigMap(nodeNameStrategy string, nodeRoleARN 
 		}
 		return true, nil
 	})
+	if err != nil {
+		return fmt.Errorf("retry loop failed: %w", err)
+	}
+	return nil
 }
 
 func getNodeInstanceIDs(nodes []corev1.Node) ([]string, error) {
