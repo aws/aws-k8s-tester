@@ -36,7 +36,7 @@ func init() {
 
 const (
 	requestRetryInterval = 10 * time.Second
-	requestRetryTimeout  = 3 * time.Minute
+	requestRetryTimeout  = 10 * time.Minute
 )
 
 type k8sClient struct {
