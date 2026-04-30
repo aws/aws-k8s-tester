@@ -11,6 +11,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install necessary dependencies
 RUN apt update -y \
+ && apt upgrade -y \
  && apt remove -y --allow-change-held-packages \
       libmlx5-1 \
       ibverbs-utils \
