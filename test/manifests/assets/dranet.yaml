@@ -118,7 +118,7 @@ spec:
         - --hostname-override=$(NODE_NAME)
         - "--bind-address=:9177"
         - --cloud-provider-hint=AWS
-        - --filter=(!("dra.net/type" in attributes) || attributes["dra.net/type"].StringValue != "veth") && (!("dra.net/pciDevice" in attributes) || attributes["dra.net/pciDevice"].StringValue != "Elastic Network Adapter (ENA)")
+        - --filter="dra.net/pciDevice" in attributes && attributes["dra.net/pciDevice"].StringValue == "Elastic Fabric Adapter (EFA)"
         image: {{.RdmaDeviceDraDriverImage}}
         imagePullPolicy: IfNotPresent
         env:
