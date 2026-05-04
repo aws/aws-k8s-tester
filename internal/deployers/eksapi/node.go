@@ -21,6 +21,7 @@ import (
 	"github.com/aws/smithy-go"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"log/slog"
@@ -328,6 +329,20 @@ func (m *nodeManager) createPlaceholderDeployment(opts *deployerOptions, k8sClie
 							Name:    "main",
 							Image:   "public.ecr.aws/amazonlinux/amazonlinux:2023",
 							Command: []string{"sleep", "infinity"},
+							Resources: func() corev1.ResourceRequirements {
+								// Auto mode will launch node with efa interface attached only when efa request exist in pod spec
+								if opts.EFA {
+									return corev1.ResourceRequirements{
+										Requests: corev1.ResourceList{
+											"vpc.amazonaws.com/efa": resource.MustParse("1"),
+										},
+										Limits: corev1.ResourceList{
+											"vpc.amazonaws.com/efa": resource.MustParse("1"),
+										},
+									}
+								}
+								return corev1.ResourceRequirements{}
+							}(),
 						},
 					},
 				},
