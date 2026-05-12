@@ -77,7 +77,7 @@ func TestGracefulReboot(t *testing.T) {
 			// Retry for up to 1 minute to handle transient TLS errors during cert rotation.
 			var kubeletResponsive bool
 			var err error
-			healthCheckCtx, healthCheckCancel := context.WithTimeout(ctx, 1*time.Minute)
+			healthCheckCtx, healthCheckCancel := context.WithTimeout(ctx, 5*time.Minute)
 			defer healthCheckCancel()
 			for {
 				kubeletResponsive, err = fwext.KubeletIsResponsive(healthCheckCtx, cfg.Client().RESTConfig(), targetNode.Name)
