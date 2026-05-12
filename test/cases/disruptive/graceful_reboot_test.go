@@ -73,10 +73,23 @@ func TestGracefulReboot(t *testing.T) {
 
 			// Do an initial check of the /healthz endpoint reachability to ensure we can rely on it later.
 			// This might fail even if the node is healthy if, for example, the node's security group rules
-			// do not allow ingress traffic from the control plane
-			kubeletResponsive, err := fwext.KubeletIsResponsive(ctx, cfg.Client().RESTConfig(), targetNode.Name)
-			if err != nil || !kubeletResponsive {
-				t.Fatalf("Node %s is not responding to initial /healthz checks: %v", targetNode.Name, err)
+			// do not allow ingress traffic from the control plane.
+			// Retry for up to 1 minute to handle transient TLS errors during cert rotation.
+			var kubeletResponsive bool
+			var err error
+			healthCheckCtx, healthCheckCancel := context.WithTimeout(ctx, 1*time.Minute)
+			defer healthCheckCancel()
+			for {
+				kubeletResponsive, err = fwext.KubeletIsResponsive(healthCheckCtx, cfg.Client().RESTConfig(), targetNode.Name)
+				if err == nil && kubeletResponsive {
+					break
+				}
+				select {
+				case <-healthCheckCtx.Done():
+					t.Fatalf("Node %s is not responding to initial /healthz checks: %v", targetNode.Name, err)
+				case <-time.After(5 * time.Second):
+					t.Logf("Retrying /healthz check for node %s (last error: %v, responsive: %v)", targetNode.Name, err, kubeletResponsive)
+				}
 			}
 
 			providerIDParts := strings.Split(targetNode.Spec.ProviderID, "/")
