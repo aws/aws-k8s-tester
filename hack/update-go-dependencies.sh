@@ -5,7 +5,7 @@ set -o errexit
 set -o pipefail
 
 DEFAULT_PINNED_MODULES=(
-  "sigs.k8s.io/karpenter@v1.8.2"
+  "sigs.k8s.io/karpenter@v1.9.0"
   "k8s.io/api@v0.35.5"
   "k8s.io/apimachinery@v0.35.5"
   "k8s.io/client-go@v0.35.5"

@@ -224,25 +224,19 @@ func (m *nodeManager) createNodePool(opts *deployerOptions, k8sClient *k8sClient
 					},
 					Requirements: []karpv1.NodeSelectorRequirementWithMinValues{
 						{
-							NodeSelectorRequirement: corev1.NodeSelectorRequirement{
-								Key:      "kubernetes.io/os",
-								Operator: corev1.NodeSelectorOpIn,
-								Values:   []string{"linux"},
-							},
+							Key:      "kubernetes.io/os",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"linux"},
 						},
 						{
-							NodeSelectorRequirement: corev1.NodeSelectorRequirement{
-								Key:      "karpenter.sh/capacity-type",
-								Operator: corev1.NodeSelectorOpIn,
-								Values:   []string{"reserved", "on-demand"},
-							},
+							Key:      "karpenter.sh/capacity-type",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"reserved", "on-demand"},
 						},
 						{
-							NodeSelectorRequirement: corev1.NodeSelectorRequirement{
-								Key:      "node.kubernetes.io/instance-type",
-								Operator: corev1.NodeSelectorOpIn,
-								Values:   opts.InstanceTypes,
-							},
+							Key:      "node.kubernetes.io/instance-type",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   opts.InstanceTypes,
 						},
 					},
 				},
