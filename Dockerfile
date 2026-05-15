@@ -2,7 +2,7 @@ FROM public.ecr.aws/amazonlinux/amazonlinux:2023 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 RUN dnf install -y git tar gzip make unzip gcc rsync wget jq
-ARG GO_MINOR_VERSION=1.25
+ARG GO_MINOR_VERSION=1.26
 RUN curl https://go.dev/dl/?mode=json | jq -r .[].version | grep "^go${GO_MINOR_VERSION}" | head -n1 > go-version.txt
 RUN  wget -O go.tar.gz https://go.dev/dl/$(cat go-version.txt).${TARGETOS}-${TARGETARCH}.tar.gz && \
     rm -rf /usr/local/go && \

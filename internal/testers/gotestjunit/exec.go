@@ -40,7 +40,7 @@ import (
 
 	"github.com/jstemmer/go-junit-report/v2/junit"
 	"github.com/jstemmer/go-junit-report/v2/parser/gotest"
-	"github.com/octago/sflags/gen/gpflag"
+	"github.com/urfave/sflags/gen/gpflag"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/kubetest2/pkg/artifacts"
 	"sigs.k8s.io/kubetest2/pkg/testers"
