@@ -36,6 +36,9 @@ test_04_dcgm_diagnostics()
         skip "This test does not apply to vGPU instances (g6f.*, gr6f.*)"
     fi
 
-    # https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/dcgm-diagnostics.html#run-levels-and-tests
-    assert_status_code 0 "dcgmi diag -r 2"
+    # Use per-GPU-model PCIe width overrides via -c;
+    # min_pci_width is sub-test-scoped and cannot be set with -p.
+    local test_dir
+    test_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    assert_status_code 0 "dcgmi diag -r 2 -c ${test_dir}/dcgm-diag.yaml"
 }
