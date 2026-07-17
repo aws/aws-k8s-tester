@@ -1,0 +1,17 @@
+# Per-GPU-model DCGM diagnostics overrides for gpu_unit_tests.
+# Lists only GPU models provisioned with reduced PCIe lanes on AWS; unlisted
+# models keep DCGM's strict defaults. version tracks the DCGM in the Dockerfile.
+version: "4.6.0"
+spec: dcgm-diag-v1
+skus:
+  # NVIDIA L4: g6.*/gr6.* single-GPU sizes wire the L4 to a PCIe x8 slot.
+  - name: NVIDIA L4
+    id: 27b8
+    pcie:
+      is_allowed: true
+      h2d_d2h_single_pinned:
+        min_pci_generation: 1.0
+        min_pci_width: 8.0
+      h2d_d2h_single_unpinned:
+        min_pci_generation: 1.0
+        min_pci_width: 8.0
