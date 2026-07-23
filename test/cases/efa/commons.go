@@ -32,7 +32,8 @@ var (
 	nodeType               *string
 	expectedEFADeviceCount *int
 
-	verbose *bool
+	verbose             *bool
+	installDevicePlugin *bool
 )
 
 const (
