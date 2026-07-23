@@ -25,9 +25,6 @@ Parameters:
     Description: Node disk size in gigabytes.
     Default: 100
 
-  NodeCount:
-    Type: Number
-
   ClusterName:
     Type: String
 
@@ -45,6 +42,12 @@ Parameters:
     Type: String
     Description: Capacity reservation id for the unmanaged nodegroup
 
+  CapacityBlock:
+    Type: String
+    Description: Whether the capacity reservation is a capacity block
+    Default: "false"
+    AllowedValues: ["true", "false"]
+
   UserDataIsMIMEPart:
     Description: "User data should be embedded as a part of a multi-part MIME document"
     Default: true
@@ -52,7 +55,10 @@ Parameters:
     AllowedValues: [true, false]
 
 Conditions:
-  IsCapacityReservationIdSet: !Not [!Equals [!Ref CapacityReservationId, ""]]
+  IsCapacityBlock: !Equals [!Ref CapacityBlock, "true"]
+  IsOnDemandReservation: !And
+    - !Not [!Equals [!Ref CapacityReservationId, ""]]
+    - !Not [!Condition IsCapacityBlock]
   IsUserDataMIMEPart: !Equals [true, !Ref UserDataIsMIMEPart]
 
 Resources:
@@ -116,9 +122,18 @@ Resources:
               VolumeType: gp2
         CapacityReservationSpecification:
           Fn::If:
-            - IsCapacityReservationIdSet
+            - IsOnDemandReservation
             - CapacityReservationTarget:
                 CapacityReservationId: !Ref CapacityReservationId
+            - Fn::If:
+              - IsCapacityBlock
+              - CapacityReservationTarget:
+                  CapacityReservationId: !Ref CapacityReservationId
+              - !Ref AWS::NoValue
+        InstanceMarketOptions:
+          Fn::If:
+            - IsCapacityBlock
+            - MarketType: capacity-block
             - !Ref AWS::NoValue
         IamInstanceProfile:
           Arn: !GetAtt NodeInstanceProfile.Arn
@@ -163,6 +178,22 @@ Resources:
               - Fn::Sub: |
                   ${UserData}
 
+  {{ if .NoASG }}
+  {{ range $i, $e := until .NodeCount }}
+  Node{{$e}}:
+    Type: AWS::EC2::Instance
+    Properties:
+      LaunchTemplate:
+        LaunchTemplateId: !Ref NodeLaunchTemplate
+        Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
+      Tags:
+        - Key: Name
+          Value: !Sub "${ClusterName}-Node"
+        # necessary for kubelet's legacy, in-tree cloud provider
+        - Key: !Sub "kubernetes.io/cluster/${ClusterName}"
+          Value: owned
+  {{ end }}
+  {{ else }}
   NodeGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     UpdatePolicy:
@@ -180,9 +211,9 @@ Resources:
               {{- range .InstanceTypes}}
                 - InstanceType: "{{.}}"
               {{- end}}
-      DesiredCapacity: !Ref NodeCount
-      MinSize: !Ref NodeCount
-      MaxSize: !Ref NodeCount
+      DesiredCapacity: {{ .NodeCount }}
+      MinSize: {{ .NodeCount }}
+      MaxSize: {{ .NodeCount }}
       VPCZoneIdentifier: !Ref SubnetIds
       Tags:
         - Key: Name
@@ -192,3 +223,4 @@ Resources:
         - Key: !Sub "kubernetes.io/cluster/${ClusterName}"
           Value: owned
           PropagateAtLaunch: true
+  {{ end }}
