@@ -57,6 +57,7 @@ func TestMain(m *testing.M) {
 	nodeType = flag.String("nodeType", "", "instance type to target for tests")
 	expectedEFADeviceCount = flag.Int("expectedEFADeviceCount", -1, "expected number of efa devices for the target nodes")
 	verbose = flag.Bool("verbose", true, "use verbose mode for tests")
+	installDevicePlugin = flag.Bool("installDevicePlugin", true, "install EFA device plugin")
 
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
@@ -77,8 +78,13 @@ func TestMain(m *testing.M) {
 
 	ec2Client = e2e.NewEC2Client()
 
-	testenv.Setup(
-		deployEFAPlugin,
+	setUpFunctions := []env.Func{}
+	if *installDevicePlugin {
+		setUpFunctions = append(setUpFunctions, deployEFAPlugin)
+	} else {
+		log.Println("skipping EFA device plugin installation (--installDevicePlugin=false)")
+	}
+	setUpFunctions = append(setUpFunctions,
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 			select {
 			case <-ctx.Done():
@@ -89,13 +95,16 @@ func TestMain(m *testing.M) {
 			return ctx, cfg.Client().Resources().Create(ctx, getTestNamespace())
 		},
 	)
+	testenv.Setup(setUpFunctions...)
 
 	testenv.Finish(
 		func(ctx context.Context, config *envconf.Config) (context.Context, error) {
 			cfg.Client().Resources().Delete(context.TODO(), getTestNamespace())
-			err := e2e.DeleteManifests(cfg.Client().RESTConfig(), manifests.EfaDevicePluginManifest)
-			if err != nil {
-				return ctx, err
+			if *installDevicePlugin {
+				err := e2e.DeleteManifests(cfg.Client().RESTConfig(), manifests.EfaDevicePluginManifest)
+				if err != nil {
+					return ctx, err
+				}
 			}
 			return ctx, nil
 		},
