@@ -90,7 +90,7 @@ func (m *logManager) gatherLogsUsingScript(k8sClient *k8sClient, opts *deployerO
 				return nil
 			}
 			if len(out.AutoScalingGroups) != 1 {
-				slog.Warn("autoscaling group not found, %s", m.resourceID)
+				slog.Warn("autoscaling group not found", "resourceID", m.resourceID)
 			} else {
 				for _, asg := range out.AutoScalingGroups {
 					for _, instance := range asg.Instances {
