@@ -65,7 +65,7 @@ type deployerOptions struct {
 	AMIType                     string        `flag:"ami-type" desc:"AMI type for managed nodes"`
 	AutoMode                    bool          `flag:"auto-mode" desc:"Enable EKS Auto Mode"`
 	CapacityReservation         bool          `flag:"capacity-reservation" desc:"Use capacity reservation for the unmanaged nodegroup"`
-	CapacityBlock               bool          `flag:"capacity-block" desc:"Use capacity block market type for the reservation. Implies --capacity-reservation. Only works with --no-asg because mixed instances policy does not support capacity blocks."`
+	CapacityBlock               bool          `flag:"capacity-block" desc:"Use capacity block market type for the reservation. Implies --capacity-reservation. Only works with a single node because the mixed instances policy does not support capacity blocks."`
 	TargetCapacityReservationId string        `flag:"target-capacity-reservation-id" desc:"CapacityReservation ID to use for targeted launches. Implies --capacity-reservation."`
 	ClusterCreationTimeout      time.Duration `flag:"cluster-creation-timeout" desc:"Time to wait for cluster to be created and become active."`
 	ClusterRoleServicePrincipal string        `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
@@ -83,7 +83,6 @@ type deployerOptions struct {
 	KubeconfigPath          string        `flag:"kubeconfig" desc:"Path to kubeconfig"`
 	KubernetesVersion       string        `flag:"kubernetes-version" desc:"cluster Kubernetes version"`
 	LogBucket               string        `flag:"log-bucket" desc:"S3 bucket for storing logs for each run. If empty, logs will not be stored."`
-	NoASG                   bool          `flag:"no-asg" desc:"Create individual instances without an autoscaling group. Currently only supports a single instance type and subnet."`
 	NodeadmFeatureGates     []string      `flag:"nodeadm-feature-gates" desc:"Feature gates to enable for nodeadm (key=value pairs)"`
 	NodeCreationTimeout     time.Duration `flag:"node-creation-timeout" desc:"Time to wait for nodes to be created/launched. This should consider instance availability."`
 	NodeReadyTimeout        time.Duration `flag:"node-ready-timeout" desc:"Time to wait for all nodes to become ready"`
@@ -347,9 +346,6 @@ func (d *deployer) verifyUpFlags() error {
 	} else {
 		if d.AMI != "" {
 			return fmt.Errorf("--ami should not be provided without --unmanaged-nodes")
-		}
-		if d.NoASG {
-			return fmt.Errorf("--no-asg should not be provided without --unmanaged-nodes")
 		}
 		if d.AMIType == "" {
 			d.AMIType = "AL2023_x86_64_STANDARD"

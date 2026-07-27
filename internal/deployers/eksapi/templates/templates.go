@@ -3,8 +3,6 @@ package templates
 import (
 	_ "embed"
 	"text/template"
-
-	sprig "github.com/Masterminds/sprig/v3"
 )
 
 //go:embed infra.yaml
@@ -16,7 +14,7 @@ var CloudWatchAgentRbac []byte
 var (
 	//go:embed unmanaged-nodegroup.yaml.template
 	unmanagedNodegroupTemplate string
-	UnmanagedNodegroup         = template.Must(template.New("unmanagedNodegroup").Funcs(sprig.FuncMap()).Parse(unmanagedNodegroupTemplate))
+	UnmanagedNodegroup         = template.Must(template.New("unmanagedNodegroup").Parse(unmanagedNodegroupTemplate))
 )
 
 //go:embed cloudwatch-infra.yaml.template
@@ -34,9 +32,8 @@ type NetworkInterface struct {
 
 type UnmanagedNodegroupTemplateData struct {
 	NetworkInterfaces []NetworkInterface
+	KubernetesVersion string
 	InstanceTypes     []string
-	NoASG             bool
-	NodeCount         int
 }
 
 type BusyboxDeploymentTemplateData struct {

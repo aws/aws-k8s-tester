@@ -25,6 +25,9 @@ Parameters:
     Description: Node disk size in gigabytes.
     Default: 100
 
+  NodeCount:
+    Type: Number
+
   ClusterName:
     Type: String
 
@@ -178,22 +181,6 @@ Resources:
               - Fn::Sub: |
                   ${UserData}
 
-  {{ if .NoASG }}
-  {{ range $i, $e := until .NodeCount }}
-  Node{{$e}}:
-    Type: AWS::EC2::Instance
-    Properties:
-      LaunchTemplate:
-        LaunchTemplateId: !Ref NodeLaunchTemplate
-        Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
-      Tags:
-        - Key: Name
-          Value: !Sub "${ClusterName}-Node"
-        # necessary for kubelet's legacy, in-tree cloud provider
-        - Key: !Sub "kubernetes.io/cluster/${ClusterName}"
-          Value: owned
-  {{ end }}
-  {{ else }}
   NodeGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     UpdatePolicy:
@@ -202,6 +189,7 @@ Resources:
         PauseTime: PT15M
     Properties:
       AutoScalingGroupName: !Ref ResourceId
+      {{- if gt (len .InstanceTypes) 1 }}
       MixedInstancesPolicy:
         LaunchTemplate:
           LaunchTemplateSpecification:
@@ -211,9 +199,17 @@ Resources:
               {{- range .InstanceTypes}}
                 - InstanceType: "{{.}}"
               {{- end}}
-      DesiredCapacity: {{ .NodeCount }}
-      MinSize: {{ .NodeCount }}
-      MaxSize: {{ .NodeCount }}
+      {{- else }}
+      # A single instance type uses the launch template directly. A
+      # MixedInstancesPolicy cannot be used with capacity blocks, so it is only
+      # used when more than one instance type is requested.
+      LaunchTemplate:
+        LaunchTemplateId: !Ref NodeLaunchTemplate
+        Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
+      {{- end }}
+      DesiredCapacity: !Ref NodeCount
+      MinSize: !Ref NodeCount
+      MaxSize: !Ref NodeCount
       VPCZoneIdentifier: !Ref SubnetIds
       Tags:
         - Key: Name
@@ -223,4 +219,3 @@ Resources:
         - Key: !Sub "kubernetes.io/cluster/${ClusterName}"
           Value: owned
           PropagateAtLaunch: true
-  {{ end }}
