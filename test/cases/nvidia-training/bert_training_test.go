@@ -68,7 +68,8 @@ func TestBertTraining(t *testing.T) {
 			job := &batchv1.Job{
 				ObjectMeta: metav1.ObjectMeta{Name: "bert-training-launcher", Namespace: "default"},
 			}
-			if err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
+			if err := fwext.WaitForWithTimeout(t, "Job bert-training-launcher",
+				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 				wait.WithTimeout(time.Minute*20),
 				wait.WithContext(ctx),
 			); err != nil {

@@ -214,10 +214,14 @@ func waitForJobCreation(cfg *envconf.Config) (*batchv1.Job, error) {
 
 func waitForJobCompletion(job *batchv1.Job, cfg *envconf.Config) error {
 	log.Println("Waiting for 'bert-training' Job to succeed...")
-	return wait.For(
+	err := wait.For(
 		fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 		wait.WithTimeout(30*time.Minute),
 	)
+	if err != nil && fwext.IsTimeoutError(err) {
+		log.Printf("%s: Job bert-training", fwext.WaitForTimeoutMessage)
+	}
+	return err
 }
 
 func processJobLogs(ctx context.Context, cfg *envconf.Config) error {
