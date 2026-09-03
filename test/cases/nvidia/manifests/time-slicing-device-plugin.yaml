@@ -1,0 +1,83 @@
+# NVIDIA device plugin configured for time-slicing.
+#
+# This replaces the standard nvidia-device-plugin-daemonset for the duration of
+# the time-slicing feature, then the standard one is restored in Teardown. The
+# name is deliberately identical so only one plugin ever advertises
+# nvidia.com/gpu; two plugins registering the same resource would conflict.
+#
+# Time-slicing is a device-plugin setting, not a GPU or driver capability: the
+# plugin simply advertises each physical GPU {{.Replicas}} times and the driver
+# time-shares between the pods that land on it. There is no memory or fault
+# isolation between them, unlike MIG.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nvidia-time-slicing-config
+  namespace: kube-system
+data:
+  config.yaml: |
+    version: v1
+    sharing:
+      timeSlicing:
+        # Both of these are set explicitly because the assertions depend on
+        # them. renameByDefault: true would advertise nvidia.com/gpu.shared
+        # instead of multiplying nvidia.com/gpu, which is what Bottlerocket's
+        # plugin config defaults to; leaving it implicit would make the test
+        # silently wrong if the plugin's own default ever changed.
+        renameByDefault: false
+        failRequestsGreaterThanOne: true
+        resources:
+        - name: nvidia.com/gpu
+          replicas: {{.Replicas}}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin-daemonset
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      name: nvidia-device-plugin-ds
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: nvidia-device-plugin-ds
+    spec:
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      priorityClassName: "system-node-critical"
+      containers:
+      - image: nvcr.io/nvidia/k8s-device-plugin:v0.17.2
+        name: nvidia-device-plugin-ctr
+        env:
+          - name: FAIL_ON_INIT_ERROR
+            value: "false"
+          # Without this the plugin ignores the mounted config and advertises
+          # one resource per physical GPU.
+          - name: CONFIG_FILE
+            value: /etc/nvidia-device-plugin/config.yaml
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: device-plugin
+          mountPath: /var/lib/kubelet/device-plugins
+        # Must not be /etc/nvidia: the NVIDIA container runtime hook mkdirs
+        # /etc/nvidia/nvidia-application-profiles-rc.d in the container rootfs
+        # during runc init, and a ConfigMap mount is always read-only, so the
+        # hook fails and the container never starts.
+        - name: time-slicing-config
+          mountPath: /etc/nvidia-device-plugin
+      volumes:
+      - name: device-plugin
+        hostPath:
+          path: /var/lib/kubelet/device-plugins
+      - name: time-slicing-config
+        configMap:
+          name: nvidia-time-slicing-config
