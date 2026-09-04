@@ -130,3 +130,5 @@ kubetest2 \
 The JUnit XML file is written to `$ARTIFACTS/junit_<test-case>.xml` (e.g., `_artifacts/junit_testcase.xml`).
 
 The artifacts directory defaults to `./_artifacts` or can be set via the `ARTIFACTS` environment variable.
+
+<!-- CI probe: no functional change. Verifies whether main itself builds. -->
