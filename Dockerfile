@@ -9,7 +9,8 @@ RUN  wget -O go.tar.gz https://go.dev/dl/$(cat go-version.txt).${TARGETOS}-${TAR
     tar -C /usr/local -xzf go.tar.gz
 ENV GOPATH=/usr/local/go
 ENV PATH=$PATH:$GOPATH/bin
-ENV GOPROXY=direct
+ARG GOPROXY="https://proxy.golang.org|direct"
+ENV GOPROXY=${GOPROXY}
 
 WORKDIR $GOPATH/src/github.com/aws/aws-k8s-tester
 COPY . .
