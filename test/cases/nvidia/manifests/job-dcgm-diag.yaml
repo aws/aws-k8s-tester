@@ -1,0 +1,38 @@
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: dcgm-diag-job
+  labels:
+    app: dcgm-diag-job
+spec:
+  # DCGM level 3/4 is a long, invasive GPU stress. A retry would repeat the
+  # entire run, so fail once and report rather than re-burning the GPUs.
+  backoffLimit: 0
+  activeDeadlineSeconds: {{.ActiveDeadlineSeconds}}
+  template:
+    metadata:
+      labels:
+        app: dcgm-diag-job
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: dcgm-diag-container
+        image: {{.NvidiaTestImage}}
+        imagePullPolicy: Always
+        env:
+          - name: EC2_INSTANCE_TYPE
+            value: {{.NodeType}}
+          - name: DCGM_DIAG_LEVEL
+            value: "{{.DiagLevel}}"
+        # Script is baked into the image; see test/images/nvidia/gpu_unit_tests.
+        command:
+        - bash
+        - /app/gpu_unit_tests/dcgm-diag.sh
+        resources:
+          # Request every GPU on the node so the scheduler guarantees the
+          # exclusivity the script's preflight check asserts.
+          limits:
+            nvidia.com/gpu: {{.GpuPerNode}}
+          requests:
+            cpu: "1"
+            memory: 1Gi

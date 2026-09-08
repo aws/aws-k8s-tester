@@ -119,4 +119,4 @@ RUN rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 COPY test/images/nvidia/gpu_unit_tests ./gpu_unit_tests
-RUN chmod +x ./gpu_unit_tests/unit_test
+RUN chmod +x ./gpu_unit_tests/unit_test ./gpu_unit_tests/dcgm-diag.sh
