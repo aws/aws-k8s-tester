@@ -39,6 +39,12 @@ type Config struct {
 	DcgmDiagEnabled        bool `flag:"dcgmDiagEnabled" desc:"run the deep DCGM diagnostic feature (long-running; not for per-build gates)"`
 	DcgmDiagLevel          int  `flag:"dcgmDiagLevel" desc:"dcgmi diag run level 1-4 (4 adds memtest+pulse and can exceed an hour)"`
 	DcgmDiagTimeoutMinutes int  `flag:"dcgmDiagTimeoutMinutes" desc:"wait timeout for the deep DCGM diagnostic Job, in minutes"`
+	// Time-slicing replaces the cluster's device plugin, so it is opt-in: some
+	// harnesses invoke this binary without -test.run, and there an unguarded run
+	// would oversubscribe GPUs underneath the other features. See
+	// time_slicing_test.go.
+	TimeSlicingEnabled  bool `flag:"timeSlicingEnabled" desc:"run the GPU time-slicing feature (reconfigures the cluster's NVIDIA device plugin)"`
+	TimeSlicingReplicas int  `flag:"timeSlicingReplicas" desc:"how many times the device plugin advertises each physical GPU under time-slicing"`
 }
 
 var (
@@ -111,6 +117,10 @@ func TestMain(m *testing.M) {
 		DcgmDiagEnabled:        false,
 		DcgmDiagLevel:          4,
 		DcgmDiagTimeoutMinutes: 180,
+		// Off by default: reconfiguring the device plugin changes GPU
+		// advertisement for everything else on the node.
+		TimeSlicingEnabled:  false,
+		TimeSlicingReplicas: 10,
 	}
 
 	_, err := common.ParseFlags(&testConfig)
