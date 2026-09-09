@@ -51,11 +51,26 @@ RUN mkdir -p /var/run/sshd \
  && echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config \
  && sed -i 's/#\(StrictModes \).*/\1no/g' /etc/ssh/sshd_config
 
-# Build CUDA Samples
+# Build CUDA Samples.
+# Each entry is "<relative-path-under-Samples>:<produced-binary-name>".
+# When cuda-samples upstream reorganizes a sample, update its path here.
 RUN git clone https://github.com/NVIDIA/cuda-samples.git /tmp/cuda-samples \
       --branch v$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION \
- && cd /tmp/cuda-samples/Samples/0_Introduction/vectorAdd && cmake . && make -j$(nproc) && cp vectorAdd /usr/bin \
- && cd /tmp/cuda-samples/Samples/1_Utilities/deviceQuery && cmake . && make -j$(nproc) && cp deviceQuery /usr/bin \
+ && for sample in \
+      "0_Introduction/vectorAdd:vectorAdd" \
+      "1_Utilities/deviceQuery:deviceQuery" \
+      "6_Performance/UnifiedMemoryPerf:UnifiedMemoryPerf" \
+      "3_CUDA_Features/immaTensorCoreGemm:immaTensorCoreGemm" \
+      "2_Concepts_and_Techniques/reductionMultiBlockCG:reductionMultiBlockCG" \
+      "2_Concepts_and_Techniques/shfl_scan:shfl_scan" \
+      "0_Introduction/simpleAWBarrier:simpleAWBarrier" \
+      "0_Introduction/simpleAtomicIntrinsics:simpleAtomicIntrinsics" \
+      "0_Introduction/simpleVoteIntrinsics:simpleVoteIntrinsics" \
+      "3_CUDA_Features/warpAggregatedAtomicsCG:warpAggregatedAtomicsCG" \
+      "3_CUDA_Features/globalToShmemAsyncCopy:globalToShmemAsyncCopy"; do \
+      dir="${sample%%:*}"; bin="${sample##*:}"; \
+      cd "/tmp/cuda-samples/Samples/$dir" && cmake . && make -j$(nproc) && cp "$bin" /usr/bin || exit 1; \
+    done \
  && cd && rm -rf /tmp/cuda-samples
 
 # Install EFA

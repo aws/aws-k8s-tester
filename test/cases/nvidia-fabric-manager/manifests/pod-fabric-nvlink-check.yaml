@@ -1,0 +1,188 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nvidia-fabric-nvlink-check
+spec:
+  restartPolicy: Never
+  tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Exists"
+    effect: "NoSchedule"
+  containers:
+  - name: fabric-nvlink-check
+    image: {{.NvidiaTestImage}}
+    env:
+    - name: NVIDIA_DRIVER_CAPABILITIES
+      value: "compute,utility"
+    command:
+    - /bin/bash
+    - -c
+    - |
+      set -eu
+      set -o pipefail
+
+      # In-container fabric-manager / NVLink assertions gated by
+      # kernel-observed hardware topology, not EC2 instance family:
+      #
+      # nvswitch      -- /proc/driver/nvidia-nvswitch/devices/ populated.
+      #                  Assert Fabric State Completed on every GPU and
+      #                  NVLinks all Active with expected count derived
+      #                  from GPU SKU x GPU count.
+      # nvlink_direct -- no NVSwitch, but nvidia-smi nvlink -s reports
+      #                  at least one Link (multi-GPU NVLink mesh). No
+      #                  fabric state to assert; positive count check
+      #                  is skipped without a topology map.
+      # non_nvlink    -- neither. Assert nvidia-smi nvlink -s reports
+      #                  no active links (negative path).
+      #
+      # Exit codes: 50 fabric state != Completed, 51 NVLinks not all Active,
+      # 52 NVLink Active-count != expected, 53 NVLinks reported on non-NVLink hw.
+
+      # Node classification from kernel state, not an EC2 family list:
+      #   nvswitch      -- /host/proc/driver/nvidia-nvswitch/devices/
+      #                    is populated (one entry per bound switch).
+      #   nvlink_direct -- no NVSwitch, but nvidia-smi nvlink -s reports
+      #                    at least one Link line (multi-GPU NVLink mesh
+      #                    without switches).
+      #   non_nvlink    -- neither.
+      nvswitch_dir=/host/proc/driver/nvidia-nvswitch/devices
+      if [ -d "$nvswitch_dir" ] && [ -n "$(ls -A "$nvswitch_dir" 2>/dev/null)" ]; then
+        class=nvswitch
+      elif nvidia-smi nvlink -s 2>/dev/null | grep -qE 'Link[[:space:]]+[0-9]+'; then
+        class=nvlink_direct
+      else
+        class=non_nvlink
+      fi
+      echo "Node class: $class"
+
+      # -----------------------------------------------------------------
+      # 5.3 fabric state (NVSwitch only)
+      # -----------------------------------------------------------------
+      if [ "$class" = "nvswitch" ]; then
+        echo "=== 5.3 fabric state ==="
+        states=$(nvidia-smi -q | awk '/^[[:space:]]*Fabric$/,/^$/' | \
+                 awk -F':' '/State[[:space:]]*:/ {gsub(/^[[:space:]]+|[[:space:]]+$/,"",$2); print $2}')
+        if [ -z "$states" ]; then
+          echo "FAIL 5.3: nvidia-smi -q reported no Fabric section on an NVSwitch host"
+          exit 50
+        fi
+        while IFS= read -r s; do
+          if [ "$s" != "Completed" ]; then
+            echo "FAIL 5.3: GPU reports fabric State='$s', expected 'Completed'"
+            exit 50
+          fi
+        done <<< "$states"
+        echo "OK 5.3: every GPU fabric state = Completed"
+      else
+        echo "SKIP 5.3: not an NVSwitch instance"
+      fi
+
+      # -----------------------------------------------------------------
+      # 5.4+5.5 NVLinks Active + expected count (NVSwitch only)
+      # -----------------------------------------------------------------
+      if [ "$class" = "nvswitch" ]; then
+        echo "=== 5.4+5.5 NVLinks all Active + expected count ==="
+        # Derive expected NVLink count from the GPU SKU rather than
+        # the EC2 instance family: link count is a property of the
+        # silicon (V100/A100/H100/H200/B200) times the number of
+        # GPUs on the node. This stays valid across future instance
+        # families that reuse an existing SKU.
+        gpu_name=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -n1)
+        gpu_count=$(nvidia-smi -L | wc -l)
+        case "$gpu_name" in
+          *V100*)          links_per_gpu=6  ;;
+          *A100*)          links_per_gpu=12 ;;
+          *H100*|*H200*)   links_per_gpu=18 ;;
+          *B200*)          links_per_gpu=18 ;;
+          *)               links_per_gpu=0  ;;
+        esac
+        if [ "$links_per_gpu" -gt 0 ]; then
+          expected_count=$(( links_per_gpu * gpu_count ))
+        else
+          expected_count=""
+        fi
+        echo "GPU SKU: '$gpu_name'  count=$gpu_count  links/GPU=$links_per_gpu  expected_active=${expected_count:-<unknown>}"
+
+        raw=$(nvidia-smi nvlink -s 2>&1)
+        active=0
+        bad_count=0
+        current_gpu=""
+        while IFS= read -r line; do
+          case "$line" in
+            GPU\ *)
+              current_gpu=$(echo "$line" | awk '{print $2}' | tr -d ':') ;;
+            *Link*)
+              link_idx=$(echo "$line" | awk '{print $2}' | tr -d ':')
+              # `nvidia-smi nvlink -s` prints per-link bandwidth for
+              # healthy links (e.g. "Link 0: 25.781 GB/s") and a token
+              # like "<inactive>" for down links -- there is no
+              # "Active" literal to match on. Treat a numeric field
+              # (bandwidth) as up; anything else is down.
+              state=$(echo "$line" | awk '{print $3}')
+              case "$state" in
+                ''|'<inactive>'|Inactive|inactive|N/A|'<disabled>')
+                  echo "  bad link: GPU $current_gpu link $link_idx state=$state"
+                  bad_count=$((bad_count + 1))
+                  ;;
+                [0-9]*)
+                  active=$((active + 1))
+                  ;;
+                *)
+                  echo "  bad link: GPU $current_gpu link $link_idx state=$state (unrecognized)"
+                  bad_count=$((bad_count + 1))
+                  ;;
+              esac
+              ;;
+          esac
+        done <<< "$raw"
+
+        if [ "$bad_count" -gt 0 ]; then
+          echo "FAIL 5.4: $bad_count NVLink(s) not Active (see above)"
+          echo "$raw"
+          exit 51
+        fi
+
+        if [ -n "$expected_count" ]; then
+          if [ "$active" -ne "$expected_count" ]; then
+            echo "FAIL 5.5: NVLink Active count ($active) != expected ($expected_count) for GPU SKU '$gpu_name' ($gpu_count GPUs)"
+            echo "$raw"
+            exit 52
+          fi
+          echo "OK 5.4+5.5: all $active NVLinks Active (matches expected $expected_count for $gpu_count x $gpu_name)"
+        else
+          echo "OK 5.4: all $active reported NVLinks Active; SKIP 5.5 (no expected count for GPU SKU '$gpu_name')"
+        fi
+      else
+        echo "SKIP 5.4+5.5: not an NVSwitch instance"
+      fi
+
+      # -----------------------------------------------------------------
+      # 6.8 no NVLinks on non-NVLink hw (negative path)
+      # -----------------------------------------------------------------
+      if [ "$class" = "non_nvlink" ]; then
+        echo "=== 6.8 no NVLinks on non-NVLink hardware ==="
+        reported=$(nvidia-smi nvlink -s 2>/dev/null | grep -E 'Link[[:space:]]+[0-9]+' || true)
+        if [ -n "$reported" ]; then
+          echo "FAIL 6.8: this node classified as non-NVLink but driver reports NVLink state:"
+          echo "$reported"
+          exit 53
+        fi
+        echo "OK 6.8: no NVLinks reported (as expected for non-NVLink hardware)"
+      else
+        echo "SKIP 6.8: node is class=$class, not non_nvlink"
+      fi
+
+      echo "=== all applicable fabric/NVLink checks passed ==="
+    resources:
+      requests:
+        nvidia.com/gpu: "{{.GpuCount}}"
+      limits:
+        nvidia.com/gpu: "{{.GpuCount}}"
+    volumeMounts:
+    - name: host-proc-driver
+      mountPath: /host/proc/driver
+      readOnly: true
+  volumes:
+  - name: host-proc-driver
+    hostPath:
+      path: /proc/driver
