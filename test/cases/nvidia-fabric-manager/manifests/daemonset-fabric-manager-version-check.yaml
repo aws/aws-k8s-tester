@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-fabric-manager-version-check
+  namespace: default
+  labels:
+    app: nvidia-fabric-manager-version-check
+spec:
+  selector:
+    matchLabels:
+      app: nvidia-fabric-manager-version-check
+  template:
+    metadata:
+      labels:
+        app: nvidia-fabric-manager-version-check
+    spec:
+      tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
+        effect: "NoSchedule"
+      containers:
+      - name: nvidia-fabric-manager-version-check
+        image: public.ecr.aws/amazonlinux/amazonlinux:latest
+        command:
+        - sh
+        - -c
+        - |
+          set -eu
+          set -o pipefail
+
+          yum install -y -q awk >/dev/null 2>&1 || \
+            dnf install -y -q awk >/dev/null 2>&1 || true
+
+          # 5.2 only meaningful on NVSwitch nodes. The kernel driver
+          # exposes /proc/driver/nvidia-nvswitch/devices/ (populated
+          # with one entry per bound switch) only when NVSwitch
+          # hardware is present -- more reliable than an EC2 instance
+          # family list, and works on any cloud / bare metal.
+          nvswitch_dir=/host/proc/driver/nvidia-nvswitch/devices
+          if [ ! -d "$nvswitch_dir" ] || [ -z "$(ls -A "$nvswitch_dir" 2>/dev/null)" ]; then
+            echo "OK: no NVSwitch devices bound on this node; 5.2 does not apply. Skipping."
+            exec tail -f /dev/null
+          fi
+          echo "NVSwitch devices detected: $(ls "$nvswitch_dir" | wc -l)"
+
+          echo "=== 5.2: fabric-manager version must match driver version ==="
+
+          driver_ver=""
+          if [ -r /host/proc/driver/nvidia/version ]; then
+            driver_ver="$(awk '/NVRM version/ {for(i=1;i<=NF;i++) if ($i ~ /^[0-9]+\.[0-9]+\.[0-9]+$/) {print $i; exit}}' /host/proc/driver/nvidia/version)"
+          fi
+          if [ -z "$driver_ver" ]; then
+            echo "FAIL: could not read driver version from /host/proc/driver/nvidia/version"
+            [ -r /host/proc/driver/nvidia/version ] && cat /host/proc/driver/nvidia/version
+            exit 1
+          fi
+
+          fm_log=""
+          for candidate in /host/var/log/fabricmanager.log /host/var/log/fabric-manager.log; do
+            if [ -r "$candidate" ]; then
+              fm_log="$candidate"
+              break
+            fi
+          done
+
+          if [ -z "$fm_log" ]; then
+            echo "SKIP-5.2: no fabric-manager log found under /host/var/log/."
+            echo "  Cannot verify daemon-vs-driver version match without invoking"
+            echo "  the binary (requires privileged/nsenter access)."
+            exec tail -f /dev/null
+          fi
+
+          fm_ver="$(grep -Eom1 '[Ff]abric [Mm]anager (SDK )?[Vv]ersion[[:space:]:]+[0-9]+\.[0-9]+\.[0-9]+' "$fm_log" \
+                     | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+          if [ -z "$fm_ver" ]; then
+            echo "SKIP-5.2: could not parse fabric-manager version from $fm_log."
+            head -20 "$fm_log" | sed 's/^/    /'
+            exec tail -f /dev/null
+          fi
+
+          if [ "$fm_ver" != "$driver_ver" ]; then
+            echo "FAIL: fabric-manager version ($fm_ver) does not match driver version ($driver_ver)."
+            echo "  Classic post-re-point failure on a multi-driver AMI."
+            exit 1
+          fi
+
+          echo "OK: fabric-manager version $fm_ver matches driver version $driver_ver."
+          exec tail -f /dev/null
+        volumeMounts:
+        - name: host-proc
+          mountPath: /host/proc
+          readOnly: true
+        - name: host-var-log
+          mountPath: /host/var/log
+          readOnly: true
+      volumes:
+      - name: host-proc
+        hostPath:
+          path: /proc
+      - name: host-var-log
+        hostPath:
+          path: /var/log

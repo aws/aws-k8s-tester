@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nvidia-gsp-firmware-check
+spec:
+  restartPolicy: Never
+  tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Exists"
+    effect: "NoSchedule"
+  containers:
+  - name: gsp-firmware-check
+    image: {{.NvidiaTestImage}}
+    env:
+    - name: NVIDIA_DRIVER_CAPABILITIES
+      value: "compute,utility"
+    command:
+    - /bin/bash
+    - -c
+    - |
+      set -eu
+      set -o pipefail
+
+      # GSP firmware assertions on Ampere+.
+      # Modern NVIDIA GPUs run a chunk of driver logic on an on-die
+      # RISC-V core (the GSP). The kernel module uploads a firmware
+      # blob at init; if it fails to load, the driver falls back to
+      # legacy CPU-side operation with different behavior.
+      #
+      # This pod asserts, on Ampere+ hardware (SM >= 8.0):
+      # every GPU reports a non-empty GSP Firmware Version
+      # the GSP version equals the driver version reported by
+      # nvidia-smi (fingerprint of a partial re-point)
+      # every GPU on the node reports the same GSP version
+      #
+      # Pre-Ampere hardware has no GSP; skip cleanly.
+      #
+      # Exit codes: 40 pre-Ampere skip (still Succeeded phase, echoes),
+      # 41 empty/N/A version, 42 GSP != driver, 43 cross-GPU mismatch.
+
+      cc=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | head -1 | tr -d ' .' | head -c 3)
+      : "${cc:=0}"
+      if [ "$cc" -lt 80 ]; then
+        echo "SKIP 1.9: pre-Ampere hardware (compute cap $cc); no GSP firmware"
+        exit 0
+      fi
+
+      # Extract per-GPU GSP versions.
+      versions=$(nvidia-smi -q | awk -F':' '/GSP Firmware Version/ {gsub(/^[[:space:]]+|[[:space:]]+$/,"",$2); print $2}')
+      if [ -z "$versions" ]; then
+        echo "FAIL 1.9a: nvidia-smi -q reported no GSP Firmware Version lines on an Ampere+ GPU"
+        exit 41
+      fi
+
+      driver_version=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1 | tr -d ' \r\n')
+      if [ -z "$driver_version" ]; then
+        echo "FAIL 1.9: could not read driver_version"
+        exit 41
+      fi
+      echo "driver version: $driver_version"
+
+      unique=""
+      while IFS= read -r v; do
+        if [ -z "$v" ] || [ "$v" = "N/A" ]; then
+          echo "FAIL 1.9a: GSP Firmware Version is empty/N/A. Driver may be in legacy (non-GSP) mode."
+          exit 41
+        fi
+        if [ "$v" != "$driver_version" ]; then
+          echo "FAIL 1.9b: GSP version '$v' != driver version '$driver_version' (partial re-point)"
+          exit 42
+        fi
+        case "$unique" in
+          *"|$v|"*) ;;
+          *) unique="${unique}|$v|" ;;
+        esac
+      done <<< "$versions"
+
+      distinct=$(echo "$unique" | tr '|' '\n' | grep -c '[^[:space:]]' || true)
+      if [ "$distinct" -ne 1 ]; then
+        echo "FAIL 1.9c: cross-GPU mismatch, $distinct distinct GSP versions: $(echo "$unique" | tr '|' ' ' | tr -s ' ')"
+        exit 43
+      fi
+
+      echo "OK 1.9: every GPU reports GSP firmware version $driver_version (matches driver)"
+    resources:
+      requests:
+        nvidia.com/gpu: "{{.GpuCount}}"
+      limits:
+        nvidia.com/gpu: "{{.GpuCount}}"

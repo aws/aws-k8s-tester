@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nvidia-cuda-compute-check
+spec:
+  restartPolicy: Never
+  tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Exists"
+    effect: "NoSchedule"
+  containers:
+  - name: cuda-compute-check
+    image: {{.NvidiaTestImage}}
+    env:
+    - name: NVIDIA_DRIVER_CAPABILITIES
+      value: "compute,utility"
+    - name: DEMO_SUITE_DIR
+      value: "/usr/bin"
+    command:
+    - /bin/bash
+    - -c
+    - |
+      set -eu
+      set -o pipefail
+
+      # CUDA compute sub-tests (excludes deviceQuery and
+      # vectorAdd -- already covered upstream in nvidia.test).
+      # The sample binaries are built into the container image by
+      # upstream's test/images/nvidia/Dockerfile. If a binary is missing
+      # we fail explicitly with a note about the image tag needed.
+      #
+      # Two tests are compute-cap gated:
+      #   * immaTensorCoreGemm     SM >= 7.5 (INT8 tensor cores, Turing+)
+      #   * globalToShmemAsyncCopy SM >= 8.0 (cp.async, Ampere+)
+      # Below the gate they skip cleanly rather than failing.
+
+      compute_cap_int=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | head -1 | tr -d ' .' | head -c 3)
+      : "${compute_cap_int:=0}"
+      echo "compute capability (as int): $compute_cap_int"
+
+      run_sample() {
+        local name="$1"
+        local min_cc="${2:-0}"
+        if [ "$compute_cap_int" -lt "$min_cc" ]; then
+          echo "SKIP ${name}: requires compute capability >= ${min_cc}, current is ${compute_cap_int}"
+          return 0
+        fi
+        if [ ! -x "$DEMO_SUITE_DIR/${name}" ]; then
+          echo "FAIL ${name}: binary $DEMO_SUITE_DIR/${name} is missing from the image."
+          echo "  This image was not built with the extended CUDA-samples list."
+          echo "  See upstream test/images/nvidia/Dockerfile for the required builds."
+          exit 20
+        fi
+        echo "=== running ${name} ==="
+        if ! "$DEMO_SUITE_DIR/${name}"; then
+          echo "FAIL ${name}: sample self-check reported failure (non-zero exit)"
+          exit 21
+        fi
+      }
+
+      # 2.11 -- Unified Memory page migration
+      run_sample UnifiedMemoryPerf
+      # 2.3  -- INT8 tensor-core MMA (Turing+)
+      run_sample immaTensorCoreGemm 75
+      # 2.5  -- Cooperative Groups grid-wide barrier
+      run_sample reductionMultiBlockCG
+      # 2.6  -- Warp shuffle intrinsics
+      run_sample shfl_scan
+      # 2.4  -- Async arrive/wait barrier (cp.async on Ampere+, sw fallback below)
+      run_sample simpleAWBarrier
+      # 2.7  -- Atomic intrinsics correctness under contention
+      run_sample simpleAtomicIntrinsics
+      # 2.8  -- Warp-vote intrinsics
+      run_sample simpleVoteIntrinsics
+      # 2.9  -- Warp-aggregated atomic add
+      run_sample warpAggregatedAtomicsCG
+      # 2.10 -- cp.async global->shmem (Ampere+)
+      run_sample globalToShmemAsyncCopy 80
+
+      echo "=== all CUDA-compute samples passed (or skipped where compute-cap gated) ==="
+    resources:
+      requests:
+        nvidia.com/gpu: "1"
+      limits:
+        nvidia.com/gpu: "1"

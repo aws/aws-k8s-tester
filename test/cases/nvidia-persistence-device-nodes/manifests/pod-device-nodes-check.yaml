@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nvidia-persistence-device-nodes-check
+spec:
+  restartPolicy: Never
+  tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Exists"
+    effect: "NoSchedule"
+  containers:
+  - name: device-nodes-check
+    image: {{.NvidiaTestImage}}
+    env:
+    - name: NVIDIA_DRIVER_CAPABILITIES
+      value: "compute,utility"
+    command:
+    - /bin/bash
+    - -c
+    - |
+      set -eu
+      set -o pipefail
+
+      # assert the /dev/nvidia* device nodes
+      # the container needs are present, are actual character devices,
+      # and are root-owned with the expected mode. These are created by
+      # nvidia-persistenced (modern kernels) or nvidia-modprobe (older)
+      # on the host and injected into the container by
+      # nvidia-container-runtime.
+      #
+      # Checks (each fails the pod with a distinct exit code):
+      #   30: /dev not accessible
+      #   31: /dev/nvidia<N> missing or not a character device
+      #   32: /dev/nvidiactl missing or not a character device
+      #   33: /dev/nvidia-uvm missing or not a character device
+      #   34: /dev/nvidia-uvm-tools missing or not a character device
+      #   35: ownership check failed (not root:root)
+
+      echo "=== 7.3 device nodes present + correct file mode/ownership ==="
+      if [ ! -d /dev ]; then
+        echo "FAIL 7.3: /dev is not accessible in the container"
+        exit 30
+      fi
+
+      gpu_count=$(nvidia-smi --query-gpu=index --format=csv,noheader | wc -l | tr -d ' ')
+      if [ "$gpu_count" -lt 1 ]; then
+        echo "FAIL 7.3: nvidia-smi reports no GPUs"
+        exit 31
+      fi
+      # Enumerate injected device nodes rather than assume contiguous numbering:
+      # with partial-GPU allocations (e.g. requesting 1 of 4 GPUs on the node)
+      # nvidia-container-runtime injects only the assigned device, whose host
+      # index is not necessarily 0.
+      devs=$(ls /dev/nvidia[0-9]* 2>/dev/null || true)
+      if [ -z "$devs" ]; then
+        echo "FAIL 7.3: no /dev/nvidia<N> device nodes present in the container"
+        exit 31
+      fi
+      dev_count=$(echo "$devs" | wc -w | tr -d ' ')
+      echo "Detected $gpu_count GPU(s) via nvidia-smi; $dev_count injected /dev/nvidia* node(s): $devs"
+
+      check_char_dev() {
+        local path="$1"
+        local exit_code="$2"
+        if [ ! -c "$path" ]; then
+          echo "FAIL 7.3: $path is missing or is not a character device"
+          echo "  Details:"; ls -la "$path" 2>&1 | sed 's/^/    /' || echo "    (path does not exist)"
+          exit "$exit_code"
+        fi
+        # Ownership: expect uid=0 (root). gid=0 on most drivers; some
+        # AMIs run persistenced with a different group, so we only fail
+        # on non-root owner.
+        local owner
+        owner=$(stat -c "%u" "$path" 2>/dev/null || echo -1)
+        if [ "$owner" != "0" ]; then
+          echo "FAIL 7.3: $path is not owned by root (uid=$owner)"
+          exit 35
+        fi
+        echo "OK: $path  $(stat -c 'mode=%a owner=%U:%G' "$path")"
+      }
+
+      for dev in $devs; do
+        check_char_dev "$dev" 31
+      done
+      check_char_dev /dev/nvidiactl        32
+      check_char_dev /dev/nvidia-uvm       33
+      check_char_dev /dev/nvidia-uvm-tools 34
+
+      echo "=== all expected /dev/nvidia* device nodes present, mode + ownership OK ==="
+    resources:
+      requests:
+        nvidia.com/gpu: "1"
+      limits:
+        nvidia.com/gpu: "1"

@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nvidia-driver-liveness-check
+spec:
+  restartPolicy: Never
+  tolerations:
+  - key: "nvidia.com/gpu"
+    operator: "Exists"
+    effect: "NoSchedule"
+  containers:
+  - name: driver-liveness-check
+    image: {{.NvidiaTestImage}}
+    env:
+    - name: NVIDIA_DRIVER_CAPABILITIES
+      value: "compute,utility"
+    - name: EXPECTED_DRIVER_VERSION
+      value: "{{.ExpectedDriverVersion}}"
+    - name: EC2_INSTANCE_TYPE
+      value: "{{.NodeType}}"
+    command:
+    - /bin/bash
+    - -c
+    - |
+      set -eu
+      set -o pipefail
+
+      # ------------------------------------------------------------------
+      # 1.1  test_nvidia_smi_runs -- cheapest liveness probe.
+      # `nvidia-smi -L` exits 0 iff NVML initialised, kernel module
+      # answered, and the management path is intact. The classic
+      # "Driver/library version mismatch" failure after a bad re-point
+      # exits non-zero here.
+      # ------------------------------------------------------------------
+      echo "=== 1.1 nvidia-smi -L ==="
+      if ! nvidia-smi -L; then
+        echo "FAIL 1.1: nvidia-smi -L returned non-zero. NVML failed to"
+        echo "  initialise -- most likely a driver/library version mismatch"
+        echo "  after a botched re-point on a multi-driver AMI."
+        exit 10
+      fi
+
+      # ------------------------------------------------------------------
+      # 1.5  test_nvidia_driver_version -- exact version assertion.
+      # On a multi-driver AMI the dangerous failure is not "no driver"
+      # but "the wrong driver". Assert every GPU reports the version
+      # this AMI was built to ship. Skip if EXPECTED_DRIVER_VERSION is
+      # unset (additive behaviour).
+      # ------------------------------------------------------------------
+      echo "=== 1.5 driver version = expected ==="
+      if [ -z "$EXPECTED_DRIVER_VERSION" ]; then
+        echo "SKIP 1.5: EXPECTED_DRIVER_VERSION not set"
+      else
+        # Capture nvidia-smi output first 
+        driver_versions=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader) || {
+          echo "FAIL 1.5: nvidia-smi driver_version query failed"
+          exit 11
+        }
+        if [ -z "$driver_versions" ]; then
+          echo "FAIL 1.5: nvidia-smi reported no GPUs"
+          exit 11
+        fi
+        while read -r actual; do
+          if [ "$actual" != "$EXPECTED_DRIVER_VERSION" ]; then
+            echo "FAIL 1.5: driver version '$actual' != expected '$EXPECTED_DRIVER_VERSION'"
+            exit 11
+          fi
+        done <<< "$driver_versions"
+        echo "OK 1.5: every GPU reports driver version $EXPECTED_DRIVER_VERSION"
+      fi
+
+      # ------------------------------------------------------------------
+      # 1.8  test_nvidia_gpu_model -- GPU model matches instance type.
+      # Regex per instance family. Anchored so "T4" != "T4G" and
+      # "L4" != "L40S". Skip if instance type has no mapping.
+      # ------------------------------------------------------------------
+      echo "=== 1.8 GPU model matches instance type ==="
+      case "$EC2_INSTANCE_TYPE" in
+        p3.*)         expected_regex='^Tesla V100-' ;;
+        p4d.*)        expected_regex='^NVIDIA A100-SXM4-40GB' ;;
+        p4de.*)       expected_regex='^NVIDIA A100-SXM4-80GB' ;;
+        p5.*)         expected_regex='^NVIDIA H100 ' ;;
+        p5e.*|p5en.*) expected_regex='^NVIDIA H200 ' ;;
+        g5.*)         expected_regex='^NVIDIA A10G$' ;;
+        g5g.*)        expected_regex='^NVIDIA T4G$' ;;
+        g4dn.*)       expected_regex='^Tesla T4$' ;;
+        g6.*)         expected_regex='^NVIDIA L4$' ;;
+        g6e.*)        expected_regex='^NVIDIA L40S$' ;;
+        g6f.*|gr6f.*) expected_regex='^NVIDIA L4-' ;;
+        g7.*)         expected_regex='^NVIDIA RTX PRO 4500 Blackwell Server Edition' ;;
+        *)            expected_regex="" ;;
+      esac
+
+      if [ -z "$expected_regex" ]; then
+        echo "SKIP 1.8: no GPU-model mapping for instance type '$EC2_INSTANCE_TYPE'"
+      else
+        gpu_names=$(nvidia-smi --query-gpu=name --format=csv,noheader) || {
+          echo "FAIL 1.8: nvidia-smi name query failed"
+          exit 12
+        }
+        if [ -z "$gpu_names" ]; then
+          echo "FAIL 1.8: nvidia-smi reported no GPUs"
+          exit 12
+        fi
+        while read -r name; do
+          if ! echo "$name" | grep -qE "$expected_regex"; then
+            echo "FAIL 1.8: GPU model '$name' does not match expected pattern '$expected_regex' for $EC2_INSTANCE_TYPE"
+            exit 12
+          fi
+        done <<< "$gpu_names"
+        echo "OK 1.8: every GPU model matches '$expected_regex'"
+      fi
+
+      echo "=== all driver-liveness checks passed ==="
+    resources:
+      requests:
+        nvidia.com/gpu: "1"
+      limits:
+        nvidia.com/gpu: "1"
