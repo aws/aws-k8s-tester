@@ -84,6 +84,7 @@ func TestMain(m *testing.M) {
 		)
 	}
 	if len(setUp) > 0 {
+		setUp = append(setUp, common.WaitForDevicePluginPropagation)
 		testenv.Setup(setUp...)
 	}
 	if len(pluginManifests) > 0 {

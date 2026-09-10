@@ -10,58 +10,74 @@ import (
 	fwext "github.com/aws/aws-k8s-tester/internal/e2e"
 	"github.com/aws/aws-k8s-tester/test/common"
 
-	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	e2ewait "sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-// On every NVSwitch node, the running fabric-manager daemon's version must match the
-// installed NVIDIA driver version. DaemonSet-based host check that reads
-// /host/var/log/fabricmanager.log for the FM version and
-// /host/proc/driver/nvidia/version for the driver version. Skips on
-// non-NVSwitch instances (tail -f). Soft-skips (still Ready) if the log
-// is missing or unparseable.
+// TestFabricManagerVersionMatchesDriver runs one pod per GPU node
+// matching -nodeType, each of which cross-references the fabric-
+// manager version parsed from /host/var/log/fabricmanager.log against
+// the kernel driver version at /host/proc/driver/nvidia/version. The
+// underlying workload is a Job (parallelism=completions=node count) so
+// the test only passes when every pod exits 0 -- unlike the earlier
+// DaemonSet variant which merely required pods to be Running.
 func TestFabricManagerVersionMatchesDriver(t *testing.T) {
 	feat := features.New("nvidia-fabric-manager-version-check").
 		WithLabel("suite", "nvidia").
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			rendered, err := fwext.RenderManifests(dsFabricManagerVersionCheckManifest, struct{ NvidiaTestImage string }{
+			nodeCount, err := countGPUNodesOfType(ctx, cfg.Client().RESTConfig(), testConfig.NodeType)
+			if err != nil {
+				t.Fatalf("count GPU nodes of type %q: %v", testConfig.NodeType, err)
+			}
+			if nodeCount == 0 {
+				t.Fatalf("no schedulable GPU nodes with instance-type=%q found; the Job would never complete", testConfig.NodeType)
+			}
+			rendered, err := fwext.RenderManifests(jobFabricManagerVersionCheckManifest, struct {
+				NvidiaTestImage string
+				NodeType        string
+				NodeCount       int
+			}{
 				NvidiaTestImage: testConfig.NvidiaTestImage,
+				NodeType:        testConfig.NodeType,
+				NodeCount:       nodeCount,
 			})
 			if err != nil {
-				t.Fatalf("render DS: %v", err)
+				t.Fatalf("render job: %v", err)
 			}
 			if err := fwext.ApplyManifests(cfg.Client().RESTConfig(), rendered); err != nil {
-				t.Fatalf("apply DS: %v", err)
+				t.Fatalf("apply job: %v", err)
 			}
-			ctx = context.WithValue(ctx, dsManifestKey{}, rendered)
+			ctx = context.WithValue(ctx, jobManifestKey{}, rendered)
 			return ctx
 		}).
-		Assess("DS becomes Ready", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			ds := &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: "nvidia-fabric-manager-version-check", Namespace: "default"}}
+		Assess("Job pods all succeed", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			job := &batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: "nvidia-fabric-manager-version-check", Namespace: "default"}}
 			err := e2ewait.For(
-				fwext.NewConditionExtension(cfg.Client().Resources()).DaemonSetReady(ds),
+				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 				e2ewait.WithTimeout(3*time.Minute),
 			)
 			if err != nil {
-				t.Logf("DS not Ready: %v", err)
+				t.Logf("Job did not complete successfully: %v", err)
 				fwext.PrintDaemonSetPodLogs(t, ctx, cfg.Client().RESTConfig(), "default", "app=nvidia-fabric-manager-version-check")
-				t.Fatalf("nvidia-fabric-manager-version-check DS not Ready within 3 minutes -- see pod logs for the 5.2 failure")
+				t.Fatalf("nvidia-fabric-manager-version-check Job did not have all pods Succeed within 3 minutes -- see pod logs for the 5.2 failure")
 			}
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			rendered, _ := ctx.Value(dsManifestKey{}).([]byte)
+			rendered, _ := ctx.Value(jobManifestKey{}).([]byte)
 			if len(rendered) == 0 {
 				return ctx
 			}
 			if err := fwext.DeleteManifests(cfg.Client().RESTConfig(), rendered); err != nil {
-				t.Errorf("delete DS: %v", err)
+				t.Errorf("delete job: %v", err)
 			}
 			return ctx
 		}).
@@ -71,11 +87,11 @@ func TestFabricManagerVersionMatchesDriver(t *testing.T) {
 }
 
 // TestFabricAndNVLinkInContainer covers the three in-container fabric/
-// NVLink assertions in one pod that dispatches by instance-family class:
-// fabric state, NVLinks Active + expected count, no NVLinks on non-NVLink hardware.
-// Each check either runs, prints
-// SKIP for its class, or fails with a distinct exit code (50, 51, 52,
-// 53 -- see the pod manifest).
+// NVLink assertions in one pod that dispatches by node hardware:
+// fabric state, NVLinks Active + expected count, no NVLinks on
+// non-NVLink hardware. Each check either runs, prints SKIP for its
+// class, or fails with a distinct exit code (50, 51, 52, 53 -- see
+// the pod manifest).
 func TestFabricAndNVLinkInContainer(t *testing.T) {
 	feat := features.New("nvidia-fabric-nvlink-check").
 		WithLabel("suite", "nvidia").
@@ -135,5 +151,42 @@ func TestFabricAndNVLinkInContainer(t *testing.T) {
 	testenv.Test(t, feat)
 }
 
+// countGPUNodesOfType returns the number of Ready nodes carrying the
+// requested EC2 instance-type label and advertising >=1 nvidia.com/gpu
+// in .status.allocatable. It's used to size the fabric-manager Job's
+// parallelism/completions so the Job pass condition is "every GPU node
+// ran the check and exited 0".
+func countGPUNodesOfType(ctx context.Context, restConfig *rest.Config, instanceType string) (int, error) {
+	clientset, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		return 0, err
+	}
+	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{
+		LabelSelector: "node.kubernetes.io/instance-type=" + instanceType,
+	})
+	if err != nil {
+		return 0, err
+	}
+	count := 0
+	for _, n := range nodes.Items {
+		if !nodeIsReady(n) {
+			continue
+		}
+		if q, ok := n.Status.Allocatable["nvidia.com/gpu"]; ok && q.Value() > 0 {
+			count++
+		}
+	}
+	return count, nil
+}
+
+func nodeIsReady(n v1.Node) bool {
+	for _, c := range n.Status.Conditions {
+		if c.Type == v1.NodeReady && c.Status == v1.ConditionTrue {
+			return true
+		}
+	}
+	return false
+}
+
 type renderedManifestKey struct{}
-type dsManifestKey struct{}
+type jobManifestKey struct{}

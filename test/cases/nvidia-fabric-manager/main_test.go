@@ -25,8 +25,8 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-//go:embed manifests/daemonset-fabric-manager-version-check.yaml
-var dsFabricManagerVersionCheckManifest []byte
+//go:embed manifests/job-fabric-manager-version-check.yaml
+var jobFabricManagerVersionCheckManifest []byte
 
 //go:embed manifests/pod-fabric-nvlink-check.yaml
 var podFabricNVLinkCheckManifest []byte
@@ -92,6 +92,7 @@ func TestMain(m *testing.M) {
 		)
 	}
 	if len(setUp) > 0 {
+		setUp = append(setUp, common.WaitForDevicePluginPropagation)
 		testenv.Setup(setUp...)
 	}
 	if len(pluginManifests) > 0 {

@@ -16,6 +16,22 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
+// WaitForDevicePluginPropagation is an env.Func that sleeps briefly
+// after a device-plugin DaemonSet is Ready, giving the plugin pods
+// time to advertise their extended resources (nvidia.com/gpu,
+// vpc.amazonaws.com/efa) via the kubelet before subsequent test pods
+// try to schedule against them. DS.Ready only means the pods are
+// running; extended-resource registration happens shortly after and
+// isn't reflected in DS.Status. Mirrors the cooldown pattern used in
+// test/cases/efa/main_test.go.
+func WaitForDevicePluginPropagation(ctx context.Context, config *envconf.Config) (context.Context, error) {
+	select {
+	case <-ctx.Done():
+	case <-time.After(5 * time.Second):
+	}
+	return ctx, nil
+}
+
 // DeployDaemonSet returns a function to deploy and wait for a DaemonSet to be ready
 func DeployDaemonSet(name, namespace string) env.Func {
 	return func(ctx context.Context, config *envconf.Config) (context.Context, error) {

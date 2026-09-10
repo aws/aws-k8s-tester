@@ -1,23 +1,39 @@
-apiVersion: apps/v1
-kind: DaemonSet
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: nvidia-fabric-manager-version-check
   namespace: default
   labels:
     app: nvidia-fabric-manager-version-check
 spec:
-  selector:
-    matchLabels:
-      app: nvidia-fabric-manager-version-check
+  # One pod per GPU node -- parallelism/completions are threaded from
+  # Go after counting nodes that match .status.allocatable[nvidia.com/gpu]>0
+  # and node.kubernetes.io/instance-type=<NodeType>.
+  parallelism: {{.NodeCount}}
+  completions: {{.NodeCount}}
+  completionMode: NonIndexed
+  backoffLimit: 0
   template:
     metadata:
       labels:
         app: nvidia-fabric-manager-version-check
     spec:
+      restartPolicy: Never
       tolerations:
       - key: "nvidia.com/gpu"
         operator: "Exists"
         effect: "NoSchedule"
+      nodeSelector:
+        node.kubernetes.io/instance-type: {{.NodeType}}
+      # One pod per hostname so every GPU node runs the check exactly
+      # once, in parallel.
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app: nvidia-fabric-manager-version-check
       containers:
       - name: nvidia-fabric-manager-version-check
         image: {{.NvidiaTestImage}}
@@ -28,9 +44,8 @@ spec:
           set -eu
           set -o pipefail
 
-          # Reuses the nvidia test image so we get grep / awk / bash out
-          # of the box without a runtime package install (no network
-          # egress required from the pod).
+          # Reuses the nvidia test image so we get grep / bash out of
+          # the box without a runtime package install.
 
           # 5.2 only meaningful on NVSwitch nodes. The kernel driver
           # exposes /proc/driver/nvidia-nvswitch/devices/ (populated
@@ -40,7 +55,7 @@ spec:
           nvswitch_dir=/host/proc/driver/nvidia-nvswitch/devices
           if [ ! -d "$nvswitch_dir" ] || [ -z "$(ls -A "$nvswitch_dir" 2>/dev/null)" ]; then
             echo "OK: no NVSwitch devices bound on this node; 5.2 does not apply. Skipping."
-            exec tail -f /dev/null
+            exit 0
           fi
           echo "NVSwitch devices detected: $(ls "$nvswitch_dir" | wc -l)"
 
@@ -68,7 +83,7 @@ spec:
             echo "SKIP-5.2: no fabric-manager log found under /host/var/log/."
             echo "  Cannot verify daemon-vs-driver version match without invoking"
             echo "  the binary (requires privileged/nsenter access)."
-            exec tail -f /dev/null
+            exit 0
           fi
 
           fm_ver="$(grep -Eom1 '[Ff]abric [Mm]anager (SDK )?[Vv]ersion[[:space:]:]+[0-9]+\.[0-9]+\.[0-9]+' "$fm_log" \
@@ -76,7 +91,7 @@ spec:
           if [ -z "$fm_ver" ]; then
             echo "SKIP-5.2: could not parse fabric-manager version from $fm_log."
             head -20 "$fm_log" | sed 's/^/    /'
-            exec tail -f /dev/null
+            exit 0
           fi
 
           if [ "$fm_ver" != "$driver_ver" ]; then
@@ -86,7 +101,7 @@ spec:
           fi
 
           echo "OK: fabric-manager version $fm_ver matches driver version $driver_ver."
-          exec tail -f /dev/null
+          exit 0
         volumeMounts:
         - name: host-proc
           mountPath: /host/proc
