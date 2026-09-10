@@ -30,9 +30,16 @@ func TestFabricManagerVersionMatchesDriver(t *testing.T) {
 		WithLabel("suite", "nvidia").
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			if err := fwext.ApplyManifests(cfg.Client().RESTConfig(), dsFabricManagerVersionCheckManifest); err != nil {
+			rendered, err := fwext.RenderManifests(dsFabricManagerVersionCheckManifest, struct{ NvidiaTestImage string }{
+				NvidiaTestImage: testConfig.NvidiaTestImage,
+			})
+			if err != nil {
+				t.Fatalf("render DS: %v", err)
+			}
+			if err := fwext.ApplyManifests(cfg.Client().RESTConfig(), rendered); err != nil {
 				t.Fatalf("apply DS: %v", err)
 			}
+			ctx = context.WithValue(ctx, dsManifestKey{}, rendered)
 			return ctx
 		}).
 		Assess("DS becomes Ready", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -49,7 +56,11 @@ func TestFabricManagerVersionMatchesDriver(t *testing.T) {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			if err := fwext.DeleteManifests(cfg.Client().RESTConfig(), dsFabricManagerVersionCheckManifest); err != nil {
+			rendered, _ := ctx.Value(dsManifestKey{}).([]byte)
+			if len(rendered) == 0 {
+				return ctx
+			}
+			if err := fwext.DeleteManifests(cfg.Client().RESTConfig(), rendered); err != nil {
 				t.Errorf("delete DS: %v", err)
 			}
 			return ctx
@@ -70,9 +81,16 @@ func TestFabricAndNVLinkInContainer(t *testing.T) {
 		WithLabel("suite", "nvidia").
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			// Ask AWS how many GPUs this instance type has, so the pod
+			// pins the whole node -- the fabric/NVLink assertions
+			// need every GPU visible.
+			info, err := common.GPUInfoForInstanceType(ctx, testConfig.NodeType, testConfig.Region)
+			if err != nil {
+				t.Fatalf("ec2:DescribeInstanceTypes(%q): %v", testConfig.NodeType, err)
+			}
 			rendered, err := fwext.RenderManifests(podFabricNVLinkCheckManifest, PodManifestTplVars{
 				NvidiaTestImage: testConfig.NvidiaTestImage,
-				GpuCount:        common.GPUCountForNodeType(testConfig.NodeType),
+				GpuCount:        info.Count,
 			})
 			if err != nil {
 				t.Fatalf("render manifest: %v", err)
@@ -90,6 +108,11 @@ func TestFabricAndNVLinkInContainer(t *testing.T) {
 				e2ewait.WithTimeout(3*time.Minute),
 			)
 			if err != nil {
+				if logs, lerr := fwext.ReadPodLogs(ctx, cfg.Client().RESTConfig(), "default", "nvidia-fabric-nvlink-check", "fabric-nvlink-check"); lerr == nil {
+					t.Logf("--- pod nvidia-fabric-nvlink-check logs ---\n%s--- end pod logs ---", logs)
+				} else {
+					t.Logf("could not fetch pod logs for nvidia-fabric-nvlink-check: %v", lerr)
+				}
 				if err == wait.ErrWaitTimeout {
 					t.Fatalf("fabric-nvlink pod did not complete within 3 minutes: %v", err)
 				}
@@ -113,3 +136,4 @@ func TestFabricAndNVLinkInContainer(t *testing.T) {
 }
 
 type renderedManifestKey struct{}
+type dsManifestKey struct{}

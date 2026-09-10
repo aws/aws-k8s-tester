@@ -31,7 +31,7 @@ func TestDriverLiveness(t *testing.T) {
 		WithLabel("suite", "nvidia").
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			rendered, err := fwext.RenderManifests(podDriverLivenessCheckManifest, tplVars())
+			rendered, err := fwext.RenderManifests(podDriverLivenessCheckManifest, tplVars(ctx))
 			if err != nil {
 				t.Fatalf("render manifest: %v", err)
 			}
@@ -48,6 +48,11 @@ func TestDriverLiveness(t *testing.T) {
 				e2ewait.WithTimeout(5*time.Minute),
 			)
 			if err != nil {
+				if logs, lerr := fwext.ReadPodLogs(ctx, cfg.Client().RESTConfig(), podNamespace, podName, "driver-liveness-check"); lerr == nil {
+					t.Logf("--- pod %s logs ---\n%s--- end pod logs ---", podName, logs)
+				} else {
+					t.Logf("could not fetch pod logs for %s: %v", podName, lerr)
+				}
 				if err == wait.ErrWaitTimeout {
 					t.Fatalf("driver-liveness pod did not complete within 5 minutes: %v", err)
 				}

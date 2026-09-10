@@ -37,6 +37,7 @@ type Config struct {
 	NvidiaTestImage       string `flag:"nvidiaTestImage" desc:"URL of the nvidia test image (built from upstream test/images/nvidia/Dockerfile) -- required"`
 	ExpectedDriverVersion string `flag:"expectedDriverVersion" desc:"expected NVIDIA driver version (e.g. 570.86.15); when empty the 1.5 assertion is skipped"`
 	NodeType              string `flag:"nodeType" desc:"EC2 instance type under qualification (e.g. p5.48xlarge) -- required for 1.8 GPU-model regex"`
+	Region                string `flag:"region" desc:"AWS region for ec2:DescribeInstanceTypes lookup (falls back to AWS_REGION env / ~/.aws/config / IMDS when empty)"`
 	InstallDevicePlugin   bool   `flag:"installDevicePlugin" desc:"install the NVIDIA k8s device plugin before the test and delete it after (default true)"`
 	EfaEnabled            bool   `flag:"efaEnabled" desc:"also install the aws-efa-k8s device plugin (default false)"`
 }
@@ -112,16 +113,30 @@ func TestMain(m *testing.M) {
 }
 
 // PodManifestTplVars is the template-variable set for the pod manifest.
+// ExpectedGPUName is the substring the in-pod nvidia-smi product name
+// must contain -- sourced from ec2:DescribeInstanceTypes.GpuInfo.Name
+// (e.g. "A100", "H100", "L4"). Empty means skip check 1.8.
 type PodManifestTplVars struct {
 	NvidiaTestImage       string
 	ExpectedDriverVersion string
-	NodeType              string
+	ExpectedGPUName       string
 }
 
-func tplVars() PodManifestTplVars {
-	return PodManifestTplVars{
+// tplVars renders the manifest values, looking up ExpectedGPUName from
+// the EC2 API. A lookup failure is logged and the check is downgraded
+// to SKIP (via empty EXPECTED_GPU_NAME) rather than failing the run --
+// missing IAM permission for ec2:DescribeInstanceTypes shouldn't
+// break qualification runs that could otherwise complete.
+func tplVars(ctx context.Context) PodManifestTplVars {
+	v := PodManifestTplVars{
 		NvidiaTestImage:       testConfig.NvidiaTestImage,
 		ExpectedDriverVersion: testConfig.ExpectedDriverVersion,
-		NodeType:              testConfig.NodeType,
 	}
+	info, err := common.GPUInfoForInstanceType(ctx, testConfig.NodeType, testConfig.Region)
+	if err != nil {
+		log.Printf("warning: ec2:DescribeInstanceTypes lookup for %q failed, 1.8 will SKIP: %v", testConfig.NodeType, err)
+		return v
+	}
+	v.ExpectedGPUName = info.Name
+	return v
 }

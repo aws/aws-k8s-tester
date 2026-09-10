@@ -31,9 +31,13 @@ func TestGSPFirmware(t *testing.T) {
 		WithLabel("suite", "nvidia").
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			info, err := common.GPUInfoForInstanceType(ctx, testConfig.NodeType, testConfig.Region)
+			if err != nil {
+				t.Fatalf("ec2:DescribeInstanceTypes(%q): %v", testConfig.NodeType, err)
+			}
 			rendered, err := fwext.RenderManifests(podGSPFirmwareCheckManifest, PodManifestTplVars{
 				NvidiaTestImage: testConfig.NvidiaTestImage,
-				GpuCount:        common.GPUCountForNodeType(testConfig.NodeType),
+				GpuCount:        info.Count,
 			})
 			if err != nil {
 				t.Fatalf("render manifest: %v", err)
@@ -51,6 +55,11 @@ func TestGSPFirmware(t *testing.T) {
 				e2ewait.WithTimeout(3*time.Minute),
 			)
 			if err != nil {
+				if logs, lerr := fwext.ReadPodLogs(ctx, cfg.Client().RESTConfig(), podNamespace, podName, "gsp-firmware-check"); lerr == nil {
+					t.Logf("--- pod %s logs ---\n%s--- end pod logs ---", podName, logs)
+				} else {
+					t.Logf("could not fetch pod logs for %s: %v", podName, lerr)
+				}
 				if err == wait.ErrWaitTimeout {
 					t.Fatalf("gsp-firmware pod did not complete within 3 minutes: %v", err)
 				}

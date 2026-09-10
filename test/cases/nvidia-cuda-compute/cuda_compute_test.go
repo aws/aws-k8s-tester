@@ -52,6 +52,11 @@ func TestCUDACompute(t *testing.T) {
 				e2ewait.WithTimeout(15*time.Minute),
 			)
 			if err != nil {
+				if logs, lerr := fwext.ReadPodLogs(ctx, cfg.Client().RESTConfig(), podNamespace, podName, "cuda-compute-check"); lerr == nil {
+					t.Logf("--- pod %s logs ---\n%s--- end pod logs ---", podName, logs)
+				} else {
+					t.Logf("could not fetch pod logs for %s: %v", podName, lerr)
+				}
 				if err == wait.ErrWaitTimeout {
 					t.Fatalf("cuda-compute pod did not complete within 15 minutes: %v", err)
 				}

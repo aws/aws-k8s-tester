@@ -34,6 +34,7 @@ var podFabricNVLinkCheckManifest []byte
 type Config struct {
 	NvidiaTestImage     string `flag:"nvidiaTestImage" desc:"URL of the nvidia test image -- required for the in-container 5.3/5.4+5.5/6.8 checks"`
 	NodeType            string `flag:"nodeType" desc:"EC2 instance type under qualification -- required for 5.3/5.4+5.5/6.8 dispatch"`
+	Region              string `flag:"region" desc:"AWS region for ec2:DescribeInstanceTypes lookup (falls back to AWS_REGION env / ~/.aws/config / IMDS when empty)"`
 	InstallDevicePlugin bool   `flag:"installDevicePlugin" desc:"install the NVIDIA k8s device plugin before the test and delete it after (default true)"`
 	EfaEnabled          bool   `flag:"efaEnabled" desc:"also install the aws-efa-k8s device plugin (default false)"`
 }

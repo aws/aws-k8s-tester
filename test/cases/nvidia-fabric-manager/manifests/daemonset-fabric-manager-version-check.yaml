@@ -20,16 +20,17 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: nvidia-fabric-manager-version-check
-        image: public.ecr.aws/amazonlinux/amazonlinux:latest
+        image: {{.NvidiaTestImage}}
         command:
-        - sh
+        - bash
         - -c
         - |
           set -eu
           set -o pipefail
 
-          yum install -y -q awk >/dev/null 2>&1 || \
-            dnf install -y -q awk >/dev/null 2>&1 || true
+          # Reuses the nvidia test image so we get grep / awk / bash out
+          # of the box without a runtime package install (no network
+          # egress required from the pod).
 
           # 5.2 only meaningful on NVSwitch nodes. The kernel driver
           # exposes /proc/driver/nvidia-nvswitch/devices/ (populated
@@ -47,7 +48,7 @@ spec:
 
           driver_ver=""
           if [ -r /host/proc/driver/nvidia/version ]; then
-            driver_ver="$(awk '/NVRM version/ {for(i=1;i<=NF;i++) if ($i ~ /^[0-9]+\.[0-9]+\.[0-9]+$/) {print $i; exit}}' /host/proc/driver/nvidia/version)"
+            driver_ver="$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+' /host/proc/driver/nvidia/version | head -n1)"
           fi
           if [ -z "$driver_ver" ]; then
             echo "FAIL: could not read driver version from /host/proc/driver/nvidia/version"

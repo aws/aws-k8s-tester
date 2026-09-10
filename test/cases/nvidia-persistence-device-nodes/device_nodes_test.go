@@ -51,6 +51,11 @@ func TestDeviceNodes(t *testing.T) {
 				e2ewait.WithTimeout(3*time.Minute),
 			)
 			if err != nil {
+				if logs, lerr := fwext.ReadPodLogs(ctx, cfg.Client().RESTConfig(), podNamespace, podName, "device-nodes-check"); lerr == nil {
+					t.Logf("--- pod %s logs ---\n%s--- end pod logs ---", podName, logs)
+				} else {
+					t.Logf("could not fetch pod logs for %s: %v", podName, lerr)
+				}
 				if err == wait.ErrWaitTimeout {
 					t.Fatalf("device-nodes pod did not complete within 3 minutes: %v", err)
 				}

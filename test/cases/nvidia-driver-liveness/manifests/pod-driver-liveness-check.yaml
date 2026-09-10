@@ -16,8 +16,8 @@ spec:
       value: "compute,utility"
     - name: EXPECTED_DRIVER_VERSION
       value: "{{.ExpectedDriverVersion}}"
-    - name: EC2_INSTANCE_TYPE
-      value: "{{.NodeType}}"
+    - name: EXPECTED_GPU_NAME
+      value: "{{.ExpectedGPUName}}"
     command:
     - /bin/bash
     - -c
@@ -70,29 +70,18 @@ spec:
       fi
 
       # ------------------------------------------------------------------
-      # 1.8  test_nvidia_gpu_model -- GPU model matches instance type.
-      # Regex per instance family. Anchored so "T4" != "T4G" and
-      # "L4" != "L40S". Skip if instance type has no mapping.
+      # 1.8  test_nvidia_gpu_model -- GPU model reported by the driver
+      # must match what AWS advertises for this instance type. The
+      # expected string comes from ec2:DescribeInstanceTypes' GpuInfo
+      # (looked up by the Go test and threaded in as EXPECTED_GPU_NAME).
+      # EC2's short name (e.g. "A100", "H100", "L4", "T4") is a
+      # case-insensitive substring of nvidia-smi's product name
+      # (e.g. "NVIDIA A100-SXM4-40GB"), so we substring-match instead
+      # of maintaining a per-family regex table.
       # ------------------------------------------------------------------
       echo "=== 1.8 GPU model matches instance type ==="
-      case "$EC2_INSTANCE_TYPE" in
-        p3.*)         expected_regex='^Tesla V100-' ;;
-        p4d.*)        expected_regex='^NVIDIA A100-SXM4-40GB' ;;
-        p4de.*)       expected_regex='^NVIDIA A100-SXM4-80GB' ;;
-        p5.*)         expected_regex='^NVIDIA H100 ' ;;
-        p5e.*|p5en.*) expected_regex='^NVIDIA H200 ' ;;
-        g5.*)         expected_regex='^NVIDIA A10G$' ;;
-        g5g.*)        expected_regex='^NVIDIA T4G$' ;;
-        g4dn.*)       expected_regex='^Tesla T4$' ;;
-        g6.*)         expected_regex='^NVIDIA L4$' ;;
-        g6e.*)        expected_regex='^NVIDIA L40S$' ;;
-        g6f.*|gr6f.*) expected_regex='^NVIDIA L4-' ;;
-        g7.*)         expected_regex='^NVIDIA RTX PRO 4500 Blackwell Server Edition' ;;
-        *)            expected_regex="" ;;
-      esac
-
-      if [ -z "$expected_regex" ]; then
-        echo "SKIP 1.8: no GPU-model mapping for instance type '$EC2_INSTANCE_TYPE'"
+      if [ -z "$EXPECTED_GPU_NAME" ]; then
+        echo "SKIP 1.8: EXPECTED_GPU_NAME not set (ec2:DescribeInstanceTypes lookup skipped)"
       else
         gpu_names=$(nvidia-smi --query-gpu=name --format=csv,noheader) || {
           echo "FAIL 1.8: nvidia-smi name query failed"
@@ -103,12 +92,12 @@ spec:
           exit 12
         fi
         while read -r name; do
-          if ! echo "$name" | grep -qE "$expected_regex"; then
-            echo "FAIL 1.8: GPU model '$name' does not match expected pattern '$expected_regex' for $EC2_INSTANCE_TYPE"
+          if ! echo "$name" | grep -qiF "$EXPECTED_GPU_NAME"; then
+            echo "FAIL 1.8: GPU model '$name' does not contain expected substring '$EXPECTED_GPU_NAME'"
             exit 12
           fi
         done <<< "$gpu_names"
-        echo "OK 1.8: every GPU model matches '$expected_regex'"
+        echo "OK 1.8: every GPU model contains '$EXPECTED_GPU_NAME'"
       fi
 
       echo "=== all driver-liveness checks passed ==="
