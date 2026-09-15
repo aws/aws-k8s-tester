@@ -47,11 +47,15 @@ spec:
       # this AMI was built to ship. Skip if EXPECTED_DRIVER_VERSION is
       # unset (additive behaviour).
       # ------------------------------------------------------------------
-      echo "=== 1.5 driver version = expected ==="
+      # Compare only the driver branch (leading integer of the
+       # version triplet, e.g. "580" out of "580.65.06") rather than
+       # the full X.Y.Z. NVIDIA driver point releases within a branch
+       # are qualified together, so we only care that the AMI shipped
+       # the right *branch*, not the exact patch level.
+      echo "=== 1.5 driver branch = expected ==="
       if [ -z "$EXPECTED_DRIVER_VERSION" ]; then
         echo "SKIP 1.5: EXPECTED_DRIVER_VERSION not set"
       else
-        # Capture nvidia-smi output first 
         driver_versions=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader) || {
           echo "FAIL 1.5: nvidia-smi driver_version query failed"
           exit 11
@@ -60,13 +64,15 @@ spec:
           echo "FAIL 1.5: nvidia-smi reported no GPUs"
           exit 11
         fi
+        expected_branch="${EXPECTED_DRIVER_VERSION%%.*}"
         while read -r actual; do
-          if [ "$actual" != "$EXPECTED_DRIVER_VERSION" ]; then
-            echo "FAIL 1.5: driver version '$actual' != expected '$EXPECTED_DRIVER_VERSION'"
+          actual_branch="${actual%%.*}"
+          if [ "$actual_branch" != "$expected_branch" ]; then
+            echo "FAIL 1.5: driver branch '$actual_branch' (full: '$actual') != expected branch '$expected_branch'"
             exit 11
           fi
         done <<< "$driver_versions"
-        echo "OK 1.5: every GPU reports driver version $EXPECTED_DRIVER_VERSION"
+        echo "OK 1.5: every GPU reports driver branch $expected_branch (full versions may vary within the branch)"
       fi
 
       # ------------------------------------------------------------------
