@@ -24,6 +24,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/env"
@@ -40,6 +41,7 @@ var (
 	rdmaDeviceDraDriverImage  *string
 	acceleratorDraDriverImage *string
 	containerTestImage        *string
+	autoModeEnabled           *bool
 	nodeCount                 int
 )
 
@@ -79,6 +81,8 @@ const (
 	nvidiaDRAHelmRepoURL     = "https://helm.ngc.nvidia.com/nvidia"
 	nvidiaDRANamespace       = "nvidia-dra-driver-gpu"
 	nvidiaDRAHelmChartVer    = "25.8.1"
+
+	nvidiaDRAKubeletPluginDaemonSet = "nvidia-dra-driver-gpu-kubelet-plugin"
 )
 
 // labelNodesGPUPresent labels all nodes with nvidia.com/gpu.present=true.
@@ -158,10 +162,37 @@ func uninstallNvidiaDRADriverHelm(ctx context.Context, config *envconf.Config) (
 	return ctx, nil
 }
 
+// daemonSetScheduledOnAtLeastOneNode reports true once the DaemonSet controller has
+// picked at least one node for the DaemonSet.
+func daemonSetScheduledOnAtLeastOneNode(config *envconf.Config, ds *appsv1.DaemonSet) apimachinerywait.ConditionWithContextFunc {
+	return func(ctx context.Context) (bool, error) {
+		if err := config.Client().Resources().Get(ctx, ds.GetName(), ds.GetNamespace(), ds); err != nil {
+			return false, err
+		}
+		return ds.Status.DesiredNumberScheduled > 0, nil
+	}
+}
+
 func waitForNvidiaDRADriverReady(ctx context.Context, config *envconf.Config) (context.Context, error) {
 	ds := appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{Name: "nvidia-dra-driver-gpu-kubelet-plugin", Namespace: nvidiaDRANamespace},
+		ObjectMeta: metav1.ObjectMeta{Name: nvidiaDRAKubeletPluginDaemonSet, Namespace: nvidiaDRANamespace},
 	}
+
+	// DaemonSetReady is satisfied when NumberReady == DesiredNumberScheduled, which is
+	// trivially true at 0 == 0. The kubelet plugin gates itself on the
+	// nvidia.com/gpu.present node label via nodeAffinity, so on a node image that does
+	// not set that label the DaemonSet matches nothing and would still be reported
+	// ready. Require it to be scheduled somewhere first so that case fails loudly.
+	if err := wait.For(
+		daemonSetScheduledOnAtLeastOneNode(config, &ds),
+		wait.WithTimeout(5*time.Minute),
+		wait.WithContext(ctx),
+	); err != nil {
+		return ctx, fmt.Errorf("nvidia-dra-driver daemonset %s/%s was not scheduled onto any node "+
+			"(check that GPU nodes carry the nvidia.com/gpu.present=true label): %w",
+			nvidiaDRANamespace, nvidiaDRAKubeletPluginDaemonSet, err)
+	}
+
 	err := wait.For(
 		fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&ds),
 		wait.WithTimeout(5*time.Minute),
@@ -170,7 +201,7 @@ func waitForNvidiaDRADriverReady(ctx context.Context, config *envconf.Config) (c
 	if err != nil {
 		return ctx, fmt.Errorf("nvidia-dra-driver daemonset is not ready: %w", err)
 	}
-	log.Println("nvidia-dra-driver daemonset is ready.")
+	log.Printf("nvidia-dra-driver daemonset is ready on %d node(s).", ds.Status.DesiredNumberScheduled)
 	return ctx, nil
 }
 
@@ -179,6 +210,7 @@ func TestMain(m *testing.M) {
 	rdmaDeviceDraDriverImage = flag.String("rdmaDeviceDraDriverImage", "", "container image for the dranet DRA driver")
 	acceleratorDraDriverImage = flag.String("acceleratorDraDriverImage", "", "container image for the NVIDIA DRA driver")
 	containerTestImage = flag.String("containerTestImage", "", "container image for the NCCL test workload")
+	autoModeEnabled = flag.Bool("autoModeEnabled", false, "the cluster runs EKS Auto Mode, whose node images set nvidia.com/gpu.present themselves; the suite will assert that label instead of applying it")
 
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
@@ -239,10 +271,14 @@ func TestMain(m *testing.M) {
 				})
 			}
 
-			// Label all nodes with nvidia.com/gpu.present=true.
-			g.Go(func() error {
-				return labelNodesGPUPresent(gctx)
-			})
+			// Label all nodes with nvidia.com/gpu.present=true. Auto Mode node images set
+			// this label themselves and TestGPUPresentLabel asserts that they do, so
+			// applying it here would mask a node image that does not.
+			if !*autoModeEnabled {
+				g.Go(func() error {
+					return labelNodesGPUPresent(gctx)
+				})
+			}
 
 			// Add NVIDIA Helm repo and install NVIDIA DRA driver.
 			g.Go(func() error {
