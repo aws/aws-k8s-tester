@@ -38,6 +38,19 @@ spec:
       : "${compute_cap_int:=0}"
       echo "compute capability (as int): $compute_cap_int"
 
+      # Detect vGPU. UnifiedMemoryPerf uses cudaMallocManaged with page
+      # migration between host and device, which the NVIDIA vGPU driver
+      # does not support; the sample fails immediately on g6f / gr6f
+      # (and any other vGPU-mode instance) even though every other
+      # sample here runs. `nvidia-smi -q` prints "Virtualization Mode:
+      # VGPU" inside a vGPU guest and "Pass-Through" / "None" on
+      # bare-metal / GPU-passthrough hosts, which is what we key off.
+      is_vgpu=false
+      if nvidia-smi -q 2>/dev/null | grep -qE '^[[:space:]]*Virtualization Mode[[:space:]]*:[[:space:]]*VGPU$'; then
+        is_vgpu=true
+        echo "vGPU detected (nvidia-smi Virtualization Mode = VGPU)"
+      fi
+
       run_sample() {
         local name="$1"
         local min_cc="${2:-0}"
@@ -58,8 +71,15 @@ spec:
         fi
       }
 
-      # 2.11 -- Unified Memory page migration
-      run_sample UnifiedMemoryPerf
+      # 2.11 -- Unified Memory page migration.
+      # Not supported by the NVIDIA vGPU driver -- skip on vGPU
+      # instances (g6f, gr6f, and future vGPU SKUs) rather than
+      # fail on a known-unsupported combination.
+      if [ "$is_vgpu" = "true" ]; then
+        echo "SKIP UnifiedMemoryPerf: unified memory page migration is not supported on vGPU"
+      else
+        run_sample UnifiedMemoryPerf
+      fi
       # 2.3  -- INT8 tensor-core MMA (Turing+)
       run_sample immaTensorCoreGemm 75
       # 2.5  -- Cooperative Groups grid-wide barrier

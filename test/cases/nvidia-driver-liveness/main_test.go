@@ -35,7 +35,7 @@ var podDriverLivenessCheckManifest []byte
 // `-<flag>` on the command line (parsed via common.ParseFlags).
 type Config struct {
 	NvidiaTestImage       string `flag:"nvidiaTestImage" desc:"URL of the nvidia test image (built from upstream test/images/nvidia/Dockerfile) -- required"`
-	ExpectedDriverVersion string `flag:"expectedDriverVersion" desc:"expected NVIDIA driver version (e.g. 570.86.15); when empty the 1.5 assertion is skipped"`
+	ExpectedDriverVersion string `flag:"expectedDriverVersion" desc:"expected NVIDIA driver branch (leading integer of the version triplet, e.g. \"580\" for the 580.xx.xx branch); full triplets like \"580.86.15\" are also accepted and the branch is extracted. Empty skips the 1.5 assertion."`
 	NodeType              string `flag:"nodeType" desc:"EC2 instance type under qualification (e.g. p5.48xlarge) -- required for 1.8 GPU-model regex"`
 	Region                string `flag:"region" desc:"AWS region for ec2:DescribeInstanceTypes lookup (falls back to AWS_REGION env / ~/.aws/config / IMDS when empty)"`
 	InstallDevicePlugin   bool   `flag:"installDevicePlugin" desc:"install the NVIDIA k8s device plugin before the test and delete it after (default true)"`

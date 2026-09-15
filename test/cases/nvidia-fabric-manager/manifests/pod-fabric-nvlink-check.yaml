@@ -57,22 +57,52 @@ spec:
 
       # -----------------------------------------------------------------
       # 5.3 fabric state (NVSwitch only)
+      #
+      # Skipped on Pre-NVL5 fabrics: nvidia-fabricmanager logs
+      # "Detected Pre-NVL5 system" to the systemd journal at startup
+      # on NVSwitch generations 1-4 (Volta / Ampere / Hopper). The
+      # fabric-state semantics differ enough on those generations
+      # that the "State: Completed" assertion is unreliable, so we
+      # gate this check on NVL5+ hardware (Blackwell / GB200) by
+      # detecting the absence of that log line.
+      #
+      # journalctl only, not the fabricmanager.log file: the string
+      # is emitted at daemon startup via NVSMI logging which goes to
+      # syslog/journald but is not written to /var/log/fabricmanager.log.
       # -----------------------------------------------------------------
       if [ "$class" = "nvswitch" ]; then
-        echo "=== 5.3 fabric state ==="
-        states=$(nvidia-smi -q | awk '/^[[:space:]]*Fabric$/,/^$/' | \
-                 awk -F':' '/State[[:space:]]*:/ {gsub(/^[[:space:]]+|[[:space:]]+$/,"",$2); print $2}')
-        if [ -z "$states" ]; then
-          echo "FAIL 5.3: nvidia-smi -q reported no Fabric section on an NVSwitch host"
-          exit 50
+        pre_nvl5=0
+        jctl_dir=""
+        if [ -d /host/var/log/journal ] && [ -n "$(ls -A /host/var/log/journal 2>/dev/null)" ]; then
+          jctl_dir=/host/var/log/journal
+        elif [ -d /host/run/log/journal ] && [ -n "$(ls -A /host/run/log/journal 2>/dev/null)" ]; then
+          jctl_dir=/host/run/log/journal
         fi
-        while IFS= read -r s; do
-          if [ "$s" != "Completed" ]; then
-            echo "FAIL 5.3: GPU reports fabric State='$s', expected 'Completed'"
+        if [ -n "$jctl_dir" ] && command -v journalctl >/dev/null 2>&1; then
+          pre_nvl5=$(journalctl -D "$jctl_dir" -u nvidia-fabricmanager -b --no-pager 2>/dev/null \
+                       | grep -c "Detected Pre-NVL5 system" || true)
+        else
+          echo "  note: could not query journalctl (dir='$jctl_dir', journalctl=$(command -v journalctl || echo missing)); assuming NVL5+"
+        fi
+
+        if [ "$pre_nvl5" -gt 0 ]; then
+          echo "SKIP 5.3: fabric-manager reports 'Detected Pre-NVL5 system'; fabric-state check applies to NVL5+ only"
+        else
+          echo "=== 5.3 fabric state ==="
+          states=$(nvidia-smi -q | awk '/^[[:space:]]*Fabric$/,/^$/' | \
+                   awk -F':' '/State[[:space:]]*:/ {gsub(/^[[:space:]]+|[[:space:]]+$/,"",$2); print $2}')
+          if [ -z "$states" ]; then
+            echo "FAIL 5.3: nvidia-smi -q reported no Fabric section on an NVSwitch host"
             exit 50
           fi
-        done <<< "$states"
-        echo "OK 5.3: every GPU fabric state = Completed"
+          while IFS= read -r s; do
+            if [ "$s" != "Completed" ]; then
+              echo "FAIL 5.3: GPU reports fabric State='$s', expected 'Completed'"
+              exit 50
+            fi
+          done <<< "$states"
+          echo "OK 5.3: every GPU fabric state = Completed"
+        fi
       else
         echo "SKIP 5.3: not an NVSwitch instance"
       fi
@@ -182,7 +212,26 @@ spec:
     - name: host-proc-driver
       mountPath: /host/proc/driver
       readOnly: true
+    # Read-only host journals so 5.3's Pre-NVL5 gate can journalctl
+    # against the fabric-manager unit. Both persistent (/var/log/journal)
+    # and volatile (/run/log/journal) are mounted -- distros vary in
+    # which one holds the current boot, and journalctl -D "$dir" -b
+    # filters correctly either way.
+    - name: host-var-log-journal
+      mountPath: /host/var/log/journal
+      readOnly: true
+    - name: host-run-log-journal
+      mountPath: /host/run/log/journal
+      readOnly: true
   volumes:
   - name: host-proc-driver
     hostPath:
       path: /proc/driver
+  - name: host-var-log-journal
+    hostPath:
+      path: /var/log/journal
+      type: DirectoryOrCreate
+  - name: host-run-log-journal
+    hostPath:
+      path: /run/log/journal
+      type: DirectoryOrCreate
