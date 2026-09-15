@@ -1,0 +1,188 @@
+# NVIDIA device plugin configured for MPS, plus the MPS control daemon it needs.
+#
+# This replaces the standard nvidia-device-plugin-daemonset for the duration of
+# the MPS feature, then the standard one is restored in Teardown. The name is
+# deliberately identical so only one plugin ever advertises nvidia.com/gpu; two
+# plugins registering the same resource would conflict.
+#
+# MPS differs from time-slicing in more than the config key. Under time-slicing
+# the driver context-switches between clients; under MPS a control daemon funnels
+# every client through a single shared CUDA context, so their kernels run at the
+# same time rather than taking turns. That daemon is a second DaemonSet, it must
+# be privileged, and it sets the GPU compute mode to EXCLUSIVE_PROCESS. The
+# plugin itself also needs MPS_ROOT and the two MPS volumes, so the plugin pod
+# spec is not the stock one with a different ConfigMap.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nvidia-mps-config
+  namespace: kube-system
+data:
+  config.yaml: |
+    version: v1
+    sharing:
+      mps:
+        # Set explicitly because the assertions depend on them: renameByDefault
+        # would advertise nvidia.com/gpu.shared instead of multiplying
+        # nvidia.com/gpu, and leaving either implicit would make the test
+        # silently wrong if the plugin's own defaults changed.
+        renameByDefault: false
+        failRequestsGreaterThanOne: true
+        resources:
+        - name: nvidia.com/gpu
+          replicas: {{.Replicas}}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin-daemonset
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      name: nvidia-device-plugin-ds
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: nvidia-device-plugin-ds
+    spec:
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      priorityClassName: "system-node-critical"
+      containers:
+      - image: {{.PluginImage}}
+        name: nvidia-device-plugin-ctr
+        env:
+          - name: FAIL_ON_INIT_ERROR
+            value: "false"
+          # Without this the plugin ignores the mounted config and advertises
+          # one resource per physical GPU.
+          - name: CONFIG_FILE
+            value: /etc/nvidia-device-plugin/config.yaml
+          # Where the plugin looks for the control daemon's pipe and shm
+          # directories. Must match the control daemon's mps-root below, or the
+          # plugin cannot reach the daemon and MPS silently does not engage.
+          - name: MPS_ROOT
+            value: {{.MpsRoot}}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: device-plugin
+          mountPath: /var/lib/kubelet/device-plugins
+        # Must not be /etc/nvidia: the NVIDIA container runtime hook mkdirs
+        # /etc/nvidia/nvidia-application-profiles-rc.d in the container rootfs
+        # during runc init, and a ConfigMap mount is always read-only, so the
+        # hook fails and the container never starts.
+        - name: mps-config
+          mountPath: /etc/nvidia-device-plugin
+        # The plugin health-checks the daemon through its /dev/shm.
+        - name: mps-shm
+          mountPath: /dev/shm
+        - name: mps-root
+          mountPath: /mps
+      volumes:
+      - name: device-plugin
+        hostPath:
+          path: /var/lib/kubelet/device-plugins
+      - name: mps-config
+        configMap:
+          name: nvidia-mps-config
+      - name: mps-root
+        hostPath:
+          path: {{.MpsRoot}}
+          type: DirectoryOrCreate
+      - name: mps-shm
+        hostPath:
+          path: {{.MpsRoot}}/shm
+          type: DirectoryOrCreate
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin-mps-control-daemon
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      name: nvidia-device-plugin-mps-control-daemon
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: nvidia-device-plugin-mps-control-daemon
+    spec:
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      priorityClassName: "system-node-critical"
+      # Upstream's chart gates this DaemonSet on nvidia.com/mps.capable=true, a
+      # label applied by GPU Feature Discovery. GFD is not installed here, so
+      # gating on it would leave this pod unschedulable and MPS would never
+      # engage while the plugin still advertised the multiplied count.
+      #
+      # No nodeSelector replaces it. Every node in the clusters this runs in
+      # comes from one unmanaged nodegroup of the instance type under test, so
+      # there is no non-GPU node to keep this off. Selecting on a label instead
+      # would tie the feature to whichever labels a particular AMI and
+      # Kubernetes version happen to apply at boot, and getting that wrong is
+      # silent: the DaemonSet simply matches nothing. The test asserts
+      # DesiredNumberScheduled > 0 for that reason.
+      initContainers:
+      # Creates the daemon-specific /dev/shm under mps-root. The main container
+      # cannot do this itself: it needs the mount to already exist.
+      - image: {{.PluginImage}}
+        name: mps-control-daemon-mounts
+        command: [mps-control-daemon, mount-shm]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: mps-root
+          mountPath: /mps
+          mountPropagation: Bidirectional
+      containers:
+      - image: {{.PluginImage}}
+        name: mps-control-daemon-ctr
+        command: [mps-control-daemon]
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: CONFIG_FILE
+          value: /etc/nvidia-device-plugin/config.yaml
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: all
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: compute,utility
+        # Privileged because it sets the GPU compute mode and owns the shared
+        # CUDA context every client is funnelled through.
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: mps-shm
+          mountPath: /dev/shm
+        - name: mps-root
+          mountPath: /mps
+        - name: mps-config
+          mountPath: /etc/nvidia-device-plugin
+      volumes:
+      - name: mps-root
+        hostPath:
+          path: {{.MpsRoot}}
+          type: DirectoryOrCreate
+      - name: mps-shm
+        hostPath:
+          path: {{.MpsRoot}}/shm
+          type: DirectoryOrCreate
+      - name: mps-config
+        configMap:
+          name: nvidia-mps-config

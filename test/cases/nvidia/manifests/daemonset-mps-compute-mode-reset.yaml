@@ -1,0 +1,78 @@
+# Restores the GPU compute mode after the MPS feature.
+#
+# The MPS control daemon sets compute mode to EXCLUSIVE_PROCESS, which is device
+# state rather than plugin configuration. On hardware the daemon restores DEFAULT as
+# it shuts down, so on the happy path this reports "already set to DEFAULT" and does
+# nothing; it is here for the case where the daemon does not exit cleanly. Left
+# applied, the node keeps rejecting more than one CUDA context per GPU, which breaks
+# every later feature on it -- time-slicing in particular, which needs DEFAULT and,
+# because requesting time-slicing on an exclusive GPU is not an error, would fail in
+# a way that looks nothing to do with MPS.
+#
+# A DaemonSet rather than a Job because the control daemon runs on every GPU node,
+# so every one of them needs resetting. A Job with completions: 1 would return a
+# single node to DEFAULT and silently leave the rest exclusive.
+#
+# Deliberately does not request nvidia.com/gpu. This runs while the device plugin
+# is being swapped back, so a pod that needed an allocation from the plugin could
+# sit Pending exactly when the reset matters most. NVIDIA_VISIBLE_DEVICES gets the
+# container its devices from the runtime instead.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: mps-compute-mode-reset
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      name: mps-compute-mode-reset
+  template:
+    metadata:
+      labels:
+        name: mps-compute-mode-reset
+    spec:
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: compute-mode-reset
+        image: {{.NvidiaTestImage}}
+        imagePullPolicy: Always
+        env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: all
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: compute,utility
+        securityContext:
+          privileged: true
+        command:
+        - bash
+        - -c
+        - |
+          set -o pipefail
+          before=$(nvidia-smi --query-gpu=index,compute_mode --format=csv,noheader | tr '\n' ';')
+          echo "compute mode before reset: $before"
+          # -c 0 is DEFAULT. Applies to every visible GPU. Harmless when the mode
+          # is already DEFAULT, which is the usual case.
+          nvidia-smi -c 0
+          after=$(nvidia-smi --query-gpu=compute_mode --format=csv,noheader)
+          echo "compute mode after reset: $(echo "$after" | tr '\n' ';')"
+          if echo "$after" | grep -qvi "^Default$"; then
+            echo "at least one GPU is not back in Default compute mode" >&2
+            exit 1
+          fi
+          # Readiness is what the test waits on, so mark success only after the
+          # check above passed, then stay alive so the DaemonSet can report it.
+          touch /tmp/reset-done
+          sleep infinity
+        readinessProbe:
+          exec:
+            command: [cat, /tmp/reset-done]
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          failureThreshold: 30
+        resources:
+          requests:
+            cpu: "500m"
+            memory: 512Mi

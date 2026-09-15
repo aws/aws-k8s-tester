@@ -92,13 +92,16 @@ type sharingState struct {
 }
 
 // gpuSharingWorkloadTplVars renders job-gpu-sharing-workload.yaml. Name gives each
-// feature its own Job and selector.
+// feature its own Job and selector. ReportComputeMode is MPS-only: time-slicing has
+// no use for it, since the mode it needs (DEFAULT) is also the mode a GPU with no
+// sharing configured is in, so reading it would prove nothing.
 type gpuSharingWorkloadTplVars struct {
 	Name                  string
 	NvidiaTestImage       string
 	Completions           int
 	ActiveDeadlineSeconds int
 	HoldSeconds           int
+	ReportComputeMode     bool
 }
 
 // devicePluginImage returns the plugin image the stock manifest pins, so the
