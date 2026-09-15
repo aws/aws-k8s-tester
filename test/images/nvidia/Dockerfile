@@ -39,7 +39,8 @@ RUN apt update -y \
       freeglut3-dev \
       libglu1-mesa-dev \
       datacenter-gpu-manager-4-cuda12 \
-      datacenter-gpu-manager-4-cuda13
+      datacenter-gpu-manager-4-cuda13 \
+      systemd
 
 RUN ldconfig
 

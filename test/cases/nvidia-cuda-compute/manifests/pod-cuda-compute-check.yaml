@@ -80,8 +80,15 @@ spec:
         fi
       }
 
-      # 2.11 -- Unified Memory page migration
-      run_sample UnifiedMemoryPerf
+      # 2.11 -- Unified Memory page migration.
+      # Not supported by the NVIDIA vGPU driver -- skip on vGPU
+      # instances (g6f, gr6f, and future vGPU SKUs) rather than
+      # fail on a known-unsupported combination.
+      if [ "$is_vgpu" = "true" ]; then
+        echo "SKIP UnifiedMemoryPerf: unified memory page migration is not supported on vGPU"
+      else
+        run_sample UnifiedMemoryPerf
+      fi
       # 2.3  -- INT8 tensor-core MMA (Turing+)
       run_sample immaTensorCoreGemm 75
       # 2.5  -- Cooperative Groups grid-wide barrier
