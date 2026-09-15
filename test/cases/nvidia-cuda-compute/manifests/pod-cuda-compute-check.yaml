@@ -45,8 +45,17 @@ spec:
       # sample here runs. `nvidia-smi -q` prints "Virtualization Mode:
       # VGPU" inside a vGPU guest and "Pass-Through" / "None" on
       # bare-metal / GPU-passthrough hosts, which is what we key off.
+      # Match any "Virtualization Mode ... : VGPU" line.
+      #
+      # Capture the output into a variable first: `nvidia-smi -q` can
+      # exit non-zero on some vGPU guests (unlicensed feature warnings,
+      # etc.) even when stdout is fine. `set -o pipefail` above would
+      # otherwise poison "nvidia-smi -q | grep -q ..." with nvidia-smi's
+      # exit code and the if-branch would be silently skipped even when
+      # the grep pattern matches.
       is_vgpu=false
-      if nvidia-smi -q 2>/dev/null | grep -qE '^[[:space:]]*Virtualization Mode[[:space:]]*:[[:space:]]*VGPU$'; then
+      smi_out=$(nvidia-smi -q 2>/dev/null || true)
+      if echo "$smi_out" | grep -qE 'Virtualization Mode[[:space:]]*:[[:space:]]*VGPU'; then
         is_vgpu=true
         echo "vGPU detected (nvidia-smi Virtualization Mode = VGPU)"
       fi
