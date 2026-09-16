@@ -53,6 +53,17 @@ spec:
             exit 1
           fi
           echo "GPU_UUID=$gpu_uuid"
+{{- if .ReportComputeMode}}
+          # Only MPS asks for this. Its control daemon takes the GPU in
+          # EXCLUSIVE_PROCESS, which is what separates MPS from time-slicing:
+          # both multiply allocatable and both let pods share a GPU.
+          compute_mode=$(nvidia-smi --query-gpu=compute_mode --format=csv,noheader | head -1)
+          if [ -z "$compute_mode" ]; then
+            echo "failed to read the compute mode from nvidia-smi" >&2
+            exit 1
+          fi
+          echo "COMPUTE_MODE=$compute_mode"
+{{- end}}
           echo "pod $HOSTNAME starting on $(nvidia-smi --query-gpu=index,name --format=csv,noheader | tr '\n' ';')"
           vectorAdd
           # A single vectorAdd is milliseconds of GPU work, far too short for the
@@ -63,6 +74,14 @@ spec:
           while [ "$SECONDS" -lt "$end" ]; do
             vectorAdd > /dev/null || exit 1
           done
+{{- if .ReportComputeMode}}
+          # Printed for the log, not asserted on. The process list is empty from in
+          # here whatever MPS is doing: this pod has no hostPID, so the host PIDs
+          # the driver reports do not resolve in its namespace. The header row is
+          # still useful -- it shows compute mode, utilisation and memory.
+          echo "--- nvidia-smi process table as seen by $HOSTNAME ---"
+          nvidia-smi || true
+{{- end}}
         resources:
           limits:
             nvidia.com/gpu: 1

@@ -45,6 +45,11 @@ type Config struct {
 	// time_slicing_test.go.
 	TimeSlicingEnabled  bool `flag:"timeSlicingEnabled" desc:"run the GPU time-slicing feature (reconfigures the cluster's NVIDIA device plugin)"`
 	TimeSlicingReplicas int  `flag:"timeSlicingReplicas" desc:"how many times the device plugin advertises each physical GPU under time-slicing"`
+	// MPS is opt-in for the same reason as time-slicing: it replaces the
+	// cluster's device plugin. It also sets the GPU compute mode, which the
+	// feature has to reset. See mps_test.go.
+	MpsEnabled  bool `flag:"mpsEnabled" desc:"run the GPU MPS feature (reconfigures the NVIDIA device plugin and sets compute mode to EXCLUSIVE_PROCESS)"`
+	MpsReplicas int  `flag:"mpsReplicas" desc:"how many times the device plugin advertises each physical GPU under MPS"`
 }
 
 var (
@@ -121,6 +126,10 @@ func TestMain(m *testing.M) {
 		// advertisement for everything else on the node.
 		TimeSlicingEnabled:  false,
 		TimeSlicingReplicas: 10,
+		// Off by default: replaces the cluster's device plugin and changes the
+		// GPU compute mode.
+		MpsEnabled:  false,
+		MpsReplicas: 4,
 	}
 
 	_, err := common.ParseFlags(&testConfig)
