@@ -55,7 +55,20 @@ spec:
           echo "compute mode before reset: $before"
           # -c 0 is DEFAULT. Applies to every visible GPU. Harmless when the mode
           # is already DEFAULT, which is the usual case.
-          nvidia-smi -c 0
+          #
+          # Checked rather than ignored: this reset is a no-op on the happy path,
+          # since the control daemon restores DEFAULT as it shuts down. If the
+          # command were failing outright -- privileged dropped, driver error -- the
+          # state read below would still pass on every ordinary run, and we would
+          # only find out the day the reset was actually needed.
+          if ! nvidia-smi -c 0; then
+            echo "nvidia-smi -c 0 exited non-zero" >&2
+            exit 1
+          fi
+          # Read the state back as well. -c applies to the GPUs nvidia-smi can see,
+          # so a run that saw a subset can exit 0 while the rest stay exclusive, and
+          # a per-GPU failure is not documented to make the overall exit non-zero.
+          # The device state is what later features depend on.
           after=$(nvidia-smi --query-gpu=compute_mode --format=csv,noheader)
           echo "compute mode after reset: $(echo "$after" | tr '\n' ';')"
           if echo "$after" | grep -qvi "^Default$"; then
