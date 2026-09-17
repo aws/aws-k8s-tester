@@ -21,6 +21,8 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
+const gpuAdvertiseTimeout = 5 * time.Minute
+
 // TestFabricManagerVersionMatchesDriver runs one pod per GPU node
 // matching -nodeType, each of which cross-references the fabric-
 // manager version parsed from /host/var/log/fabricmanager.log against
@@ -33,12 +35,22 @@ func TestFabricManagerVersionMatchesDriver(t *testing.T) {
 		WithLabel("suite", "nvidia").
 		WithLabel("hardware", "gpu").
 		Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			nodeCount, err := countGPUNodesOfType(ctx, cfg.Client().RESTConfig(), testConfig.NodeType)
-			if err != nil {
-				t.Fatalf("count GPU nodes of type %q: %v", testConfig.NodeType, err)
-			}
-			if nodeCount == 0 {
-				t.Fatalf("no schedulable GPU nodes with instance-type=%q found; the Job would never complete", testConfig.NodeType)
+			// kubelet advertises nvidia.com/gpu only once the device plugin has
+			// registered.
+			var nodeCount int
+			if err := e2ewait.For(func(ctx context.Context) (bool, error) {
+				var err error
+				nodeCount, err = countGPUNodesOfType(ctx, cfg.Client().RESTConfig(), testConfig.NodeType)
+				if err != nil {
+					return false, err
+				}
+				if nodeCount == 0 {
+					t.Logf("no ready node with instance-type=%q advertises nvidia.com/gpu yet; retrying", testConfig.NodeType)
+				}
+				return nodeCount > 0, nil
+			}, e2ewait.WithContext(ctx), e2ewait.WithTimeout(gpuAdvertiseTimeout)); err != nil {
+				t.Fatalf("no schedulable GPU nodes with instance-type=%q found within %s; the Job would never complete: %v",
+					testConfig.NodeType, gpuAdvertiseTimeout, err)
 			}
 			rendered, err := fwext.RenderManifests(jobFabricManagerVersionCheckManifest, struct {
 				NvidiaTestImage string

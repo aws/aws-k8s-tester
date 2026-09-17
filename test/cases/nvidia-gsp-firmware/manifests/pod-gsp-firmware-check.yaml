@@ -45,6 +45,16 @@ spec:
         exit 0
       fi
 
+      # The AMI disables GSP on some instance families (NVreg_EnableGpuFirmware=0),
+      # where nvidia-smi then reports N/A for every GPU. Any non-zero value means
+      # enabled.
+      params=/host/proc/driver/nvidia/params
+      gsp_enabled=$(awk -F': *' '/^EnableGpuFirmware:/ {print $2; exit}' "$params")
+      if [ "${gsp_enabled:-}" = "0" ]; then
+        echo "SKIP 1.9: GSP disabled in the driver (EnableGpuFirmware=0); no GSP firmware to assert"
+        exit 0
+      fi
+
       # Extract per-GPU GSP versions.
       versions=$(nvidia-smi -q | awk -F':' '/GSP Firmware Version/ {gsub(/^[[:space:]]+|[[:space:]]+$/,"",$2); print $2}')
       if [ -z "$versions" ]; then
@@ -87,3 +97,11 @@ spec:
         nvidia.com/gpu: "{{.GpuCount}}"
       limits:
         nvidia.com/gpu: "{{.GpuCount}}"
+    volumeMounts:
+    - name: host-proc
+      mountPath: /host/proc
+      readOnly: true
+  volumes:
+  - name: host-proc
+    hostPath:
+      path: /proc
