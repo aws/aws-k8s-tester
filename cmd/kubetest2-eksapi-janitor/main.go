@@ -5,7 +5,6 @@ import (
 	"flag"
 	"log/slog"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-k8s-tester/internal/deployers/eksapi"
@@ -20,16 +19,10 @@ func main() {
 	flag.StringVar(&stackStatus, "stack-status", "", "only process stacks with a specific status")
 	var emitMetrics bool
 	flag.BoolVar(&emitMetrics, "emit-metrics", false, "Send metrics to CloudWatch")
-	var regions string
-	flag.StringVar(&regions, "regions", "", "comma-separated regions to sweep; when empty, all regions enabled for the account are swept")
+	var allRegions bool
+	flag.BoolVar(&allRegions, "all-regions", false, "sweep all regions enabled for the account; when false, only the default region is swept")
 	flag.Parse()
-	var regionsList []string
-	for _, r := range strings.Split(regions, ",") {
-		if r = strings.TrimSpace(r); r != "" {
-			regionsList = append(regionsList, r)
-		}
-	}
-	j := eksapi.NewJanitor(maxResourceAge, emitMetrics, workers, stackStatus, regionsList)
+	j := eksapi.NewJanitor(maxResourceAge, emitMetrics, workers, stackStatus, allRegions)
 	if err := j.Sweep(context.Background()); err != nil {
 		slog.Error("failed to sweep resources", "error", err)
 		os.Exit(1)

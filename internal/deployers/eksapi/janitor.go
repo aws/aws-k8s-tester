@@ -18,7 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 )
 
-func NewJanitor(maxResourceAge time.Duration, emitMetrics bool, workers int, stackStatus string, regions []string) *janitor {
+func NewJanitor(maxResourceAge time.Duration, emitMetrics bool, workers int, stackStatus string, allRegions bool) *janitor {
 	awsConfig := awssdk.NewConfig()
 	var metricRegistry metrics.MetricRegistry
 	if emitMetrics {
@@ -33,7 +33,7 @@ func NewJanitor(maxResourceAge time.Duration, emitMetrics bool, workers int, sta
 		maxResourceAge: maxResourceAge,
 		workers:        workers,
 		stackStatus:    stackStatus,
-		regions:        regions,
+		allRegions:     allRegions,
 		awsConfig:      awsConfig,
 		metrics:        metricRegistry,
 	}
@@ -43,27 +43,29 @@ type janitor struct {
 	maxResourceAge time.Duration
 	workers        int
 	stackStatus    string
-	// regions is the list of regions to sweep. When empty, all regions
-	// enabled for the account are discovered and swept.
-	regions []string
+	// allRegions, when true, sweeps every region enabled for the account.
+	// When false, only the default region from the AWS config is swept.
+	allRegions bool
 
 	awsConfig aws.Config
 	metrics   metrics.MetricRegistry
 }
 
-// Sweep sweeps every configured region. When no regions are configured, all
-// regions enabled for the account are discovered and swept. The janitor can
-// run in any single region and still reach every other region, because the
-// target region is determined by the AWS SDK config, not by where the process
-// runs.
+// Sweep sweeps the selected regions. When allRegions is set, every region
+// enabled for the account is discovered and swept; otherwise only the default
+// region from the AWS config is swept. The janitor can run in any single region
+// and still reach every other region, because the target region is determined
+// by the AWS SDK config, not by where the process runs.
 func (j *janitor) Sweep(ctx context.Context) error {
-	regions := j.regions
-	if len(regions) == 0 {
+	var regions []string
+	if j.allRegions {
 		discovered, err := j.getRegions(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get regions: %v", err)
 		}
 		regions = discovered
+	} else {
+		regions = []string{j.awsConfig.Region}
 	}
 	slog.Info("sweeping regions", "regions", regions)
 	var errs []error
