@@ -24,6 +24,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apimachinerywait "k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/pkg/env"
@@ -158,10 +159,37 @@ func uninstallNvidiaDRADriverHelm(ctx context.Context, config *envconf.Config) (
 	return ctx, nil
 }
 
+// daemonSetScheduledOnAtLeastOneNode reports true once the DaemonSet controller has
+// picked at least one node for the DaemonSet.
+func daemonSetScheduledOnAtLeastOneNode(config *envconf.Config, ds *appsv1.DaemonSet) apimachinerywait.ConditionWithContextFunc {
+	return func(ctx context.Context) (bool, error) {
+		if err := config.Client().Resources().Get(ctx, ds.GetName(), ds.GetNamespace(), ds); err != nil {
+			return false, err
+		}
+		return ds.Status.DesiredNumberScheduled > 0, nil
+	}
+}
+
 func waitForNvidiaDRADriverReady(ctx context.Context, config *envconf.Config) (context.Context, error) {
 	ds := appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{Name: "nvidia-dra-driver-gpu-kubelet-plugin", Namespace: nvidiaDRANamespace},
 	}
+
+	// DaemonSetReady is satisfied when NumberReady == DesiredNumberScheduled, which is
+	// trivially true at 0 == 0. The kubelet plugin gates itself on the
+	// nvidia.com/gpu.present node label via nodeAffinity, so on a node image that does
+	// not set that label the DaemonSet matches nothing and would still be reported
+	// ready. Require it to be scheduled somewhere first so that case fails loudly.
+	if err := wait.For(
+		daemonSetScheduledOnAtLeastOneNode(config, &ds),
+		wait.WithTimeout(5*time.Minute),
+		wait.WithContext(ctx),
+	); err != nil {
+		return ctx, fmt.Errorf("nvidia-dra-driver daemonset %s/%s was not scheduled onto any node "+
+			"(check that GPU nodes carry the nvidia.com/gpu.present=true label): %w",
+			ds.GetNamespace(), ds.GetName(), err)
+	}
+
 	err := wait.For(
 		fwext.NewConditionExtension(config.Client().Resources()).DaemonSetReady(&ds),
 		wait.WithTimeout(5*time.Minute),
@@ -170,7 +198,7 @@ func waitForNvidiaDRADriverReady(ctx context.Context, config *envconf.Config) (c
 	if err != nil {
 		return ctx, fmt.Errorf("nvidia-dra-driver daemonset is not ready: %w", err)
 	}
-	log.Println("nvidia-dra-driver daemonset is ready.")
+	log.Printf("nvidia-dra-driver daemonset is ready on %d node(s).", ds.Status.DesiredNumberScheduled)
 	return ctx, nil
 }
 
