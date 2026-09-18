@@ -19,8 +19,10 @@ func main() {
 	flag.StringVar(&stackStatus, "stack-status", "", "only process stacks with a specific status")
 	var emitMetrics bool
 	flag.BoolVar(&emitMetrics, "emit-metrics", false, "Send metrics to CloudWatch")
+	var allRegions bool
+	flag.BoolVar(&allRegions, "all-regions", false, "sweep all regions enabled for the account; when false, only the default region is swept")
 	flag.Parse()
-	j := eksapi.NewJanitor(maxResourceAge, emitMetrics, workers, stackStatus)
+	j := eksapi.NewJanitor(maxResourceAge, emitMetrics, workers, stackStatus, allRegions)
 	if err := j.Sweep(context.Background()); err != nil {
 		slog.Error("failed to sweep resources", "error", err)
 		os.Exit(1)

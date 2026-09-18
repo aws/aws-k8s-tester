@@ -15,9 +15,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	cloudformationtypes "github.com/aws/aws-sdk-go-v2/service/cloudformation/types"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
 )
 
-func NewJanitor(maxResourceAge time.Duration, emitMetrics bool, workers int, stackStatus string) *janitor {
+func NewJanitor(maxResourceAge time.Duration, emitMetrics bool, workers int, stackStatus string, allRegions bool) *janitor {
 	awsConfig := awssdk.NewConfig()
 	var metricRegistry metrics.MetricRegistry
 	if emitMetrics {
@@ -32,8 +33,8 @@ func NewJanitor(maxResourceAge time.Duration, emitMetrics bool, workers int, sta
 		maxResourceAge: maxResourceAge,
 		workers:        workers,
 		stackStatus:    stackStatus,
+		allRegions:     allRegions,
 		awsConfig:      awsConfig,
-		cfnClient:      cloudformation.NewFromConfig(awsConfig),
 		metrics:        metricRegistry,
 	}
 }
@@ -42,15 +43,61 @@ type janitor struct {
 	maxResourceAge time.Duration
 	workers        int
 	stackStatus    string
+	// allRegions, when true, sweeps every region enabled for the account.
+	// When false, only the default region from the AWS config is swept.
+	allRegions bool
 
 	awsConfig aws.Config
-	cfnClient *cloudformation.Client
 	metrics   metrics.MetricRegistry
 }
 
+// Sweep sweeps the selected regions. When allRegions is set, every region
+// enabled for the account is discovered and swept; otherwise only the default
+// region from the AWS config is swept. The janitor can run in any single region
+// and still reach every other region, because the target region is determined
+// by the AWS SDK config, not by where the process runs.
 func (j *janitor) Sweep(ctx context.Context) error {
-	awsConfig := awssdk.NewConfig()
-	cfnClient := cloudformation.NewFromConfig(awsConfig)
+	var regions []string
+	if j.allRegions {
+		discovered, err := j.getRegions(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get regions: %v", err)
+		}
+		regions = discovered
+	} else {
+		regions = []string{j.awsConfig.Region}
+	}
+	slog.Info("sweeping regions", "regions", regions)
+	var errs []error
+	for _, region := range regions {
+		if err := j.sweepRegion(ctx, region); err != nil {
+			errs = append(errs, fmt.Errorf("region %s: %v", region, err))
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// getRegions returns the regions that are enabled (or opted in) for the
+// account. Disabled opt-in regions are excluded.
+func (j *janitor) getRegions(ctx context.Context) ([]string, error) {
+	ec2Client := ec2.NewFromConfig(j.awsConfig)
+	out, err := ec2Client.DescribeRegions(ctx, &ec2.DescribeRegionsInput{})
+	if err != nil {
+		return nil, err
+	}
+	var regions []string
+	for _, r := range out.Regions {
+		regions = append(regions, *r.RegionName)
+	}
+	return regions, nil
+}
+
+// sweepRegion sweeps a single region using a region-scoped copy of the base
+// AWS config.
+func (j *janitor) sweepRegion(ctx context.Context, region string) error {
+	cfg := j.awsConfig.Copy()
+	cfg.Region = region
+	cfnClient := cloudformation.NewFromConfig(cfg)
 	stacks, err := j.getStacks(ctx, cfnClient)
 	if err != nil {
 		return fmt.Errorf("failed to get stacks: %v", err)
@@ -60,7 +107,7 @@ func (j *janitor) Sweep(ctx context.Context) error {
 	errChan := make(chan error, len(stacks))
 	for i := 1; i <= j.workers; i++ {
 		wg.Add(1)
-		go j.sweepWorker(&wg, stackQueue, errChan)
+		go j.sweepWorker(cfg, &wg, stackQueue, errChan)
 	}
 
 	for _, stack := range stacks {
@@ -90,7 +137,7 @@ func (j *janitor) getStacks(ctx context.Context, cfnClient *cloudformation.Clien
 	return stacks, nil
 }
 
-func (j *janitor) sweepWorker(wg *sync.WaitGroup, stackQueue <-chan cloudformationtypes.Stack, errChan chan<- error) {
+func (j *janitor) sweepWorker(cfg aws.Config, wg *sync.WaitGroup, stackQueue <-chan cloudformationtypes.Stack, errChan chan<- error) {
 	defer wg.Done()
 	for stack := range stackQueue {
 		resourceID := *stack.StackName
@@ -109,23 +156,23 @@ func (j *janitor) sweepWorker(wg *sync.WaitGroup, stackQueue <-chan cloudformati
 			slog.Info("skipping resources", "age", resourceAge, "resourceID", resourceID)
 			continue
 		}
-		clients := j.awsClientsForStack(stack)
+		clients := j.awsClientsForStack(cfg, stack)
 		infraManager := NewInfrastructureManager(clients, resourceID, j.metrics)
 		clusterManager := NewClusterManager(clients, resourceID)
 		nodeManager := NewNodeManager(clients, resourceID)
-		slog.Info("deleting resources", "age", resourceAge, "resourceID", resourceID)
+		slog.Info("deleting resources", "age", resourceAge, "resourceID", resourceID, "region", cfg.Region)
 		if err := deleteResources(infraManager, clusterManager, nodeManager, nil /* k8sClient */, nil /* deployerOptions */); err != nil {
 			errChan <- fmt.Errorf("failed to delete resources: %s: %v", resourceID, err)
 		}
 	}
 }
 
-func (j *janitor) awsClientsForStack(stack cloudformationtypes.Stack) *awsClients {
+func (j *janitor) awsClientsForStack(cfg aws.Config, stack cloudformationtypes.Stack) *awsClients {
 	var eksEndpointURL string
 	for _, tag := range stack.Tags {
 		if *tag.Key == eksEndpointURLTag {
 			eksEndpointURL = *tag.Value
 		}
 	}
-	return newAWSClients(j.awsConfig, eksEndpointURL)
+	return newAWSClients(cfg, eksEndpointURL)
 }
