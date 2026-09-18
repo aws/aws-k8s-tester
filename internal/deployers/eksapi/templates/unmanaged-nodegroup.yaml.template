@@ -45,6 +45,12 @@ Parameters:
     Type: String
     Description: Capacity reservation id for the unmanaged nodegroup
 
+  CapacityBlock:
+    Type: String
+    Description: Whether the capacity reservation is a capacity block
+    Default: "false"
+    AllowedValues: ["true", "false"]
+
   UserDataIsMIMEPart:
     Description: "User data should be embedded as a part of a multi-part MIME document"
     Default: true
@@ -52,7 +58,10 @@ Parameters:
     AllowedValues: [true, false]
 
 Conditions:
-  IsCapacityReservationIdSet: !Not [!Equals [!Ref CapacityReservationId, ""]]
+  IsCapacityBlock: !Equals [!Ref CapacityBlock, "true"]
+  IsOnDemandReservation: !And
+    - !Not [!Equals [!Ref CapacityReservationId, ""]]
+    - !Not [!Condition IsCapacityBlock]
   IsUserDataMIMEPart: !Equals [true, !Ref UserDataIsMIMEPart]
 
 Resources:
@@ -116,9 +125,18 @@ Resources:
               VolumeType: gp2
         CapacityReservationSpecification:
           Fn::If:
-            - IsCapacityReservationIdSet
+            - IsOnDemandReservation
             - CapacityReservationTarget:
                 CapacityReservationId: !Ref CapacityReservationId
+            - Fn::If:
+              - IsCapacityBlock
+              - CapacityReservationTarget:
+                  CapacityReservationId: !Ref CapacityReservationId
+              - !Ref AWS::NoValue
+        InstanceMarketOptions:
+          Fn::If:
+            - IsCapacityBlock
+            - MarketType: capacity-block
             - !Ref AWS::NoValue
         IamInstanceProfile:
           Arn: !GetAtt NodeInstanceProfile.Arn
@@ -171,6 +189,7 @@ Resources:
         PauseTime: PT15M
     Properties:
       AutoScalingGroupName: !Ref ResourceId
+      {{- if gt (len .InstanceTypes) 1 }}
       MixedInstancesPolicy:
         LaunchTemplate:
           LaunchTemplateSpecification:
@@ -180,6 +199,14 @@ Resources:
               {{- range .InstanceTypes}}
                 - InstanceType: "{{.}}"
               {{- end}}
+      {{- else }}
+      # A single instance type uses the launch template directly. A
+      # MixedInstancesPolicy cannot be used with capacity blocks, so it is only
+      # used when more than one instance type is requested.
+      LaunchTemplate:
+        LaunchTemplateId: !Ref NodeLaunchTemplate
+        Version: !GetAtt NodeLaunchTemplate.LatestVersionNumber
+      {{- end }}
       DesiredCapacity: !Ref NodeCount
       MinSize: !Ref NodeCount
       MaxSize: !Ref NodeCount
