@@ -159,12 +159,10 @@ func setupMps(ctx context.Context, t *testing.T, cfg *envconf.Config, st *mpsSta
 
 	// Compare against what this cluster actually advertised rather than assuming
 	// gpuPerNode is still accurate.
-	before, err := allocatableGPUs(ctx, cfg)
+	before, err := waitForAdvertisedGPUs(ctx, cfg)
 	if err != nil {
-		t.Fatalf("failed to read allocatable GPUs: %v", err)
-	}
-	if before == 0 {
-		t.Fatal("no allocatable nvidia.com/gpu before reconfiguring; the stock device plugin is not advertising")
+		t.Fatalf("no allocatable nvidia.com/gpu within %v; the stock device plugin never advertised: %v",
+			gpuSharingAdvertiseTimeout, err)
 	}
 	st.physical = before
 	st.completions = before * st.replicas
@@ -259,7 +257,10 @@ func assessMpsAdvertisement(ctx context.Context, t *testing.T, cfg *envconf.Conf
 	if err := wait.For(func(ctx context.Context) (bool, error) {
 		n, err := allocatableGPUs(ctx, cfg)
 		if err != nil {
-			return false, err
+			// Transient read failures should not end the poll; see
+			// waitForAdvertisedGPUs.
+			log.Printf("[mps] could not read allocatable GPUs, retrying: %v", err)
+			return false, nil
 		}
 		after = n
 		return n == st.completions, nil

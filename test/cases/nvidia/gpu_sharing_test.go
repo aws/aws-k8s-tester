@@ -134,6 +134,37 @@ func allocatableGPUs(ctx context.Context, cfg *envconf.Config) (int, error) {
 	return total, nil
 }
 
+// waitForAdvertisedGPUs polls until the device plugin is advertising at least one
+// nvidia.com/gpu and returns the count.
+//
+// Polling rather than reading once, because these features now run after a node reboot:
+// the reboot tester waits for the node to be Ready, and Ready does not mean the device
+// plugin has re-registered with kubelet and kubelet has republished the resource. Read
+// once, the count can still be 0 in that window, and the feature would fail claiming
+// the stock plugin is not advertising when it simply has not finished starting. The
+// same lag is already polled for on the way out, after the plugin is swapped.
+func waitForAdvertisedGPUs(ctx context.Context, cfg *envconf.Config) (int, error) {
+	var got int
+	var lastErr error
+	err := wait.For(func(ctx context.Context) (bool, error) {
+		n, err := allocatableGPUs(ctx, cfg)
+		if err != nil {
+			// Keep polling. Listing nodes can fail transiently, and treating the
+			// first failure as terminal defeats the point of a poll. Remembered so
+			// a genuinely broken read is still diagnosable from the timeout.
+			lastErr = err
+			log.Printf("[gpu-sharing] could not read allocatable GPUs, retrying: %v", err)
+			return false, nil
+		}
+		got = n
+		return n > 0, nil
+	}, wait.WithContext(ctx), wait.WithTimeout(gpuSharingAdvertiseTimeout))
+	if err != nil && lastErr != nil {
+		return got, fmt.Errorf("%w (last read error: %v)", err, lastErr)
+	}
+	return got, err
+}
+
 // restoreStockDevicePlugin puts the stock plugin back and removes the feature's
 // ConfigMap. Shared because both features end the same way, and a divergence
 // between two copies of this would leave one of them quietly not restoring.

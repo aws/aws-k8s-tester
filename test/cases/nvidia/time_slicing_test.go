@@ -81,12 +81,10 @@ func TestTimeSlicing(t *testing.T) {
 			// Record the pre-change count so the assertion below compares against
 			// what this cluster actually advertised, rather than assuming
 			// gpuPerNode is still accurate.
-			before, err := allocatableGPUs(ctx, cfg)
+			before, err := waitForAdvertisedGPUs(ctx, cfg)
 			if err != nil {
-				t.Fatalf("failed to read allocatable GPUs: %v", err)
-			}
-			if before == 0 {
-				t.Fatal("no allocatable nvidia.com/gpu before reconfiguring; the stock device plugin is not advertising")
+				t.Fatalf("no allocatable nvidia.com/gpu within %v; the stock device plugin never advertised: %v",
+					gpuSharingAdvertiseTimeout, err)
 			}
 			log.Printf("[time-slicing] allocatable nvidia.com/gpu before: %d", before)
 
@@ -157,7 +155,10 @@ func TestTimeSlicing(t *testing.T) {
 				var err error
 				got, err = allocatableGPUs(ctx, cfg)
 				if err != nil {
-					return false, err
+					// Transient read failures should not end the poll; see
+					// waitForAdvertisedGPUs.
+					log.Printf("[time-slicing] could not read allocatable GPUs, retrying: %v", err)
+					return false, nil
 				}
 				return got == want, nil
 			}, wait.WithContext(ctx), wait.WithTimeout(gpuSharingAdvertiseTimeout))
