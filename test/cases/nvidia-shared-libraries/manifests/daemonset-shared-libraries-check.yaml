@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-shared-libraries-check
+  namespace: default
+  labels:
+    app: nvidia-shared-libraries-check
+spec:
+  selector:
+    matchLabels:
+      app: nvidia-shared-libraries-check
+  template:
+    metadata:
+      labels:
+        app: nvidia-shared-libraries-check
+    spec:
+      tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
+        effect: "NoSchedule"
+      containers:
+      - name: shared-libraries-check
+        image: public.ecr.aws/amazonlinux/amazonlinux:2023
+        env:
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "compute,utility"
+        - name: REQUIRED_LIBS
+          value: "{{.RequiredLibs}}"
+        - name: ALLOWED_LIB_DIRS_RE
+          value: '{{.AllowedLibDirsRegex}}'
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -eu
+          set -o pipefail
+
+          echo "=== ldconfig -p output (NVIDIA / CUDA entries) ==="
+          check_failed=0
+          if ! ldconfig -p > /tmp/ldconfig.out; then
+            echo "FAIL: ldconfig -p returned non-zero"
+            check_failed=1
+          elif ! grep -E 'libcuda|libnvidia' /tmp/ldconfig.out; then
+            echo "(no NVIDIA / CUDA lines in ld cache)"
+            check_failed=1
+          else
+            for lib in $REQUIRED_LIBS; do
+              # `ldconfig -p` lines look like (leading tab, resolved path last):
+              #   libcuda.so.1 (libc6,x86-64) => /usr/lib64/libcuda.so.1
+              # Match on the exact SONAME in column 1 and print the last
+              # whitespace-separated field. Awk's default FS handles the
+              # leading tab and the space+`=>` in the middle.
+              paths=$(awk -v L="$lib" '$1 == L { print $NF }' /tmp/ldconfig.out)
+              if [ -z "$paths" ]; then
+                echo "FAIL: $lib is not in the ld.so cache"
+                check_failed=1
+                continue
+              fi
+              # A SONAME can have multiple entries (32-bit + 64-bit, or
+              # multi-arch). Every entry must pass; a shadowing copy at
+              # a bad path is a hard failure even if a good copy also
+              # exists, because ld.so walks the cache in order and
+              # takes the first match.
+              while IFS= read -r p; do
+                if echo "$p" | grep -qE "$ALLOWED_LIB_DIRS_RE"; then
+                  echo "OK:   $lib -> $p"
+                else
+                  echo "FAIL: $lib -> $p (not under $ALLOWED_LIB_DIRS_RE)"
+                  check_failed=1
+                fi
+              done <<< "$paths"
+            done
+          fi
+
+          if [ "$check_failed" = "0" ]; then
+            echo "=== all required NVIDIA driver libraries are in the ld cache and resolve under $ALLOWED_LIB_DIRS_RE ==="
+            # sentinel picked up by the readinessProbe.
+            touch /tmp/ready
+          else
+            echo "=== check FAILED; container will stay alive so this output persists in current logs ==="
+          fi
+
+          # daemonsets require a RestartPolicy of Always, avoid a restarrt loop
+          sleep infinity
+        readinessProbe:
+          exec:
+            command: ["test", "-f", "/tmp/ready"]
+          initialDelaySeconds: 2
+          periodSeconds: 3
+          failureThreshold: 3
+          successThreshold: 1
+        resources:
+          requests:
+            nvidia.com/gpu: "1"
+          limits:
+            nvidia.com/gpu: "1"
