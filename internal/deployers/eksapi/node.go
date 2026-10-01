@@ -45,6 +45,7 @@ var (
 	}
 
 	defaultInstanceTypes_arm64 = []string{
+		"m8g.large",
 		"m7g.xlarge",
 		"m7g.large",
 		"m6g.xlarge",
