@@ -40,13 +40,30 @@ spec:
 
       # Node classification from kernel state, not an EC2 family list:
       #   nvswitch      -- /host/proc/driver/nvidia-nvswitch/devices/
-      #                    is populated (one entry per bound switch).
+      #                    is populated (one entry per bound switch),
+      #                    or fabric-manager detected an NVL5+ system.
       #   nvlink_direct -- no NVSwitch, but nvidia-smi nvlink -s reports
       #                    at least one Link line (multi-GPU NVLink mesh
       #                    without switches).
       #   non_nvlink    -- neither.
+      #
+      # On NVL5+ (Blackwell HGX, e.g. p6-b200) the NVSwitches are not
+      # PCI devices on the host, so nothing registers under
+      # nvidia-nvswitch/devices. They're managed through CX7 bridges
+      # instead, and nvidia-fabricmanager-start.sh logs "Detected NVL5+
+      # system" to the journal when it finds one.
       nvswitch_dir=/host/proc/driver/nvidia-nvswitch/devices
+      nvl5=0
+      for jctl_dir in /host/var/log/journal /host/run/log/journal; do
+        [ -d "$jctl_dir" ] || continue
+        if find "$jctl_dir" -maxdepth 3 -type f -name '*.journal' \
+             -exec grep -aqs "Detected NVL5+ system" {} + 2>/dev/null; then
+          nvl5=1
+        fi
+      done
       if [ -d "$nvswitch_dir" ] && [ -n "$(ls -A "$nvswitch_dir" 2>/dev/null)" ]; then
+        class=nvswitch
+      elif [ "$nvl5" -eq 1 ]; then
         class=nvswitch
       elif nvidia-smi nvlink -s 2>/dev/null | grep -qE 'Link[[:space:]]+[0-9]+'; then
         class=nvlink_direct
