@@ -105,7 +105,8 @@ func multiNode(testName string) features.Feature {
 		Assess("MPIJob succeeds", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 			mpiJob := mpijobs.NewUnstructured(jobName, "default")
 			t.Log("Waiting for multi node job to complete")
-			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(mpiJob, mpijobs.MPIJobSucceeded),
+			err := fwext.WaitForWithTimeout(t, "MPIJob "+jobName,
+				conditions.New(cfg.Client().Resources()).ResourceMatch(mpiJob, mpijobs.MPIJobSucceeded),
 				wait.WithContext(ctx),
 				wait.WithTimeout(60*time.Minute),
 			)
@@ -170,7 +171,8 @@ func singleNode() features.Feature {
 			mpiJob := mpijobs.NewUnstructured("pytorch-training-single-node", "default")
 			ctx = context.WithValue(ctx, "mpiJob", mpiJob)
 			t.Log("Waiting for single node job to complete")
-			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).ResourceMatch(mpiJob, mpijobs.MPIJobSucceeded),
+			err := fwext.WaitForWithTimeout(t, "MPIJob pytorch-training-single-node",
+				fwext.NewConditionExtension(cfg.Client().Resources()).ResourceMatch(mpiJob, mpijobs.MPIJobSucceeded),
 				wait.WithContext(ctx),
 				wait.WithTimeout(30*time.Minute),
 			)

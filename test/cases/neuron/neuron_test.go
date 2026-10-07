@@ -70,7 +70,8 @@ func TestNeuronNodes(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "neuronx-single-node", Namespace: "default"},
 			}
 			t.Log("Waiting for single node job to complete")
-			err := wait.For(fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
+			err := fwext.WaitForWithTimeout(t, "Job neuronx-single-node",
+				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 				wait.WithContext(ctx),
 				wait.WithTimeout(time.Minute*20),
 			)
@@ -129,7 +130,8 @@ func TestNeuronNodes(t *testing.T) {
 			mpiJob := mpijobs.NewUnstructured("multi-node-nccom-test", "default")
 			ctx = context.WithValue(ctx, "mpiJob", mpiJob)
 			t.Log("Waiting for MPIJob to complete")
-			err := wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(mpiJob, mpijobs.MPIJobSucceeded),
+			err := fwext.WaitForWithTimeout(t, "MPIJob multi-node-nccom-test",
+				conditions.New(cfg.Client().Resources()).ResourceMatch(mpiJob, mpijobs.MPIJobSucceeded),
 				wait.WithContext(ctx),
 				wait.WithTimeout(time.Minute*30),
 			)

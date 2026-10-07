@@ -67,7 +67,7 @@ func TestNeuronInference(t *testing.T) {
 			job := &batchv1.Job{
 				ObjectMeta: metav1.ObjectMeta{Name: "neuron-inference", Namespace: "default"},
 			}
-			if err := wait.For(
+			if err := fwext.WaitForWithTimeout(t, "Job neuron-inference",
 				fwext.NewConditionExtension(cfg.Client().Resources()).JobSucceeded(job),
 				wait.WithTimeout(60*time.Minute),
 			); err != nil {
