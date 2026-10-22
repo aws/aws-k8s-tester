@@ -456,6 +456,23 @@ Resources:
               - !Ref "AWS::Partition"
               - ":iam::aws:policy/AmazonEKSNetworkingPolicy"
           - !Ref "AWS::NoValue"
+      Policies:
+        - !If
+          - IsAutoMode
+          # SGP grants INSTANCE-ATTACH on the trunk and branch ENIs to the trunk
+          # account before associating them. The permission is intentionally kept
+          # out of the EKS managed policies, so Auto Mode clusters need it here.
+          - PolicyName: sgp-create-network-interface-permission
+            PolicyDocument:
+              Version: 2012-10-17
+              Statement:
+                - Effect: Allow
+                  Action: "ec2:CreateNetworkInterfacePermission"
+                  Resource: "*"
+                  Condition:
+                    StringEquals:
+                      "ec2:Permission": "INSTANCE-ATTACH"
+          - !Ref "AWS::NoValue"
 
   NodeRole:
     Type: AWS::IAM::Role
