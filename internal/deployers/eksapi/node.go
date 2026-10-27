@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"log/slog"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/autoscaling"
 	"github.com/aws/aws-sdk-go-v2/service/cloudformation"
@@ -23,7 +25,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"log/slog"
 	"k8s.io/utils/pointer"
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 
@@ -786,7 +787,7 @@ func (m *nodeManager) getValidInstanceTypes(desiredInstanceTypes []string) ([]st
 func (m *nodeManager) getNetworkInterfaces(opts *deployerOptions, securityGroups []string, subnetIDs []string) ([]templates.NetworkInterface, error) {
 	if !opts.EFA {
 		// create only the default primary network interface if not using EFA
-		netiface, err := getNetworkInterface(opts, 0, subnetIDs, securityGroups)
+		netiface, err := getNetworkInterface(opts, 0, interfaceTypeENA, subnetIDs, securityGroups)
 		if err != nil {
 			return nil, err
 		}
@@ -807,12 +808,29 @@ func (m *nodeManager) getNetworkInterfaces(opts *deployerOptions, securityGroups
 		return nil, fmt.Errorf("cannot generate efa interfaces for instance type %s because it does not support efa", instanceType)
 	}
 
-	// 1 EFA interface is supported per network card
+	// 1 EFA interface per network card, capped by MaximumEfaInterfaces.
 	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/efa.html#efa-limits
-	numEfaInterfaces := int(aws.ToInt32(networkInfo.MaximumNetworkCards))
+	// EfaSupported implies EfaInfo; treat its absence as one interface rather than
+	// assuming every card qualifies.
+	maxEfaInterfaces := 1
+	if networkInfo.EfaInfo != nil {
+		maxEfaInterfaces = int(aws.ToInt32(networkInfo.EfaInfo.MaximumEfaInterfaces))
+	}
+	efaCards, err := efaCardLayout(instanceType, int(aws.ToInt32(networkInfo.MaximumNetworkCards)), maxEfaInterfaces)
+	if err != nil {
+		return nil, err
+	}
 	var networkInterfaces []templates.NetworkInterface
-	for cardIndex := range numEfaInterfaces {
-		efaInterface, err := getNetworkInterface(opts, cardIndex, subnetIDs, securityGroups)
+	if efaCards[0] != 0 {
+		// Card 0 cannot carry EFA but still provides the primary ENA and IP.
+		primary, err := getNetworkInterface(opts, 0, interfaceTypeENA, subnetIDs, securityGroups)
+		if err != nil {
+			return nil, err
+		}
+		networkInterfaces = append(networkInterfaces, primary)
+	}
+	for _, cardIndex := range efaCards {
+		efaInterface, err := getNetworkInterface(opts, cardIndex, interfaceTypeEFA, subnetIDs, securityGroups)
 		if err != nil {
 			return nil, err
 		}
@@ -821,7 +839,40 @@ func (m *nodeManager) getNetworkInterfaces(opts *deployerOptions, securityGroups
 	return networkInterfaces, nil
 }
 
-func getNetworkInterface(opts *deployerOptions, networkCardIndex int, subnetIds []string, securityGroups []string) (templates.NetworkInterface, error) {
+// EC2 network interface types.
+const (
+	interfaceTypeENA = "interface"
+	interfaceTypeEFA = "efa"
+)
+
+// efaPrimaryENAOnlyTypes lists instance types whose network card 0 cannot carry an
+// EFA device, so EFA is attached from card 1 upward instead. DescribeInstanceTypes
+// reports no per-card EFA limit, so this cannot be derived: a type with EFA on card 0
+// only and one with EFA on every card but the first report the same two numbers.
+// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/efa-acc-inst-types.html
+var efaPrimaryENAOnlyTypes = map[string]bool{
+	"p6-b300.48xlarge":   true, // documented: primary card takes only an ENA
+	"p6e-gb200.36xlarge": true, // documented: NCI 0 is ENA, NCIs 1-16 carry EFA
+}
+
+// efaCardLayout returns the network card indices that carry an EFA device, ascending.
+func efaCardLayout(instanceType string, cardCount int, maxEfaInterfaces int) ([]int, error) {
+	firstEfaCard := 0
+	if efaPrimaryENAOnlyTypes[instanceType] {
+		firstEfaCard = 1
+	}
+	var efaCards []int
+	for card := firstEfaCard; card < cardCount && len(efaCards) < maxEfaInterfaces; card++ {
+		efaCards = append(efaCards, card)
+	}
+	if len(efaCards) == 0 {
+		return nil, fmt.Errorf("no network card on %s can carry an EFA interface (%d card(s), %d EFA interface(s))",
+			instanceType, cardCount, maxEfaInterfaces)
+	}
+	return efaCards, nil
+}
+
+func getNetworkInterface(opts *deployerOptions, networkCardIndex int, interfaceType string, subnetIds []string, securityGroups []string) (templates.NetworkInterface, error) {
 	// simplification that works with currently supported network interfaces based on
 	// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-eni.html#network-cards
 	// and
@@ -830,24 +881,26 @@ func getNetworkInterface(opts *deployerOptions, networkCardIndex int, subnetIds 
 	if networkCardIndex > 0 {
 		deviceIndex = 1
 	}
-	var description, interfaceType, subnetID *string
+	var description, subnetID *string
 	if opts.EFA {
 		if len(subnetIds) == 0 {
 			return templates.NetworkInterface{}, fmt.Errorf("EFA interfaces require a subnet but none were provided")
 		}
 		subnetID = &subnetIds[0]
-		interfaceType = aws.String("efa")
-		description = aws.String("EFA-enabled network interface")
+		if interfaceType == interfaceTypeENA {
+			description = aws.String("ENA-only primary network interface (EFA not supported on network card 0)")
+		} else {
+			description = aws.String("EFA-enabled network interface")
+		}
 	} else {
 		// no need to assign a subnet here, more restrictive than it is helpful
-		interfaceType = aws.String("interface")
 		description = aws.String("Standard network interface")
 	}
 	return templates.NetworkInterface{
 		Description:         description,
 		DeviceIndex:         &deviceIndex,
 		NetworkCardIndex:    &networkCardIndex,
-		InterfaceType:       interfaceType,
+		InterfaceType:       aws.String(interfaceType),
 		SubnetId:            subnetID,
 		Groups:              securityGroups,
 		DeleteOnTermination: aws.Bool(true),
