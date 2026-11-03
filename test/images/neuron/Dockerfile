@@ -38,16 +38,9 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     build-essential \
     ca-certificates \
-    cmake \
     curl \
-    emacs \
-    git \
-    jq \
-    libopencv-dev \
-    software-properties-common \
     wget \
     unzip \
-    vim \
     zlib1g-dev \
     openssl \
     libssl-dev \
@@ -55,8 +48,8 @@ RUN apt-get update \
     libgdbm-dev \
     libc6-dev \
     libbz2-dev \
+    liblzma-dev \
     libncurses-dev \
-    tk-dev \
     libffi-dev \
     libcap-dev \
     gnupg2 \
