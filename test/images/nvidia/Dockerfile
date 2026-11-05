@@ -2,52 +2,41 @@ ARG CUDA_MAJOR_VERSION=12
 ARG CUDA_MINOR_VERSION=8
 
 # Start with the NVIDIA CUDA base image
-FROM nvidia/cuda:$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION.0-devel-ubuntu22.04
+FROM nvidia/cuda:$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION.0-devel-amzn2023
 
 ARG CUDA_MAJOR_VERSION
 ARG CUDA_MINOR_VERSION
 
-ENV DEBIAN_FRONTEND=noninteractive
-
 # Install necessary dependencies
-RUN apt update -y \
- && apt upgrade -y \
- && apt remove -y --allow-change-held-packages \
-      libmlx5-1 \
-      ibverbs-utils \
-      libibverbs-dev \
-      libibverbs1 \
-      libnccl2 \
-      libnccl-dev \
- && rm -rf /opt/hpcx \
- && rm -rf /usr/local/mpi \
- && rm -rf /usr/local/ucx \
- && rm -f /etc/ld.so.conf.d/hpcx.conf \
- && apt install -y \
+RUN dnf upgrade -y \
+ && dnf install -y \
       git \
       gcc \
-      openssh-client \
+      gcc-c++ \
+      make \
+      openssh-clients \
       openssh-server \
-      build-essential \
-      curl \
+      tar \
+      gzip \
+      which \
       autoconf \
       libtool \
       automake \
       cmake \
-      apt-utils \
-      libhwloc-dev \
-      freeglut3-dev \
-      libglu1-mesa-dev \
+      hwloc-devel \
       datacenter-gpu-manager-4-cuda12 \
+      datacenter-gpu-manager-4-proprietary-cuda12 \
       datacenter-gpu-manager-4-cuda13 \
+      datacenter-gpu-manager-4-proprietary-cuda13 \
       systemd
 
 RUN ldconfig
 
-ENV LD_LIBRARY_PATH /opt/amazon/openmpi/lib:/opt/amazon/efa/lib:/opt/aws-ofi-nccl/install/lib:/usr/local/cuda/lib:/usr/local/lib/:/usr/lib64:/usr/lib/x86_64-linux-gnu/:/usr/lib/aarch64-linux-gnu/:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH /opt/amazon/openmpi/lib64:/opt/amazon/openmpi/lib:/opt/amazon/efa/lib64:/opt/amazon/efa/lib:/opt/aws-ofi-nccl/install/lib:/usr/local/cuda/lib:/usr/local/lib/:/usr/lib64:$LD_LIBRARY_PATH
 ENV PATH /usr/local/cuda/bin:/opt/amazon/openmpi/bin:/opt/amazon/efa/bin:/usr/sbin:/usr/bin:/usr/local/bin:$PATH
 
-RUN mkdir -p /var/run/sshd \
+RUN ssh-keygen -A \
+ && mkdir -p /var/run/sshd \
  && sed -i 's/[ #]\(.*StrictHostKeyChecking \).*/ \1no/g' /etc/ssh/ssh_config \
  && echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config \
  && sed -i 's/#\(StrictModes \).*/\1no/g' /etc/ssh/sshd_config
@@ -83,7 +72,7 @@ RUN curl -sL https://efa-installer.amazonaws.com/aws-efa-installer-$EFA_INSTALLE
 
 # Build nvbandwidth
 ARG NVBANDWIDTH_VERSION=v0.8
-RUN apt install -y libboost-program-options-dev
+RUN dnf install -y boost-devel
 RUN git clone https://github.com/NVIDIA/nvbandwidth.git --branch $NVBANDWIDTH_VERSION /tmp/nvbandwidth \
  && cd /tmp/nvbandwidth \
  && cmake -DMULTINODE=1 . && make && cp nvbandwidth /usr/bin \
@@ -130,7 +119,7 @@ ENV NCCL_PROTO simple
 # see https://linux.die.net/man/8/ld.so for usage. replaces LD_PRELOAD env.
 RUN echo "/usr/local/lib/libnccl.so" >> /etc/ld.so.preload
 
-RUN rm -rf /var/lib/apt/lists/*
+RUN dnf clean all && rm -rf /var/cache/dnf
 
 WORKDIR /app
 
