@@ -1,5 +1,5 @@
-ARG CUDA_MAJOR_VERSION=12
-ARG CUDA_MINOR_VERSION=8
+ARG CUDA_MAJOR_VERSION=13
+ARG CUDA_MINOR_VERSION=0
 
 # Use the NVIDIA CUDA runtime as a parent image
 FROM nvidia/cuda:$CUDA_MAJOR_VERSION.$CUDA_MINOR_VERSION.0-devel-amzn2023
@@ -62,7 +62,7 @@ RUN ln -s /usr/local/bin/pip3 /usr/bin/pip \
  && pip --no-cache-dir install --upgrade pip setuptools
 
 # Install Pytorch from Source
-ARG PYTORCH_BRANCH=v2.6.0
+ARG PYTORCH_BRANCH=v2.9.1
 ARG PYTORCH_BUILD_ENV="MAX_JOBS=8 BUILD_TEST=0"
 
 ENV CUDA_HOME=/usr/local/cuda
@@ -70,7 +70,7 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extra
 ENV PATH=$PATH:$CUDA_HOME/bin
 ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.7;8.9;9.0;10.0;12.0"
 
-RUN pip install typing-extensions sympy pyyaml
+RUN pip install typing-extensions sympy pyyaml "cmake>=3.27,<4"
 RUN git clone https://github.com/pytorch/pytorch.git /tmp/pytorch \
         --recursive \
         --branch $PYTORCH_BRANCH \
