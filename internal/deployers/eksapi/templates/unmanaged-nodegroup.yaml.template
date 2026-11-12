@@ -120,6 +120,10 @@ Resources:
             - CapacityReservationTarget:
                 CapacityReservationId: !Ref CapacityReservationId
             - !Ref AWS::NoValue
+        {{- if .EnclaveEnabled }}
+        EnclaveOptions:
+          Enabled: true
+        {{- end }}
         IamInstanceProfile:
           Arn: !GetAtt NodeInstanceProfile.Arn
         ImageId: !Ref AMIId
