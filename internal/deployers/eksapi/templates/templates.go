@@ -34,6 +34,7 @@ type UnmanagedNodegroupTemplateData struct {
 	NetworkInterfaces []NetworkInterface
 	KubernetesVersion string
 	InstanceTypes     []string
+	EnclaveEnabled    bool
 }
 
 type BusyboxDeploymentTemplateData struct {

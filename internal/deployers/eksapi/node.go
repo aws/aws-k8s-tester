@@ -439,9 +439,11 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 	err = templates.UnmanagedNodegroup.Execute(&templateBuf, struct {
 		NetworkInterfaces []templates.NetworkInterface
 		InstanceTypes     []string
+		EnclaveEnabled    bool
 	}{
 		NetworkInterfaces: networkInterfaces,
 		InstanceTypes:     opts.InstanceTypes,
+		EnclaveEnabled:    opts.EnclaveEnabled,
 	})
 	if err != nil {
 		return err
