@@ -8,7 +8,7 @@ ARG CUDA_MAJOR_VERSION
 ARG CUDA_MINOR_VERSION
 
 # Install necessary dependencies
-RUN dnf upgrade -y \
+RUN dnf upgrade -y --releasever=latest \
  && dnf install -y \
       git \
       gcc \
