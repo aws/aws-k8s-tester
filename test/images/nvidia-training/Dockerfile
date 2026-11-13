@@ -85,11 +85,15 @@ RUN dnf install -y \
 RUN ldconfig
 
 # SSH configuration
+# AL2023 OpenSSH follows the host kernel's FIPS mode and then aborts on the
+# curve25519 key exchange it offers by default, so drop it for FIPS hosts.
 RUN ssh-keygen -A && \
     mkdir -p /var/run/sshd && \
     sed -i 's/[ #]\(.*StrictHostKeyChecking \).*/ \1no/g' /etc/ssh/ssh_config && \
     echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config && \
-    sed -i 's/#\(StrictModes \).*/\1no/g' /etc/ssh/sshd_config
+    sed -i 's/#\(StrictModes \).*/\1no/g' /etc/ssh/sshd_config && \
+    echo "KexAlgorithms -curve25519-sha256,curve25519-sha256@libssh.org" > /etc/ssh/ssh_config.d/40-fips-kex.conf && \
+    echo "KexAlgorithms -curve25519-sha256,curve25519-sha256@libssh.org" > /etc/ssh/sshd_config.d/40-fips-kex.conf
 
 # Set environment variables for OpenMPI, CUDA, EFA, and NCCL
 ENV LD_LIBRARY_PATH /opt/amazon/openmpi/lib64:/opt/amazon/openmpi/lib:/opt/amazon/efa/lib64:/opt/aws-ofi-nccl/install/lib:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64:/usr/local/lib/:/usr/lib64:$LD_LIBRARY_PATH
