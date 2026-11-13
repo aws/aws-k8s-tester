@@ -12,7 +12,7 @@ ARG CUDA_MINOR_VERSION
 ENV MASTER_ADDR=127.0.0.1
 ENV MASTER_PORT=12355
 
-RUN dnf upgrade -y \
+RUN dnf upgrade -y --releasever=latest \
  && dnf install -y \
         gcc \
         gcc-c++ \
