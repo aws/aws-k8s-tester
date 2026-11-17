@@ -51,9 +51,16 @@ Parameters:
     Type: String
     AllowedValues: [true, false]
 
+  EnclaveEnabled:
+    Description: "Enable AWS Nitro Enclaves on the node instances"
+    Default: false
+    Type: String
+    AllowedValues: [true, false]
+
 Conditions:
   IsCapacityReservationIdSet: !Not [!Equals [!Ref CapacityReservationId, ""]]
   IsUserDataMIMEPart: !Equals [true, !Ref UserDataIsMIMEPart]
+  IsEnclaveEnabled: !Equals [true, !Ref EnclaveEnabled]
 
 Resources:
   EFASecurityGroupIngress:
@@ -119,6 +126,11 @@ Resources:
             - IsCapacityReservationIdSet
             - CapacityReservationTarget:
                 CapacityReservationId: !Ref CapacityReservationId
+            - !Ref AWS::NoValue
+        EnclaveOptions:
+          !If
+            - IsEnclaveEnabled
+            - Enabled: true
             - !Ref AWS::NoValue
         IamInstanceProfile:
           Arn: !GetAtt NodeInstanceProfile.Arn

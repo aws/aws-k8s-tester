@@ -499,6 +499,10 @@ func (m *nodeManager) createUnmanagedNodegroup(infra *Infrastructure, cluster *C
 				ParameterKey:   aws.String("CapacityReservationId"),
 				ParameterValue: aws.String(capacityReservationId),
 			},
+			{
+				ParameterKey:   aws.String("EnclaveEnabled"),
+				ParameterValue: aws.String(strconv.FormatBool(opts.EnclaveEnabled)),
+			},
 		},
 	}
 	out, err := m.clients.CFN().CreateStack(context.TODO(), &input)

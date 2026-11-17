@@ -70,6 +70,7 @@ type deployerOptions struct {
 	ClusterRoleServicePrincipal string        `flag:"cluster-role-service-principal" desc:"Additional service principal that can assume the cluster role"`
 	DeployCloudwatchInfra       bool          `flag:"deploy-cloudwatch-infra" desc:"Deploy required infrastructure for emitting metrics to CloudWatch"`
 	EFA                         bool          `flag:"efa" desc:"Create EFA interfaces on the node of an unmanaged nodegroup. One instance type must be passed if set. Requires --unmanaged-nodes and --instance-types."`
+	EnclaveEnabled              bool          `flag:"enclave-enabled" desc:"Enable AWS Nitro Enclaves on the nodes of an unmanaged nodegroup. The instance types must support Nitro Enclaves. Requires --unmanaged-nodes."`
 	EKSEndpointURL              string        `flag:"endpoint-url" desc:"Endpoint URL for the EKS API"`
 	EmitMetrics                 bool          `flag:"emit-metrics" desc:"Record and emit metrics to CloudWatch"`
 	EnableClusterLogging        bool          `flag:"enable-cluster-logging" desc:"Enable sending EKS control plane logs to an /aws/eks/<cluster_name/cluster log group. https://docs.aws.amazon.com/eks/latest/userguide/control-plane-logs.html"`
@@ -342,6 +343,9 @@ func (d *deployer) verifyUpFlags() error {
 	} else {
 		if d.AMI != "" {
 			return fmt.Errorf("--ami should not be provided without --unmanaged-nodes")
+		}
+		if d.EnclaveEnabled {
+			return fmt.Errorf("--enclave-enabled requires --unmanaged-nodes")
 		}
 		if d.AMIType == "" {
 			d.AMIType = "AL2023_x86_64_STANDARD"
