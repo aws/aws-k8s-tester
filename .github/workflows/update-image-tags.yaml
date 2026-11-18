@@ -16,11 +16,14 @@ jobs:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # 4.2.2
     - run: ./hack/update-image-tags.sh
     - uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # 7.0.8
+      # still open a PR for the images that did update if one updater failed
+      if: ${{ !cancelled() }}
       with:
         branch: update-image-tags
         base: main
         add-paths: |
           test/images/
+          test/manifests/
         commit-message: "chore: update image tags"
         committer: "GitHub <noreply@github.com>"
         author: "GitHub <noreply@github.com>"

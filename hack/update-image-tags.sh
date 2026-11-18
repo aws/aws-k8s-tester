@@ -4,61 +4,77 @@ set -o nounset
 set -o errexit
 set -o pipefail
 
+# All lookups below use anonymous access, so this script does not require AWS credentials.
+
 ECR_PUBLIC_REGISTRY="public.ecr.aws"
 EKS_CONTAINER_REGISTRY="602401143452.dkr.ecr.us-west-2.amazonaws.com"
+EKS_CHARTS_RAW_URL="https://raw.githubusercontent.com/aws/eks-charts/master/stable"
 
-# get_ecr_image_tags <REGISTRY> <REPOSITORY>
-# e.g. get_ecr_image_tags $ECR_PUBLIC_REGISTRY amazonlinux/amazonlinux
-get_ecr_image_tags() {
-    set -e
-    local REGISTRY=$1 
+# Names of images whose lookup failed; reported at the end so one broken upstream
+# doesn't block the others from being updated.
+FAILED=()
+
+# get_registry_tags <REGISTRY> <REPOSITORY> <TOKEN_URL>
+# Lists tags via the OCI distribution API using an anonymous bearer token.
+get_registry_tags() {
+    local REGISTRY=$1
     local REPOSITORY=$2
+    local TOKEN_URL=$3
     local TOKEN
-
-    # Get ECR public token if image is from a public registry, otherwise use a private token
-    # An authorization token is required for every ECR HTTP request
-    if [ "$REGISTRY" = "$ECR_PUBLIC_REGISTRY" ]; then
-        TOKEN=$(aws ecr-public get-authorization-token --region us-east-1 --output=text --query 'authorizationData.authorizationToken')
-        local AUTHORIZATION_TYPE="Bearer"
-    else 
-        TOKEN=$(aws ecr get-authorization-token --output text --query 'authorizationData[].authorizationToken')
-        local AUTHORIZATION_TYPE="Basic"
-    fi
-
-    curl -s -H "Authorization: ${AUTHORIZATION_TYPE} $TOKEN" "https://$REGISTRY/v2/$REPOSITORY/tags/list" | jq '.tags'
+    TOKEN=$(curl -sSf "$TOKEN_URL" | jq -re '.token')
+    curl -sSf -H "Authorization: Bearer $TOKEN" "https://$REGISTRY/v2/$REPOSITORY/tags/list" | jq -ce '.tags'
 }
 
-# update_image_uris REPOSITORY IMAGE_TAG
+# update_image_uris <REPOSITORY> <IMAGE_TAG>
 update_image_uris() {
     local REPOSITORY=$1
     local NEW_TAG=$2
-    PREFIX="image: ${REPOSITORY}"
+    if [ -z "$NEW_TAG" ] || [ "$NEW_TAG" = "null" ]; then
+        echo "ERROR: empty tag resolved for ${REPOSITORY}, skipping" >&2
+        return 1
+    fi
+    echo "  ${REPOSITORY} -> ${NEW_TAG}"
+    local PREFIX="image: ${REPOSITORY}"
     find ./test/manifests -type f -exec sed -i "s#$PREFIX:.*#$PREFIX:$NEW_TAG#g" {} +
 }
 
-# update the nvidia k8s device plugin
-echo "Updating Nvidia device plugin image"
-NVIDIA_DEVICE_PLUGIN_TAG=$(curl -s 'https://catalog.ngc.nvidia.com/api/containers/images?orgName=nvidia&name=k8s-device-plugin&isPublic=true' | jq -r '.images | sort_by(.updatedDate) | reverse | map(select(.tag | test("^v[0-9]+.[0-9]+.[0-9]+$"))) | first | .tag')
-update_image_uris nvcr.io/nvidia/k8s-device-plugin $NVIDIA_DEVICE_PLUGIN_TAG
+update_nvidia_device_plugin() {
+    local TAG
+    TAG=$(get_registry_tags nvcr.io nvidia/k8s-device-plugin \
+            "https://nvcr.io/proxy_auth?scope=repository:nvidia/k8s-device-plugin:pull" \
+        | jq -r '[.[] | select(test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))] | max_by(sub("^v"; "") | split(".") | map(tonumber))')
+    update_image_uris nvcr.io/nvidia/k8s-device-plugin "$TAG"
+}
 
-# below updates require authentication and should not exit early with a failure.
-# TODO: remove this once the aws credentials are setup and the paths are expected to succeed.
-set +e
+update_neuron_device_plugin() {
+    local REPOSITORY="neuron/neuron-device-plugin"
+    local TAG
+    TAG=$(get_registry_tags "$ECR_PUBLIC_REGISTRY" "$REPOSITORY" "https://${ECR_PUBLIC_REGISTRY}/token/" \
+        | jq -r '[.[] | select(test("^[0-9]+(\\.[0-9]+)+$"))] | max_by(split(".") | map(tonumber))')
+    update_image_uris "${ECR_PUBLIC_REGISTRY}/${REPOSITORY}" "$TAG"
+}
 
-# update the neuron k8s device plugin
-echo "Updating Neuron device plugin image"
-NEURON_DEVICE_PLUGIN_REPOSITORY_NAME="neuron/neuron-device-plugin"
-NEURON_DEVICE_PLUGIN_TAGS=$(get_ecr_image_tags $ECR_PUBLIC_REGISTRY $NEURON_DEVICE_PLUGIN_REPOSITORY_NAME)
-if [ $? -eq 0 ]; then
-    LATEST_NEURON_DEVICE_PLUGIN_TAG=$(echo $NEURON_DEVICE_PLUGIN_TAGS | jq -r 'max_by(split(".") | map(tonumber))')
-    update_image_uris "${ECR_PUBLIC_REGISTRY}/${NEURON_DEVICE_PLUGIN_REPOSITORY_NAME}" $LATEST_NEURON_DEVICE_PLUGIN_TAG
-fi
+update_efa_device_plugin() {
+    # The EKS registry requires AWS credentials to list tags, so use the image tag
+    # published in the official aws-efa-k8s-device-plugin Helm chart instead. This keeps
+    # the -eksbuild.N suffix, which carries rebuilt images with security patches.
+    local TAG
+    TAG=$(curl -sSf "${EKS_CHARTS_RAW_URL}/aws-efa-k8s-device-plugin/values.yaml" \
+        | awk '/^image:/{in_image=1; next} in_image && /^[^[:space:]]/{in_image=0} in_image && $1=="tag:"{gsub(/"/, "", $2); print $2; exit}')
+    update_image_uris "${EKS_CONTAINER_REGISTRY}/eks/aws-efa-k8s-device-plugin" "$TAG"
+}
 
-# update the efa k8s device plugin
-echo "Updating EFA device plugin image"
-EFA_DEVICE_PLUGIN_REPOSITORY_NAME="eks/aws-efa-k8s-device-plugin"
-EFA_DEVICE_PLUGIN_TAGS=$(get_ecr_image_tags $EKS_CONTAINER_REGISTRY $EFA_DEVICE_PLUGIN_REPOSITORY_NAME)
-if [ $? -eq 0 ]; then
-    LATEST_EFA_DEVICE_PLUGIN_TAG=$(echo $EFA_DEVICE_PLUGIN_TAGS | jq -r 'map(split("-") | .[0]) | max_by(sub("^v"; "") | split(".") | map(tonumber))')
-    update_image_uris "${EKS_CONTAINER_REGISTRY}/${EFA_DEVICE_PLUGIN_REPOSITORY_NAME}" $LATEST_EFA_DEVICE_PLUGIN_TAG
+for UPDATER in update_nvidia_device_plugin update_neuron_device_plugin update_efa_device_plugin; do
+    echo "Running ${UPDATER}"
+    # errexit is suspended inside an `if` condition, so failed lookups surface as an
+    # empty/null tag, which update_image_uris rejects with a non-zero return.
+    if ! "$UPDATER"; then
+        echo "ERROR: ${UPDATER} failed" >&2
+        FAILED+=("$UPDATER")
+    fi
+done
+
+if [ ${#FAILED[@]} -gt 0 ]; then
+    echo "ERROR: the following updaters failed: ${FAILED[*]}" >&2
+    exit 1
 fi
