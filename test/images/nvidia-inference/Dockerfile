@@ -69,7 +69,9 @@ RUN ln -s /usr/local/bin/pip3 /usr/bin/pip \
 ###############################################################################
 # Install Pytorch from Source
 ###############################################################################
-ARG PYTORCH_BRANCH=v2.6.0
+# Keep in step with test/images/nvidia-training: transformers imports dtypes such
+# as torch.float8_e8m0fnu at module load, which only exist from torch 2.7 onward.
+ARG PYTORCH_BRANCH=v2.9.1
 ARG PYTORCH_BUILD_ENV="MAX_JOBS=8 BUILD_TEST=0"
 
 # envs needed to make the path of NVCC known to the compilation
@@ -78,7 +80,7 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extra
 ENV PATH=$PATH:$CUDA_HOME/bin
 ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.7;8.9;9.0;10.0;12.0"
 
-RUN pip3 install typing-extensions sympy pyyaml
+RUN pip3 install typing-extensions sympy pyyaml "cmake>=3.27,<4"
 RUN git clone https://github.com/pytorch/pytorch.git /tmp/pytorch \
       --recursive \
       --branch $PYTORCH_BRANCH \
